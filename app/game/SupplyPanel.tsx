@@ -1,6 +1,6 @@
 import { Progress } from '@/components/ui/progress';
 import { Sprite } from './Sprite';
-import { GameButton, ResourceIcon } from './PackUI';
+import { GameButton, PackIcon, ResourceIcon } from './PackUI';
 import {
   type State,
   type Selection,
@@ -138,7 +138,13 @@ export function SupplySelection({
         value={(target.hp / target.maxHp) * 100}
         aria-label="Santé du ravitaillement"
       />
-      <GameButton className="primary-btn" disabled={!!reason} onClick={onRaid}>
+      <GameButton
+        className="primary-btn"
+        tone="red"
+        disabled={!!reason}
+        onClick={onRaid}
+      >
+        <PackIcon asset="ui-sword" />
         {worker ? 'Attaquer le paysan' : 'Saboter la production'}
       </GameButton>
       {reason && <p className="reason">{reason}</p>}

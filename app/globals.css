@@ -2057,3 +2057,96 @@ svg {
     padding-inline: 20px;
   }
 }
+
+/* Original pack artwork stays at its native proportions. */
+.pack-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+.icon-btn .pack-icon {
+  width: 28px;
+  height: 28px;
+}
+.canvas-help .pack-icon {
+  width: 26px;
+  height: 26px;
+  margin: -5px;
+}
+.pack-button-down {
+  display: none;
+}
+.pack-action:active:not(:disabled) .pack-button-rest {
+  display: none;
+}
+.pack-action:active:not(:disabled) .pack-button-down {
+  display: block;
+}
+.pack-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  background: transparent;
+  border: 0;
+}
+.ui-modal [data-slot='dialog-title'] {
+  padding-right: 30px;
+}
+.game-settings {
+  display: grid;
+  gap: 10px;
+}
+.game-settings .subtle-btn {
+  margin: 0;
+  white-space: normal;
+}
+.settings-speeds {
+  display: flex;
+  gap: 8px;
+}
+.settings-speeds .subtle-btn[aria-pressed='true'] {
+  background: #59767e !important;
+  color: #ffe5a3 !important;
+}
+.game-shell,
+.ui-modal,
+.district-popover {
+  cursor:
+    url('/tiny-swords/ui-cursor.png') 23 18,
+    default;
+}
+:is(.game-shell, .ui-modal, .district-popover)
+  :is(button, a, summary, [role='tab']) {
+  cursor:
+    url('/tiny-swords/ui-cursor-hand.png') 23 18,
+    pointer;
+}
+:is(.game-shell, .ui-modal, .district-popover)
+  :is(button:disabled, [aria-disabled='true'], .build-card.locked) {
+  cursor:
+    url('/tiny-swords/ui-cursor-forbidden.png') 32 32,
+    not-allowed;
+  pointer-events: auto;
+}
+.world-canvas,
+.world-canvas[data-cursor='arrow'] {
+  cursor:
+    url('/tiny-swords/ui-cursor.png') 23 18,
+    default;
+}
+.world-canvas[data-cursor='hand'] {
+  cursor:
+    url('/tiny-swords/ui-cursor-hand.png') 23 18,
+    pointer;
+}
+.world-canvas[data-cursor='forbidden'] {
+  cursor:
+    url('/tiny-swords/ui-cursor-forbidden.png') 32 32,
+    not-allowed;
+}

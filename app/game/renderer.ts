@@ -8,6 +8,8 @@ import {
   supplyActive,
   entrance,
   atEntrance,
+  buildReason,
+  type BuildingKind,
   type State,
   type Point,
   type Selection,
@@ -81,7 +83,10 @@ export class Renderer {
   private hover: Selection | null = null;
   private reducedMotion = false;
   public selection: Selection = { type: 'lot', id: 7 };
-  public buildMode = false;
+  public buildKind: BuildingKind | null = null;
+  private get buildMode() {
+    return this.buildKind !== null;
+  }
   public ready = false;
 
   constructor(
@@ -242,8 +247,8 @@ export class Renderer {
       }
     } else {
       this.hover = this.hit(p);
-      this.canvas.style.cursor = this.hover ? 'pointer' : 'grab';
     }
+    this.updateCursor();
   };
   private pointerUp = (e: PointerEvent) => {
     if (!this.down) return;
@@ -255,13 +260,31 @@ export class Renderer {
     }
     this.down = null;
     this.dragging = false;
+    this.hover = this.hit(p);
+    this.updateCursor();
     if (this.canvas.hasPointerCapture(e.pointerId))
       this.canvas.releasePointerCapture(e.pointerId);
   };
   private pointerCancel = () => {
     this.down = null;
     this.dragging = false;
+    this.updateCursor();
   };
+  private updateCursor() {
+    const forbidden =
+      this.buildKind !== null &&
+      (this.hover?.type !== 'lot' ||
+        !!buildReason(this.getState(), this.hover.id, this.buildKind));
+    const cursor = this.dragging
+      ? 'hand'
+      : forbidden
+        ? 'forbidden'
+        : this.hover
+          ? 'hand'
+          : 'arrow';
+    if (this.canvas.dataset.cursor !== cursor)
+      this.canvas.dataset.cursor = cursor;
+  }
   private contextMenu = (e: MouseEvent) => {
     e.preventDefault();
     this.onMove(this.toWorld(this.point(e)));
@@ -588,6 +611,7 @@ export class Renderer {
     ctx.restore();
   }
   private render = () => {
+    this.updateCursor();
     if (this.disposed) return;
     const ctx = this.ctx,
       s = this.getState(),

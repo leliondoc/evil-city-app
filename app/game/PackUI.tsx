@@ -1,10 +1,18 @@
 import { useEffect, useRef, type ComponentProps } from 'react';
 import { paintPanel, type PanelKind } from './panelSkin';
 import { Button as BaseButton } from '@/components/ui/button';
-import { ASSETS } from './art';
+import { ASSETS, type AssetKey } from './art';
 
 /** Paint separated pack tiles at a fixed pixel scale, including on resize. */
-export function PanelSkin({ kind = 'paper' }: { kind?: PanelKind }) {
+export function PanelSkin({
+  kind = 'paper',
+  asset,
+  className = '',
+}: {
+  kind?: PanelKind;
+  asset?: AssetKey;
+  className?: string;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current!;
@@ -22,7 +30,7 @@ export function PanelSkin({ kind = 'paper' }: { kind?: PanelKind }) {
       paintPanel(ctx, image, kind, width, height);
     };
     image.onload = draw;
-    image.src = ASSETS[`ui-${kind}`].src;
+    image.src = ASSETS[asset ?? `ui-${kind}`].src;
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => {
@@ -30,16 +38,21 @@ export function PanelSkin({ kind = 'paper' }: { kind?: PanelKind }) {
       observer.disconnect();
       image.onload = null;
     };
-  }, [kind]);
+  }, [kind, asset]);
   return (
-    <canvas ref={ref} className={`pack-skin pack-${kind}`} aria-hidden="true" />
+    <canvas
+      ref={ref}
+      className={`pack-skin pack-${kind} ${className}`}
+      aria-hidden="true"
+    />
   );
 }
 export function GameButton({
   children,
   className,
+  tone = 'blue',
   ...props
-}: ComponentProps<typeof BaseButton>) {
+}: ComponentProps<typeof BaseButton> & { tone?: 'blue' | 'red' }) {
   const skin =
     typeof className === 'string' && className.includes('primary-btn');
   return (
@@ -51,9 +64,40 @@ export function GameButton({
           : className
       }
     >
-      {skin && <PanelSkin kind="button" />}
+      {skin && (
+        <>
+          <PanelSkin
+            kind="button"
+            asset={tone === 'red' ? 'ui-button-red' : 'ui-button'}
+            className="pack-button-rest"
+          />
+          <PanelSkin
+            kind="button"
+            asset={
+              tone === 'red' ? 'ui-button-red-pressed' : 'ui-button-pressed'
+            }
+            className="pack-button-down"
+          />
+        </>
+      )}
       {children}
     </BaseButton>
+  );
+}
+export function PackIcon({
+  asset,
+  className = '',
+}: {
+  asset: AssetKey;
+  className?: string;
+}) {
+  return (
+    <img
+      className={`pack-icon ${className}`}
+      src={ASSETS[asset].src}
+      alt=""
+      aria-hidden="true"
+    />
   );
 }
 export function ResourceIcon({ kind }: { kind: 'gold' | 'wood' | 'food' }) {

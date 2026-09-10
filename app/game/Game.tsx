@@ -8,18 +8,12 @@ import {
   Sparkles,
   Users,
   Pause,
-  Play,
   BookOpen,
-  HelpCircle,
-  RotateCcw,
   Plus,
   Minus,
   Crosshair,
-  MousePointer2,
-  Move,
   Flag,
   Hammer,
-  Swords,
   Shield,
   CheckCircle2,
   Circle,
@@ -28,9 +22,13 @@ import {
   Crown,
   ArrowUp,
   Hourglass,
-  X,
 } from 'lucide-react';
-import { GameButton as Button, ResourceIcon, RibbonSkin } from './PackUI';
+import {
+  GameButton as Button,
+  PackIcon,
+  ResourceIcon,
+  RibbonSkin,
+} from './PackUI';
 import { SupplySelection } from './SupplyPanel';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -141,7 +139,7 @@ export default function Game() {
   const [tab, setTab] = useState('build');
   const [bestiaryAction, setBestiaryAction] = useState<Animation>('idle');
   const [modal, setModal] = useState<
-    'guide' | 'bestiary' | 'restart' | 'victory' | 'defeat' | null
+    'guide' | 'bestiary' | 'settings' | 'restart' | 'victory' | 'defeat' | null
   >(null);
   const [ready, setReady] = useState(false);
   const [artError, setArtError] = useState('');
@@ -235,7 +233,7 @@ export default function Game() {
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.selection = selection;
-      rendererRef.current.buildMode = !!pendingBuild;
+      rendererRef.current.buildKind = pendingBuild;
     }
   }, [selection, pendingBuild]);
   useEffect(() => {
@@ -499,7 +497,7 @@ export default function Game() {
             aria-label={paused ? 'Reprendre' : 'Mettre en pause'}
             onClick={() => setPaused((p) => !p)}
           >
-            {paused ? <Play size={17} /> : <Pause size={17} />}
+            {paused ? <PackIcon asset="ui-play" /> : <Pause size={17} />}
           </Button>
           <Button
             className="icon-btn optional-action"
@@ -515,15 +513,15 @@ export default function Game() {
             aria-label="Comment jouer"
             onClick={() => setModal('guide')}
           >
-            <HelpCircle size={17} />
+            <PackIcon asset="ui-info" />
           </Button>
           <Button
-            className="icon-btn optional-action"
-            title="Nouvelle partie"
-            aria-label="Recommencer la partie"
-            onClick={() => setModal('restart')}
+            className="icon-btn"
+            title="Paramètres de partie"
+            aria-label="Ouvrir les paramètres"
+            onClick={() => setModal('settings')}
           >
-            <RotateCcw size={16} />
+            <PackIcon asset="ui-settings" />
           </Button>
         </div>
       </header>
@@ -680,12 +678,13 @@ export default function Game() {
                   </p>
                   <Button
                     className="primary-btn"
+                    tone="red"
                     disabled={s.won || s.lost || !army(s).length}
                     onClick={() =>
                       run((state) => intercept(state, selectedEnemy.id))
                     }
                   >
-                    <Swords size={15} /> Intercepter
+                    <PackIcon asset="ui-sword" /> Intercepter
                   </Button>
                 </>
               )}
@@ -834,7 +833,7 @@ export default function Game() {
                               setFeedback('');
                             }}
                           >
-                            <X size={13} />
+                            <PackIcon asset="ui-close" />
                             Annuler
                           </Button>
                         </>
@@ -911,12 +910,13 @@ export default function Game() {
                       />
                       <Button
                         className="primary-btn"
+                        tone="red"
                         disabled={!!attackReason(s, selectedLot.id)}
                         onClick={() =>
                           run((state) => attack(state, selectedLot.id))
                         }
                       >
-                        <Swords size={16} />
+                        <PackIcon asset="ui-sword" />
                         Envoyer l’armée
                       </Button>
                       <p className="reason">
@@ -930,7 +930,7 @@ export default function Game() {
                           className="subtle-btn"
                           onClick={() => run((state) => retreat(state))}
                         >
-                          Sonner le repli
+                          <PackIcon asset="ui-back" /> Sonner le repli
                         </Button>
                       )}
                     </>
@@ -944,7 +944,7 @@ export default function Game() {
                           run((state) => defend(state, selectedLot.id))
                         }
                       >
-                        <Shield size={16} aria-hidden="true" />
+                        <PackIcon asset="ui-shield" />
                         <span>Rassembler l’armée ici</span>
                       </Button>
                     </div>
@@ -985,11 +985,11 @@ export default function Game() {
           </div>
           <div className="canvas-help">
             <span>
-              <MousePointer2 size={13} />
+              <PackIcon asset="ui-cursor" />
               Sélectionner
             </span>
             <span>
-              <Move size={13} />
+              <PackIcon asset="ui-cursor-hand" />
               Glisser pour explorer
             </span>
             <span>Molette : zoom</span>
@@ -1101,7 +1101,7 @@ export default function Game() {
               Bâtiments
             </TabsTrigger>
             <TabsTrigger value="recruit">
-              <Swords size={14} />
+              <PackIcon asset="ui-sword" />
               Créatures
             </TabsTrigger>
           </TabsList>
@@ -1162,7 +1162,66 @@ export default function Game() {
           if (!open) setModal(null);
         }}
       >
-        <DialogContent className="ui-modal">
+        <DialogContent className="ui-modal" showCloseButton={false}>
+          <Button
+            className="pack-modal-close"
+            aria-label="Fermer"
+            onClick={() => setModal(null)}
+          >
+            <PackIcon asset="ui-close" />
+          </Button>
+          {modal === 'settings' && (
+            <>
+              <DialogTitle>Paramètres de partie</DialogTitle>
+              <DialogDescription>
+                La partie reste en pause pendant que ce menu est ouvert.
+              </DialogDescription>
+              <div className="game-settings">
+                <p id="game-speed-label">Vitesse de jeu</p>
+                <div
+                  className="settings-speeds"
+                  role="group"
+                  aria-labelledby="game-speed-label"
+                >
+                  {[1, 2, 3].map((value) => (
+                    <Button
+                      key={value}
+                      className="subtle-btn"
+                      aria-pressed={speed === value}
+                      onClick={() => setSpeed(value)}
+                    >
+                      ×{value}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  className="subtle-btn"
+                  aria-pressed={paused}
+                  onClick={() => setPaused((value) => !value)}
+                >
+                  {paused ? <PackIcon asset="ui-play" /> : <Pause size={16} />}
+                  {paused
+                    ? 'Reprendre à la fermeture'
+                    : 'Garder le jeu en pause'}
+                </Button>
+                <Button
+                  className="subtle-btn"
+                  onClick={() => setModal('guide')}
+                >
+                  <PackIcon asset="ui-info" /> Comment jouer
+                </Button>
+                <Button
+                  className="subtle-btn"
+                  onClick={() => setModal('restart')}
+                >
+                  <PackIcon asset="ui-back" /> Recommencer la partie
+                </Button>
+              </div>
+              <Button className="primary-btn" onClick={() => setModal(null)}>
+                <PackIcon asset="ui-back" /> Retour au quartier
+              </Button>
+            </>
+          )}
           {modal === 'guide' && (
             <>
               <DialogTitle>Le guide du mauvais voisin</DialogTitle>

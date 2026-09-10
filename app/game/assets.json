@@ -1590,5 +1590,61 @@
     "frameWidth": 64,
     "frames": 1,
     "anchor": 0.67
+  },
+  "ui-button-red-pressed": {
+    "src": "/tiny-swords/ui-button-red-pressed.png",
+    "width": 320,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-cursor-hand": {
+    "src": "/tiny-swords/ui-cursor-hand.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-cursor-forbidden": {
+    "src": "/tiny-swords/ui-cursor-forbidden.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-play": {
+    "src": "/tiny-swords/ui-play.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-back": {
+    "src": "/tiny-swords/ui-back.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-settings": {
+    "src": "/tiny-swords/ui-settings.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-info": {
+    "src": "/tiny-swords/ui-info.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
   }
 }
