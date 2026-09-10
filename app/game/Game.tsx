@@ -65,6 +65,7 @@ import {
   build,
   buildReason,
   buildUnlockReason,
+  buildMenuReason,
   recruit,
   recruitReason,
   claim,
@@ -1345,22 +1346,24 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               {BUILD_OPTIONS.map((kind, i) => {
                 const b = BUILDINGS[kind];
                 const locked = buildUnlockReason(s, kind);
+                const reason = buildMenuReason(s, kind);
                 return (
                   <button
-                    className={`build-card ${pendingBuild === kind ? 'chosen' : ''} ${locked ? 'locked' : ''}`}
+                    className={`build-card ${pendingBuild === kind ? 'chosen' : ''} ${reason ? 'locked' : ''}`}
                     key={kind}
                     onClick={() => chooseBuild(kind)}
                     aria-pressed={pendingBuild === kind}
                     aria-disabled={!!locked}
-                    title={locked || b.short}
+                    title={reason || b.short}
+                    aria-label={`${b.name}${reason ? `. ${reason}` : ''}`}
                   >
                     <Sprite asset={buildingArt(kind)} />
                     <div>
                       <strong>{b.name}</strong>
-                      <small className={locked ? 'recruit-blocker' : undefined}>
-                        {locked || b.short}
+                      <small className={reason ? 'recruit-blocker' : undefined}>
+                        {reason || b.short}
                       </small>
-                      <Costs cost={b.cost} />
+                      <Costs cost={b.cost} available={s.resources} />
                     </div>
                     <span className="keyhint">
                       {locked ? <LockKeyhole size={13} /> : i + 1}

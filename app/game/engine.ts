@@ -252,6 +252,21 @@ export function buildUnlockReason(s: State, kind: BuildingKind): string {
   if (!required || hasBuilding(s, required)) return '';
   return `Terminez ${BUILDINGS[required].name.toLowerCase()} pour débloquer ce bâtiment.`;
 }
+/** Information available before selecting a parcel, shared with the construction menu. */
+export function buildMenuReason(s: State, kind: BuildingKind): string {
+  const missing = Object.entries(BUILDINGS[kind].cost)
+    .filter(([key, amount]) => s.resources[key as keyof Resources] < amount)
+    .map(
+      ([key, amount]) =>
+        `${Math.ceil(amount - s.resources[key as keyof Resources])} ${RESOURCE_LABELS[key as keyof Resources]}`,
+    );
+  return [
+    buildUnlockReason(s, kind),
+    missing.length ? `Il manque : ${missing.join(', ')}.` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
 export const RECRUIT_OPTIONS: CreatureKind[] = [
   'goblin',
   'troll',
@@ -1026,10 +1041,8 @@ export function buildReason(s: State, id: number, kind: BuildingKind): string {
     return 'Choisissez un terrain libre ou une maison conquise.';
   if (!BUILD_OPTIONS.includes(kind))
     return 'Ce bâtiment ne peut pas être construit.';
-  const locked = buildUnlockReason(s, kind);
-  if (locked) return locked;
-  if (!canAfford(s, BUILDINGS[kind].cost))
-    return 'Il manque des ressources pour ce chantier.';
+  const unavailable = buildMenuReason(s, kind);
+  if (unavailable) return unavailable;
   if (!s.units.some((u) => u.kind === 'goblin'))
     return 'Recrutez un gobelin pour construire.';
   return '';
