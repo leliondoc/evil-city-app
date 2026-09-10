@@ -1574,5 +1574,21 @@
     "frameWidth": 128,
     "frames": 1,
     "anchor": 0.67
+  },
+  "ui-menu-button": {
+    "src": "/tiny-swords/ui-menu-button.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-close": {
+    "src": "/tiny-swords/ui-close.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
   }
 }

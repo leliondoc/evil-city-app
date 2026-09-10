@@ -36,7 +36,7 @@ import {
   ResourceIcon,
   RibbonSkin,
 } from './PackUI';
-import { SupplyPanel, SupplySelection } from './SupplyPanel';
+import { SupplySelection } from './SupplyPanel';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -527,15 +527,6 @@ export default function Game() {
         </div>
       </header>
 
-      <ThreatPanel
-        state={s}
-        onSelect={(id) => {
-          setPendingBuild(null);
-          setSelection({ type: 'lot', id });
-        }}
-        onDefend={() => run((state) => defend(state))}
-      />
-      <SupplyPanel state={s} onSelect={select} />
       <div className="game-body">
         <aside
           ref={sidebarRef}
@@ -998,6 +989,14 @@ export default function Game() {
             </span>
             <span>Molette : zoom</span>
           </div>
+          <ThreatPanel
+            state={s}
+            onSelect={(next) => {
+              setPendingBuild(null);
+              setSelection(next);
+            }}
+            onDefend={() => run((state) => defend(state))}
+          />
           <div className="map-controls">
             <Button
               className="icon-btn"

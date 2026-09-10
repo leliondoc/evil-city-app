@@ -24,9 +24,8 @@ export function SupplyPanel({
     s.elapsed >= s.economy.nextUpgradeAt &&
     !suppliesAvailable(s, UPGRADE_SUPPLIES);
   return (
-    <details className="supply-disclosure">
-      <summary>
-        <span>Ravitaillement humain</span>
+    <div className="supply-panel">
+      <div className="supply-summary">
         <span>
           {s.workers.length} paysans ·{' '}
           {s.sites.filter((site) => supplyActive(s, site)).length}/3 sites
@@ -38,7 +37,7 @@ export function SupplyPanel({
               ? 'Amélioration bloquée : ressources manquantes'
               : `Niv. ${s.economy.level + 1} dans ≥ ${Math.max(0, Math.ceil(s.economy.nextUpgradeAt - s.elapsed))} s`}
         </strong>
-      </summary>
+      </div>
       <div className="supply-content">
         <p>
           Les livraisons financent leurs troupes. Une amélioration coûte 25 or,
@@ -71,7 +70,7 @@ export function SupplyPanel({
           ))}
         </div>
       </div>
-    </details>
+    </div>
   );
 }
 export function SupplySelection({

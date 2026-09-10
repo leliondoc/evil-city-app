@@ -74,6 +74,8 @@ for key, relative in {
     'ui-gold': 'Icons/Icon_03.png', 'ui-wood-icon': 'Icons/Icon_02.png',
     'ui-food': 'Icons/Icon_04.png', 'ui-sword': 'Icons/Icon_05.png',
     'ui-shield': 'Icons/Icon_06.png',
+    'ui-menu-button': 'Buttons/SmallBlueSquareButton_Regular.png',
+    'ui-close': 'Icons/Icon_09.png',
 }.items():
     copy(key, f'{ui}/{relative}')
 manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
