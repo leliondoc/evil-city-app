@@ -333,7 +333,14 @@ export interface Unit extends Point {
   activityProgress?: number;
   hauntReadyAt?: number;
   moving?: boolean;
-  gatheredWood?: number;
+  gathering?: {
+    site: number;
+    kind: 'wood' | 'gold';
+    phase: 'outbound' | 'harvest' | 'return';
+    cargo: number;
+    progress: number;
+    workSeconds?: number;
+  };
   id: number;
   kind: CreatureKind;
   hp: number;
@@ -1261,6 +1268,8 @@ export function commandUnit(
   if (s.won || s.lost) return 'La partie est terminée.';
   const unit = s.units.find((u) => u.id === id && u.hp > 0);
   if (!unit) return 'Cette créature n’est plus disponible.';
+  if (unit.kind === 'goblin' && target?.type === 'resource')
+    return gather(s, unit.id, target.id);
   if (target?.type === 'tower') return towerOrder(s, target.id, id);
   const lot =
     target?.type === 'lot'
@@ -1402,8 +1411,127 @@ function gathersWood(unit: Unit) {
   return (
     unit.hp > 0 &&
     unit.kind === 'goblin' &&
-    (unit.task === 'idle' || unit.task === 'forage')
+    (unit.task === 'idle' || unit.task === 'forage') &&
+    unit.gathering?.kind !== 'gold'
   );
+}
+function gatheringApproach(site: ResourceSite, u: Unit): Point {
+  const p = resourceApproach(site);
+  return site.kind === 'wood'
+    ? { x: p.x, y: p.y + (u.id % 3) * 1.1 }
+    : { x: p.x - (u.id % 2) * 0.7, y: p.y };
+}
+/** Orders and automatic gathering use the same visible resource sites. */
+export function gather(s: State, unitId: number, siteId: number): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  const u = s.units.find(
+    (v) => v.id === unitId && v.hp > 0 && v.kind === 'goblin',
+  );
+  const site = s.sites.find((v) => v.id === siteId);
+  if (!u || !site || site.kind === 'food')
+    return 'Choisissez un gobelin et une source de bois ou d’or.';
+  if (site.hp <= 0) return 'Ce site est détruit : attendez sa réparation.';
+  const point = gatheringApproach(site, u);
+  if (!findPath(u, point).length && distanceBetween(u, point) >= 1)
+    return 'Cette ressource est inaccessible.';
+  if ((u.gathering?.cargo ?? 0) > 0 && u.gathering?.site !== site.id)
+    return 'Déposez le chargement actuel au manoir avant de changer de ressource.';
+  u.gathering =
+    u.gathering?.site === site.id
+      ? u.gathering
+      : {
+          site: site.id,
+          kind: site.kind,
+          phase: 'outbound',
+          cargo: 0,
+          progress: 0,
+        };
+  const returning = u.gathering.cargo > 0;
+  u.gathering.phase = returning ? 'return' : 'outbound';
+  u.gathering.progress = 0;
+  assign(u, returning ? entrance(s.lots[6]) : point, 'forage', site.id);
+  return '';
+}
+export function gatheringText(u: Unit) {
+  const g = u.gathering;
+  if (!g || u.task !== 'forage') return 'Disponible';
+  const name = g.kind === 'wood' ? 'bois' : 'or';
+  return g.phase === 'return'
+    ? `Rapporte ${g.cargo} ${name}`
+    : g.phase === 'harvest'
+      ? `Récolte du ${name}`
+      : `Rejoint la source de ${name}`;
+}
+export function harvestRates(s: State): Pick<Resources, 'wood' | 'gold'> {
+  const result = { wood: 0, gold: 0 };
+  for (const u of s.units) {
+    if (
+      u.hp <= 0 ||
+      u.kind !== 'goblin' ||
+      !['idle', 'forage'].includes(u.task)
+    )
+      continue;
+    result[u.gathering?.kind ?? 'wood'] += GOBLIN_WOOD_PER_SECOND;
+  }
+  return result;
+}
+function advanceGathering(s: State, u: Unit, dt: number): boolean {
+  if (u.kind !== 'goblin') return false;
+  if (u.task === 'idle') {
+    const site =
+      s.sites.find((v) => v.id === u.gathering?.site) ??
+      s.sites.find((v) => v.kind === 'wood' && v.hp > 0);
+    if (!site) return false;
+    // Deliver a retained load after an interrupted trip, even if its source was destroyed.
+    if (u.gathering && u.gathering.cargo > 0) {
+      u.gathering.phase = 'return';
+      assign(u, entrance(s.lots[6]), 'forage', site.id);
+    } else if (gather(s, u.id, site.id)) return false;
+  }
+  if (u.task !== 'forage' || !u.gathering) return false;
+  const g = u.gathering;
+  const site = s.sites.find((v) => v.id === g.site);
+  if (!site || (site.hp <= 0 && g.cargo === 0)) {
+    u.task = 'idle';
+    u.path = [];
+    u.target = null;
+    u.gathering = undefined;
+    return true;
+  }
+  const destination =
+    g.phase === 'return' ? entrance(s.lots[6]) : gatheringApproach(site, u);
+  if (!u.path.length && distanceBetween(u, destination) >= 1)
+    u.path = findPath(u, destination);
+  walk(s, u, CREATURES.goblin.speed * dt);
+  if (u.path.length || distanceBetween(u, destination) >= 1) return true;
+  if (g.phase === 'return') {
+    const amount = creditResource(s, g.kind, g.cargo);
+    if (amount > 0) resourceGain(s, u, g.kind, amount);
+    g.cargo = 0;
+    g.progress = 0;
+    g.phase = 'outbound';
+    u.task = 'idle';
+    u.target = null;
+    return true;
+  }
+  if (g.phase === 'outbound') {
+    const route = findPath(entrance(s.lots[6]), resourceApproach(site));
+    g.workSeconds = Math.max(
+      8,
+      10 / GOBLIN_WOOD_PER_SECOND - (2 * route.length) / CREATURES.goblin.speed,
+    );
+  }
+  g.phase = 'harvest';
+  u.facing = site.x >= u.x ? 1 : -1;
+  g.progress += dt;
+  // Ten resources per trip; allow for travel to keep production close to 13/min.
+  if (g.progress >= (g.workSeconds ?? 8)) {
+    g.cargo = 10;
+    g.phase = 'return';
+    g.progress = 0;
+    assign(u, entrance(s.lots[6]), 'forage', site.id);
+  }
+  return true;
 }
 export function goblinWorkforce(s: State) {
   const goblins = s.units.filter((u) => u.kind === 'goblin' && u.hp > 0);
@@ -1434,9 +1562,6 @@ export function rates(s: State): Resources {
       rate.mana += 0.5;
     }
     if (l.kind === 'guild') rate.mana += 0.3 * n;
-  }
-  for (const u of s.units) {
-    if (gathersWood(u)) rate.wood += GOBLIN_WOOD_PER_SECOND;
   }
   rate.food = foodBalance(s).net / 60;
   return rate;
@@ -2155,27 +2280,11 @@ function tickStep(s: State, dt: number) {
   }
   mobilize(s);
   const income = rates(s);
-  let creditedWood = 0;
   for (const key of Object.keys(income) as (keyof Resources)[]) {
     if (income[key] < 0)
       s.resources[key] = Math.max(0, s.resources[key] + income[key] * dt);
     else {
-      const credited = creditResource(s, key, income[key] * dt);
-      if (key === 'wood') creditedWood = credited;
-    }
-  }
-  // Aggregate each goblin's already credited fractional income into visible +1 gains.
-  for (const unit of s.units) {
-    if (!gathersWood(unit)) continue;
-    unit.gatheredWood =
-      (unit.gatheredWood ?? 0) +
-      (income.wood > 0
-        ? (creditedWood * GOBLIN_WOOD_PER_SECOND) / income.wood
-        : 0);
-    const amount = Math.floor(unit.gatheredWood);
-    if (amount > 0) {
-      unit.gatheredWood -= amount;
-      resourceGain(s, unit, 'wood', amount);
+      creditResource(s, key, income[key] * dt);
     }
   }
   for (const r of s.recruits) r.remaining -= dt;
@@ -2197,6 +2306,7 @@ function tickStep(s: State, dt: number) {
     u.fighting = false;
     if (strategyUnit(s, u, dt)) continue;
     if (advanceSpecialUnit(s, u, dt)) continue;
+    if (advanceGathering(s, u, dt)) continue;
     if (
       (u.kind !== 'goblin' || hasResearch(s, 'embers')) &&
       u.kind !== 'specter' &&
@@ -2289,16 +2399,6 @@ function tickStep(s: State, dt: number) {
           Math.hypot(u.x - home.x, u.y - home.y) < 4
         )
           u.hp = Math.min(CREATURES[u.kind].hp, u.hp + 2 * dt);
-        if (u.kind === 'goblin' && u.idleTime > 4 + (u.id % 3)) {
-          const plots = s.lots.filter((l) => l.owned);
-          const p = plots[Math.floor(s.elapsed / 8 + u.id) % plots.length];
-          assign(
-            u,
-            { x: p.x + (u.id % 2 ? 1.5 : 6.5), y: p.y + 7.5 },
-            'forage',
-            null,
-          );
-        }
       }
     }
   }

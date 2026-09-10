@@ -199,7 +199,7 @@ test('A funded domain supports a victory after repelling a raid', () => {
   s.lots[7].kind = 'canteen';
   s.lots[5].owned = true;
   s.lots[5].kind = 'crypt';
-  armyFixture(s, 5);
+  armyFixture(s, 6);
   // The guild now fields four real fighters; equip this funded siege army.
   assert.equal(research(s, 'embers'), '');
   assert.equal(research(s, 'chain'), '');

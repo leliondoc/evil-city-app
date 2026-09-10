@@ -1163,7 +1163,7 @@ export class Renderer {
         draw: () => {
           const selected =
             this.selection.type === 'resource' && this.selection.id === site.id;
-          const active = supplyActive(s, site);
+          const active = site.hp > 0;
           const key = SUPPLIES[site.kind].art as AssetKey;
           const hit = this.sprite(
             key,
@@ -1264,15 +1264,20 @@ export class Renderer {
             y = u.y * CELL,
             def = CREATURES[u.kind],
             selected = selectedUnitIds(this.selection).includes(u.id);
-          const action: Animation = u.fighting
-            ? 'attack'
-            : u.path.length && u.moving !== false
-              ? 'walk'
-              : u.task === 'attack' &&
-                  u.target !== null &&
-                  atEntrance(u, s.lots[u.target])
-                ? 'attack'
-                : 'idle';
+          const harvesting =
+            u.task === 'forage' &&
+            u.gathering?.phase === 'harvest' &&
+            !u.path.length;
+          const action: Animation =
+            u.fighting || harvesting
+              ? 'attack'
+              : u.path.length && u.moving !== false
+                ? 'walk'
+                : u.task === 'attack' &&
+                    u.target !== null &&
+                    atEntrance(u, s.lots[u.target])
+                  ? 'attack'
+                  : 'idle';
           let motion = this.motions.get(u.id);
           if (!motion || motion.action !== action || motion.since > t) {
             motion = { action, since: t };
@@ -1324,7 +1329,13 @@ export class Renderer {
           if (u.task === 'deliver') {
             this.sprite('unit-death', x + 20, y - 8, 0.55, 10);
           }
-          if (u.task === 'forage') this.sprite('wood', x + 20, y - 4, 0.45);
+          if ((u.gathering?.cargo ?? 0) > 0)
+            this.sprite(
+              u.gathering!.kind === 'wood' ? 'wood' : 'ui-gold',
+              x + 20,
+              y - 4,
+              0.45,
+            );
           if (
             u.task === 'build' &&
             u.target !== null &&
@@ -1342,7 +1353,7 @@ export class Renderer {
                 frame,
               );
           }
-          if (selected || u.hp < def.hp || action === 'attack')
+          if (selected || u.hp < def.hp || (action === 'attack' && !harvesting))
             combatBars.push({
               x,
               y: y - (u.kind === 'troll' || u.kind === 'minotaur' ? 84 : 58),

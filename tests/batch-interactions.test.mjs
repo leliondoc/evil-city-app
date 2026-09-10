@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createGame,
   goblinWorkforce,
-  rates,
+  harvestRates,
   tick,
   recruit,
   commandUnit,
@@ -131,13 +131,7 @@ test('A marching group forms a spaced file and every member reaches the destinat
 
 test('Harvest feedback reports actual deliveries once and expires without duplicating income', () => {
   const s = createGame();
-  const initialWood = s.resources.wood;
-  tick(s, 4.6);
-  assert.equal(
-    s.resourceGains.filter((g) => g.kind === 'wood' && g.amount === 1).length,
-    3,
-  );
-  assert.ok(Math.abs(s.resources.wood - initialWood - 3 * 0.22 * 4.6) < 1e-8);
+  s.units = []; // Human delivery feedback is isolated from goblin trips.
   const seen = new Set();
   const reported = { gold: 0, wood: 0, food: 0 };
   for (let i = 0; i < 1500; i++) {
@@ -157,7 +151,7 @@ test('Harvest feedback reports actual deliveries once and expires without duplic
   assert.ok(Object.values(reported).every((amount) => amount >= 20));
 });
 
-test('Goblin workforce counts living gatherers, builders and other duties consistently with actual wood income', () => {
+test('Goblin workforce counts living gatherers, builders and other duties consistently with estimated delivery rates', () => {
   const s = createGame();
   assert.deepEqual(goblinWorkforce(s), {
     total: 3,
@@ -166,7 +160,7 @@ test('Goblin workforce counts living gatherers, builders and other duties consis
     other: 0,
     queued: 0,
   });
-  const fullIncome = rates(s).wood;
+  const fullIncome = harvestRates(s).wood;
   s.units[0].task = 'build';
   s.units[1].task = 'rest';
   s.recruits.push({ kind: 'goblin', remaining: 6 });
@@ -177,7 +171,7 @@ test('Goblin workforce counts living gatherers, builders and other duties consis
     other: 1,
     queued: 1,
   });
-  assert.ok(Math.abs(rates(s).wood - fullIncome / 3) < 1e-10);
+  assert.ok(Math.abs(harvestRates(s).wood - fullIncome / 3) < 1e-10);
   s.units[2].hp = 0;
   assert.deepEqual(goblinWorkforce(s), {
     total: 2,
@@ -186,5 +180,5 @@ test('Goblin workforce counts living gatherers, builders and other duties consis
     other: 1,
     queued: 1,
   });
-  assert.equal(rates(s).wood, 0);
+  assert.equal(harvestRates(s).wood, 0);
 });

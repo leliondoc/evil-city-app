@@ -76,7 +76,7 @@ export function createDomain(): DomainState {
 }
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 const free = (u: Unit) =>
-  u.hp > 0 && (u.task === 'idle' || u.task === 'forage');
+  u.hp > 0 && (u.task === 'idle' || (u.task === 'forage' && !u.gathering));
 const courierAvailable = (u: Unit) =>
   u.hp > 0 &&
   u.kind === 'goblin' &&

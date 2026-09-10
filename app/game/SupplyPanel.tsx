@@ -80,11 +80,13 @@ export function SupplySelection({
   state: s,
   selection,
   onRaid,
+  onGather,
   onSelect,
 }: {
   state: State;
   selection: Selection;
   onRaid: () => void;
+  onGather: () => void;
   onSelect: (selection: Selection) => void;
 }) {
   const worker =
@@ -120,6 +122,21 @@ export function SupplySelection({
           ? `Récolte 10 ${def.label.toLowerCase()}, puis les livre. L’éliminer fait perdre sa cargaison et interrompt sa route pendant au moins 40 s.`
           : `Alimente les humains en ${def.label.toLowerCase()}. Saboter ce site rapporte 15 ressources et coupe la production pendant au moins 90 s. Prendre son bâtiment arrête la production tant que vous le contrôlez.`}
       </p>
+      {!worker && site.kind !== 'food' && (
+        <>
+          <GameButton
+            className="primary-btn"
+            onClick={onGather}
+            disabled={s.won || s.lost || site.hp <= 0}
+          >
+            <ResourceIcon kind={site.kind} /> Envoyer un gobelin récolter
+          </GameButton>
+          <p className="reason">
+            Chargements de 10, livrés au manoir. Vous pouvez aussi sélectionner
+            un gobelin puis donner un ordre sur ce site.
+          </p>
+        </>
+      )}
       <div className="selection-stats">
         <span>
           {Math.ceil(target.hp)} / {target.maxHp} PV

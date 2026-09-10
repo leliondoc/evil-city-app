@@ -10,11 +10,11 @@ import {
 } from '../app/game/engine.ts';
 import { strategyUnit } from '../app/game/strategy.ts';
 
-test('Every passive stock stops at its cap, emits no fictitious wood gains, and resumes after spending', () => {
+test('Passive stocks cap immediately; wood resumes only after a delivery following spending', () => {
   const s = createGame();
   s.lots[4].kind = 'canteen';
   s.lots[4].owned = true;
-  s.resources = { gold: 999.9, wood: 999.9, food: 999.9, mana: 999.9 };
+  s.resources = { gold: 999.9, wood: 1000, food: 999.9, mana: 999.9 };
   tick(s, 10);
   for (const value of Object.values(s.resources))
     assert.equal(value, RESOURCE_CAP);
@@ -23,7 +23,7 @@ test('Every passive stock stops at its cap, emits no fictitious wood gains, and 
   const wood = s.resources.wood;
   assert.ok(wood < RESOURCE_CAP);
   // Spending on an upgrade leaves the gatherers at their current duties.
-  tick(s, 1);
+  tick(s, 60);
   assert.ok(s.resources.wood > wood);
   assert.ok(s.resources.wood <= RESOURCE_CAP);
   assert.equal(recruit(s, 'goblin'), '');

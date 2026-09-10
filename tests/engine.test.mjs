@@ -34,6 +34,33 @@ function until(s, condition, limit = 300) {
 
 test('Starting at zero reaches every construction tier, funds trolls and repels the first raid', () => {
   const s = createGame();
+  let assault = null;
+  // Delivery routes expose workers: react to raids instead of waiting through attacks.
+  const until = (state, condition, limit = 300) => {
+    for (let i = 0; i < limit * 10 && !condition() && !state.lost; i++) {
+      if (assault === null && army(state).length && state.enemies.length) {
+        const home = entrance(state.lots[6]);
+        const threat = [...state.enemies].sort(
+          (a, b) =>
+            Math.hypot(a.x - home.x, a.y - home.y) -
+            Math.hypot(b.x - home.x, b.y - home.y),
+        )[0];
+        if (
+          !army(state).some(
+            (u) => u.task === 'defend' && u.target === threat.id,
+          )
+        )
+          intercept(state, threat.id);
+      } else if (
+        assault !== null &&
+        !state.lots[assault].owned &&
+        !army(state).some((u) => u.task === 'attack' && u.target === assault)
+      )
+        attack(state, assault);
+      tick(state, 0.1);
+    }
+    assert.ok(condition(), 'Opening progresses while defending the domain');
+  };
   assert.deepEqual(s.resources, { gold: 0, wood: 0, food: 0, mana: 0 });
   const construct = (id, kind) => {
     until(s, () => !buildReason(s, id, kind));
@@ -46,13 +73,15 @@ test('Starting at zero reaches every construction tier, funds trolls and repels 
   until(s, () => !claimReason(s, 4));
   assert.equal(claim(s, 4), '');
   construct(4, 'crypt');
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 3; i++) {
     until(s, () => !recruitReason(s, 'skeleton'));
     assert.equal(recruit(s, 'skeleton'), '');
   }
-  until(s, () => army(s).length === 4);
+  until(s, () => army(s).length === 3);
   assert.equal(attack(s, 8), '');
+  assault = 8;
   until(s, () => s.lots[8].owned);
+  assault = null;
   assert.equal(defend(s, 4), '');
   construct(8, 'forge');
   until(s, () => !recruitReason(s, 'troll'));

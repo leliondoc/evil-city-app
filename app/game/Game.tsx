@@ -59,6 +59,9 @@ import {
   capacity,
   rates,
   goblinWorkforce,
+  harvestRates,
+  gatheringText,
+  gather,
   GOBLIN_CAP,
   RESOURCE_CAP,
   foodBalance,
@@ -97,7 +100,7 @@ const unitsText = {
   tower: 'En poste à la tour',
   'collect-loot': 'Récupère le butin',
   'deliver-loot': 'Rapporte le butin',
-  forage: 'Récupère du bois',
+  forage: 'Récolte des ressources',
   build: 'Au chantier',
   attack: 'En expédition',
   move: 'En déplacement',
@@ -401,6 +404,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const def = chosenKind ? BUILDINGS[chosenKind] : undefined;
   const creature = selectedUnit ? CREATURES[selectedUnit.kind] : undefined;
   const income = rates(s);
+  const harvest = harvestRates(s);
+  income.wood += harvest.wood;
+  income.gold += harvest.gold;
   const workforce = goblinWorkforce(s);
   const food = foodBalance(s);
   const owned = s.lots.filter((l) => l.owned).length;
@@ -546,7 +552,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     >
                       {s.resources[key] >= RESOURCE_CAP && rate >= 0
                         ? ' · Plein'
-                        : ` · ${rate >= 0 ? '+' : ''}${rate}/min`}
+                        : ` · ${key === 'wood' || (key === 'gold' && harvest.gold > 0) ? '≈ ' : ''}${rate >= 0 ? '+' : ''}${rate}/min`}
                     </span>
                   </span>
                 </div>
@@ -557,7 +563,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         <button
           className="goblin-counter"
           disabled={workforce.total === 0}
-          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois (+${Math.round(income.wood * 60)}/min), ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Maximum ${GOBLIN_CAP}, recrutements inclus. L’or, les vivres et l’essence proviennent des bâtiments. Cliquer pour sélectionner tous les gobelins.`}
+          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois (+${Math.round(income.wood * 60)}/min), ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Maximum ${GOBLIN_CAP}, recrutements inclus. Bois et or récoltés : environ 13/min par gobelin, crédités uniquement à la livraison au manoir. Les bâtiments apportent aussi leurs revenus. Cliquer pour sélectionner tous les gobelins.`}
           aria-label={`Gobelins : ${workforce.total} sur ${GOBLIN_CAP}, ${workforce.queued} en recrutement, dont ${workforce.wood} au bois et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
           onClick={() => {
             select(
@@ -577,7 +583,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               {workforce.total}/{GOBLIN_CAP} <span>Gobelins</span>
             </strong>
             <small>
-              Bois {workforce.wood}
+              Bois {workforce.wood} · Or {Math.round(harvest.gold / 0.22)}
               <span> · Chantiers {workforce.building}</span>
             </small>
           </div>
@@ -732,6 +738,21 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               selection={selection}
               onSelect={select}
               onRaid={() => run((state) => raidSupply(state, selection))}
+              onGather={() =>
+                run((state) => {
+                  const goblin = state.units.find(
+                    (u) =>
+                      u.hp > 0 &&
+                      u.kind === 'goblin' &&
+                      ['idle', 'forage'].includes(u.task) &&
+                      !u.gathering?.cargo &&
+                      u.gathering?.site !== selection.id,
+                  );
+                  return goblin
+                    ? gather(state, goblin.id, selection.id)
+                    : 'Aucun gobelin libre sans chargement. Sélectionnez un gobelin pour lui donner cet ordre.';
+                })
+              }
             />
           ) : selection.type === 'guildHero' ? (
             <GuildHeroSelection state={s} id={selection.id} onSelect={select} />
@@ -839,7 +860,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       selectedUnit.moving === false &&
                       !selectedUnit.fighting
                         ? 'Attend le passage'
-                        : unitsText[selectedUnit.task]}
+                        : selectedUnit.task === 'forage'
+                          ? gatheringText(selectedUnit)
+                          : unitsText[selectedUnit.task]}
                     </span>
                   </div>
                   <Progress
