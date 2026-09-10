@@ -126,6 +126,10 @@ test('The first level keeps only the bridge tower, reachable and capturable with
     assert.equal(s.units.filter((u) => u.task === 'tower').length, 1);
     for (let i = 0; i < 1500 && !t.owned; i++) strategyUnit(s, u, 0.1);
     assert.equal(t.owned, true);
+    assert.equal(t.occupant, u.id);
+    assert.equal(u.task, 'tower');
+    assert.equal(u.target, t.id);
+    assert.match(s.notice, /racket est actif/);
     assert.ok(Math.hypot(u.x - t.x, u.y - t.y) < 1);
   }
 });
@@ -159,9 +163,15 @@ test('Racket subtracts a cargo share once, then a separate courier must bring it
   advanceStrategy(s, 0.1);
   assert.equal(w.cargo, 7);
   assert.equal(t.loot[kind], 3);
+  assert.equal(s.resourceGains.length, 1);
+  assert.equal(s.resourceGains[0].amount, 3);
+  assert.equal(s.resourceGains[0].kind, kind);
+  assert.equal(s.resourceGains[0].x, t.artX);
+  assert.ok(s.resourceGains[0].y < t.artY);
   assert.equal(s.resources[kind], before);
   advanceStrategy(s, 0.1);
   assert.equal(w.cargo, 7);
+  assert.equal(s.resourceGains.length, 1);
   assert.equal(collectLoot(s, t.id), '');
   const courier = s.units.find((u) => u.task === 'collect-loot');
   for (let i = 0; i < 1000 && courier.task === 'collect-loot'; i++)

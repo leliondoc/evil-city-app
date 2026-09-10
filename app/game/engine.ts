@@ -756,7 +756,12 @@ export interface ResourceGain extends Point {
   at: number;
 }
 export const RESOURCE_GAIN_LIFETIME = 1.8;
-function resourceGain(s: State, point: Point, kind: Supply, amount: number) {
+export function resourceGain(
+  s: State,
+  point: Point,
+  kind: Supply,
+  amount: number,
+) {
   if (amount <= 0) return;
   s.resourceGains.push({
     id: s.nextId++,

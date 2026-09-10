@@ -91,7 +91,9 @@ export function TowerPanel({
       (!tower.owned || ['goblin', 'skeleton', 'specter'].includes(u.kind)),
   );
   const chosen =
-    candidates.find((u) => String(u.id) === choice) ?? candidates[0];
+    candidates.find((u) => String(u.id) === choice) ??
+    candidates.find((u) => u.id === tower.occupant) ??
+    candidates[0];
   const alarmError = lureReason(s, id),
     lootError = lootReason(s, id);
   return (
@@ -144,10 +146,16 @@ export function TowerPanel({
       </label>
       <Button
         className="primary-btn"
-        disabled={!chosen || s.won || s.lost}
+        disabled={!chosen || chosen.id === tower.occupant || s.won || s.lost}
         onClick={() => chosen && onAction((s) => towerOrder(s, id, chosen.id))}
       >
-        {tower.owned ? 'Affecter à la tour' : 'Capturer la tour'}
+        {chosen?.id === tower.occupant
+          ? occupant
+            ? 'Déjà en poste'
+            : 'Garnison en route'
+          : tower.owned
+            ? 'Remplacer la garnison'
+            : 'Capturer la tour'}
       </Button>
       {tower.owned && (
         <>

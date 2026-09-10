@@ -1,6 +1,7 @@
 import {
   announce,
   creditResource,
+  resourceGain,
   assign,
   clearShot,
   CREATURES,
@@ -301,9 +302,17 @@ export function strategyUnit(s: State, u: Unit, dt: number) {
       s.domain.suspicion = Math.min(100, s.domain.suspicion + 12);
       announce(
         s,
-        `${t.name} capturée. Affectez-lui un gobelin, un squelette ou un spectre.`,
+        u.kind === 'goblin'
+          ? `${t.name} capturée. Votre gobelin reste en poste : le racket est actif.`
+          : ['skeleton', 'specter'].includes(u.kind)
+            ? `${t.name} capturée. Votre ${CREATURES[u.kind].name.toLowerCase()} reste en poste.`
+            : `${t.name} capturée. Affectez-lui un gobelin, un squelette ou un spectre.`,
       );
-      if (!['goblin', 'skeleton', 'specter'].includes(u.kind)) {
+      if (['goblin', 'skeleton', 'specter'].includes(u.kind)) {
+        t.occupant = u.id;
+        u.task = 'tower';
+        u.target = t.id;
+      } else {
         t.occupant = null;
         u.task = 'idle';
         u.target = null;
@@ -387,6 +396,19 @@ export function advanceStrategy(s: State, dt: number) {
         w.cargo -= amount;
         w.taxed = true;
         t.loot[kind] = (t.loot[kind] ?? 0) + amount;
+        const point = {
+          x: t.artX,
+          y: t.artY - 2 - ['gold', 'wood', 'food'].indexOf(kind) * 0.7,
+        };
+        const gain = s.resourceGains.find(
+          (g) =>
+            g.at === s.elapsed &&
+            g.kind === kind &&
+            g.x === point.x &&
+            g.y === point.y,
+        );
+        if (gain) gain.amount += amount;
+        else resourceGain(s, point, kind, amount);
         s.domain.suspicion = Math.min(100, s.domain.suspicion + amount);
       }
   }
