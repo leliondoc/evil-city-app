@@ -1302,14 +1302,21 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               <Crosshair size={17} />
             </Button>
           </div>
-          {message && (
-            <output className="toast-message" aria-live="polite">
-              <PanelSkin kind="notice" />
-              <span>{message}</span>
-            </output>
-          )}
-          {paused && (
-            <div className="paused-label">Le mal prend une pause.</div>
+          {(message || paused) && (
+            <div className="game-notifications">
+              {paused && (
+                <div className="paused-label">
+                  <PanelSkin kind="ribbon" />
+                  <span>Le mal prend une pause.</span>
+                </div>
+              )}
+              {message && (
+                <output className="toast-message" aria-live="polite">
+                  <PanelSkin kind="notice" />
+                  <span>{message}</span>
+                </output>
+              )}
+            </div>
           )}
           {!ready && (
             <div className="loading-art">

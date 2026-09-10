@@ -22,11 +22,27 @@ import {
   GROUND_PATCHES,
   HIGHLANDS,
   patchTiles,
+  groundTiles,
   onPatch,
   onGround,
 } from '../app/game/terrainLayout.ts';
 
 test('Coastal terraces remain connected and every stair joins an upper surface to dry lower ground', () => {
+  const ground = groundTiles();
+  const cells = new Map(ground.map((tile) => [`${tile.x},${tile.y}`, tile]));
+  for (const tile of ground)
+    for (const [dx, dy] of [
+      [64, 0],
+      [0, 64],
+    ]) {
+      const neighbour = cells.get(`${tile.x + dx},${tile.y + dy}`);
+      if (neighbour)
+        assert.equal(
+          tile.key,
+          neighbour.key,
+          'Continuous ground shares its grass palette',
+        );
+    }
   for (const p of [...GROUND_PATCHES, ...HIGHLANDS]) {
     if (p.rows) {
       assert.equal(p.rows.length, p.h);
@@ -58,6 +74,14 @@ test('Coastal terraces remain connected and every stair joins an upper surface t
         onGround(x, y + 128) ||
           HIGHLANDS.slice(0, index).some((lower) => onPatch(lower, x, y + 128)),
         'Stairs end on lower land',
+      );
+      const landingX = x + (stair.side === 'left' ? -64 : 64);
+      assert.ok(
+        onGround(landingX, y + 128) ||
+          HIGHLANDS.slice(0, index).some((lower) =>
+            onPatch(lower, landingX, y + 128),
+          ),
+        'The full diagonal ramp has a dry lower landing',
       );
       assert.equal(
         sceneryFits({ key: 'tree-1', x, y, scale: 0.6 }),

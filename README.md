@@ -72,7 +72,7 @@ Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, 
 - `app/game/Game.tsx` : interface et commandes.
 - `public/tiny-swords/` : ressources graphiques intégrées au jeu.
 
-Les 95 tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
+Les 94 tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
 
 Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Le clic droit commande les unités sélectionnées. Les gobelins d’un groupe mixte ne participent aux attaques qu’après la recherche Armes enflammées.
 
@@ -94,9 +94,9 @@ Les trois tours sont sélectionnables sur la carte ou dans « Tours du quartier 
 
 Une tour sans garnison peut être reprise en 8 secondes par les humains proches, ce qui perd son butin. Les effets exigent que l’occupant soit réellement arrivé. Un ordre de groupe affecte une seule créature à la tour.
 
-Les jardins du joueur reprennent l’herbe originale avec une palette brun sombre et des touches rouille ; la couleur suit les conquêtes et reprises. Les textes de carte ont un contour sombre, le bâtiment choisi apparaît en transparence sous le pointeur et les notifications utilisent le parchemin Tiny Swords en haut au centre, adapté au mobile.
+Les jardins utilisent les couleurs d’origine des terrains du pack, sans recoloration brun rouge. Les textes de carte ont un contour sombre, le bâtiment choisi apparaît en transparence sous le pointeur et les notifications utilisent le parchemin Tiny Swords en haut au centre, adapté au mobile.
 
-La scène locale `/tests/strategy-preview.html` permet d’examiner les sprites, recherches, tours et notifications. Les 11 tests de `tests/strategy.test.mjs` vérifient dépenses, combos, captures, transports, interruptions et résurrection complète dans la simulation.
+La scène locale `/tests/strategy-preview.html` permet d’examiner les sprites, recherches, tours et notifications. Les 10 tests de `tests/strategy.test.mjs` vérifient dépenses, combos, captures, transports, interruptions et résurrection complète dans la simulation.
 
 Les combattants proches se placent face à face sur un axe horizontal adapté aux sprites. Ils passent par le portail avant de s’écarter dans la rue et restent limités par les murs et leur vitesse de déplacement. La scène locale /tests/combat-preview.html présente les trois gabarits de mêlée contre un chevalier.
 

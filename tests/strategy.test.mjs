@@ -19,7 +19,6 @@ import {
   releaseTower,
 } from '../app/game/strategy.ts';
 import { leaveCorpse, advanceDomain, resurrect } from '../app/game/domain.ts';
-import { corruptGrassPixels } from '../app/game/corruption.ts';
 function prepared() {
   const s = createGame();
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
@@ -267,15 +266,4 @@ test('Real simulation sends a monk to a delivered body and completes the ritual'
   for (let i = 0; i < 1200 && !s.domain.resurrected; i++) tick(s, 0.1);
   assert.equal(s.domain.resurrected, 1);
   assert.ok(s.enemies.some((e) => e.revived));
-});
-test('Corrupted grass retains pixel alpha and maps lights to a dark reddish brown palette', () => {
-  const pixels = new Uint8ClampedArray([
-    1, 2, 3, 0, 80, 150, 90, 255, 10, 40, 30, 120,
-  ]);
-  corruptGrassPixels(pixels);
-  assert.deepEqual([...pixels.slice(0, 4)], [1, 2, 3, 0]);
-  assert.equal(pixels[7], 255);
-  assert.equal(pixels[11], 120);
-  assert.ok(pixels[4] > pixels[5] && pixels[5] > pixels[6]);
-  assert.ok(pixels[4] <= 145);
 });

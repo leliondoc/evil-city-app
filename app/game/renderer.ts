@@ -42,7 +42,6 @@ import {
 } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
-import { corruptGrassPixels } from './corruption';
 import { hasResearch, towerOccupant } from './strategy';
 import {
   selectedUnitIds,
@@ -81,7 +80,6 @@ export class Renderer {
     { x: number; y: number; width: number; height: number }
   >();
   private terrain: HTMLCanvasElement;
-  private corruptedGrass: HTMLCanvasElement | null = null;
   private ownership = '';
   private pointer: Point | null = null;
   private decorations: Decoration[] = [];
@@ -185,23 +183,6 @@ export class Renderer {
           ),
       );
       if (this.disposed) return;
-      this.corruptedGrass = document.createElement('canvas');
-      this.corruptedGrass.width = this.corruptedGrass.height = 192;
-      const corruptContext = this.corruptedGrass.getContext('2d')!;
-      corruptContext.drawImage(
-        this.images.get('terrain-5')!,
-        0,
-        0,
-        192,
-        192,
-        0,
-        0,
-        192,
-        192,
-      );
-      const corruptedPixels = corruptContext.getImageData(0, 0, 192, 192);
-      corruptGrassPixels(corruptedPixels.data);
-      corruptContext.putImageData(corruptedPixels, 0, 0);
       this.makeTerrain();
       this.makeDecorations();
       this.ready = true;
@@ -493,12 +474,8 @@ export class Renderer {
     y: number,
     w: number,
     h: number,
-    corrupted = false,
   ) {
-    const im =
-      corrupted && this.corruptedGrass
-        ? this.corruptedGrass
-        : this.images.get(key)!;
+    const im = this.images.get(key)!;
     for (let ty = 0; ty < h; ty++)
       for (let tx = 0; tx < w; tx++) {
         const sx = tx === 0 ? 0 : tx === w - 1 ? 128 : 64,
@@ -580,13 +557,13 @@ export class Renderer {
     for (const stair of p.stairs ?? [])
       ctx.drawImage(
         this.images.get(p.key)!,
-        stair.side === 'left' ? 0 : 192,
+        stair.side === 'left' ? 0 : 128,
         256,
-        64,
         128,
-        p.x + stair.tx * 64,
+        128,
+        p.x + stair.tx * 64 - (stair.side === 'left' ? 64 : 0),
         p.y + stair.ty * 64,
-        64,
+        128,
         128,
       );
   }
@@ -640,7 +617,7 @@ export class Renderer {
             : lot.id === 8
               ? 'terrain-3'
               : 'terrain-1';
-      this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4, lot.owned);
+      this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4);
       if (lot.id === 0 && !lot.owned) {
         // The church foundation must sit on the upper surface, ahead of the cliff.
         this.plateau(
@@ -813,16 +790,16 @@ export class Renderer {
     ctx.lineTo(center, (lot.y + 8) * CELL);
     ctx.stroke();
     if (lot.id === 0 && !lot.owned) {
-      // Original 64 × 128 ramp spans the terrace lip and the lower forecourt.
+      // Keep both halves of the original ramp, including its lower landing.
       ctx.drawImage(
         this.images.get('terrain-2')!,
-        192,
-        256,
-        64,
         128,
-        center - 32,
+        256,
+        128,
+        128,
+        center - 64,
         (lot.y + 5) * CELL - 40,
-        64,
+        128,
         128,
       );
     }

@@ -38,8 +38,9 @@ export function sceneryFits(d: Decoration) {
     HIGHLANDS.some((p) =>
       p.stairs?.some(
         (stair) =>
-          d.x >= p.x + stair.tx * 64 - 28 &&
-          d.x <= p.x + (stair.tx + 1) * 64 + 28 &&
+          d.x >= p.x + (stair.tx - (stair.side === 'left' ? 1 : 0)) * 64 - 28 &&
+          d.x <=
+            p.x + (stair.tx + (stair.side === 'right' ? 2 : 1)) * 64 + 28 &&
           d.y >= p.y + stair.ty * 64 - 24 &&
           d.y <= p.y + (stair.ty + 2) * 64 + 32,
       ),
@@ -106,8 +107,7 @@ export function makeScenery(lots: Lot[]): Decoration[] {
     [320, -70, 2],
     [828, -70, 1],
     [-254, -94, 2],
-    [1232, -30, 2],
-    [1128, 80, 2],
+    [1104, 64, 2],
     [1160, 390, 2],
     [1290, 490, 2],
     [1190, 720, 3],
@@ -128,7 +128,10 @@ export function makeScenery(lots: Lot[]): Decoration[] {
     [18, 58],
   ];
   for (const [index, [cx, cy, species]] of groves.entries()) {
-    for (const [i, [dx, dy]] of offsets.entries())
+    for (const [i, [dx, dy]] of (cx === 1104
+      ? offsets.slice(0, 3)
+      : offsets
+    ).entries())
       decorations.push({
         x: cx + dx + (index % 2 ? 8 : -6),
         y: cy + dy,

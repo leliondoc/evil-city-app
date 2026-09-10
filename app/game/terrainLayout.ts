@@ -31,7 +31,7 @@ export const GROUND_PATCHES: GroundPatch[] = [
     rows: ['..##.', '.####', '#####'],
   },
   {
-    key: 'terrain-5',
+    key: 'terrain-4',
     x: 960,
     y: -256,
     w: 9,
@@ -88,7 +88,7 @@ export const GROUND_PATCHES: GroundPatch[] = [
   },
   // The eastern shore and the southern neck preserve both bridge landings.
   {
-    key: 'terrain-5',
+    key: 'terrain-4',
     x: -448,
     y: 192,
     w: 5,
@@ -106,7 +106,7 @@ export const GROUND_PATCHES: GroundPatch[] = [
     ],
   },
   {
-    key: 'terrain-2',
+    key: 'terrain-4',
     x: -384,
     y: 832,
     w: 5,
@@ -114,7 +114,7 @@ export const GROUND_PATCHES: GroundPatch[] = [
     rows: ['.###.', '.####', '#####', '#####', '.###.'],
   },
   {
-    key: 'terrain-3',
+    key: 'terrain-4',
     x: 64,
     y: 1024,
     w: 6,
@@ -153,11 +153,11 @@ export const HIGHLANDS: GroundPatch[] = [
   },
   {
     key: 'terrain-4',
-    x: 1152,
-    y: -192,
+    x: 1216,
+    y: -128,
     w: 3,
     h: 2,
-    rows: ['###', '##.'],
+    rows: ['###', '###'],
     stairs: [{ tx: 1, ty: 1, side: 'right' }],
   },
 ];

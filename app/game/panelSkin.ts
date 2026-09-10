@@ -1,4 +1,10 @@
-export type PanelKind = 'paper' | 'notice' | 'wood' | 'banner' | 'button';
+export type PanelKind =
+  | 'paper'
+  | 'notice'
+  | 'ribbon'
+  | 'wood'
+  | 'banner'
+  | 'button';
 type Slice = readonly [start: number, size: number];
 const regular: Slice[] = [
   [0, 64],
@@ -19,28 +25,30 @@ export function paintPanel(
   width: number,
   height: number,
 ) {
-  const paperNotice: Slice[] = [
-    [0, 64],
-    [144, 32],
-    [256, 64],
-  ];
+  if (kind === 'ribbon') {
+    ctx.clearRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = false;
+    const scale = height / 128;
+    const edge = 96 * scale;
+    ctx.drawImage(image, 32, 0, 96, 128, 0, 0, edge, height);
+    for (let x = edge; x < width - edge; x += 64 * scale) {
+      const w = Math.min(64 * scale, width - edge - x);
+      ctx.drawImage(image, 192, 0, w / scale, 128, x, 0, w, height);
+    }
+    ctx.drawImage(image, 320, 0, 96, 128, width - edge, 0, edge, height);
+    return;
+  }
   const cols =
-    kind === 'wood' || kind === 'banner'
-      ? large
-      : kind === 'notice'
-        ? paperNotice
-        : regular;
+    kind === 'wood' || kind === 'banner' || kind === 'notice' ? large : regular;
   const rows: Slice[] =
-    kind === 'wood' || kind === 'banner'
+    kind === 'wood' || kind === 'banner' || kind === 'notice'
       ? [
           [32, 96],
           [192, 64],
           [320, 112],
         ]
-      : kind === 'notice'
-        ? paperNotice
-        : regular;
-  const scale = kind === 'button' ? 0.25 : 0.5;
+      : regular;
+  const scale = kind === 'button' ? 0.25 : kind === 'notice' ? 0.375 : 0.5;
   const xs = [0, cols[0][1] * scale, width - cols[2][1] * scale, width];
   const ys = [0, rows[0][1] * scale, height - rows[2][1] * scale, height];
   ctx.clearRect(0, 0, width, height);

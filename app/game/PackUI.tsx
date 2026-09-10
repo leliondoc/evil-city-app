@@ -31,7 +31,14 @@ export function PanelSkin({
     };
     image.onload = draw;
     image.src =
-      ASSETS[asset ?? (kind === 'notice' ? 'ui-paper' : `ui-${kind}`)].src;
+      ASSETS[
+        asset ??
+          (kind === 'notice'
+            ? 'ui-banner'
+            : kind === 'ribbon'
+              ? 'ui-ribbons'
+              : `ui-${kind}`)
+      ].src;
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => {
