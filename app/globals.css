@@ -1261,6 +1261,14 @@ svg {
   border-color: #839589;
   color: #ffe1a0;
 }
+.army-face[aria-pressed='true'] {
+  outline: 2px solid #ffe1a0;
+  outline-offset: 1px;
+}
+.army-face:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 .army-title span,
 .army-note {
   color: #c6d4cb;
@@ -2368,6 +2376,27 @@ svg {
   display: block;
 }
 .game-shell[data-compact='true'] .army-overview {
+  display: none;
+}
+.game-shell[data-compact='true'][data-panel='recruit'] .army-overview {
+  display: block;
+  width: 100%;
+  padding: 4px 0 12px;
+  border: 0;
+}
+.game-shell[data-compact='true'] .army-faces {
+  gap: 6px;
+}
+.game-shell[data-compact='true'] .army-face {
+  flex: 1;
+  min-width: 44px;
+  height: 48px;
+}
+.game-shell[data-compact='true'] .army-face img {
+  width: 40px;
+  height: 40px;
+}
+.game-shell[data-compact='true'] .army-note {
   display: none;
 }
 .game-shell[data-compact='true'] .build-tabs > [role='tablist'] {

@@ -422,8 +422,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     setPendingBuild(null);
     if (mode === 'command') setMobilePanel(null);
   };
-  const count = (kind: CreatureKind) =>
-    s.units.filter((u) => u.kind === kind).length;
   const cycleLot = (direction: number) => {
     setPendingBuild(null);
     setSelection({
@@ -1316,18 +1314,34 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </span>
           </div>
           <div className="army-faces">
-            {RECRUIT_OPTIONS.map((kind) => (
-              <button
-                className="army-face"
-                key={kind}
-                aria-label={`${count(kind)} ${CREATURES[kind].name}. Voir le bestiaire`}
-                title={`${CREATURES[kind].name} : ${count(kind)}`}
-                onClick={() => setModal('bestiary')}
-              >
-                <CreaturePortrait kind={kind} />
-                <b>{count(kind)}</b>
-              </button>
-            ))}
+            {RECRUIT_OPTIONS.map((kind) => {
+              const ids = s.units
+                .filter((u) => u.kind === kind && u.hp > 0)
+                .map((u) => u.id);
+              const selected = selectedUnitIds(selection);
+              return (
+                <button
+                  className="army-face"
+                  key={kind}
+                  aria-label={`${CREATURES[kind].name} : sélectionner toutes les unités (${ids.length})`}
+                  title={`${CREATURES[kind].name} : sélectionner toutes les unités (${ids.length})`}
+                  disabled={ids.length === 0}
+                  aria-pressed={
+                    ids.length > 0 &&
+                    selected.length === ids.length &&
+                    ids.every((id) => selected.includes(id))
+                  }
+                  onClick={() => {
+                    select(unitSelection(ids));
+                    setMobilePanel(null);
+                    setTouchMode('inspect');
+                  }}
+                >
+                  <CreaturePortrait kind={kind} />
+                  <b>{ids.length}</b>
+                </button>
+              );
+            })}
           </div>
           <p className="army-note">
             {s.recruits.length ? (
