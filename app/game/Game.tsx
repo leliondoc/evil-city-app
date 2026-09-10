@@ -15,8 +15,6 @@ import {
   Shield,
   CheckCircle2,
   Circle,
-  ChevronLeft,
-  ChevronRight,
   Crown,
   ArrowUp,
   Hourglass,
@@ -429,13 +427,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     setPendingBuild(null);
     if (mode === 'command') setMobilePanel(null);
   };
-  const cycleLot = (direction: number) => {
-    setPendingBuild(null);
-    setSelection({
-      type: 'lot',
-      id: ((selection.type === 'lot' ? selection.id : 6) + direction + 9) % 9,
-    });
-  };
   const reset = () => {
     stateRef.current = createGame();
     setSelection({ type: 'lot', id: 7 });
@@ -763,36 +754,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               className="selection-panel"
               aria-label="Détails de la sélection"
             >
-              <div className="selection-heading">
-                <p className="eyebrow">
-                  <span
-                    className={`owner-dot ${selectedLot && !selectedLot.owned ? 'neutral' : ''}`}
-                  />
-                  {selectedEnemy
-                    ? 'Force humaine'
-                    : selectedUnit
-                      ? 'Votre créature'
-                      : selectedLot?.owned
-                        ? 'Votre domaine'
-                        : 'Quartier libre'}
-                </p>
-                <div style={{ display: 'flex' }}>
-                  <button
-                    aria-label="Parcelle précédente"
-                    title="Parcelle précédente"
-                    onClick={() => cycleLot(-1)}
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    aria-label="Parcelle suivante"
-                    title="Parcelle suivante"
-                    onClick={() => cycleLot(1)}
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
               <h3 className="selection-name">
                 {enemyDef?.name ||
                   creature?.name ||

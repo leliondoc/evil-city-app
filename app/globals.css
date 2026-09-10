@@ -288,22 +288,6 @@ svg {
   height: 1px;
   background: linear-gradient(90deg, #a2a47355, transparent);
 }
-.selection-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.owner-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 100%;
-  background: #b19cc8;
-  margin-right: 5px;
-}
-.owner-dot.neutral {
-  background: #81a8b1;
-}
 .selection-name {
   font:
     normal 23px/1.2 Georgia,
@@ -1577,9 +1561,6 @@ svg {
   color: #d3ddd2 !important;
   background: #ffffff08 !important;
   border-color: transparent !important;
-}
-.selection-panel .selection-heading button {
-  color: #c4d9d5;
 }
 .rally-action {
   padding-top: 14px;
