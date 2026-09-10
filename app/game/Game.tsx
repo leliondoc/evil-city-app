@@ -351,7 +351,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      if (modal || target.closest('input,textarea,[role=dialog]')) return;
+      if (
+        modal ||
+        target.isContentEditable ||
+        target.closest('input,textarea,select,[role=dialog]')
+      )
+        return;
       if (event.code === 'Space' && !target.closest('button')) {
         event.preventDefault();
         setPaused((p) => !p);
@@ -370,17 +375,25 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         else if (tab === 'recruit' && RECRUIT_OPTIONS[i])
           chooseRecruit(RECRUIT_OPTIONS[i]);
       }
-      if (target === canvasRef.current) {
-        const movement: Record<string, [number, number]> = {
-          ArrowLeft: [40, 0],
-          ArrowRight: [-40, 0],
-          ArrowUp: [0, 40],
-          ArrowDown: [0, -40],
-        };
-        if (movement[event.key]) {
-          event.preventDefault();
-          rendererRef.current?.pan(...movement[event.key]);
-        }
+      const movement: Record<string, [number, number]> = {
+        z: [0, 40],
+        q: [40, 0],
+        s: [0, -40],
+        d: [-40, 0],
+        ...(target === canvasRef.current
+          ? {
+              ArrowLeft: [40, 0],
+              ArrowRight: [-40, 0],
+              ArrowUp: [0, 40],
+              ArrowDown: [0, -40],
+            }
+          : {}),
+      };
+      const direction =
+        movement[event.key] ?? movement[event.key.toLowerCase()];
+      if (direction && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        rendererRef.current?.pan(...direction);
       }
     };
     window.addEventListener('keydown', keydown);
@@ -1198,7 +1211,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             aria-label={
               compact
                 ? 'Carte tactile. Touchez pour sélectionner, glissez pour explorer, pincez pour zoomer. Groupe permet une sélection par rectangle ; Ordre permet de toucher une destination ou un ennemi.'
-                : 'Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette ou flèches : déplacer la carte. Les boutons du panneau permettent aussi de parcourir les parcelles.'
+                : 'Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette, ZQSD ou flèches : déplacer la carte.'
             }
           />
           <div className="map-caption">
@@ -1213,7 +1226,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </span>
             <span>
               <PackIcon asset="ui-cursor-hand" />
-              Glisser : explorer
+              Glisser / ZQSD : explorer
             </span>
             <span>Molette : zoom</span>
           </div>
@@ -1810,9 +1823,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 <br />
                 Shift + glisser gauche : sélectionner ou compléter un groupe ·
                 Shift + clic : ajouter ou retirer une unité · Glisser gauche :
-                déplacer la carte · Molette : zoom · Espace : pause · 1-5 :
-                bâtiment ou créature · R : repli · Échap : désélectionner ou
-                annuler un chantier avant sa pose.
+                déplacer la carte · ZQSD ou flèches : déplacer la caméra ·
+                Molette : zoom · Espace : pause · 1-5 : bâtiment ou créature · R
+                : repli · Échap : désélectionner ou annuler un chantier avant sa
+                pose.
                 <br />
                 Les parties ne sont pas conservées après fermeture. Le quartier
                 est fictif.
