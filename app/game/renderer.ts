@@ -642,13 +642,14 @@ export class Renderer {
               : 'terrain-1';
       this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4, lot.owned);
       if (lot.id === 0 && !lot.owned) {
+        // The church foundation must sit on the upper surface, ahead of the cliff.
         this.plateau(
           ctx,
           'terrain-2',
           (lot.x + 1) * CELL,
           (lot.y + 1) * CELL - 40,
           3,
-          2,
+          3,
         );
       }
     }
@@ -812,16 +813,17 @@ export class Renderer {
     ctx.lineTo(center, (lot.y + 8) * CELL);
     ctx.stroke();
     if (lot.id === 0 && !lot.owned) {
+      // Original 64 × 128 ramp spans the terrace lip and the lower forecourt.
       ctx.drawImage(
         this.images.get('terrain-2')!,
+        192,
         256,
-        192,
         64,
-        192,
+        128,
         center - 32,
-        (lot.y + 4) * CELL,
+        (lot.y + 5) * CELL - 40,
         64,
-        96,
+        128,
       );
     }
     ctx.restore();
