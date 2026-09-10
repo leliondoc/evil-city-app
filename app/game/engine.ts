@@ -2027,6 +2027,7 @@ function advanceEnemies(s: State, dt: number) {
   for (const e of s.enemies) {
     if (e.hp <= 0 || s.lost) continue;
     e.fighting = false;
+    e.moving = false;
     e.healTarget = null;
     e.attackCooldown -= dt;
     const def = enemyDefinition(e);

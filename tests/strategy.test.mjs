@@ -1,7 +1,13 @@
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { entrance, assign, commandUnits, tick } from '../app/game/engine.ts';
+import {
+  entrance,
+  assign,
+  commandUnits,
+  tick,
+  findPath,
+} from '../app/game/engine.ts';
 import {
   research,
   hitEnemy,
@@ -13,7 +19,12 @@ import {
   divertEnemy,
   releaseTower,
 } from '../app/game/strategy.ts';
-import { leaveCorpse, advanceDomain, resurrect } from '../app/game/domain.ts';
+import {
+  leaveCorpse,
+  advanceDomain,
+  resurrect,
+  exorcise,
+} from '../app/game/domain.ts';
 function prepared() {
   const s = createGame();
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
@@ -276,4 +287,81 @@ test('Real simulation sends a monk to a delivered body and completes the ritual'
   for (let i = 0; i < 1200 && !s.domain.resurrected; i++) tick(s, 0.1);
   assert.equal(s.domain.resurrected, 1);
   assert.ok(s.enemies.some((e) => e.revived));
+});
+
+test('An unfunded monk leaves the ritual entrance instead of walking back and forth', () => {
+  const { s, monk, home } = resurrectionSetup();
+  s.workers = [];
+  s.economy.stocks.gold = 0;
+  s.economy.stocks.food = 0;
+  s.domain.nextRescuerAt = Infinity;
+  const start = entrance(home);
+  for (let i = 0; i < 60; i++) tick(s, 0.1);
+  assert.equal(s.domain.resurrected, 0);
+  assert.equal(monk.resurrecting, undefined);
+  assert.ok(Math.hypot(monk.x - start.x, monk.y - start.y) > 3);
+});
+
+test('A vanished resurrection target releases its route and allows a later ritual', () => {
+  const { s, monk, home } = resurrectionSetup();
+  const souls = [...s.domain.souls];
+  Object.assign(monk, entrance(s.lots[0]));
+  assert.equal(resurrect(s, monk, 0.1), true);
+  assert.ok(monk.path.length > 0);
+  s.domain.souls = [];
+  assert.equal(resurrect(s, monk, 0.1), false);
+  assert.deepEqual(monk.path, []);
+  assert.equal(monk.moving, false);
+  assert.equal(monk.resurrecting, undefined);
+  assert.equal(monk.resurrectionHp, undefined);
+  // No ritual owns the subsequent ordinary movement order.
+  monk.path = findPath(monk, entrance(s.lots[6]));
+  const route = structuredClone(monk.path);
+  resurrect(s, monk, 0.1);
+  assert.deepEqual(monk.path, route);
+  s.domain.souls = souls;
+  Object.assign(monk, entrance(home));
+  resurrect(s, monk, 10);
+  assert.equal(s.domain.resurrected, 1);
+});
+
+test('A monk waiting for a specter stops walking and abandons a vanished specter', () => {
+  const s = prepared();
+  const point = entrance(s.lots[1]);
+  const ghost = unit(s, 'specter', point);
+  const monk = enemy(s, { x: point.x - 1, y: point.y + 1 }, 'monk');
+  s.enemies = [monk];
+  Object.assign(ghost, {
+    task: 'duel',
+    target: monk.id,
+    path: [{ x: point.x + 1, y: point.y + 1 }],
+  });
+  Object.assign(monk, {
+    exorcising: ghost.id,
+    exorcismStreet: { ...monk },
+    path: [{ ...point }],
+    moving: true,
+  });
+  assert.equal(exorcise(s, monk, 0.1), true);
+  assert.deepEqual(monk.path, []);
+  assert.equal(monk.moving, false);
+  monk.path = [{ ...point }];
+  monk.moving = true;
+  s.units = [];
+  assert.equal(exorcise(s, monk, 0.1), false);
+  assert.deepEqual(monk.path, []);
+  assert.equal(monk.moving, false);
+  assert.equal(monk.exorcising, undefined);
+});
+
+test('An interrupted ritual does not keep resetting the monk’s fallback route', () => {
+  const { s, monk } = resurrectionSetup();
+  resurrect(s, monk, 1);
+  unit(s, 'goblin', { x: monk.x + 1, y: monk.y });
+  assert.equal(resurrect(s, monk, 0.1), false);
+  assert.equal(monk.resurrecting, undefined);
+  monk.path = findPath(monk, entrance(s.lots[6]));
+  const route = structuredClone(monk.path);
+  for (let i = 0; i < 10; i++) assert.equal(resurrect(s, monk, 0.1), false);
+  assert.deepEqual(monk.path, route);
 });

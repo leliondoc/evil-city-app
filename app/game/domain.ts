@@ -151,7 +151,11 @@ export function exorcise(s: State, monk: Enemy, dt: number): boolean {
   const opponent = s.units.find((u) => u.id === monk.exorcising && u.hp > 0);
   if (monk.exorcismStreet && opponent && distance(monk, opponent) <= 8) {
     // Let the specter pass through the gate before either actor attacks.
-    if (opponent.task === 'duel' && opponent.path.length) return true;
+    if (opponent.task === 'duel' && opponent.path.length) {
+      monk.path = [];
+      monk.moving = false;
+      return true;
+    }
     monk.facing = opponent.x >= monk.x ? 1 : -1;
     if (distance(monk, opponent) <= 2.2 && clearShot(monk, opponent)) {
       monk.path = [];
@@ -164,6 +168,7 @@ export function exorcise(s: State, monk: Enemy, dt: number): boolean {
     }
     return true;
   }
+  const previousTarget = monk.exorcising;
   monk.exorcising = undefined;
   monk.exorcismStreet = undefined;
   const lot = s.lots
@@ -178,6 +183,10 @@ export function exorcise(s: State, monk: Enemy, dt: number): boolean {
       (a, b) => distance(monk, entrance(a)) - distance(monk, entrance(b)),
     )[0];
   monk.exorcising = lot?.hauntedBy;
+  if (previousTarget !== undefined && previousTarget !== monk.exorcising) {
+    monk.path = [];
+    monk.moving = false;
+  }
   if (!lot) return false;
   const destination = { x: entrance(lot).x - 1, y: lot.y + 8.5 };
   if (distance(monk, destination) > 0.5) {
@@ -445,9 +454,25 @@ export function advanceDomain(s: State, dt: number) {
   }
 }
 
+function cancelResurrection(monk: Enemy): false {
+  // Only discard movement owned by the abandoned ritual, not a regular patrol.
+  if (monk.resurrecting !== undefined) {
+    monk.path = [];
+    monk.moving = false;
+  }
+  monk.resurrecting = undefined;
+  monk.resurrectionProgress = 0;
+  monk.resurrectionHp = undefined;
+  return false;
+}
+
 export function resurrect(s: State, monk: Enemy, dt: number): boolean {
+  // Do not repeatedly approach a ritual that cannot start, then leave it again.
+  if (s.economy.stocks.gold < 25 || s.economy.stocks.food < 15)
+    return cancelResurrection(monk);
   const candidates = s.domain.souls.filter(
     (soul) =>
+      soul.expiresAt > s.elapsed &&
       !s.lots[soul.home].owned &&
       !s.enemies.some(
         (e) => e.id !== monk.id && e.hp > 0 && e.resurrecting === soul.id,
@@ -455,13 +480,7 @@ export function resurrect(s: State, monk: Enemy, dt: number): boolean {
   );
   const soul =
     candidates.find((soul) => soul.id === monk.resurrecting) ?? candidates[0];
-  if (!soul) {
-    monk.resurrecting = undefined;
-    monk.resurrectionProgress = 0;
-    return false;
-  }
-  if (monk.resurrecting !== soul.id) monk.resurrectionProgress = 0;
-  monk.resurrecting = soul.id;
+  if (!soul) return cancelResurrection(monk);
   const home = s.lots[soul.home],
     target = entrance(home);
   if (
@@ -469,10 +488,10 @@ export function resurrect(s: State, monk: Enemy, dt: number): boolean {
     s.units.some((u) => u.hp > 0 && distance(u, monk) < 3) ||
     (monk.resurrectionHp !== undefined && monk.hp < monk.resurrectionHp)
   ) {
-    monk.resurrectionProgress = 0;
-    monk.resurrectionHp = monk.hp;
-    return false;
+    return cancelResurrection(monk);
   }
+  if (monk.resurrecting !== soul.id) monk.resurrectionProgress = 0;
+  monk.resurrecting = soul.id;
   monk.resurrectionHp = monk.hp;
   if (distance(monk, target) > 1) {
     if (!monk.path.length || distance(monk.path.at(-1)!, target) > 1)
@@ -481,10 +500,7 @@ export function resurrect(s: State, monk: Enemy, dt: number): boolean {
     return true;
   }
   monk.path = [];
-  if (s.economy.stocks.gold < 25 || s.economy.stocks.food < 15) {
-    monk.resurrectionProgress = 0;
-    return false;
-  }
+  monk.moving = false;
   monk.resurrectionProgress = (monk.resurrectionProgress ?? 0) + dt;
   if (monk.resurrectionProgress >= 10) {
     s.economy.stocks.gold -= 25;
