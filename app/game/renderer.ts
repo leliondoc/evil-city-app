@@ -93,6 +93,7 @@ export class Renderer {
   private disposed = false;
   private width = 0;
   private height = 0;
+  private viewport = { x: 0, y: 0, width: 0, height: 0 };
   private scale = 1;
   private uiScale = 1;
   private zoom = 1;
@@ -133,6 +134,7 @@ export class Renderer {
     ).matches;
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
+    if (canvas.parentElement) this.resizeObserver.observe(canvas.parentElement);
     this.resize();
     canvas.addEventListener('pointerdown', this.pointerDown);
     canvas.addEventListener('pointermove', this.pointerMove);
@@ -204,20 +206,31 @@ export class Renderer {
       ) || 1;
     this.width = r.width;
     this.height = r.height;
+    // The desktop canvas extends under the HUD; frame the town in its clear center.
+    const view = this.canvas.parentElement?.getBoundingClientRect() ?? r;
+    this.viewport = {
+      x: view.left - r.left,
+      y: view.top - r.top,
+      width: view.width,
+      height: view.height,
+    };
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.canvas.width = Math.round(r.width * dpr);
     this.canvas.height = Math.round(r.height * dpr);
     this.recalculate();
   }
   private recalculate() {
+    const view = this.viewport;
     this.scale =
       Math.max(
         0.1,
-        Math.min(this.width / (SIZE + 96), this.height / (SIZE + 150)),
+        Math.min(view.width / (SIZE + 96), view.height / (SIZE + 150)),
       ) * this.zoom;
     this.origin = {
-      x: Math.round((this.width - SIZE * this.scale) / 2 + this.panX),
-      y: Math.round((this.height - SIZE * this.scale) / 2 + this.panY + 14),
+      x: Math.round(view.x + (view.width - SIZE * this.scale) / 2 + this.panX),
+      y: Math.round(
+        view.y + (view.height - SIZE * this.scale) / 2 + this.panY + 14,
+      ),
     };
   }
   public zoomBy(factor: number) {

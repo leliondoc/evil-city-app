@@ -64,7 +64,7 @@ try {
     assert.ok(Math.abs(metrics.questFont - 13 * scale) < 0.1);
     // Map hit testing remains in native pixels after the surrounding panels grow.
     const point = await page.evaluate(() => {
-      const r = document.querySelector('.world-canvas').getBoundingClientRect(),
+      const r = document.querySelector('.world-wrap').getBoundingClientRect(),
         scale = Math.max(0.1, Math.min(r.width / 1120, r.height / 1174));
       return {
         x: r.x + Math.round((r.width - 1024 * scale) / 2) + 16 * 32 * scale,

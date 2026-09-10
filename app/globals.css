@@ -3152,3 +3152,65 @@ svg {
   overflow-y: auto;
 }
 .district-popover > * { flex-shrink: 0; }
+/* Floating desktop HUD: only useful cards shade the live world behind them. */
+.game-shell[data-compact='false'] .world-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 0;
+}
+.game-shell[data-compact='false'] .topbar {
+  position: relative;
+  background: #17252bdb;
+  border-bottom: 0;
+}
+.game-shell[data-compact='false'] .mission-sidebar {
+  position: relative;
+  z-index: 3;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+}
+.game-shell[data-compact='false'] .mission-sidebar > * { pointer-events: auto; }
+.game-shell[data-compact='false'] .mission-sidebar .chronicle {
+  background: #182a30e6;
+  border: 1px solid #9b956555;
+  border-radius: 6px;
+  margin-top: 12px;
+  padding: 12px;
+}
+.game-shell[data-compact='false'] .sidebar {
+  align-self: flex-start;
+  max-height: 100%;
+  background: #192b31e0;
+  border: 1px solid #a1956855;
+  border-radius: 6px;
+  box-shadow: 0 3px 12px #0b1c2533;
+}
+.game-shell[data-compact='false'] .bottom-bar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+.game-shell[data-compact='false'] .bottom-bar .army-overview {
+  align-self: flex-start;
+  background: #192b31de;
+  padding: 12px;
+  border: 1px solid #a1956855;
+  border-radius: 6px;
+  pointer-events: auto;
+}
+.game-shell[data-compact='false'] .bottom-bar .build-tabs { pointer-events: none; }
+.game-shell[data-compact='false'] .build-tabs :is([role='tablist'], .card-row) { pointer-events: auto; }
+.game-shell[data-compact='false'] .build-card {
+  background: #20323be8;
+}
+.game-shell[data-compact='false'] .build-card.locked { opacity: 1; }
+.game-shell[data-compact='false'] .build-card:hover { background: #314852f5; }
+.game-shell[data-compact='false'] .recruit-progress {
+  background: #192b31ed;
+  border-radius: 3px;
+  padding: 3px 5px;
+}
