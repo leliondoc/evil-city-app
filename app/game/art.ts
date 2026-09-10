@@ -1,5 +1,11 @@
 import manifest from './assets.json' with { type: 'json' };
-import type { BuildingKind, CreatureKind } from './engine';
+import type {
+  BuildingKind,
+  CreatureKind,
+  Enemy,
+  HumanWorker,
+  ResourceSite,
+} from './engine';
 
 export const ASSETS = Object.fromEntries(
   Object.entries(manifest).map(([key, asset]) => [
@@ -14,10 +20,21 @@ export type AssetKey = keyof typeof ASSETS;
 export type Animation = 'idle' | 'walk' | 'attack';
 export const FRAME_SECONDS = 0.1;
 export function buildingArt(kind: BuildingKind, owned = true): AssetKey {
+  if (kind === 'guild' && !owned) return 'guild-yellow';
   if (kind === 'den') return 'den';
   if (kind === 'empty') return 'wood';
   const name = kind === 'hall' ? 'hq' : kind === 'guild' ? 'crypt' : kind;
   return `${name}-${owned ? 'purple' : 'blue'}` as AssetKey;
+}
+export function enemyAnimationSequence(
+  enemy: Pick<Enemy, 'kind' | 'role'>,
+  action: Animation,
+): AssetKey[] {
+  return [
+    enemy.kind === 'guard'
+      ? (`guard-${action}` as AssetKey)
+      : (`hero-${enemy.role}-${action}` as AssetKey),
+  ];
 }
 export function animationSequence(
   kind: CreatureKind,
@@ -37,3 +54,15 @@ export function animationFrame(sequence: AssetKey[], seconds: number) {
   return { key: sequence[0], frame: 0 };
 }
 export const portrait = (kind: CreatureKind) => ASSETS[`${kind}-avatar`].src;
+
+export function workerArt(worker: HumanWorker, site: ResourceSite): AssetKey {
+  const action =
+    worker.phase === 'harvest'
+      ? 'work'
+      : worker.phase === 'return'
+        ? 'carry'
+        : worker.path.length
+          ? 'walk'
+          : 'idle';
+  return `pawn-${site.kind}-${action}` as AssetKey;
+}

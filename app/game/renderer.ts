@@ -2,7 +2,8 @@ import {
   BUILDINGS,
   CREATURES,
   ENEMIES,
-  STARTS,
+  SUPPLIES,
+  supplyActive,
   entrance,
   type State,
   type Point,
@@ -13,14 +14,16 @@ import {
   ASSETS,
   animationFrame,
   animationSequence,
+  enemyAnimationSequence,
   buildingArt,
+  workerArt,
   type AssetKey,
   type Animation,
 } from './art';
 
 const CELL = 32,
   SIZE = 32 * CELL,
-  MARGIN = 128;
+  MARGIN = 512;
 const noise = (x: number, y: number) => {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
   return n - Math.floor(n);
@@ -92,7 +95,13 @@ export class Renderer {
     try {
       await Promise.all(
         (Object.keys(ASSETS) as AssetKey[])
-          .filter((k) => !k.endsWith('avatar') && k !== 'wood-panel')
+          .filter(
+            (k) =>
+              !k.endsWith('avatar') &&
+              k !== 'wood-panel' &&
+              !k.startsWith('bestiary-') &&
+              !k.startsWith('ui-'),
+          )
           .map(
             (key) =>
               new Promise<void>((resolve, reject) => {
@@ -262,6 +271,48 @@ export class Renderer {
         ctx.drawImage(im, sx, sy, 64, 64, x + tx * 64, y + ty * 64, 64, 64);
       }
   }
+  private plateau(
+    ctx: CanvasRenderingContext2D,
+    key: AssetKey,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ) {
+    const im = this.images.get(key)!;
+    ctx.drawImage(
+      this.images.get('terrain-shadow')!,
+      0,
+      0,
+      192,
+      192,
+      x - 20,
+      y + 15,
+      w * 64 + 40,
+      h * 64 + 96,
+    );
+    for (let ty = 0; ty < h; ty++)
+      for (let tx = 0; tx < w; tx++) {
+        const sx = 320 + (tx === 0 ? 0 : tx === w - 1 ? 128 : 64);
+        const sy = ty === 0 ? 0 : ty === h - 1 ? 128 : 64;
+        ctx.drawImage(im, sx, sy, 64, 64, x + tx * 64, y + ty * 64, 64, 64);
+      }
+    for (let tx = 0; tx < w; tx++) {
+      const sx = 320 + (tx === 0 ? 0 : tx === w - 1 ? 128 : 64);
+      for (let row = 0; row < 2; row++)
+        ctx.drawImage(
+          im,
+          sx,
+          192 + row * 64,
+          64,
+          64,
+          x + tx * 64,
+          y + h * 64 + row * 64,
+          64,
+          64,
+        );
+    }
+  }
   private makeTerrain() {
     const c = this.terrain;
     c.width = SIZE + MARGIN * 2;
@@ -269,91 +320,156 @@ export class Renderer {
     const ctx = c.getContext('2d')!;
     ctx.imageSmoothingEnabled = false;
     ctx.translate(MARGIN, MARGIN);
-    // Paving is street geometry; organic surfaces use the original terrain tiles.
-    ctx.fillStyle = '#cab989';
-    ctx.fillRect(0, 0, SIZE, SIZE);
+    const water = this.images.get('water')!;
+    for (let y = -MARGIN; y < SIZE + MARGIN; y += 64)
+      for (let x = -MARGIN; x < SIZE + MARGIN; x += 64)
+        ctx.drawImage(water, x, y, 64, 64);
+    // A river around the western bank, woodland islands and an eastern ridge.
+    this.grassPatch(ctx, 'terrain-4', -64, -64, 18, 18);
+    this.grassPatch(ctx, 'terrain-4', -192, -128, 7, 7);
+    this.grassPatch(ctx, 'terrain-4', 896, 320, 7, 12);
+    this.grassPatch(ctx, 'terrain-5', -448, 192, 5, 6);
+    this.grassPatch(ctx, 'terrain-2', -384, 768, 5, 6);
+    this.plateau(ctx, 'terrain-5', 1024, -192, 7, 5);
+    this.plateau(ctx, 'terrain-4', -352, -160, 4, 3);
+    // Only streets and entrances are paved; gardens retain their own vegetation.
+    ctx.fillStyle = '#b9a67b';
+    for (const edge of [0, 10, 20, 30]) {
+      ctx.fillRect(edge * CELL, 0, 2 * CELL, SIZE);
+      ctx.fillRect(0, edge * CELL, SIZE, 2 * CELL);
+    }
     for (let y = 0; y < SIZE; y += 16)
       for (let x = 0; x < SIZE; x += 32) {
-        ctx.fillStyle = noise(x, y) > 0.55 ? '#dec897' : '#c4ad81';
-        ctx.fillRect(x + (y % 32 ? 16 : 0), y, 30, 14);
+        if (Math.floor(x / CELL) % 10 < 2 || Math.floor(y / CELL) % 10 < 2) {
+          ctx.fillStyle = noise(x, y) > 0.55 ? '#d2bd90' : '#b5a27c';
+          ctx.fillRect(x + (y % 32 ? 8 : 0), y, 28, 13);
+        }
       }
-    for (const y of STARTS)
-      for (const x of STARTS) {
-        this.grassPatch(ctx, 'grass', x * CELL, y * CELL, 4, 4);
-        ctx.fillStyle = '#cab989';
-        ctx.fillRect((x + 3.7) * CELL, (y + 5) * CELL, 1.6 * CELL, 3 * CELL);
+    for (const lot of this.getState().lots) {
+      const key: AssetKey =
+        lot.id === 6 || lot.id === 3
+          ? 'terrain-5'
+          : lot.id === 0
+            ? 'terrain-2'
+            : lot.id === 8
+              ? 'terrain-3'
+              : 'terrain-1';
+      this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4);
+      ctx.fillStyle = '#c0aa7c';
+      ctx.fillRect(
+        (lot.x + 3.7) * CELL,
+        (lot.y + 4) * CELL,
+        1.6 * CELL,
+        4 * CELL,
+      );
+      if (lot.id === 0) {
+        this.plateau(
+          ctx,
+          'terrain-2',
+          (lot.x + 1) * CELL,
+          (lot.y + 1) * CELL - 40,
+          3,
+          2,
+        );
+        const im = this.images.get('terrain-2')!;
+        ctx.drawImage(
+          im,
+          256,
+          192,
+          64,
+          192,
+          (lot.x + 3.5) * CELL,
+          (lot.y + 4) * CELL,
+          64,
+          96,
+        );
       }
-    for (let x = -MARGIN; x < SIZE + MARGIN; x += 64) {
-      ctx.drawImage(
-        this.images.get('grass-dark')!,
-        64,
-        64,
-        64,
-        64,
-        x,
-        -64,
-        64,
-        64,
-      );
-      ctx.drawImage(
-        this.images.get('grass-dark')!,
-        64,
-        64,
-        64,
-        64,
-        x,
-        SIZE,
-        64,
-        64,
-      );
     }
-    for (let y = -64; y < SIZE + 64; y += 64) {
-      ctx.drawImage(
-        this.images.get('grass-dark')!,
-        64,
-        64,
-        64,
-        64,
-        -64,
-        y,
-        64,
-        64,
-      );
-      ctx.drawImage(
-        this.images.get('grass-dark')!,
-        64,
-        64,
-        64,
-        64,
-        SIZE,
-        y,
-        64,
-        64,
-      );
+    // A small wooden footbridge joins the western grove to the town bank.
+    ctx.fillStyle = '#354957';
+    ctx.fillRect(-166, 636, 226, 86);
+    for (let x = -160; x < 64; x += 16) {
+      ctx.fillStyle = x % 32 ? '#a87e4e' : '#c1975c';
+      ctx.fillRect(x, 632, 14, 76);
+    }
+    ctx.fillStyle = '#684c3b';
+    ctx.fillRect(-176, 638, 250, 6);
+    ctx.fillRect(-176, 700, 250, 6);
+    // A kitchen garden inside an already blocked building plot.
+    for (let row = 0; row < 4; row++) {
+      ctx.fillStyle = '#94754e';
+      ctx.fillRect(890, 795 + row * 18, 60, 11);
+      for (let col = 0; col < 5; col++) {
+        ctx.fillStyle = '#d6ce79';
+        ctx.fillRect(892 + col * 12, 794 + row * 18, 5, 5);
+      }
     }
   }
   private makeDecorations() {
     this.decorations = [];
-    for (const y of STARTS)
-      for (const x of STARTS)
-        this.decorations.push(
-          {
-            x: (x + 1) * CELL,
-            y: (y + 3) * CELL,
-            key: 'tree-small',
-            scale: 0.65,
-          },
-          { x: (x + 7) * CELL, y: (y + 2) * CELL, key: 'bush', scale: 0.5 },
-        );
-    for (let i = 0; i < 12; i++) {
-      const p = (i * 3 - 1) * CELL;
+    for (const lot of this.getState().lots) {
+      const n = lot.id;
       this.decorations.push(
-        { x: p, y: -16, key: 'tree', scale: 0.85 },
-        { x: -22, y: p, key: 'tree', scale: 0.8 },
-        { x: SIZE + 28, y: p, key: 'tree-small', scale: 0.8 },
-        { x: p, y: SIZE + 72, key: 'tree-small', scale: 0.8 },
+        {
+          x: (lot.x + 1.2) * CELL,
+          y: (lot.y + 3) * CELL,
+          key: `tree-${(n % 4) + 1}` as AssetKey,
+          scale: n === 0 ? 0.45 : 0.58,
+        },
+        {
+          x: (lot.x + 7) * CELL,
+          y: (lot.y + 2) * CELL,
+          key: `bush-${(n % 4) + 1}` as AssetKey,
+          scale: 0.65,
+        },
+        {
+          x: (lot.x + 1.1) * CELL,
+          y: (lot.y + 6) * CELL,
+          key: `rock-${(n % 4) + 1}` as AssetKey,
+          scale: 0.75,
+        },
       );
+      if ([1, 5, 8].includes(n))
+        this.decorations.push({
+          x: (lot.x + 6.5) * CELL,
+          y: (lot.y + 5.5) * CELL,
+          key: 'bush-2',
+          scale: 0.5,
+        });
     }
+    for (let i = 0; i < 25; i++) {
+      const top = i < 12;
+      const x = top ? -100 + i * 103 : 1035 + noise(i, 4) * 210;
+      const y = top ? -50 - noise(i, 6) * 100 : 370 + (i - 12) * 62;
+      this.decorations.push({
+        x,
+        y,
+        key: `tree-${(i % 4) + 1}` as AssetKey,
+        scale: 0.65 + noise(i, 8) * 0.2,
+      });
+    }
+    for (let i = 0; i < 11; i++)
+      this.decorations.push({
+        x: -380 + (i % 3) * 74,
+        y: 240 + Math.floor(i / 3) * 72,
+        key: `tree-${(i % 4) + 1}` as AssetKey,
+        scale: 0.65,
+      });
+    for (let i = 0; i < 9; i++)
+      this.decorations.push({
+        x: -460 + noise(i, 3) * 330,
+        y: 70 + i * 117,
+        key: `water-rock-${(i % 4) + 1}` as AssetKey,
+        scale: 1,
+      });
+    this.decorations.push(
+      { x: -275, y: 930, key: 'sheep', scale: 0.75 },
+      { x: -190, y: 970, key: 'sheep', scale: 0.65 },
+      { x: 1170, y: 45, key: 'gold-rock', scale: 1 },
+      { x: 1280, y: 70, key: 'gold-rock', scale: 0.8 },
+      { x: 1260, y: 880, key: 'rock-3', scale: 1.4 },
+      { x: -265, y: 80, key: 'rock-4', scale: 1.2 },
+    );
   }
   private sprite(
     key: AssetKey,
@@ -484,12 +600,12 @@ export class Renderer {
     ctx.fillRect(0, 0, this.width, this.height);
     ctx.translate(this.origin.x, this.origin.y);
     ctx.scale(this.scale, this.scale);
-    const grass = this.images.get('grass-dark')!,
+    const grass = this.images.get('water')!,
       left = Math.floor(-this.origin.x / this.scale / 64) * 64,
       top = Math.floor(-this.origin.y / this.scale / 64) * 64;
     for (let y = top; y < (this.height - this.origin.y) / this.scale; y += 64)
       for (let x = left; x < (this.width - this.origin.x) / this.scale; x += 64)
-        ctx.drawImage(grass, 64, 64, 64, 64, x, y, 64, 64);
+        ctx.drawImage(grass, 0, 0, 64, 64, x, y, 64, 64);
     ctx.drawImage(this.terrain, -MARGIN, -MARGIN);
     this.hits = [];
     if (s.elapsed === 0) this.motions.clear();
@@ -522,10 +638,10 @@ export class Renderer {
           8 * CELL - 12,
         );
       }
-      this.fence(l, false);
+      if (l.kind !== 'guild' && l.kind !== 'hall') this.fence(l, false);
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4.4) * CELL,
-        y = (l.y + 5.7) * CELL;
+        y = (l.y + 5.7) * CELL - (l.id === 0 ? 28 : 0);
       drawables.push({
         depth: y,
         draw: () => {
@@ -544,7 +660,10 @@ export class Renderer {
             this.sprite('wood', x - 25, y, 0.9);
             this.sprite('rock', x + 30, y - 10, 0.8);
           } else {
-            const key = buildingArt(kind, l.owned),
+            const key =
+                kind === 'house'
+                  ? (`house-${l.owned ? 'purple' : 'blue'}-${(l.id % 2) + 2}` as AssetKey)
+                  : buildingArt(kind, l.owned),
               a = ASSETS[key],
               frame = Math.floor(t * 10) % a.frames;
             const scale =
@@ -609,7 +728,9 @@ export class Renderer {
           });
       drawables.push({
         depth: (l.y + 7.8) * CELL,
-        draw: () => this.fence(l, true),
+        draw: () => {
+          if (l.kind !== 'guild' && l.kind !== 'hall') this.fence(l, true);
+        },
       });
     }
     for (const d of this.decorations)
@@ -625,6 +746,68 @@ export class Renderer {
               ASSETS[d.key].frames) %
               ASSETS[d.key].frames,
           ),
+      });
+    for (const site of s.sites)
+      drawables.push({
+        depth: site.y * CELL,
+        draw: () => {
+          const selected =
+            this.selection.type === 'resource' && this.selection.id === site.id;
+          const active = supplyActive(s, site);
+          const key = SUPPLIES[site.kind].art as AssetKey;
+          const hit = this.sprite(
+            key,
+            site.x * CELL,
+            site.y * CELL,
+            site.kind === 'wood' ? 0.8 : 0.9,
+            active ? Math.floor(t * 10) % ASSETS[key].frames : 0,
+            active ? 1 : 0.4,
+          );
+          hit.selection = { type: 'resource', id: site.id };
+          this.hits.push(hit);
+          if (selected || site.hp < site.maxHp)
+            this.bar(
+              site.x * CELL,
+              site.y * CELL - 60,
+              site.hp / site.maxHp,
+              60,
+            );
+          this.label(
+            site.x * CELL,
+            site.y * CELL + 26,
+            `${active ? '' : '× '}${SUPPLIES[site.kind].name}`,
+            active ? '#ffe0a3' : '#c5c5b5',
+          );
+        },
+      });
+    for (const worker of s.workers)
+      drawables.push({
+        depth: worker.y * CELL + 1,
+        draw: () => {
+          const key = workerArt(worker, s.sites[worker.site]);
+          const hit = this.sprite(
+            key,
+            worker.x * CELL,
+            worker.y * CELL,
+            0.72,
+            Math.floor(t * 10) % ASSETS[key].frames,
+            1,
+            worker.facing < 0,
+          );
+          hit.selection = { type: 'worker', id: worker.id };
+          this.hits.push(hit);
+          if (
+            (this.selection.type === 'worker' &&
+              this.selection.id === worker.id) ||
+            worker.hp < worker.maxHp
+          )
+            this.bar(
+              worker.x * CELL,
+              worker.y * CELL - 52,
+              worker.hp / worker.maxHp,
+              40,
+            );
+        },
       });
     for (const u of s.units)
       drawables.push({
@@ -699,9 +882,21 @@ export class Renderer {
             y = e.y * CELL;
           const selected =
             this.selection.type === 'enemy' && this.selection.id === e.id;
-          const key: AssetKey = e.fighting ? 'guard-attack' : 'guard-idle';
+          const sequence = enemyAnimationSequence(
+            e,
+            e.fighting || e.healTarget !== null
+              ? 'attack'
+              : e.path.length
+                ? 'walk'
+                : 'idle',
+          );
           let motion = this.motions.get(e.id);
-          const action: Animation = e.fighting ? 'attack' : 'idle';
+          const action: Animation =
+            e.fighting || e.healTarget !== null
+              ? 'attack'
+              : e.path.length
+                ? 'walk'
+                : 'idle';
           if (!motion || motion.action !== action || motion.since > t) {
             motion = { action, since: t };
             this.motions.set(e.id, motion);
@@ -715,18 +910,31 @@ export class Renderer {
           ctx.beginPath();
           ctx.ellipse(x, y, e.kind === 'hero' ? 28 : 21, 11, 0, 0, Math.PI * 2);
           ctx.stroke();
+          const sample = animationFrame(sequence, t - motion.since);
           const hit = this.sprite(
-            key,
+            sample.key,
             x,
             y,
-            e.kind === 'hero' ? 0.82 : 0.65,
-            Math.floor((t - motion.since) * 10) % ASSETS[key].frames,
+            e.role === 'lancer' ? 0.58 : e.kind === 'hero' ? 0.78 : 0.65,
+            sample.frame,
             1,
             e.facing < 0,
           );
           hit.selection = { type: 'enemy', id: e.id };
           this.hits.push(hit);
           this.bar(x, y - (e.kind === 'hero' ? 74 : 56), e.hp / e.maxHp, 44);
+          if (e.healTarget !== null) {
+            const ally = s.enemies.find((ally) => ally.id === e.healTarget);
+            if (ally)
+              this.sprite(
+                'hero-heal',
+                ally.x * CELL,
+                ally.y * CELL,
+                0.8,
+                Math.floor(t * 10) % ASSETS['hero-heal'].frames,
+                0.8,
+              );
+          }
           if (e.kind === 'hero' || selected)
             this.label(
               x,
@@ -737,6 +945,17 @@ export class Renderer {
         },
       });
     }
+    for (const p of s.projectiles)
+      drawables.push({
+        depth: p.y * CELL + 1,
+        draw: () => {
+          ctx.save();
+          ctx.translate(p.x * CELL, p.y * CELL - 20);
+          ctx.rotate(p.angle);
+          this.sprite('hero-arrow', 0, 0, 0.7);
+          ctx.restore();
+        },
+      });
     drawables.sort((a, b) => a.depth - b.depth);
     for (const d of drawables) d.draw();
     for (const l of s.lots) {
@@ -780,6 +999,12 @@ export class Renderer {
         ctx.stroke();
         ctx.setLineDash([]);
       }
+    }
+    // Cloud silhouettes use the original pack and drift with simulation time.
+    for (let i = 0; i < 3; i++) {
+      const x = ((t * (7 + i * 2) + i * 640) % 2050) - 480;
+      const y = [-110, 170, 980][i];
+      this.sprite(`cloud-${i + 1}` as AssetKey, x, y, 0.95, 0, 0.32);
     }
     this.frame = requestAnimationFrame(this.render);
   };

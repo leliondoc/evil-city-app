@@ -1528,3 +1528,347 @@ svg {
 .objectives-disclosure .quest-list {
   margin-top: 12px;
 }
+
+/* Original Tiny Swords UI: nine-slice paper, wooden controls and blue buttons. */
+.pack-skin {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  grid-template-columns: 18px 1fr 18px;
+  grid-template-rows: 18px 1fr 18px;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+.pack-skin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.pack-banner {
+  grid-template-columns: 22px 1fr 22px;
+  grid-template-rows: 22px 1fr 25px;
+}
+.pack-wood {
+  grid-template-columns: 24px 1fr 24px;
+  grid-template-rows: 24px 1fr 24px;
+}
+.pack-button {
+  grid-template-columns: 10px 1fr 10px;
+  grid-template-rows: 10px 1fr 10px;
+}
+.selection-panel {
+  position: relative;
+  isolation: isolate;
+  padding: 22px 20px 25px;
+  color: #363a38;
+  margin: 0 -10px;
+}
+.selection-panel .eyebrow {
+  color: #59645b;
+  letter-spacing: 1.1px;
+}
+.selection-panel .selection-name {
+  color: #303e43;
+}
+.selection-panel .selection-text,
+.selection-panel .reason,
+.selection-panel .selection-stats,
+.selection-panel .building-health {
+  color: #515647;
+}
+.selection-panel .selection-art {
+  background: radial-gradient(ellipse at center, #93835740, transparent 70%);
+  height: 120px;
+}
+.selection-panel .selection-art .sprite-preview {
+  height: 120px;
+}
+.selection-panel .subtle-btn {
+  color: #364d53 !important;
+  background: #78674913 !important;
+  border-color: #7c715747 !important;
+}
+.selection-panel .selection-heading button {
+  color: #3b5760;
+}
+.selection-panel .healthbar {
+  margin-bottom: 12px;
+  background: #574c3f;
+}
+.selection-panel .card-cost {
+  color: #515647;
+}
+.primary-btn.pack-action {
+  position: relative;
+  isolation: isolate;
+  background: transparent !important;
+  border: 0 !important;
+  color: #fff4d8 !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+  text-shadow: 0 1px #253e48;
+  padding: 12px 16px !important;
+}
+.primary-btn.pack-action:active {
+  transform: translateY(2px);
+}
+.primary-btn.pack-action:disabled {
+  opacity: 0.5;
+}
+.pack-resource-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.bottom-bar {
+  position: relative;
+  isolation: isolate;
+  background: #283d45;
+  border-top: 0;
+  padding-bottom: 16px;
+}
+.bottom-bar .army-title,
+.bottom-bar .army-note,
+.bottom-bar .army-title h3 {
+  color: #fff0cc;
+}
+.bottom-bar .army-note {
+  text-shadow: 0 1px #51352b;
+}
+.map-caption {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 21px 38px 16px;
+  text-align: center;
+  min-width: 230px;
+}
+.map-caption h2 {
+  color: #fff1c9;
+  text-shadow: 0 2px #243e49;
+}
+.map-caption p {
+  color: #d8eadb;
+  font-size: 10px;
+}
+.supply-disclosure {
+  flex: 0 0 auto;
+  z-index: 4;
+  background: #28414a;
+  border-bottom: 1px solid #647d7b;
+  font-size: 12px;
+}
+.supply-disclosure summary {
+  cursor: pointer;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  color: #d4dfd1;
+}
+.supply-disclosure summary::before {
+  content: '▸';
+  color: #ebca85;
+}
+.supply-disclosure[open] summary::before {
+  content: '▾';
+}
+.supply-disclosure summary > span:first-of-type {
+  font-weight: bold;
+  color: #ffe0a5;
+}
+.supply-disclosure summary > strong {
+  font-weight: normal;
+  margin-left: auto;
+}
+.supply-content {
+  padding: 3px 24px 12px;
+}
+.supply-content > p {
+  color: #c1d1c9;
+  margin-bottom: 10px;
+}
+.supply-sites {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.supply-sites button {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: #1b333a;
+  border: 1px solid #58716d;
+  border-radius: 3px;
+}
+.supply-sites button:hover {
+  background: #354f55;
+}
+.supply-sites strong {
+  font-size: 13px;
+  display: block;
+  color: #f5ddb1;
+}
+.supply-sites small {
+  display: block;
+  font-size: 11px;
+  color: #b8cec4;
+  font-weight: normal;
+  margin-top: 3px;
+}
+.supply-sites b {
+  margin-left: auto;
+  font-size: 18px;
+  text-align: right;
+  color: #f5ddb1;
+}
+.bestiary-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #6c817b;
+  border-radius: 4px;
+  padding: 9px 12px;
+  margin: 16px 0;
+}
+.bestiary-search input {
+  background: transparent;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  font-size: 14px;
+}
+.bestiary-search:focus-within {
+  outline: 2px solid #eaca81;
+}
+.bestiary-search span {
+  color: #aec5ba;
+  font-size: 12px;
+}
+.bestiary-creature strong {
+  display: block;
+}
+.bestiary-badge {
+  display: inline-block;
+  font-size: 10px;
+  margin: 8px 0;
+  padding: 3px 7px;
+  border: 1px solid #798b8c;
+  border-radius: 3px;
+  color: #c8d8d0;
+}
+.bestiary-badge.available {
+  color: #ead291;
+  border-color: #b4a06c;
+}
+.bestiary-creature .bestiary-note {
+  font-size: 11px;
+  margin-top: 8px;
+  color: #9fb9b0;
+}
+@media (max-width: 800px) {
+  .selection-panel {
+    padding: 16px 15px 22px;
+  }
+  .supply-disclosure summary {
+    padding: 7px 12px;
+    gap: 5px 10px;
+  }
+  .supply-disclosure summary > strong {
+    font-size: 11px;
+  }
+  .supply-content {
+    padding: 4px 12px 10px;
+  }
+  .supply-sites {
+    gap: 5px;
+  }
+  .supply-sites button {
+    padding: 7px;
+    gap: 5px;
+  }
+  .supply-sites .pack-resource-icon {
+    width: 22px;
+    height: 22px;
+  }
+  .supply-sites small {
+    font-size: 10px;
+  }
+  .map-caption {
+    min-width: 190px;
+    padding: 18px 30px 15px;
+  }
+}
+@media (max-width: 580px) {
+  .supply-sites {
+    grid-template-columns: 1fr;
+    max-height: 190px;
+    overflow: auto;
+  }
+  .supply-disclosure summary > strong {
+    width: 100%;
+    padding-left: 17px;
+  }
+  .pack-resource-icon {
+    width: 25px;
+    height: 25px;
+  }
+  .selection-panel .selection-art,
+  .selection-panel .selection-art .sprite-preview {
+    height: 85px;
+  }
+  .map-caption {
+    min-width: 0;
+    padding: 18px 16px;
+  }
+}
+/* The title uses three ribbon slices, without the transparent sheet gutters. */
+.map-caption {
+  isolation: isolate;
+  width: 188px;
+  min-width: 0;
+  padding: 13px 23px 11px;
+  background: none;
+}
+.map-caption h2 {
+  font-size: 20px;
+  line-height: 1.15;
+}
+.map-caption p {
+  display: none;
+}
+.ribbon-skin {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 35px 1fr 35px;
+  z-index: -1;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+.ribbon-skin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+@media (max-width: 580px) {
+  .map-caption {
+    width: 160px;
+    right: auto;
+    padding: 12px 22px 10px;
+  }
+  .map-caption h2 {
+    font-size: 17px;
+  }
+}

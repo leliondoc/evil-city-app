@@ -1,0 +1,172 @@
+import { Progress } from '@/components/ui/progress';
+import { Sprite } from './Sprite';
+import { GameButton, PanelSkin, ResourceIcon } from './PackUI';
+import {
+  type State,
+  type Selection,
+  SUPPLIES,
+  supplyActive,
+  raidSupplyReason,
+  UPGRADE_SUPPLIES,
+  suppliesAvailable,
+  PRESSURE,
+} from './engine';
+import { workerArt, type AssetKey } from './art';
+
+export function SupplyPanel({
+  state: s,
+  onSelect,
+}: {
+  state: State;
+  onSelect: (selection: Selection) => void;
+}) {
+  const waiting =
+    s.elapsed >= s.economy.nextUpgradeAt &&
+    !suppliesAvailable(s, UPGRADE_SUPPLIES);
+  return (
+    <details className="supply-disclosure">
+      <summary>
+        <span>Ravitaillement humain</span>
+        <span>
+          {s.workers.length} paysans ·{' '}
+          {s.sites.filter((site) => supplyActive(s, site)).length}/3 sites
+        </span>
+        <strong>
+          {s.economy.level >= PRESSURE.maxLevel
+            ? 'Niveau maximal'
+            : waiting
+              ? 'Amélioration bloquée : ressources manquantes'
+              : `Niv. ${s.economy.level + 1} dans ≥ ${Math.max(0, Math.ceil(s.economy.nextUpgradeAt - s.elapsed))} s`}
+        </strong>
+      </summary>
+      <div className="supply-content">
+        <p>
+          Les livraisons financent leurs troupes. Une amélioration coûte 25 or,
+          20 bois et 15 vivres ; les raids puisent dans les mêmes stocks.
+        </p>
+        <div className="supply-sites">
+          {s.sites.map((site) => (
+            <button
+              key={site.id}
+              onClick={() => onSelect({ type: 'resource', id: site.id })}
+            >
+              <ResourceIcon kind={site.kind} />
+              <span>
+                <strong>{SUPPLIES[site.kind].name}</strong>
+                <small>
+                  {s.lots[site.home].owned
+                    ? 'Sous votre contrôle'
+                    : site.hp <= 0
+                      ? `Sabotée · réparation dans ≥ ${Math.ceil(Math.max(0, site.repairAt - s.elapsed))} s`
+                      : s.workers.some((w) => w.site === site.id)
+                        ? 'Production active'
+                        : 'Paysan manquant'}
+                </small>
+              </span>
+              <b>
+                {s.economy.stocks[site.kind]}
+                <small>en stock</small>
+              </b>
+            </button>
+          ))}
+        </div>
+      </div>
+    </details>
+  );
+}
+export function SupplySelection({
+  state: s,
+  selection,
+  onRaid,
+  onSelect,
+}: {
+  state: State;
+  selection: Selection;
+  onRaid: () => void;
+  onSelect: (selection: Selection) => void;
+}) {
+  const worker =
+    selection.type === 'worker'
+      ? s.workers.find((w) => w.id === selection.id)
+      : undefined;
+  const site = s.sites.find(
+    (site) => site.id === (worker?.site ?? selection.id),
+  );
+  if (!site)
+    return (
+      <section className="selection-panel">
+        <PanelSkin />
+        <p>
+          Ce paysan a quitté le quartier. Sélectionnez un site de production.
+        </p>
+      </section>
+    );
+  const def = SUPPLIES[site.kind],
+    target = worker ?? site;
+  const reason = raidSupplyReason(s, selection);
+  return (
+    <section className="selection-panel" aria-label="Détails du ravitaillement">
+      <PanelSkin />
+      <p className="eyebrow">Économie humaine</p>
+      <h3 className="selection-name">{worker ? def.worker : def.name}</h3>
+      <div className="selection-art">
+        <Sprite
+          asset={worker ? workerArt(worker, site) : (def.art as AssetKey)}
+          figure={!!worker}
+        />
+      </div>
+      <p className="selection-text">
+        {worker
+          ? `Récolte 10 ${def.label.toLowerCase()}, puis les livre. L’éliminer fait perdre sa cargaison et interrompt sa route pendant au moins 40 s.`
+          : `Alimente les humains en ${def.label.toLowerCase()}. Saboter ce site rapporte 15 ressources et coupe la production pendant au moins 90 s. Prendre son bâtiment arrête la production tant que vous le contrôlez.`}
+      </p>
+      <div className="selection-stats">
+        <span>
+          {Math.ceil(target.hp)} / {target.maxHp} PV
+        </span>
+        <span>
+          {worker
+            ? worker.phase === 'harvest'
+              ? 'Récolte'
+              : worker.phase === 'return'
+                ? `Livraison : ${worker.cargo}`
+                : 'Vers le gisement'
+            : supplyActive(s, site)
+              ? 'En activité'
+              : 'Production coupée'}
+        </span>
+      </div>
+      <Progress
+        className="healthbar"
+        value={(target.hp / target.maxHp) * 100}
+        aria-label="Santé du ravitaillement"
+      />
+      <GameButton className="primary-btn" disabled={!!reason} onClick={onRaid}>
+        {worker ? 'Attaquer le paysan' : 'Saboter la production'}
+      </GameButton>
+      {reason && <p className="reason">{reason}</p>}
+      <button
+        className="subtle-btn"
+        onClick={() => onSelect({ type: 'lot', id: site.home })}
+      >
+        Voir le bâtiment de livraison →
+      </button>
+      {!worker &&
+        s.workers
+          .filter((w) => w.site === site.id)
+          .map((w) => (
+            <button
+              className="subtle-btn"
+              key={w.id}
+              onClick={() => onSelect({ type: 'worker', id: w.id })}
+            >
+              Suivre le {def.worker.toLowerCase()} →
+            </button>
+          ))}
+      <p className="reason">
+        Réparation : 10 or + 10 bois. Remplacement : 8 or + 5 vivres. Sans
+        stocks, les humains doivent attendre.
+      </p>
+    </section>
+  );
+}

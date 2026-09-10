@@ -74,13 +74,15 @@ test('Time mobilizes humans even with no expansion; future raids grow stronger',
   until(early, () => early.enemies.length > 0);
   const later = createGame();
   later.elapsed = 480;
+  later.economy.level = 5; // A developed, funded human settlement.
+  later.economy.nextUpgradeAt = 600;
+  later.economy.stocks = { gold: 100, wood: 100, food: 100 };
   advance(later, 0.1);
   until(later, () => later.enemies.length > 0);
   assert.ok(later.enemies[0].maxHp > early.enemies[0].maxHp);
   assert.ok(later.enemies[0].damage > early.enemies[0].damage);
   assert.ok(later.enemies.length > early.enemies.length);
-  later.elapsed = 5000;
-  assert.equal(humanLevel(later), 6);
+  assert.equal(humanLevel(later), 5);
 });
 
 test('The guild has its own territory/time trigger and sends heroes against the manor', () => {

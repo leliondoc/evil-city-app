@@ -414,5 +414,1149 @@
     "frameWidth": 448,
     "frames": 1,
     "anchor": 0.67
+  },
+  "bestiary-goblin-idle": {
+    "src": "/tiny-swords/bestiary-goblin-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-goblin-walk": {
+    "src": "/tiny-swords/bestiary-goblin-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-goblin-attack": {
+    "src": "/tiny-swords/bestiary-goblin-attack.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-troll-idle": {
+    "src": "/tiny-swords/bestiary-troll-idle.png",
+    "width": 4608,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 12,
+    "anchor": 0.67
+  },
+  "bestiary-troll-walk": {
+    "src": "/tiny-swords/bestiary-troll-walk.png",
+    "width": 3840,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "bestiary-troll-attack-0": {
+    "src": "/tiny-swords/bestiary-troll-attack-0.png",
+    "width": 1920,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 5,
+    "anchor": 0.67
+  },
+  "bestiary-troll-attack-1": {
+    "src": "/tiny-swords/bestiary-troll-attack-1.png",
+    "width": 2304,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-troll-attack-2": {
+    "src": "/tiny-swords/bestiary-troll-attack-2.png",
+    "width": 3840,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "bestiary-skeleton-idle": {
+    "src": "/tiny-swords/bestiary-skeleton-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-skeleton-walk": {
+    "src": "/tiny-swords/bestiary-skeleton-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-skeleton-attack": {
+    "src": "/tiny-swords/bestiary-skeleton-attack.png",
+    "width": 1344,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "bestiary-minotaur-idle": {
+    "src": "/tiny-swords/bestiary-minotaur-idle.png",
+    "width": 5120,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 16,
+    "anchor": 0.67
+  },
+  "bestiary-minotaur-walk": {
+    "src": "/tiny-swords/bestiary-minotaur-walk.png",
+    "width": 2560,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-minotaur-attack": {
+    "src": "/tiny-swords/bestiary-minotaur-attack.png",
+    "width": 3840,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 12,
+    "anchor": 0.67
+  },
+  "bestiary-spear-goblin-idle": {
+    "src": "/tiny-swords/bestiary-spear-goblin-idle.png",
+    "width": 2048,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-spear-goblin-walk": {
+    "src": "/tiny-swords/bestiary-spear-goblin-walk.png",
+    "width": 1536,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-spear-goblin-attack": {
+    "src": "/tiny-swords/bestiary-spear-goblin-attack.png",
+    "width": 1792,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "bestiary-imp-idle": {
+    "src": "/tiny-swords/bestiary-imp-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-imp-walk": {
+    "src": "/tiny-swords/bestiary-imp-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-imp-attack-0": {
+    "src": "/tiny-swords/bestiary-imp-attack-0.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "bestiary-imp-attack-1": {
+    "src": "/tiny-swords/bestiary-imp-attack-1.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "bestiary-imp-attack-2": {
+    "src": "/tiny-swords/bestiary-imp-attack-2.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "bestiary-slingshot-gnome-idle": {
+    "src": "/tiny-swords/bestiary-slingshot-gnome-idle.png",
+    "width": 1920,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "bestiary-slingshot-gnome-walk": {
+    "src": "/tiny-swords/bestiary-slingshot-gnome-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-slingshot-gnome-attack": {
+    "src": "/tiny-swords/bestiary-slingshot-gnome-attack.png",
+    "width": 1728,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 9,
+    "anchor": 0.67
+  },
+  "bestiary-turtle-idle": {
+    "src": "/tiny-swords/bestiary-turtle-idle.png",
+    "width": 3200,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "bestiary-turtle-walk": {
+    "src": "/tiny-swords/bestiary-turtle-walk.png",
+    "width": 2240,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "bestiary-turtle-attack": {
+    "src": "/tiny-swords/bestiary-turtle-attack.png",
+    "width": 3200,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "bestiary-bear-idle": {
+    "src": "/tiny-swords/bestiary-bear-idle.png",
+    "width": 2048,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-bear-walk": {
+    "src": "/tiny-swords/bestiary-bear-walk.png",
+    "width": 1280,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 5,
+    "anchor": 0.67
+  },
+  "bestiary-bear-attack": {
+    "src": "/tiny-swords/bestiary-bear-attack.png",
+    "width": 2304,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 9,
+    "anchor": 0.67
+  },
+  "bestiary-bumblebee-idle": {
+    "src": "/tiny-swords/bestiary-bumblebee-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-bumblebee-walk": {
+    "src": "/tiny-swords/bestiary-bumblebee-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "bestiary-bumblebee-attack": {
+    "src": "/tiny-swords/bestiary-bumblebee-attack.png",
+    "width": 2112,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 11,
+    "anchor": 0.67
+  },
+  "bestiary-panda-idle": {
+    "src": "/tiny-swords/bestiary-panda-idle.png",
+    "width": 2560,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "bestiary-panda-walk": {
+    "src": "/tiny-swords/bestiary-panda-walk.png",
+    "width": 1536,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-panda-attack": {
+    "src": "/tiny-swords/bestiary-panda-attack.png",
+    "width": 3328,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 13,
+    "anchor": 0.67
+  },
+  "bestiary-gnome-idle": {
+    "src": "/tiny-swords/bestiary-gnome-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-gnome-walk": {
+    "src": "/tiny-swords/bestiary-gnome-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-gnome-attack": {
+    "src": "/tiny-swords/bestiary-gnome-attack.png",
+    "width": 1344,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "bestiary-giant-bat-idle": {
+    "src": "/tiny-swords/bestiary-giant-bat-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-giant-bat-walk": {
+    "src": "/tiny-swords/bestiary-giant-bat-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "bestiary-giant-bat-attack": {
+    "src": "/tiny-swords/bestiary-giant-bat-attack.png",
+    "width": 1344,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "bestiary-bomb-fish-idle": {
+    "src": "/tiny-swords/bestiary-bomb-fish-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-bomb-fish-walk": {
+    "src": "/tiny-swords/bestiary-bomb-fish-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-bomb-fish-attack": {
+    "src": "/tiny-swords/bestiary-bomb-fish-attack.png",
+    "width": 1344,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "bestiary-thief-idle": {
+    "src": "/tiny-swords/bestiary-thief-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-thief-walk": {
+    "src": "/tiny-swords/bestiary-thief-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-thief-attack": {
+    "src": "/tiny-swords/bestiary-thief-attack.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-hex-shaman-idle": {
+    "src": "/tiny-swords/bestiary-hex-shaman-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-hex-shaman-walk": {
+    "src": "/tiny-swords/bestiary-hex-shaman-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "bestiary-hex-shaman-attack": {
+    "src": "/tiny-swords/bestiary-hex-shaman-attack.png",
+    "width": 1920,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "bestiary-lizard-idle": {
+    "src": "/tiny-swords/bestiary-lizard-idle.png",
+    "width": 1344,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "bestiary-lizard-walk": {
+    "src": "/tiny-swords/bestiary-lizard-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-lizard-attack": {
+    "src": "/tiny-swords/bestiary-lizard-attack.png",
+    "width": 1728,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 9,
+    "anchor": 0.67
+  },
+  "bestiary-gnoll-idle": {
+    "src": "/tiny-swords/bestiary-gnoll-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-gnoll-walk": {
+    "src": "/tiny-swords/bestiary-gnoll-walk.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-gnoll-attack": {
+    "src": "/tiny-swords/bestiary-gnoll-attack.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-spider-idle": {
+    "src": "/tiny-swords/bestiary-spider-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-spider-walk": {
+    "src": "/tiny-swords/bestiary-spider-walk.png",
+    "width": 960,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 5,
+    "anchor": 0.67
+  },
+  "bestiary-spider-attack": {
+    "src": "/tiny-swords/bestiary-spider-attack.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-paddle-shark-idle": {
+    "src": "/tiny-swords/bestiary-paddle-shark-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-paddle-shark-walk": {
+    "src": "/tiny-swords/bestiary-paddle-shark-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-paddle-shark-attack": {
+    "src": "/tiny-swords/bestiary-paddle-shark-attack.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-harpoon-shark-idle": {
+    "src": "/tiny-swords/bestiary-harpoon-shark-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-harpoon-shark-walk": {
+    "src": "/tiny-swords/bestiary-harpoon-shark-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "bestiary-harpoon-shark-attack": {
+    "src": "/tiny-swords/bestiary-harpoon-shark-attack.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-snake-idle": {
+    "src": "/tiny-swords/bestiary-snake-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-snake-walk": {
+    "src": "/tiny-swords/bestiary-snake-walk.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "bestiary-snake-attack": {
+    "src": "/tiny-swords/bestiary-snake-attack.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "hero-warrior-idle": {
+    "src": "/tiny-swords/hero-warrior-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "hero-warrior-walk": {
+    "src": "/tiny-swords/hero-warrior-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "hero-warrior-attack": {
+    "src": "/tiny-swords/hero-warrior-attack.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "hero-lancer-idle": {
+    "src": "/tiny-swords/hero-lancer-idle.png",
+    "width": 3840,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 12,
+    "anchor": 0.67
+  },
+  "hero-lancer-walk": {
+    "src": "/tiny-swords/hero-lancer-walk.png",
+    "width": 1920,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "hero-lancer-attack": {
+    "src": "/tiny-swords/hero-lancer-attack.png",
+    "width": 960,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 3,
+    "anchor": 0.67
+  },
+  "hero-archer-idle": {
+    "src": "/tiny-swords/hero-archer-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "hero-archer-walk": {
+    "src": "/tiny-swords/hero-archer-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "hero-archer-attack": {
+    "src": "/tiny-swords/hero-archer-attack.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "hero-monk-idle": {
+    "src": "/tiny-swords/hero-monk-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "hero-monk-walk": {
+    "src": "/tiny-swords/hero-monk-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "hero-monk-attack": {
+    "src": "/tiny-swords/hero-monk-attack.png",
+    "width": 2112,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 11,
+    "anchor": 0.67
+  },
+  "guard-walk": {
+    "src": "/tiny-swords/guard-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "hero-arrow": {
+    "src": "/tiny-swords/hero-arrow.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "hero-heal": {
+    "src": "/tiny-swords/hero-heal.png",
+    "width": 2112,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 11,
+    "anchor": 0.67
+  },
+  "guild-yellow": {
+    "src": "/tiny-swords/guild-yellow.png",
+    "width": 192,
+    "height": 320,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "terrain-1": {
+    "src": "/tiny-swords/terrain-1.png",
+    "width": 576,
+    "height": 384,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "terrain-2": {
+    "src": "/tiny-swords/terrain-2.png",
+    "width": 576,
+    "height": 384,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "terrain-3": {
+    "src": "/tiny-swords/terrain-3.png",
+    "width": 576,
+    "height": 384,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "terrain-4": {
+    "src": "/tiny-swords/terrain-4.png",
+    "width": 576,
+    "height": 384,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "terrain-5": {
+    "src": "/tiny-swords/terrain-5.png",
+    "width": 576,
+    "height": 384,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "cloud-1": {
+    "src": "/tiny-swords/cloud-1.png",
+    "width": 576,
+    "height": 256,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "bush-1": {
+    "src": "/tiny-swords/bush-1.png",
+    "width": 1024,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "rock-1": {
+    "src": "/tiny-swords/rock-1.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "water-rock-1": {
+    "src": "/tiny-swords/water-rock-1.png",
+    "width": 1024,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 16,
+    "anchor": 0.67
+  },
+  "tree-1": {
+    "src": "/tiny-swords/tree-1.png",
+    "width": 1536,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.8
+  },
+  "cloud-2": {
+    "src": "/tiny-swords/cloud-2.png",
+    "width": 576,
+    "height": 256,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "bush-2": {
+    "src": "/tiny-swords/bush-2.png",
+    "width": 1024,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "rock-2": {
+    "src": "/tiny-swords/rock-2.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "water-rock-2": {
+    "src": "/tiny-swords/water-rock-2.png",
+    "width": 1024,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 16,
+    "anchor": 0.67
+  },
+  "tree-2": {
+    "src": "/tiny-swords/tree-2.png",
+    "width": 1536,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.8
+  },
+  "cloud-3": {
+    "src": "/tiny-swords/cloud-3.png",
+    "width": 576,
+    "height": 256,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "bush-3": {
+    "src": "/tiny-swords/bush-3.png",
+    "width": 1024,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "rock-3": {
+    "src": "/tiny-swords/rock-3.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "water-rock-3": {
+    "src": "/tiny-swords/water-rock-3.png",
+    "width": 1024,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 16,
+    "anchor": 0.67
+  },
+  "tree-3": {
+    "src": "/tiny-swords/tree-3.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.8
+  },
+  "cloud-4": {
+    "src": "/tiny-swords/cloud-4.png",
+    "width": 576,
+    "height": 256,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "bush-4": {
+    "src": "/tiny-swords/bush-4.png",
+    "width": 1024,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "rock-4": {
+    "src": "/tiny-swords/rock-4.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "water-rock-4": {
+    "src": "/tiny-swords/water-rock-4.png",
+    "width": 1024,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 16,
+    "anchor": 0.67
+  },
+  "tree-4": {
+    "src": "/tiny-swords/tree-4.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.8
+  },
+  "sheep": {
+    "src": "/tiny-swords/sheep.png",
+    "width": 1536,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 12,
+    "anchor": 0.67
+  },
+  "gold-rock": {
+    "src": "/tiny-swords/gold-rock.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "terrain-shadow": {
+    "src": "/tiny-swords/terrain-shadow.png",
+    "width": 192,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "house-blue-2": {
+    "src": "/tiny-swords/house-blue-2.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "house-blue-3": {
+    "src": "/tiny-swords/house-blue-3.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "house-purple-2": {
+    "src": "/tiny-swords/house-purple-2.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "house-purple-3": {
+    "src": "/tiny-swords/house-purple-3.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "pawn-wood-walk": {
+    "src": "/tiny-swords/pawn-wood-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-wood-work": {
+    "src": "/tiny-swords/pawn-wood-work.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-wood-carry": {
+    "src": "/tiny-swords/pawn-wood-carry.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-wood-idle": {
+    "src": "/tiny-swords/pawn-wood-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "pawn-gold-walk": {
+    "src": "/tiny-swords/pawn-gold-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-gold-work": {
+    "src": "/tiny-swords/pawn-gold-work.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-gold-carry": {
+    "src": "/tiny-swords/pawn-gold-carry.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-gold-idle": {
+    "src": "/tiny-swords/pawn-gold-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "pawn-food-walk": {
+    "src": "/tiny-swords/pawn-food-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-food-work": {
+    "src": "/tiny-swords/pawn-food-work.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "pawn-food-carry": {
+    "src": "/tiny-swords/pawn-food-carry.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "pawn-food-idle": {
+    "src": "/tiny-swords/pawn-food-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "ui-paper": {
+    "src": "/tiny-swords/ui-paper.png",
+    "width": 320,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-banner": {
+    "src": "/tiny-swords/ui-banner.png",
+    "width": 448,
+    "height": 448,
+    "frameWidth": 448,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-wood": {
+    "src": "/tiny-swords/ui-wood.png",
+    "width": 448,
+    "height": 448,
+    "frameWidth": 448,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-ribbons": {
+    "src": "/tiny-swords/ui-ribbons.png",
+    "width": 448,
+    "height": 640,
+    "frameWidth": 448,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-button": {
+    "src": "/tiny-swords/ui-button.png",
+    "width": 320,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-button-pressed": {
+    "src": "/tiny-swords/ui-button-pressed.png",
+    "width": 320,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-button-red": {
+    "src": "/tiny-swords/ui-button-red.png",
+    "width": 320,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-cursor": {
+    "src": "/tiny-swords/ui-cursor.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-gold": {
+    "src": "/tiny-swords/ui-gold.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-wood-icon": {
+    "src": "/tiny-swords/ui-wood-icon.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-food": {
+    "src": "/tiny-swords/ui-food.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-sword": {
+    "src": "/tiny-swords/ui-sword.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-shield": {
+    "src": "/tiny-swords/ui-shield.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
   }
 }

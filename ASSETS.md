@@ -4,7 +4,7 @@ Auteur : Pixel Frog. [Source officielle](https://pixelfrog-assets.itch.io/tiny-s
 
 ## Provenance et licence
 
-Tiny Swords (Free Pack).zip a été téléchargé depuis la page officielle le 10 septembre 2026. Tiny Swords (Enemy Pack).zip a été acheté et fourni par l’utilisateur le même jour.
+Le dossier Tiny Swords (Free Pack) a été fourni par l’utilisateur dans Downloads le 10 septembre 2026. Tiny Swords (Enemy Pack).zip a été acheté et fourni par l’utilisateur le même jour.
 
 Les archives complètes et les fichiers Aseprite restent hors du site distribué. Les PNG intégrés sont copiés sans modification de leur dessin. Aucune image générée n’est utilisée dans cette version.
 
@@ -23,4 +23,8 @@ Les dimensions sont décrites dans `app/game/assets.json`. Les tags des sources 
 
 Les arbres, les buissons et la fumée de la tanière utilisent également les animations originales. La mairie utilise le château bleu, le manoir le château violet, la forge la caserne violette et la crypte le monastère violet. Les rues pavées sont une géométrie de terrain simple dessinée par le moteur.
 
-Les autres ennemis du pack restent disponibles dans l’archive locale pour les prochaines étapes. Ils ne possèdent pas encore de comportements jouables.
+Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les quatre recrutables ne possèdent pas encore de comportements jouables.
+
+`scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.
+
+Les textures UI sont des planches de morceaux séparés. `PackUI.tsx` les assemble en SVG : neuf morceaux pour les panneaux et boutons, trois pour le ruban. Les bordures restent fixes lorsque leur contenu change de taille. Aucun PNG n’est redessiné.

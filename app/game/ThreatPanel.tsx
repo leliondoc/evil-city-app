@@ -45,9 +45,11 @@ export function ThreatPanel({
         const Icon = kind === 'guard' ? Shield : Swords;
         const status = stopped
           ? 'Renforts coupés'
-          : m.active && m.nextRaidAt !== null
-            ? `Départ dans ${clock(m.nextRaidAt - s.elapsed)}`
-            : `${Math.round(PRESSURE[kind].territory * 100)} % d’emprise ou ${clock(PRESSURE[kind].time)}`;
+          : m.starved
+            ? 'Attend du ravitaillement'
+            : m.active && m.nextRaidAt !== null
+              ? `Départ dans ${clock(m.nextRaidAt - s.elapsed)}`
+              : `${Math.round(PRESSURE[kind].territory * 100)} % d’emprise ou ${clock(PRESSURE[kind].time)}`;
         return (
           <button
             key={kind}
@@ -57,7 +59,7 @@ export function ThreatPanel({
             title={
               m.active
                 ? m.reason
-                : 'Les humains gagnent un niveau toutes les 2 minutes, jusqu’au niveau 6.'
+                : 'Toutes les 2 minutes, les humains peuvent financer un niveau avec leurs livraisons. Sabotez leur ravitaillement.'
             }
           >
             <span>

@@ -18,7 +18,10 @@ export type Resources = {
   mana: number;
 };
 export type Cost = Partial<Resources>;
-export type Selection = { type: 'lot' | 'unit' | 'enemy'; id: number };
+export type Selection = {
+  type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource';
+  id: number;
+};
 export type BuildingDef = {
   name: string;
   description: string;
@@ -217,7 +220,15 @@ export interface Unit extends Point {
   id: number;
   kind: CreatureKind;
   hp: number;
-  task: 'idle' | 'build' | 'attack' | 'move' | 'forage' | 'defend';
+  task:
+    | 'idle'
+    | 'build'
+    | 'attack'
+    | 'move'
+    | 'forage'
+    | 'defend'
+    | 'sabotage'
+    | 'hunt';
   path: Point[];
   target: number | null;
   idleTime: number;
@@ -225,6 +236,45 @@ export interface Unit extends Point {
   fighting: boolean;
 }
 export type EnemyKind = 'guard' | 'hero';
+export type HeroRole = 'warrior' | 'lancer' | 'archer' | 'monk';
+export const HEROES = {
+  warrior: {
+    name: 'Chevalier de l’Aube',
+    hp: 140,
+    damage: 12,
+    speed: 1.5,
+    range: 1.4,
+    description:
+      'Le combattant de première ligne de la guilde. Il marche sur votre manoir et affronte vos créatures au corps à corps.',
+  },
+  lancer: {
+    name: 'Lancier de l’Aube',
+    hp: 175,
+    damage: 10,
+    speed: 1.25,
+    range: 2.3,
+    description:
+      'Un héros robuste dont la lance frappe avant le contact. Il protège l’avancée de son expédition.',
+  },
+  archer: {
+    name: 'Archère de l’Aube',
+    hp: 70,
+    damage: 9,
+    speed: 1.6,
+    range: 5.5,
+    description:
+      'Elle tire des flèches à distance. Approchez vos combattants pour la neutraliser ; les bâtiments bloquent ses tirs.',
+  },
+  monk: {
+    name: 'Moine de l’Aube',
+    hp: 85,
+    damage: 0,
+    speed: 1.35,
+    range: 4,
+    description:
+      'Il soigne les membres blessés de son expédition à proximité. Il ne peut pas endommager vos bâtiments.',
+  },
+} as const;
 export const ENEMIES = {
   guard: {
     name: 'Garde du quartier',
@@ -246,6 +296,7 @@ export const ENEMIES = {
 export interface Enemy extends Point {
   id: number;
   kind: EnemyKind;
+  role: HeroRole;
   hp: number;
   maxHp: number;
   damage: number;
@@ -254,12 +305,27 @@ export interface Enemy extends Point {
   target: number;
   facing: number;
   fighting: boolean;
+  healTarget: number | null;
+  attackCooldown: number;
+}
+export function enemyDefinition(enemy: Pick<Enemy, 'kind' | 'role'>) {
+  return enemy.kind === 'guard'
+    ? { ...ENEMIES.guard, range: 1.4 }
+    : HEROES[enemy.role];
+}
+export interface Projectile extends Point {
+  id: number;
+  target: { type: 'lot' | 'unit'; id: number };
+  damage: number;
+  angle: number;
+  life: number;
 }
 export interface Mobilization {
   active: boolean;
   nextRaidAt: number | null;
   waves: number;
   reason: string;
+  starved: boolean;
 }
 export const PRESSURE = {
   guard: {
@@ -283,16 +349,207 @@ export function territory(s: State) {
   return s.lots.filter((l) => l.owned).length / s.lots.length;
 }
 export function humanLevel(s: State) {
-  return Math.min(
-    PRESSURE.maxLevel,
-    1 + Math.floor(s.elapsed / PRESSURE.levelEvery),
-  );
+  return s.economy.level;
 }
 export function sourceBuilding(s: State, kind: EnemyKind) {
   return s.lots.find((l) => l.kind === PRESSURE[kind].source);
 }
+export type Supply = 'gold' | 'wood' | 'food';
+export const SUPPLIES = {
+  gold: {
+    name: 'Mine d’or',
+    worker: 'Mineur',
+    label: 'Or',
+    tool: 'Pickaxe',
+    cargo: 'Gold',
+    art: 'gold-rock',
+  },
+  wood: {
+    name: 'Camp de bûcherons',
+    worker: 'Bûcheron',
+    label: 'Bois',
+    tool: 'Axe',
+    cargo: 'Wood',
+    art: 'tree-2',
+  },
+  food: {
+    name: 'Bergerie',
+    worker: 'Berger',
+    label: 'Vivres',
+    tool: 'Knife',
+    cargo: 'Meat',
+    art: 'sheep',
+  },
+} as const;
+export const UPGRADE_SUPPLIES = { gold: 25, wood: 20, food: 15 };
+export interface ResourceSite extends Point {
+  id: number;
+  kind: Supply;
+  home: number;
+  hp: number;
+  maxHp: number;
+  repairAt: number;
+  recruitAt: number;
+}
+export interface HumanWorker extends Point {
+  id: number;
+  site: number;
+  hp: number;
+  maxHp: number;
+  path: Point[];
+  facing: number;
+  phase: 'outbound' | 'harvest' | 'return';
+  cargo: number;
+  progress: number;
+}
+export function supplyActive(s: State, site: ResourceSite) {
+  return !s.lots[site.home].owned && site.hp > 0;
+}
+export function suppliesAvailable(
+  s: State,
+  cost: Partial<Record<Supply, number>>,
+) {
+  return Object.entries(cost).every(
+    ([key, value]) => s.economy.stocks[key as Supply] >= value,
+  );
+}
+function spendSupplies(s: State, cost: Partial<Record<Supply, number>>) {
+  for (const [key, value] of Object.entries(cost))
+    s.economy.stocks[key as Supply] -= value;
+}
+function spawnWorker(s: State, site: ResourceSite) {
+  const home = entrance(s.lots[site.home]);
+  s.workers.push({
+    id: s.nextId++,
+    ...home,
+    site: site.id,
+    hp: 35,
+    maxHp: 35,
+    path: findPath(home, site),
+    facing: 1,
+    phase: 'outbound',
+    cargo: 0,
+    progress: 0,
+  });
+}
+export function raidSupplyReason(s: State, target: Selection) {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  if (!army(s).length)
+    return 'Recrutez des combattants pour piller les humains.';
+  if (target.type === 'resource') {
+    const site = s.sites.find((site) => site.id === target.id);
+    if (!site || !supplyActive(s, site)) return 'Ce site ne produit plus.';
+  } else if (target.type === 'worker') {
+    if (!s.workers.some((w) => w.id === target.id && w.hp > 0))
+      return 'Ce paysan a quitté le quartier.';
+  } else return 'Choisissez un paysan ou un site de production.';
+  return '';
+}
+export function raidSupply(s: State, target: Selection) {
+  const error = raidSupplyReason(s, target);
+  if (error) return error;
+  const point =
+    target.type === 'resource'
+      ? s.sites.find((site) => site.id === target.id)!
+      : s.workers.find((w) => w.id === target.id)!;
+  for (const u of army(s))
+    assign(
+      u,
+      point,
+      target.type === 'resource' ? 'sabotage' : 'hunt',
+      target.id,
+    );
+  announce(
+    s,
+    'Votre armée part couper le ravitaillement humain. La garde peut intervenir sur le trajet.',
+  );
+  return '';
+}
+function advanceEconomy(s: State, dt: number) {
+  for (const site of s.sites) {
+    if (s.lots[site.home].owned) continue;
+    if (
+      site.hp <= 0 &&
+      s.elapsed >= site.repairAt &&
+      suppliesAvailable(s, { gold: 10, wood: 10 })
+    ) {
+      spendSupplies(s, { gold: 10, wood: 10 });
+      site.hp = site.maxHp;
+      announce(
+        s,
+        `${SUPPLIES[site.kind].name} réparée : la production humaine reprend.`,
+      );
+    }
+    if (
+      supplyActive(s, site) &&
+      !s.workers.some((w) => w.site === site.id && w.hp > 0) &&
+      s.elapsed >= site.recruitAt &&
+      suppliesAvailable(s, { gold: 8, food: 5 })
+    ) {
+      spendSupplies(s, { gold: 8, food: 5 });
+      spawnWorker(s, site);
+    }
+  }
+  for (const w of s.workers) {
+    const site = s.sites[w.site];
+    if (w.hp <= 0 || !supplyActive(s, site)) continue;
+    walk(w, 1.8 * dt);
+    if (w.path.length) continue;
+    if (w.phase === 'outbound') {
+      w.phase = 'harvest';
+      w.progress = 0;
+    }
+    if (w.phase === 'harvest') {
+      w.progress += dt;
+      if (w.progress >= 6) {
+        w.cargo = 10;
+        w.phase = 'return';
+        w.path = findPath(w, entrance(s.lots[site.home]));
+      }
+    } else if (w.phase === 'return') {
+      s.economy.stocks[site.kind] += w.cargo;
+      s.economy.delivered[site.kind] += w.cargo;
+      w.cargo = 0;
+      w.phase = 'outbound';
+      w.path = findPath(w, site);
+    }
+  }
+  if (
+    s.economy.level < PRESSURE.maxLevel &&
+    s.elapsed >= s.economy.nextUpgradeAt &&
+    suppliesAvailable(s, UPGRADE_SUPPLIES)
+  ) {
+    spendSupplies(s, UPGRADE_SUPPLIES);
+    s.economy.level++;
+    s.economy.nextUpgradeAt = s.elapsed + PRESSURE.levelEvery;
+  }
+}
+function cleanupSupplies(s: State) {
+  for (const w of s.workers) {
+    const site = s.sites[w.site];
+    if (w.hp <= 0) {
+      s.resources[site.kind] += w.cargo || 4;
+      site.recruitAt = s.elapsed + 40;
+      announce(
+        s,
+        `${SUPPLIES[site.kind].worker} éliminé. Livraison perdue ; remplacement dans au moins 40 s.`,
+      );
+    }
+  }
+  s.workers = s.workers.filter(
+    (w) => w.hp > 0 && supplyActive(s, s.sites[w.site]),
+  );
+}
 export interface State {
   resources: Resources;
+  economy: {
+    stocks: Record<Supply, number>;
+    delivered: Record<Supply, number>;
+    level: number;
+    nextUpgradeAt: number;
+  };
+  workers: HumanWorker[];
+  sites: ResourceSite[];
   lots: Lot[];
   units: Unit[];
   elapsed: number;
@@ -304,6 +561,7 @@ export interface State {
   won: boolean;
   lost: boolean;
   enemies: Enemy[];
+  projectiles: Projectile[];
   mobilization: Record<EnemyKind, Mobilization>;
   defeatedEnemies: number;
   humanLevelAnnounced: number;
@@ -325,6 +583,48 @@ export function createGame(): State {
   ];
   const state: State = {
     resources: { gold: 300, wood: 125, food: 60, mana: 30 },
+    economy: {
+      stocks: { gold: 45, wood: 25, food: 35 },
+      delivered: { gold: 0, wood: 0, food: 0 },
+      level: 1,
+      nextUpgradeAt: 120,
+    },
+    workers: [],
+    sites: [
+      {
+        id: 0,
+        kind: 'food',
+        home: 1,
+        x: 18.5,
+        y: 1.5,
+        hp: 110,
+        maxHp: 110,
+        repairAt: 0,
+        recruitAt: 0,
+      },
+      {
+        id: 1,
+        kind: 'gold',
+        home: 5,
+        x: 30.5,
+        y: 10.5,
+        hp: 140,
+        maxHp: 140,
+        repairAt: 0,
+        recruitAt: 0,
+      },
+      {
+        id: 2,
+        kind: 'wood',
+        home: 8,
+        x: 30.5,
+        y: 25.5,
+        hp: 120,
+        maxHp: 120,
+        repairAt: 0,
+        recruitAt: 0,
+      },
+    ],
     elapsed: 0,
     nextId: 1,
     lots: kinds.map((kind, id) => ({
@@ -365,9 +665,22 @@ export function createGame(): State {
     won: false,
     lost: false,
     enemies: [],
+    projectiles: [],
     mobilization: {
-      guard: { active: false, nextRaidAt: null, waves: 0, reason: '' },
-      hero: { active: false, nextRaidAt: null, waves: 0, reason: '' },
+      guard: {
+        active: false,
+        nextRaidAt: null,
+        waves: 0,
+        reason: '',
+        starved: false,
+      },
+      hero: {
+        active: false,
+        nextRaidAt: null,
+        waves: 0,
+        reason: '',
+        starved: false,
+      },
     },
     defeatedEnemies: 0,
     humanLevelAnnounced: 1,
@@ -375,6 +688,7 @@ export function createGame(): State {
     recruited: 0,
   };
   for (let i = 0; i < 3; i++) spawnUnit(state, 'goblin');
+  for (const site of state.sites) spawnWorker(state, site);
   return state;
 }
 export function entrance(lot: Lot): Point {
@@ -755,6 +1069,7 @@ function mobilize(s: State) {
       source = sourceBuilding(s, kind);
     if (!source || source.owned) {
       m.active = false;
+      m.starved = false;
       m.nextRaidAt = null;
       continue;
     }
@@ -776,17 +1091,34 @@ function mobilize(s: State) {
     if (m.nextRaidAt === null || s.elapsed < m.nextRaidAt) continue;
     if (s.enemies.length >= 16) continue;
     const level = humanLevel(s),
-      def = ENEMIES[kind],
       point = entrance(source);
+    const party: HeroRole[] =
+      level === 1
+        ? ['warrior']
+        : level === 2
+          ? ['warrior', 'archer']
+          : level === 3
+            ? ['warrior', 'archer', 'monk']
+            : level === 4
+              ? ['warrior', 'lancer', 'archer', 'monk']
+              : ['warrior', 'lancer', 'archer', 'monk', 'warrior'];
     const count =
-      kind === 'guard'
-        ? 2 + Math.floor((level - 1) / 2)
-        : 1 + Math.floor(level / 2);
+      kind === 'guard' ? 2 + Math.floor((level - 1) / 2) : party.length;
+    const cost = {
+      gold: count * (kind === 'guard' ? 8 : 16),
+      food: count * (kind === 'guard' ? 4 : 8),
+    };
+    m.starved = !suppliesAvailable(s, cost);
+    if (m.starved) continue;
+    spendSupplies(s, cost);
     for (let i = 0; i < count; i++) {
+      const role = kind === 'guard' ? 'warrior' : party[i];
+      const def = enemyDefinition({ kind, role });
       const hp = Math.round(def.hp * (1 + (level - 1) * 0.15));
       const enemy: Enemy = {
         id: s.nextId++,
         kind,
+        role,
         ...point,
         x: point.x + i * 0.35,
         hp,
@@ -797,6 +1129,8 @@ function mobilize(s: State) {
         target: 6,
         facing: -1,
         fighting: false,
+        healTarget: null,
+        attackCooldown: 0.6,
       };
       const target = raidTarget(s, enemy);
       enemy.target = target.id;
@@ -850,32 +1184,126 @@ function loseLot(s: State, lot: Lot) {
     `${previousName} a été repris par la garde. Vous perdez sa production.`,
   );
 }
+export function clearShot(from: Point, to: Point) {
+  const steps = Math.ceil(distanceBetween(from, to) * 4);
+  for (let i = 1; i < steps; i++)
+    if (
+      blocked(
+        Math.floor(from.x + ((to.x - from.x) * i) / steps),
+        Math.floor(from.y + ((to.y - from.y) * i) / steps),
+      )
+    )
+      return false;
+  return true;
+}
+function shoot(s: State, e: Enemy, target: Projectile['target'], point: Point) {
+  if (e.attackCooldown > 0) return;
+  e.attackCooldown = 0.8;
+  s.projectiles.push({
+    id: s.nextId++,
+    x: e.x,
+    y: e.y,
+    target,
+    damage: e.damage * 0.8,
+    angle: Math.atan2(point.y - e.y, point.x - e.x),
+    life: 2,
+  });
+}
+function advanceProjectiles(s: State, dt: number) {
+  for (const p of s.projectiles) {
+    p.life -= dt;
+    const target =
+      p.target.type === 'unit'
+        ? s.units.find((u) => u.id === p.target.id && u.hp > 0)
+        : s.lots[p.target.id];
+    if (!target || ('owned' in target && !target.owned)) {
+      p.life = 0;
+      continue;
+    }
+    const destination = 'owned' in target ? entrance(target) : target;
+    if (!clearShot(p, destination)) {
+      p.life = 0;
+      continue;
+    }
+    const distance = distanceBetween(p, destination);
+    if (distance <= 11 * dt) {
+      target.hp = Math.max(0, target.hp - p.damage);
+      if ('owned' in target && target.hp <= 0) loseLot(s, target);
+      p.life = 0;
+    } else {
+      p.angle = Math.atan2(destination.y - p.y, destination.x - p.x);
+      p.x += Math.cos(p.angle) * 11 * dt;
+      p.y += Math.sin(p.angle) * 11 * dt;
+    }
+  }
+  s.projectiles = s.projectiles.filter((p) => p.life > 0);
+}
 function advanceEnemies(s: State, dt: number) {
   for (const e of s.enemies) {
     if (e.hp <= 0 || s.lost) continue;
     e.fighting = false;
-    const victim = nearest(e, s.units, 4);
+    e.healTarget = null;
+    e.attackCooldown -= dt;
+    const def = enemyDefinition(e);
+    if (e.role === 'monk') {
+      const ally = nearest(
+        e,
+        s.enemies.filter(
+          (ally) =>
+            ally.id !== e.id &&
+            ally.kind === 'hero' &&
+            ally.hp < ally.maxHp &&
+            clearShot(e, ally),
+        ),
+        4,
+      );
+      if (ally) {
+        e.path = [];
+        e.healTarget = ally.id;
+        ally.hp = Math.min(
+          ally.maxHp,
+          ally.hp + 7 * (1 + (e.level - 1) * 0.1) * dt,
+        );
+        e.facing = ally.x >= e.x ? 1 : -1;
+        continue;
+      }
+    }
+    const victim =
+      e.role === 'monk'
+        ? undefined
+        : nearest(e, s.units, Math.max(4, def.range));
     if (victim) {
-      if (distanceBetween(e, victim) <= 1.4) {
+      if (distanceBetween(e, victim) <= def.range && clearShot(e, victim)) {
+        e.path = [];
         e.fighting = true;
         e.facing = victim.x >= e.x ? 1 : -1;
-        victim.hp -= e.damage * dt;
+        if (e.role === 'archer')
+          shoot(s, e, { type: 'unit', id: victim.id }, victim);
+        else victim.hp -= e.damage * dt;
         continue;
       }
       e.path = findPath(e, victim);
     } else {
       if (!s.lots[e.target].owned) e.target = raidTarget(s, e).id;
       const destination = entrance(s.lots[e.target]);
-      if (distanceBetween(e, destination) <= 1.3) {
-        e.fighting = true;
+      if (
+        distanceBetween(e, destination) <= (e.role === 'archer' ? 5 : 1.3) &&
+        clearShot(e, destination)
+      ) {
+        e.path = [];
+        e.fighting = e.damage > 0;
         const lot = s.lots[e.target];
-        lot.hp = Math.max(0, lot.hp - e.damage * dt);
-        if (lot.hp <= 0) loseLot(s, lot);
+        if (e.role === 'archer')
+          shoot(s, e, { type: 'lot', id: lot.id }, destination);
+        else {
+          lot.hp = Math.max(0, lot.hp - e.damage * dt);
+          if (lot.hp <= 0) loseLot(s, lot);
+        }
         continue;
       }
       e.path = findPath(e, destination);
     }
-    walk(e, ENEMIES[e.kind].speed * dt);
+    walk(e, def.speed * dt);
   }
 }
 export function tick(s: State, dt: number) {
@@ -890,6 +1318,7 @@ export function tick(s: State, dt: number) {
 }
 function tickStep(s: State, dt: number) {
   s.elapsed += dt;
+  advanceEconomy(s, dt);
   if (humanLevel(s) > s.humanLevelAnnounced) {
     s.humanLevelAnnounced = humanLevel(s);
     announce(
@@ -931,6 +1360,37 @@ function tickStep(s: State, dt: number) {
         u.facing = threat.x >= u.x ? 1 : -1;
         threat.hp -= armyDamage(s, u) * dt;
       }
+    }
+    if (!u.fighting && (u.task === 'sabotage' || u.task === 'hunt')) {
+      const target =
+        u.task === 'sabotage'
+          ? s.sites.find(
+              (site) => site.id === u.target && supplyActive(s, site),
+            )
+          : s.workers.find(
+              (w) =>
+                w.id === u.target &&
+                w.hp > 0 &&
+                supplyActive(s, s.sites[w.site]),
+            );
+      if (!target) {
+        u.task = 'idle';
+        u.target = null;
+        u.path = [];
+      } else if (distanceBetween(u, target) <= 1.5 && clearShot(u, target)) {
+        u.fighting = true;
+        u.facing = target.x >= u.x ? 1 : -1;
+        target.hp = Math.max(0, target.hp - armyDamage(s, u) * dt);
+        if ('repairAt' in target && target.hp === 0) {
+          target.repairAt = s.elapsed + 90;
+          target.recruitAt = target.repairAt;
+          s.resources[target.kind] += 15;
+          announce(
+            s,
+            `${SUPPLIES[target.kind].name} sabotée ! +15 ${SUPPLIES[target.kind].label.toLowerCase()}. Production coupée pendant au moins 90 s.`,
+          );
+        }
+      } else u.path = findPath(u, target);
     }
     if (!u.fighting) walk(u, CREATURES[u.kind].speed * dt);
     if (!u.path.length) {
@@ -1035,7 +1495,9 @@ function tickStep(s: State, dt: number) {
       }
     }
   }
+  cleanupSupplies(s);
   advanceEnemies(s, dt);
+  advanceProjectiles(s, dt);
   const defeated = s.enemies.filter((e) => e.hp <= 0);
   s.defeatedEnemies += defeated.length;
   s.resources.gold += defeated.length * 12;
@@ -1055,7 +1517,8 @@ function tickStep(s: State, dt: number) {
     !s.lost &&
     hasBuilding(s, 'hall') &&
     hasBuilding(s, 'guild') &&
-    !s.enemies.length
+    !s.enemies.length &&
+    !s.projectiles.length
   ) {
     s.won = true;
     announce(

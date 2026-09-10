@@ -1,0 +1,500 @@
+[
+  {
+    "id": "goblin",
+    "original": "Torch Goblin",
+    "name": "Gobelin bâtisseur",
+    "description": "Une torche à la main, il construit et récupère du bois.",
+    "group": "creatures",
+    "recruitable": true,
+    "actions": {
+      "idle": [
+        "bestiary-goblin-idle"
+      ],
+      "walk": [
+        "bestiary-goblin-walk"
+      ],
+      "attack": [
+        "bestiary-goblin-attack"
+      ]
+    }
+  },
+  {
+    "id": "troll",
+    "original": "Troll",
+    "name": "Troll",
+    "description": "Un gros bras dont la frappe se prépare, s’abat, puis laisse place à la récupération.",
+    "group": "creatures",
+    "recruitable": true,
+    "actions": {
+      "idle": [
+        "bestiary-troll-idle"
+      ],
+      "walk": [
+        "bestiary-troll-walk"
+      ],
+      "attack": [
+        "bestiary-troll-attack-0",
+        "bestiary-troll-attack-1",
+        "bestiary-troll-attack-2"
+      ]
+    }
+  },
+  {
+    "id": "skeleton",
+    "original": "Skull",
+    "name": "Squelette",
+    "description": "Un soldat infatigable qui ne réclame jamais de repas.",
+    "group": "creatures",
+    "recruitable": true,
+    "actions": {
+      "idle": [
+        "bestiary-skeleton-idle"
+      ],
+      "walk": [
+        "bestiary-skeleton-walk"
+      ],
+      "attack": [
+        "bestiary-skeleton-attack"
+      ]
+    }
+  },
+  {
+    "id": "minotaur",
+    "original": "Minotaur",
+    "name": "Minotaure",
+    "description": "Un colosse de siège gourmand en nourriture et en place.",
+    "group": "creatures",
+    "recruitable": true,
+    "actions": {
+      "idle": [
+        "bestiary-minotaur-idle"
+      ],
+      "walk": [
+        "bestiary-minotaur-walk"
+      ],
+      "attack": [
+        "bestiary-minotaur-attack"
+      ]
+    }
+  },
+  {
+    "id": "spear-goblin",
+    "original": "Spear Goblin",
+    "name": "Gobelin lancier",
+    "description": "Un gobelin équipé d’une longue lance et d’un bouclier de fortune.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-spear-goblin-idle"
+      ],
+      "walk": [
+        "bestiary-spear-goblin-walk"
+      ],
+      "attack": [
+        "bestiary-spear-goblin-attack"
+      ]
+    }
+  },
+  {
+    "id": "imp",
+    "original": "Imp",
+    "name": "Diablotin",
+    "description": "Une petite créature ailée. Son attaque enchaîne préparation, assaut et fin de mouvement.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-imp-idle"
+      ],
+      "walk": [
+        "bestiary-imp-walk"
+      ],
+      "attack": [
+        "bestiary-imp-attack-0",
+        "bestiary-imp-attack-1",
+        "bestiary-imp-attack-2"
+      ]
+    }
+  },
+  {
+    "id": "slingshot-gnome",
+    "original": "Slingshot Gnome",
+    "name": "Gnome frondeur",
+    "description": "Un gnome qui préfère sa fronde aux échanges de coups.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-slingshot-gnome-idle"
+      ],
+      "walk": [
+        "bestiary-slingshot-gnome-walk"
+      ],
+      "attack": [
+        "bestiary-slingshot-gnome-attack"
+      ]
+    }
+  },
+  {
+    "id": "turtle",
+    "original": "Turtle",
+    "name": "Tortue géante",
+    "description": "Une carapace imposante et une démarche lourde.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-turtle-idle"
+      ],
+      "walk": [
+        "bestiary-turtle-walk"
+      ],
+      "attack": [
+        "bestiary-turtle-attack"
+      ]
+    }
+  },
+  {
+    "id": "bear",
+    "original": "Bear",
+    "name": "Ours",
+    "description": "Une masse de fourrure dont les griffes inspirent le respect.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-bear-idle"
+      ],
+      "walk": [
+        "bestiary-bear-walk"
+      ],
+      "attack": [
+        "bestiary-bear-attack"
+      ]
+    }
+  },
+  {
+    "id": "bumblebee",
+    "original": "Bumblebee",
+    "name": "Bourdon géant",
+    "description": "Un insecte volant qui fond sur sa cible.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-bumblebee-idle"
+      ],
+      "walk": [
+        "bestiary-bumblebee-walk"
+      ],
+      "attack": [
+        "bestiary-bumblebee-attack"
+      ]
+    }
+  },
+  {
+    "id": "panda",
+    "original": "Panda",
+    "name": "Panda combattant",
+    "description": "Un voisin massif, bien plus vif qu’il n’en a l’air.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-panda-idle"
+      ],
+      "walk": [
+        "bestiary-panda-walk"
+      ],
+      "attack": [
+        "bestiary-panda-attack"
+      ]
+    }
+  },
+  {
+    "id": "gnome",
+    "original": "Gnome",
+    "name": "Gnome",
+    "description": "Un petit combattant qui manie sa lame avec énergie.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-gnome-idle"
+      ],
+      "walk": [
+        "bestiary-gnome-walk"
+      ],
+      "attack": [
+        "bestiary-gnome-attack"
+      ]
+    }
+  },
+  {
+    "id": "giant-bat",
+    "original": "Giant Bat",
+    "name": "Chauve-souris géante",
+    "description": "Une silhouette ailée taillée pour les nuits du quartier.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-giant-bat-idle"
+      ],
+      "walk": [
+        "bestiary-giant-bat-walk"
+      ],
+      "attack": [
+        "bestiary-giant-bat-attack"
+      ]
+    }
+  },
+  {
+    "id": "bomb-fish",
+    "original": "Bomb Fish",
+    "name": "Poisson artificier",
+    "description": "Un curieux artilleur qui lance des bombes.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-bomb-fish-idle"
+      ],
+      "walk": [
+        "bestiary-bomb-fish-walk"
+      ],
+      "attack": [
+        "bestiary-bomb-fish-attack"
+      ]
+    }
+  },
+  {
+    "id": "thief",
+    "original": "Thief",
+    "name": "Voleur",
+    "description": "Une silhouette encapuchonnée armée de deux lames.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-thief-idle"
+      ],
+      "walk": [
+        "bestiary-thief-walk"
+      ],
+      "attack": [
+        "bestiary-thief-attack"
+      ]
+    }
+  },
+  {
+    "id": "hex-shaman",
+    "original": "Hex Shaman",
+    "name": "Chaman des maléfices",
+    "description": "Un sorcier masqué qui canalise une magie inquiétante.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-hex-shaman-idle"
+      ],
+      "walk": [
+        "bestiary-hex-shaman-walk"
+      ],
+      "attack": [
+        "bestiary-hex-shaman-attack"
+      ]
+    }
+  },
+  {
+    "id": "lizard",
+    "original": "Lizard",
+    "name": "Lézard guerrier",
+    "description": "Un reptile agile, toujours prêt à dégainer.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-lizard-idle"
+      ],
+      "walk": [
+        "bestiary-lizard-walk"
+      ],
+      "attack": [
+        "bestiary-lizard-attack"
+      ]
+    }
+  },
+  {
+    "id": "gnoll",
+    "original": "Gnoll",
+    "name": "Gnoll",
+    "description": "Un combattant sauvage qui projette son arme.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-gnoll-idle"
+      ],
+      "walk": [
+        "bestiary-gnoll-walk"
+      ],
+      "attack": [
+        "bestiary-gnoll-attack"
+      ]
+    }
+  },
+  {
+    "id": "spider",
+    "original": "Spider",
+    "name": "Araignée géante",
+    "description": "Huit pattes pour explorer les coins oubliés du domaine.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-spider-idle"
+      ],
+      "walk": [
+        "bestiary-spider-walk"
+      ],
+      "attack": [
+        "bestiary-spider-attack"
+      ]
+    }
+  },
+  {
+    "id": "paddle-shark",
+    "original": "Paddle Shark",
+    "name": "Requin à pagaie",
+    "description": "Un requin terrestre qui frappe avec sa pagaie.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-paddle-shark-idle"
+      ],
+      "walk": [
+        "bestiary-paddle-shark-walk"
+      ],
+      "attack": [
+        "bestiary-paddle-shark-attack"
+      ]
+    }
+  },
+  {
+    "id": "harpoon-shark",
+    "original": "Harpoon Shark",
+    "name": "Requin harponneur",
+    "description": "Un chasseur qui préfère lancer son harpon.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-harpoon-shark-idle"
+      ],
+      "walk": [
+        "bestiary-harpoon-shark-walk"
+      ],
+      "attack": [
+        "bestiary-harpoon-shark-attack"
+      ]
+    }
+  },
+  {
+    "id": "snake",
+    "original": "Snake",
+    "name": "Serpent",
+    "description": "Un reptile qui se dresse avant de frapper.",
+    "group": "creatures",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "bestiary-snake-idle"
+      ],
+      "walk": [
+        "bestiary-snake-walk"
+      ],
+      "attack": [
+        "bestiary-snake-attack"
+      ]
+    }
+  },
+  {
+    "id": "hero-warrior",
+    "original": "Warrior",
+    "name": "Chevalier de l’Aube",
+    "description": "Le combattant de première ligne de la guilde. Il vise le manoir et affronte vos créatures au corps à corps.",
+    "group": "humans",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "hero-warrior-idle"
+      ],
+      "walk": [
+        "hero-warrior-walk"
+      ],
+      "attack": [
+        "hero-warrior-attack"
+      ]
+    }
+  },
+  {
+    "id": "hero-lancer",
+    "original": "Lancer",
+    "name": "Lancier de l’Aube",
+    "description": "Un combattant robuste. Sa longue lance lui permet de frapper avant le contact.",
+    "group": "humans",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "hero-lancer-idle"
+      ],
+      "walk": [
+        "hero-lancer-walk"
+      ],
+      "attack": [
+        "hero-lancer-attack"
+      ]
+    }
+  },
+  {
+    "id": "hero-archer",
+    "original": "Archer",
+    "name": "Archère de l’Aube",
+    "description": "Elle tire de vraies flèches à distance. Les bâtiments bloquent ses lignes de tir.",
+    "group": "humans",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "hero-archer-idle"
+      ],
+      "walk": [
+        "hero-archer-walk"
+      ],
+      "attack": [
+        "hero-archer-attack"
+      ]
+    }
+  },
+  {
+    "id": "hero-monk",
+    "original": "Monk",
+    "name": "Moine de l’Aube",
+    "description": "Il soigne les membres blessés de son expédition. Éliminez-le pour empêcher les héros de se rétablir.",
+    "group": "humans",
+    "recruitable": false,
+    "actions": {
+      "idle": [
+        "hero-monk-idle"
+      ],
+      "walk": [
+        "hero-monk-walk"
+      ],
+      "attack": [
+        "hero-monk-attack"
+      ]
+    }
+  }
+]

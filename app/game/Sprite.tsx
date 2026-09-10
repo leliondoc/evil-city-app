@@ -16,18 +16,24 @@ export function Sprite({
   action = 'idle',
   className = '',
   label = '',
+  sequence: providedSequence,
+  figure = false,
 }: {
   asset?: AssetKey;
   creature?: CreatureKind;
   action?: Animation;
   className?: string;
   label?: string;
+  sequence?: AssetKey[];
+  figure?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current!,
       ctx = canvas.getContext('2d')!;
-    const sequence = creature ? animationSequence(creature, action) : [asset!];
+    const sequence =
+      providedSequence ??
+      (creature ? animationSequence(creature, action) : [asset!]);
     const images = new Map<AssetKey, HTMLImageElement>();
     let frame = 0,
       disposed = false;
@@ -62,9 +68,10 @@ export function Sprite({
           ctx.clearRect(0, 0, 256, 256);
           ctx.imageSmoothingEnabled = false;
           // Creature strips include generous margins for weapons and effects.
-          const scale = creature
-            ? 256 / (a.height * 0.7)
-            : Math.min(236 / a.frameWidth, 236 / a.height);
+          const scale =
+            creature || figure
+              ? 256 / (a.height * 0.85)
+              : Math.min(236 / a.frameWidth, 236 / a.height);
           ctx.drawImage(
             im,
             sample.frame * a.frameWidth,
@@ -88,7 +95,7 @@ export function Sprite({
       disposed = true;
       cancelAnimationFrame(frame);
     };
-  }, [asset, creature, action]);
+  }, [asset, creature, action, providedSequence, figure]);
   return (
     <canvas
       ref={ref}
