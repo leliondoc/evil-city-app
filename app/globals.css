@@ -3202,14 +3202,48 @@ svg {
   border: 0;
   box-shadow: none;
   pointer-events: none;
+  padding: 6px 8px 8px;
+  gap: 8px;
+  align-items: stretch;
 }
 .game-shell[data-compact='false'] .bottom-bar .army-overview {
-  align-self: flex-start;
+  align-self: stretch;
+  flex: 0 0 240px;
+  width: 240px;
   background: #192b31de;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #a1956855;
   border-radius: 6px;
   pointer-events: auto;
+}
+.game-shell[data-compact='false'] .army-faces {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+.game-shell[data-compact='false'] .army-face { width: 100%; min-width: 0; height: 52px; }
+.game-shell[data-compact='false'] .army-face img { width: 100%; height: 36px; }
+.game-shell[data-compact='false'] .army-face b { right: 0; bottom: 0; }
+.game-shell[data-compact='false'] .build-tabs { gap: 8px !important; }
+.game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] { flex-basis: 128px; height: 128px; }
+.game-shell[data-compact='false'] .card-row { height: 100%; gap: 8px; padding-bottom: 0; }
+.game-shell[data-compact='false'] .card-row > .build-card { max-width: none; }
+.game-shell[data-compact='false'] .recruit-option {
+  position: relative;
+  flex-basis: 210px;
+  min-width: 210px;
+  max-width: none;
+}
+.game-shell[data-compact='false'] .recruit-option > .build-card {
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 34px;
+}
+.game-shell[data-compact='false'] .recruit-progress {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
 }
 .game-shell[data-compact='false'] .bottom-bar .build-tabs { pointer-events: none; }
 .game-shell[data-compact='false'] .build-tabs :is([role='tablist'], .card-row) { pointer-events: auto; }
