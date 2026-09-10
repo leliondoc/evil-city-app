@@ -57,7 +57,8 @@ try {
       JSON.stringify(metrics),
     );
     assert.ok(
-      metrics.map.width > width * 0.65 && metrics.map.height > height * 0.6,
+      // Separate mission and selection columns still leave most of the screen for play.
+      metrics.map.width > width * 0.6 && metrics.map.height > height * 0.6,
       JSON.stringify(metrics),
     );
     assert.ok(Math.abs(metrics.questFont - 13 * scale) < 0.1);

@@ -315,7 +315,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     }
   }, [compact, touchMode]);
   useEffect(() => {
-    if (
+    if (!compact) {
+      sidebarRef.current?.scrollTo({ top: 0 });
+    } else if (
       selection.type === 'guildHero' ||
       (selection.type === 'lot' && selection.id === 0)
     ) {
@@ -323,7 +325,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         ?.querySelector('.selection-panel')
         ?.scrollIntoView({ block: 'start' });
     }
-  }, [selection]);
+  }, [selection, compact]);
 
   const chooseBuild = useCallback(
     (kind: BuildingKind) => {
@@ -492,12 +494,64 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       site ? { type: 'resource', id: site.id } : { type: 'lot', id: 6 },
     );
     setMobilePanel('details');
-    requestAnimationFrame(() =>
-      sidebarRef.current
-        ?.querySelector('.selection-panel')
-        ?.scrollIntoView({ block: 'start' }),
-    );
+    if (compact)
+      requestAnimationFrame(() =>
+        sidebarRef.current
+          ?.querySelector('.selection-panel')
+          ?.scrollIntoView({ block: 'start' }),
+      );
   };
+
+  const missionCard = (
+    <section className="mission-card" aria-label="Mission et objectifs">
+      <PanelSkin kind="notice" />
+      <p className="eyebrow">Chapitre I · Premiers méfaits</p>
+      <div className="chapter">
+        <PackIcon asset="ui-sword" />
+        <h2>Un si joli quartier.</h2>
+      </div>
+      <p className="intro-copy">
+        Soumettez le quartier. Protégez votre manoir.
+      </p>
+      {s.recruited === 0 && (
+        <Button
+          className="primary-btn"
+          disabled={
+            !!recruitReason(s, 'goblin') ||
+            s.recruits.some((r) => r.kind === 'goblin')
+          }
+          onClick={() => run((state) => recruit(state, 'goblin'))}
+        >
+          {s.recruits.some((r) => r.kind === 'goblin')
+            ? 'Premier gobelin en préparation…'
+            : 'Recruter mon premier gobelin'}
+        </Button>
+      )}
+      <details className="objectives-disclosure" open>
+        <summary>
+          Objectifs{' '}
+          <span>
+            {milestones.filter(Boolean).length}/{milestones.length}
+          </span>
+        </summary>
+        <div className="quest-list">
+          {milestoneLabels.map((label, i) => (
+            <div
+              className={`quest ${milestones[i] ? 'done' : i === currentMilestone ? 'active' : ''}`}
+              key={label}
+            >
+              {milestones[i] ? (
+                <CheckCircle2 size={17} />
+              ) : (
+                <Circle size={17} />
+              )}
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+      </details>
+    </section>
+  );
 
   return (
     <main
@@ -642,10 +696,21 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       </header>
 
       <div className="game-body">
+        {!compact && (
+          <aside className="mission-sidebar" aria-label="Mission et objectifs">
+            {missionCard}
+            <div className="chronicle">
+              <p className="eyebrow">Échos du quartier</p>
+              {s.journal.slice(0, 2).map((entry, i) => (
+                <p key={`${i}-${entry}`}>{entry}</p>
+              ))}
+            </div>
+          </aside>
+        )}
         <aside
           ref={sidebarRef}
           className="sidebar"
-          aria-label="Objectifs et sélection"
+          aria-label={compact ? 'Objectifs et sélection' : 'Sélection'}
         >
           {compact && (
             <Button
@@ -656,54 +721,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </Button>
           )}
           {sheetNotice}
-          <section className="mission-card" aria-label="Mission et objectifs">
-            <PanelSkin kind="notice" />
-            <p className="eyebrow">Chapitre I · Premiers méfaits</p>
-            <div className="chapter">
-              <PackIcon asset="ui-sword" />
-              <h2>Un si joli quartier.</h2>
-            </div>
-            <p className="intro-copy">
-              Soumettez le quartier. Protégez votre manoir.
-            </p>
-            {s.recruited === 0 && (
-              <Button
-                className="primary-btn"
-                disabled={
-                  !!recruitReason(s, 'goblin') ||
-                  s.recruits.some((r) => r.kind === 'goblin')
-                }
-                onClick={() => run((state) => recruit(state, 'goblin'))}
-              >
-                {s.recruits.some((r) => r.kind === 'goblin')
-                  ? 'Premier gobelin en préparation…'
-                  : 'Recruter mon premier gobelin'}
-              </Button>
-            )}
-            <details className="objectives-disclosure" open>
-              <summary>
-                Objectifs{' '}
-                <span>
-                  {milestones.filter(Boolean).length}/{milestones.length}
-                </span>
-              </summary>
-              <div className="quest-list">
-                {milestoneLabels.map((label, i) => (
-                  <div
-                    className={`quest ${milestones[i] ? 'done' : i === currentMilestone ? 'active' : ''}`}
-                    key={label}
-                  >
-                    {milestones[i] ? (
-                      <CheckCircle2 size={17} />
-                    ) : (
-                      <Circle size={17} />
-                    )}
-                    <span>{label}</span>
-                  </div>
-                ))}
-              </div>
-            </details>
-          </section>
+          {compact && missionCard}
           <div className="selection-divider">Sélection</div>
           {selection.type === 'units' ? (
             <section
@@ -1162,12 +1180,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               )}
             </section>
           )}
-          <div className="chronicle">
-            <p className="eyebrow">Échos du quartier</p>
-            {s.journal.slice(0, 2).map((entry, i) => (
-              <p key={`${i}-${entry}`}>{entry}</p>
-            ))}
-          </div>
         </aside>
 
         <section className="world-wrap" aria-label="Carte du quartier">

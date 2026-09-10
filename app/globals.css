@@ -3112,6 +3112,32 @@ svg {
 }
 .selection-divider::after { content: ''; height: 1px; flex: 1; background: #6c868166; }
 
+/* Objectives and the current selection scroll independently on desktop. */
+.mission-sidebar {
+  flex: 0 0 220px;
+  width: 220px;
+  padding: 16px 10px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background: #2c404a;
+  border-right: 1px solid #71847d;
+  zoom: var(--game-ui-scale);
+}
+.mission-sidebar .mission-card { padding: 22px 16px; }
+.mission-sidebar .chapter h2 { font-size: 21px; }
+.game-shell[data-compact='false'] .sidebar {
+  order: 2;
+  border-right: 0;
+  border-left: 1px solid #71847d;
+  padding-top: 16px;
+}
+.game-shell[data-compact='false'] .sidebar .selection-divider { margin: 0; }
+.game-shell[data-compact='false'] .sidebar .selection-panel { padding-top: 0; }
+@media (min-width: 801px) and (max-width: 1100px) {
+  .mission-sidebar { flex-basis: 190px; width: 190px; padding-inline: 6px; }
+  .mission-sidebar .mission-card { padding-inline: 14px; }
+}
+
 /* Scale whole interface surfaces so text, controls and their frames grow together.
    The world canvas retains native pointer coordinates and scales its labels separately. */
 :is(.topbar, .sidebar, .bottom-bar, .map-caption, .map-status, .canvas-help,
