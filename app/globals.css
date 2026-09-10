@@ -37,6 +37,7 @@
 }
 :root,
 .dark {
+  --game-ui-scale: 1;
   --background: #202d37;
   --foreground: #f5edcf;
   --card: #2d3d46;
@@ -3069,3 +3070,17 @@ svg {
   margin: 0 0 -14px;
 }
 .selection-divider::after { content: ''; height: 1px; flex: 1; background: #6c868166; }
+
+/* Scale whole interface surfaces so text, controls and their frames grow together.
+   The world canvas retains native pointer coordinates and scales its labels separately. */
+:is(.topbar, .sidebar, .bottom-bar, .map-caption, .map-status, .canvas-help,
+    .map-controls, .district-menu, .game-notifications, .ui-modal, .district-popover) {
+  zoom: var(--game-ui-scale);
+}
+.ui-modal {
+  max-height: calc(88dvh / var(--game-ui-scale));
+}
+.district-popover[data-slot='popover-content'] {
+  max-height: calc((100dvh - 100px) / var(--game-ui-scale));
+  overflow-y: auto;
+}

@@ -94,6 +94,7 @@ export class Renderer {
   private width = 0;
   private height = 0;
   private scale = 1;
+  private uiScale = 1;
   private zoom = 1;
   private panX = 0;
   private panY = 0;
@@ -197,6 +198,10 @@ export class Renderer {
   }
   private resize() {
     const r = this.canvas.getBoundingClientRect();
+    this.uiScale =
+      Number(
+        getComputedStyle(this.canvas).getPropertyValue('--game-ui-scale'),
+      ) || 1;
     this.width = r.width;
     this.height = r.height;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -844,7 +849,7 @@ export class Renderer {
   private label(x: number, y: number, text: string, color = '#eee4ce') {
     const ctx = this.ctx;
     ctx.save();
-    const size = 18 / this.scale;
+    const size = (18 * this.uiScale) / this.scale;
     ctx.font = `400 ${size}px "Pixel Operator",monospace`;
     x =
       (Math.round(this.origin.x + x * this.scale) - this.origin.x) / this.scale;
@@ -1325,7 +1330,9 @@ export class Renderer {
           if (bubble && u.task !== 'duel')
             this.label(
               x,
-              selected ? Math.min(y - 102, barY - 38 / this.scale) : y - 102,
+              selected
+                ? Math.min(y - 102, barY - (38 * this.uiScale) / this.scale)
+                : y - 102,
               bubble,
               '#d3efdd',
             );
@@ -1466,14 +1473,14 @@ export class Renderer {
           if ((e.solventUntil ?? 0) > s.elapsed)
             this.label(
               x,
-              y - 86 - (selected ? 28 / this.scale : 0),
+              y - 86 - (selected ? (28 * this.uiScale) / this.scale : 0),
               'Vulnérable au feu',
               '#e6d2a6',
             );
           if ((e.comboAt ?? -10) + 0.8 > s.elapsed)
             this.label(
               x,
-              y - 105 - (selected ? 28 / this.scale : 0),
+              y - 105 - (selected ? (28 * this.uiScale) / this.scale : 0),
               'COMBO ×2',
               '#ffb875',
             );
@@ -1487,7 +1494,7 @@ export class Renderer {
             );
             this.label(
               x,
-              y - 95 - (selected ? 28 / this.scale : 0),
+              y - 95 - (selected ? (28 * this.uiScale) / this.scale : 0),
               `Résurrection · ${Math.ceil(10 - e.resurrectionProgress!)} s`,
             );
           }
@@ -1586,7 +1593,7 @@ export class Renderer {
         e.y * CELL -
           95 -
           (this.selection.type === 'enemy' && this.selection.id === e.id
-            ? 28 / this.scale
+            ? (28 * this.uiScale) / this.scale
             : 0),
         e.fighting ? 'Duel' : 'Chasse au spectre',
         '#fff0bb',
@@ -1597,7 +1604,7 @@ export class Renderer {
         w.y * CELL -
           72 -
           (this.selection.type === 'worker' && this.selection.id === w.id
-            ? 28 / this.scale
+            ? (28 * this.uiScale) / this.scale
             : 0),
         w.recovery?.returning ? 'Sépulture' : 'Secours',
         '#d2e4f5',
@@ -1663,8 +1670,8 @@ export class Renderer {
       this.sprite(`cloud-${i + 1}` as AssetKey, x, y, 0.95, 0, 0.32);
     }
     // Draw combat health above all sprites and effects, at a readable size when zoomed out.
-    const barWidth = Math.max(48, 32 / this.scale);
-    const barHeight = Math.max(6, 4 / this.scale);
+    const barWidth = Math.max(48, (32 * this.uiScale) / this.scale);
+    const barHeight = Math.max(6, (4 * this.uiScale) / this.scale);
     const border = Math.max(2, 1 / this.scale);
     for (const bar of combatBars) {
       ctx.fillStyle = '#15212b';
@@ -1684,7 +1691,7 @@ export class Renderer {
       if (bar.name)
         this.label(
           bar.x,
-          bar.y - border - 12 / this.scale,
+          bar.y - border - (12 * this.uiScale) / this.scale,
           bar.name,
           bar.enemy ? '#ffcf83' : '#eee4ce',
         );
@@ -1701,7 +1708,7 @@ export class Renderer {
           : gain.kind === 'wood'
             ? 'ui-wood-icon'
             : 'ui-food';
-      const size = 16 / this.scale;
+      const size = (16 * this.uiScale) / this.scale;
       const x = gain.x * CELL;
       const y = gain.y * CELL - 84 - (this.reducedMotion ? 0 : progress * 32);
       ctx.save();

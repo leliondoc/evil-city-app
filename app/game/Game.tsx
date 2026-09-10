@@ -176,9 +176,28 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   );
   useEffect(() => {
     const query = window.matchMedia('(max-width: 800px), (pointer: coarse)');
-    const update = () => setCompact(query.matches);
+    const update = () => {
+      setCompact(query.matches);
+      // Scale the interface to usable CSS pixels, keeping short and touch screens compact.
+      const scale = query.matches
+        ? 1
+        : Math.max(
+            1,
+            Math.min(2, window.innerWidth / 1600, window.innerHeight / 900),
+          );
+      document.documentElement.style.setProperty(
+        '--game-ui-scale',
+        scale.toFixed(3),
+      );
+    };
+    update();
     query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
+    window.addEventListener('resize', update);
+    return () => {
+      query.removeEventListener('change', update);
+      window.removeEventListener('resize', update);
+      document.documentElement.style.removeProperty('--game-ui-scale');
+    };
   }, []);
   const [bestiaryAction, setBestiaryAction] = useState<Animation>('idle');
   const [modal, setModal] = useState<
