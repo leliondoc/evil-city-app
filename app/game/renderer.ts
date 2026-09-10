@@ -24,6 +24,14 @@ import {
   type Animation,
 } from './art';
 
+import {
+  BRIDGE,
+  GROUND_PATCHES,
+  HIGHLANDS,
+  makeScenery,
+  type Decoration,
+} from './scenery';
+
 const CELL = 32,
   SIZE = 32 * CELL,
   MARGIN = 512;
@@ -41,7 +49,7 @@ type Hit = {
   h: number;
   flip: boolean;
 };
-type Decoration = { x: number; y: number; key: AssetKey; scale: number };
+
 type Motion = { action: Animation; since: number };
 
 export class Renderer {
@@ -332,13 +340,9 @@ export class Renderer {
       for (let x = -MARGIN; x < SIZE + MARGIN; x += 64)
         ctx.drawImage(water, x, y, 64, 64);
     // A river around the western bank, woodland islands and an eastern ridge.
-    this.grassPatch(ctx, 'terrain-4', -64, -64, 18, 18);
-    this.grassPatch(ctx, 'terrain-4', -192, -128, 7, 7);
-    this.grassPatch(ctx, 'terrain-4', 896, 320, 7, 12);
-    this.grassPatch(ctx, 'terrain-5', -448, 192, 5, 6);
-    this.grassPatch(ctx, 'terrain-2', -384, 768, 5, 6);
-    this.plateau(ctx, 'terrain-5', 1024, -192, 7, 5);
-    this.plateau(ctx, 'terrain-4', -352, -160, 4, 3);
+    for (const p of GROUND_PATCHES)
+      this.grassPatch(ctx, p.key, p.x, p.y, p.w, p.h);
+    for (const p of HIGHLANDS) this.plateau(ctx, p.key, p.x, p.y, p.w, p.h);
     // Only streets and entrances are paved; gardens retain their own vegetation.
     ctx.fillStyle = '#b9a67b';
     for (const edge of [0, 10, 20, 30]) {
@@ -373,16 +377,17 @@ export class Renderer {
         );
       }
     }
-    // A small wooden footbridge joins the western grove to the town bank.
+    // Both ends rest on dry land; the eastern end meets the 64 px street.
+    const { left, right, top, bottom } = BRIDGE;
     ctx.fillStyle = '#354957';
-    ctx.fillRect(-166, 636, 226, 86);
-    for (let x = -160; x < 64; x += 16) {
+    ctx.fillRect(left - 4, top + 4, right - left + 8, bottom - top + 4);
+    for (let x = left; x < right; x += 16) {
       ctx.fillStyle = x % 32 ? '#a87e4e' : '#c1975c';
-      ctx.fillRect(x, 632, 14, 76);
+      ctx.fillRect(x, top, 14, bottom - top);
     }
     ctx.fillStyle = '#684c3b';
-    ctx.fillRect(-176, 638, 250, 6);
-    ctx.fillRect(-176, 700, 250, 6);
+    ctx.fillRect(left, top, right - left, 6);
+    ctx.fillRect(left, bottom - 6, right - left, 6);
     // A kitchen garden inside an already blocked building plot.
     for (let row = 0; row < 4; row++) {
       ctx.fillStyle = '#94754e';
@@ -394,70 +399,7 @@ export class Renderer {
     }
   }
   private makeDecorations() {
-    this.decorations = [];
-    for (const lot of this.getState().lots) {
-      const n = lot.id;
-      this.decorations.push(
-        {
-          x: (lot.x + 1.2) * CELL,
-          y: (lot.y + 3) * CELL,
-          key: `tree-${(n % 4) + 1}` as AssetKey,
-          scale: n === 0 ? 0.45 : 0.58,
-        },
-        {
-          x: (lot.x + 7) * CELL,
-          y: (lot.y + 2) * CELL,
-          key: `bush-${(n % 4) + 1}` as AssetKey,
-          scale: 0.65,
-        },
-        {
-          x: (lot.x + 1.1) * CELL,
-          y: (lot.y + 6) * CELL,
-          key: `rock-${(n % 4) + 1}` as AssetKey,
-          scale: 0.75,
-        },
-      );
-      if ([1, 5, 8].includes(n))
-        this.decorations.push({
-          x: (lot.x + 6.5) * CELL,
-          y: (lot.y + 5.5) * CELL,
-          key: 'bush-2',
-          scale: 0.5,
-        });
-    }
-    for (let i = 0; i < 25; i++) {
-      const top = i < 12;
-      const x = top ? -100 + i * 103 : 1035 + noise(i, 4) * 210;
-      const y = top ? -50 - noise(i, 6) * 100 : 370 + (i - 12) * 62;
-      this.decorations.push({
-        x,
-        y,
-        key: `tree-${(i % 4) + 1}` as AssetKey,
-        scale: 0.65 + noise(i, 8) * 0.2,
-      });
-    }
-    for (let i = 0; i < 11; i++)
-      this.decorations.push({
-        x: -380 + (i % 3) * 74,
-        y: 240 + Math.floor(i / 3) * 72,
-        key: `tree-${(i % 4) + 1}` as AssetKey,
-        scale: 0.65,
-      });
-    for (let i = 0; i < 9; i++)
-      this.decorations.push({
-        x: -460 + noise(i, 3) * 330,
-        y: 70 + i * 117,
-        key: `water-rock-${(i % 4) + 1}` as AssetKey,
-        scale: 1,
-      });
-    this.decorations.push(
-      { x: -275, y: 930, key: 'sheep', scale: 0.75 },
-      { x: -190, y: 970, key: 'sheep', scale: 0.65 },
-      { x: 1170, y: 45, key: 'gold-rock', scale: 1 },
-      { x: 1280, y: 70, key: 'gold-rock', scale: 0.8 },
-      { x: 1260, y: 880, key: 'rock-3', scale: 1.4 },
-      { x: -265, y: 80, key: 'rock-4', scale: 1.2 },
-    );
+    this.decorations = makeScenery(this.getState().lots);
   }
   private sprite(
     key: AssetKey,
@@ -840,17 +782,14 @@ export class Renderer {
             key,
             site.x * CELL,
             site.y * CELL,
-            site.kind === 'wood' ? 0.8 : site.kind === 'gold' ? 1.4 : 0.9,
+            site.kind === 'wood' ? 0.5 : site.kind === 'gold' ? 0.75 : 0.8,
             active ? Math.floor(t * 10) % ASSETS[key].frames : 0,
             active ? 1 : 0.4,
           );
           hit.selection = { type: 'resource', id: site.id };
           this.hits.push(hit);
           if (site.kind === 'gold') {
-            for (const [dx, dy, scale] of [
-              [-34, 12, 0.9],
-              [32, 18, 0.7],
-            ]) {
+            for (const [dx, dy, scale] of [[-20, 18, 0.5]]) {
               const rock = this.sprite(
                 'gold-deposit-small',
                 site.x * CELL + dx,
@@ -1053,7 +992,7 @@ export class Renderer {
     // Site labels stay in front of scenery, like parcel labels.
     for (const site of s.sites)
       this.label(
-        site.x * CELL + (site.kind === 'gold' ? 80 : 0),
+        site.x * CELL,
         site.y * CELL + 36,
         `${supplyActive(s, site) ? '' : '× '}${SUPPLIES[site.kind].label}`,
         supplyActive(s, site) ? '#ffe0a3' : '#c5c5b5',

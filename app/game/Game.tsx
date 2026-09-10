@@ -67,6 +67,7 @@ import {
   population,
   capacity,
   rates,
+  foodBalance,
   hasBuilding,
   army,
   build,
@@ -328,6 +329,7 @@ export default function Game() {
   const def = chosenKind ? BUILDINGS[chosenKind] : undefined;
   const creature = selectedUnit ? CREATURES[selectedUnit.kind] : undefined;
   const income = rates(s);
+  const food = foodBalance(s);
   const owned = s.lots.filter((l) => l.owned).length;
   const milestones = [
     hasBuilding(s, 'canteen'),
@@ -376,6 +378,34 @@ export default function Game() {
       setFeedback('');
     }
   };
+  const showFoodProduction = () => {
+    const source = s.lots.find(
+      (l) =>
+        l.owned && (l.kind === 'canteen' || l.construction?.kind === 'canteen'),
+    );
+    if (source) {
+      setPendingBuild(null);
+      setSelection({ type: 'lot', id: source.id });
+    } else {
+      chooseBuild('canteen');
+      const space =
+        s.lots.find((l) => l.owned && !l.construction && l.kind === 'empty') ??
+        s.lots.find(
+          (l) =>
+            l.owned && !l.construction && ['house', 'tavern'].includes(l.kind),
+        );
+      if (space) setSelection({ type: 'lot', id: space.id });
+      else
+        notify(
+          'Revendiquez une friche ou transformez une maison conquise pour installer une cantine.',
+        );
+    }
+    requestAnimationFrame(() =>
+      sidebarRef.current
+        ?.querySelector('.selection-panel')
+        ?.scrollIntoView({ block: 'start' }),
+    );
+  };
 
   return (
     <main className="game-shell">
@@ -397,12 +427,23 @@ export default function Game() {
             ] as const
           ).map(({ key, label, className }) => {
             const Icon = icons[key];
+            const ResourceTag = key === 'food' ? 'button' : 'div';
             const rate = Math.round(income[key] * 60);
             return (
-              <div
-                className={`resource ${className}`}
+              <ResourceTag
+                className={`resource ${className}${key === 'food' ? ' food-action' : ''}`}
                 key={key}
-                title={`${label} : ${rate >= 0 ? '+' : ''}${rate} par minute`}
+                title={
+                  key === 'food'
+                    ? `Cantines : +${food.production}/min · Créatures : −${food.consumption}/min. Voir la production de vivres.`
+                    : `${label} : ${rate >= 0 ? '+' : ''}${rate} par minute`
+                }
+                aria-label={
+                  key === 'food'
+                    ? `Vivres : ${Math.floor(s.resources.food)}. Production ${food.production}, consommation ${food.consumption} par minute. Voir la cantine.`
+                    : undefined
+                }
+                onClick={key === 'food' ? showFoodProduction : undefined}
               >
                 {key === 'mana' ? (
                   <Icon strokeWidth={1.6} />
@@ -425,8 +466,20 @@ export default function Game() {
                       {rate}/min
                     </span>
                   </span>
+                  {key === 'food' && (
+                    <span className="food-source">
+                      {food.production
+                        ? `Cantines : +${food.production}/min →`
+                        : s.lots.some(
+                              (l) =>
+                                l.owned && l.construction?.kind === 'canteen',
+                            )
+                          ? 'Cantine en chantier →'
+                          : 'Construire une cantine →'}
+                    </span>
+                  )}
                 </div>
-              </div>
+              </ResourceTag>
             );
           })}
         </div>
@@ -678,6 +731,30 @@ export default function Game() {
               )}
               {selectedLot && (
                 <>
+                  {chosenKind === 'canteen' && (
+                    <div className="food-production">
+                      <strong>
+                        {selectedLot.kind === 'canteen' && selectedLot.owned
+                          ? 'Production'
+                          : 'Après construction'}{' '}
+                        : +
+                        {45 *
+                          (selectedLot.kind === 'canteen'
+                            ? selectedLot.level
+                            : 1)}{' '}
+                        vivres/min
+                      </strong>
+                      <p>
+                        Votre armée consomme {food.consumption}/min. Bilan
+                        actuel de vos réserves : {food.net >= 0 ? '+' : ''}
+                        {food.net}/min.
+                      </p>
+                      <p>
+                        Les vivres de la cantine vont dans vos réserves. La
+                        bergerie ravitaille les humains.
+                      </p>
+                    </div>
+                  )}
                   {selectedLot.owned && selectedLot.kind !== 'empty' && (
                     <>
                       <Progress

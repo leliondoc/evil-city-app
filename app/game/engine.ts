@@ -612,8 +612,8 @@ export function createGame(): State {
         id: 0,
         kind: 'food',
         home: 1,
-        x: 18.5,
-        y: 1.5,
+        x: 19,
+        y: 4.5,
         hp: 110,
         maxHp: 110,
         repairAt: 0,
@@ -623,8 +623,8 @@ export function createGame(): State {
         id: 1,
         kind: 'gold',
         home: 5,
-        x: 30.5,
-        y: 10.5,
+        x: 29,
+        y: 14.5,
         hp: 140,
         maxHp: 140,
         repairAt: 0,
@@ -634,8 +634,8 @@ export function createGame(): State {
         id: 2,
         kind: 'wood',
         home: 8,
-        x: 30.5,
-        y: 25.5,
+        x: 29,
+        y: 26.5,
         hp: 120,
         maxHp: 120,
         repairAt: 0,
@@ -975,6 +975,18 @@ export function upgrade(s: State, id: number) {
   announce(s, `${BUILDINGS[l.kind].name} passe au niveau ${l.level}.`);
   return '';
 }
+export function foodBalance(s: State) {
+  const production = s.lots.reduce(
+    (total, l) => total + (l.owned && l.kind === 'canteen' ? 45 * l.level : 0),
+    0,
+  );
+  const consumption = s.units.reduce(
+    (total, u) =>
+      total + (u.kind === 'skeleton' ? 0 : u.kind === 'minotaur' ? 9 : 3),
+    0,
+  );
+  return { production, consumption, net: production - consumption };
+}
 export function rates(s: State): Resources {
   const rate: Resources = { gold: 0, wood: 0, food: 0, mana: 0 };
   for (const l of s.lots.filter((l) => l.owned)) {
@@ -984,7 +996,6 @@ export function rates(s: State): Resources {
       rate.mana += 0.18 * n;
     }
     if (l.kind === 'den') rate.gold += 0.25 * n;
-    if (l.kind === 'canteen') rate.food += 0.75 * n;
     if (l.kind === 'crypt') rate.mana += 0.4 * n;
     if (l.kind === 'house') rate.gold += 0.35 * n;
     if (l.kind === 'tavern') rate.gold += 0.7 * n;
@@ -997,8 +1008,8 @@ export function rates(s: State): Resources {
   for (const u of s.units) {
     if (u.kind === 'goblin' && (u.task === 'idle' || u.task === 'forage'))
       rate.wood += 0.22;
-    if (u.kind !== 'skeleton') rate.food -= u.kind === 'minotaur' ? 0.15 : 0.05;
   }
+  rate.food = foodBalance(s).net / 60;
   return rate;
 }
 const distanceBetween = (a: Point, b: Point) =>

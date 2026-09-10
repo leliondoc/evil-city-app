@@ -47,10 +47,10 @@ function fighters(s) {
 test('Human stocks increase only after workers harvest and physically deliver cargo', () => {
   const s = createGame();
   const initial = { ...s.economy.stocks };
-  tick(s, 5);
+  tick(s, 1);
   assert.deepEqual(s.economy.stocks, initial);
   assert.ok(s.workers.some((w) => w.path.length));
-  tick(s, 60);
+  tick(s, 64);
   for (const kind of ['gold', 'wood', 'food']) {
     assert.ok(s.economy.delivered[kind] >= 10, kind);
     assert.equal(

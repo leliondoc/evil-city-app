@@ -126,6 +126,33 @@ svg {
   align-items: center;
   gap: 10px;
 }
+.resource.food-action {
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+.resource.food-action:hover .food-source {
+  color: #ffe29a;
+  text-decoration: underline;
+}
+.resource.food-action:focus-visible {
+  outline: 2px solid #ffe29a;
+  outline-offset: 4px;
+}
+.resource .food-source {
+  font-size: 10px;
+  color: #d6c69a;
+  margin-top: 3px;
+}
+.food-production {
+  color: #3e5144;
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.food-production p {
+  margin-top: 6px;
+}
 .resource > svg {
   width: 23px;
   height: 23px;
