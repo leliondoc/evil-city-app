@@ -131,6 +131,7 @@ function clock(seconds: number) {
 export default function Game() {
   const stateRef = useRef<State>(createGame());
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const [, refresh] = useState(0);
   const [selection, setSelection] = useState<Selection>({ type: 'lot', id: 7 });
@@ -241,6 +242,16 @@ export default function Game() {
       rendererRef.current.buildMode = !!pendingBuild;
     }
   }, [selection, pendingBuild]);
+  useEffect(() => {
+    if (
+      selection.type === 'guildHero' ||
+      (selection.type === 'lot' && selection.id === 0)
+    ) {
+      sidebarRef.current
+        ?.querySelector('.selection-panel')
+        ?.scrollIntoView({ block: 'start' });
+    }
+  }, [selection]);
 
   const chooseBuild = useCallback(
     (kind: BuildingKind) => {
@@ -473,7 +484,11 @@ export default function Game() {
       />
       <SupplyPanel state={s} onSelect={select} />
       <div className="game-body">
-        <aside className="sidebar" aria-label="Objectifs et sélection">
+        <aside
+          ref={sidebarRef}
+          className="sidebar"
+          aria-label="Objectifs et sélection"
+        >
           <section>
             <p className="eyebrow">Chapitre I · Premiers méfaits</p>
             <div className="chapter">
