@@ -2944,3 +2944,36 @@ svg {
 .ability-card .domain-toggle span { font-weight: 700; }
 .ability-card .domain-toggle small { display: block; font-size: 11px; font-weight: 400; color: #625440; }
 .ability-costs:empty { display: none; }
+
+/* Keep the persistent mission visually separate from the selected map object. */
+.mission-card {
+  position: relative;
+  isolation: isolate;
+  margin: 0 -10px;
+  padding: 25px 21px 30px;
+  color: #443728;
+}
+.mission-card .eyebrow { color: #716048; font-size: 10px; letter-spacing: 1.2px; }
+.mission-card .chapter { gap: 8px; margin-top: 8px; }
+.mission-card .chapter h2 { color: #49301f; font-size: 23px; line-height: 1.2; }
+.mission-card .chapter svg { color: #89602e; flex-shrink: 0; }
+.mission-card .intro-copy { color: #534532; font-size: 13px; line-height: 1.6; }
+.mission-card .objectives-disclosure { border-top: 1px solid #927b4e66; padding-top: 10px; }
+.mission-card .objectives-disclosure summary { color: #493728; font-weight: 700; min-height: 30px; }
+.mission-card .objectives-disclosure summary span { color: #716048; }
+.mission-card .quest { color: #534532; font-size: 13px; line-height: 1.5; }
+.mission-card .quest > svg { color: #8b754d; }
+.mission-card .quest.active { color: #773f1e; font-weight: 700; }
+.mission-card .quest.done, .mission-card .quest.done > svg { color: #4e6a3d; }
+.selection-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  color: #b7cac4;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 -14px;
+}
+.selection-divider::after { content: ''; height: 1px; flex: 1; background: #6c868166; }

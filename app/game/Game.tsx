@@ -646,7 +646,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               Fermer les détails ×
             </button>
           )}
-          <section>
+          <section className="mission-card" aria-label="Mission et objectifs">
+            <PanelSkin kind="notice" />
             <p className="eyebrow">Chapitre I · Premiers méfaits</p>
             <div className="chapter">
               <Flag size={25} strokeWidth={1.4} />
@@ -655,7 +656,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <p className="intro-copy">
               Soumettez le quartier. Protégez votre manoir.
             </p>
-            <details className="objectives-disclosure">
+            <details className="objectives-disclosure" open>
               <summary>
                 Objectifs{' '}
                 <span>
@@ -679,6 +680,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               </div>
             </details>
           </section>
+          <div className="selection-divider">Sélection</div>
           {selection.type === 'units' ? (
             <section
               className="selection-panel"
