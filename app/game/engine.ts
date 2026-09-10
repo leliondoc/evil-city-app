@@ -18,10 +18,12 @@ export type Resources = {
   mana: number;
 };
 export type Cost = Partial<Resources>;
-export type Selection = {
-  type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource' | 'guildHero';
-  id: number;
-};
+export type Selection =
+  | {
+      type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource' | 'guildHero';
+      id: number;
+    }
+  | { type: 'none'; id?: never };
 export type BuildingDef = {
   name: string;
   description: string;
@@ -477,6 +479,8 @@ export function raidSupplyReason(s: State, target: Selection) {
   return '';
 }
 export function raidSupply(s: State, target: Selection) {
+  if (target.type !== 'resource' && target.type !== 'worker')
+    return 'Choisissez un paysan ou un site de production.';
   const error = raidSupplyReason(s, target);
   if (error) return error;
   const point =

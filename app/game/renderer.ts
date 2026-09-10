@@ -256,7 +256,7 @@ export class Renderer {
     if (!this.dragging) {
       const hit = this.hit(p);
       if (hit) this.onSelect(hit);
-      else if (this.selection.type === 'unit') this.onMove(this.toWorld(p));
+      else this.onSelect({ type: 'none' });
     }
     this.down = null;
     this.dragging = false;

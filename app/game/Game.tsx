@@ -168,6 +168,10 @@ export default function Game() {
   const select = useCallback(
     (next: Selection) => {
       setSelection(next);
+      if (next.type === 'none') {
+        setPendingBuild(null);
+        setFeedback('');
+      }
       if (pendingRef.current && next.type === 'lot') {
         const error = build(stateRef.current, next.id, pendingRef.current);
         if (error) notify(error);
@@ -272,6 +276,7 @@ export default function Game() {
       if (event.key === 'Escape') {
         setPendingBuild(null);
         setFeedback('');
+        setSelection({ type: 'none' });
       }
       if (event.key.toLowerCase() === 'h') setModal('guide');
       if (event.key.toLowerCase() === 'r') run((s) => retreat(s));
@@ -565,7 +570,20 @@ export default function Game() {
               </div>
             </details>
           </section>
-          {selection.type === 'worker' || selection.type === 'resource' ? (
+          {selection.type === 'none' ? (
+            <section className="selection-panel" aria-label="Aucune sélection">
+              <p className="eyebrow">Le quartier vous attend</p>
+              <h3 className="selection-name">Aucune sélection</h3>
+              <p className="selection-text">
+                Cliquez sur une créature ou une parcelle pour afficher ses
+                actions.
+              </p>
+              <p className="reason">
+                Clic dans le vide ou Échap : désélectionner. Clic droit :
+                déplacer la créature sélectionnée.
+              </p>
+            </section>
+          ) : selection.type === 'worker' || selection.type === 'resource' ? (
             <SupplySelection
               state={s}
               selection={selection}
