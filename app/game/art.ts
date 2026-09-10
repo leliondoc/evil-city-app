@@ -26,6 +26,12 @@ export function buildingArt(kind: BuildingKind, owned = true): AssetKey {
   const name = kind === 'hall' ? 'hq' : kind === 'guild' ? 'crypt' : kind;
   return `${name}-${owned ? 'purple' : 'blue'}` as AssetKey;
 }
+/** Door axis in the original sprite. House 2 has its entrance on the left. */
+export function buildingDoorX(key: AssetKey) {
+  return key.startsWith('tavern-') || /^house-(blue|purple)-2$/.test(key)
+    ? 30
+    : ASSETS[key].frameWidth / 2;
+}
 export function enemyAnimationSequence(
   enemy: Pick<Enemy, 'kind' | 'role'>,
   action: Animation,

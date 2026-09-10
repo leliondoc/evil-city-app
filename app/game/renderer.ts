@@ -18,6 +18,7 @@ import {
   animationSequence,
   enemyAnimationSequence,
   buildingArt,
+  buildingDoorX,
   workerArt,
   type AssetKey,
   type Animation,
@@ -361,13 +362,6 @@ export class Renderer {
               ? 'terrain-3'
               : 'terrain-1';
       this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4);
-      ctx.fillStyle = '#c0aa7c';
-      ctx.fillRect(
-        (lot.x + 3.7) * CELL,
-        (lot.y + 4) * CELL,
-        1.6 * CELL,
-        4 * CELL,
-      );
       if (lot.id === 0) {
         this.plateau(
           ctx,
@@ -376,18 +370,6 @@ export class Renderer {
           (lot.y + 1) * CELL - 40,
           3,
           2,
-        );
-        const im = this.images.get('terrain-2')!;
-        ctx.drawImage(
-          im,
-          256,
-          192,
-          64,
-          192,
-          (lot.x + 3.5) * CELL,
-          (lot.y + 4) * CELL,
-          64,
-          96,
         );
       }
     }
@@ -533,13 +515,11 @@ export class Renderer {
       flip,
     };
   }
-  private buildingSprite(
+  private buildingPlacement(
     key: AssetKey,
     x: number,
     ground: number,
     preferredScale: number,
-    frame: number,
-    alpha: number,
   ) {
     const a = ASSETS[key];
     let bounds = this.bounds.get(key);
@@ -572,14 +552,41 @@ export class Renderer {
       192 / bounds.width,
       184 / bounds.height,
     );
-    return this.sprite(
-      key,
-      x + (a.frameWidth / 2 - bounds.x - bounds.width / 2) * scale,
-      ground + (a.height * a.anchor - bounds.y - bounds.height) * scale,
+    return {
+      x: x + (a.frameWidth / 2 - bounds.x - bounds.width / 2) * scale,
+      y: ground + (a.height * a.anchor - bounds.y - bounds.height) * scale,
       scale,
-      frame,
-      alpha,
-    );
+    };
+  }
+  private approach(lot: Lot, doorX: number, ground: number) {
+    const ctx = this.ctx;
+    const center = (lot.x + 4) * CELL;
+    const bend = (lot.y + 6.3) * CELL;
+    ctx.save();
+    ctx.strokeStyle = '#c0aa7c';
+    ctx.lineWidth = 40;
+    ctx.lineJoin = 'miter';
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.moveTo(doorX, ground - 24);
+    ctx.lineTo(doorX, bend);
+    ctx.lineTo(center, bend);
+    ctx.lineTo(center, (lot.y + 8) * CELL);
+    ctx.stroke();
+    if (lot.id === 0) {
+      ctx.drawImage(
+        this.images.get('terrain-2')!,
+        256,
+        192,
+        64,
+        192,
+        center - 32,
+        (lot.y + 4) * CELL,
+        64,
+        96,
+      );
+    }
+    ctx.restore();
   }
   private bar(x: number, y: number, ratio: number, width = 60) {
     const ctx = this.ctx;
@@ -611,19 +618,9 @@ export class Renderer {
     } else {
       for (let i = 1; i < 3; i++)
         ctx.drawImage(im, 192, 64, 64, 64, x + 192, y + i * 64, 64, 64);
-      for (let i = 0; i < 4; i++) {
-        if (i === 2) continue;
-        ctx.drawImage(
-          im,
-          i === 0 ? 0 : i === 3 ? 192 : 64,
-          128,
-          64,
-          64,
-          x + i * 64,
-          y + 192,
-          64,
-          64,
-        );
+      // Retain the two gateposts and leave a centered 40 px opening between them.
+      for (const offset of [0, 148]) {
+        ctx.drawImage(im, offset, 128, 108, 64, x + offset, y + 192, 108, 64);
       }
     }
   }
@@ -692,10 +689,33 @@ export class Renderer {
           8 * CELL - 12,
         );
       }
-      if (l.kind !== 'guild' && l.kind !== 'hall') this.fence(l, false);
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
-        y = (l.y + 6.2) * CELL - (l.id === 0 ? 28 : 0);
+        y = (l.y + 6.2) * CELL - (l.id === 0 ? 28 : 0),
+        key =
+          kind === 'house'
+            ? (`house-${l.owned ? 'purple' : 'blue'}-${(l.id % 2) + 2}` as AssetKey)
+            : buildingArt(kind, l.owned),
+        preferredScale =
+          kind === 'hq' || kind === 'hall'
+            ? 0.78
+            : kind === 'den'
+              ? 0.94
+              : kind === 'crypt' || kind === 'guild'
+                ? 0.72
+                : 0.9,
+        placement =
+          kind === 'empty'
+            ? null
+            : this.buildingPlacement(key, x, y, preferredScale);
+      const doorX = placement
+        ? Math.round(
+            placement.x - (ASSETS[key].frameWidth * placement.scale) / 2,
+          ) +
+          buildingDoorX(key) * placement.scale
+        : x;
+      this.approach(l, doorX, y);
+      if (l.kind !== 'guild' && l.kind !== 'hall') this.fence(l, false);
       drawables.push({
         depth: y,
         draw: () => {
@@ -713,26 +733,14 @@ export class Renderer {
             ctx.restore();
             this.sprite('wood', x - 25, y, 0.9);
             this.sprite('rock', x + 30, y - 10, 0.8);
-          } else {
-            const key =
-                kind === 'house'
-                  ? (`house-${l.owned ? 'purple' : 'blue'}-${(l.id % 2) + 2}` as AssetKey)
-                  : buildingArt(kind, l.owned),
-              a = ASSETS[key],
+          } else if (placement) {
+            const a = ASSETS[key],
               frame = Math.floor(t * 10) % a.frames;
-            const scale =
-              kind === 'hq' || kind === 'hall'
-                ? 0.78
-                : kind === 'den'
-                  ? 0.94
-                  : kind === 'crypt' || kind === 'guild'
-                    ? 0.72
-                    : 0.9;
-            const hit = this.buildingSprite(
+            const hit = this.sprite(
               key,
-              x,
-              y,
-              scale,
+              placement.x,
+              placement.y,
+              placement.scale,
               frame,
               l.construction ? 0.55 : 1,
             );
