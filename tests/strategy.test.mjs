@@ -109,8 +109,10 @@ test('Alchemist solvent doubles only fire; burning deaths propagate once to near
   advanceStrategy(s, 0);
   assert.equal(nearby.burningUntil, expiry);
 });
-test('All towers can be reached and captured by walking; a group assigns one garrison', () => {
-  for (const tIndex of [0, 1, 2]) {
+test('The first level keeps only the bridge tower, reachable and capturable with one garrison', () => {
+  const towers = prepared().strategy.towers;
+  assert.deepEqual(towers.map((t) => t.name), ['Tour du pont']);
+  for (const tIndex of towers.map((t) => t.id)) {
     const s = prepared(),
       u = s.units[0],
       t = s.strategy.towers[tIndex];

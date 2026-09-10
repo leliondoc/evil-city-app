@@ -65,15 +65,6 @@ export function createStrategy(): StrategyState {
     comboHits: 0,
     towers: [
       { id: 0, name: 'Tour du pont', x: -0.5, y: 20.5, artX: -0.5, artY: 18.5 },
-      { id: 1, name: 'Tour du nord', x: 11, y: 1, artX: 11, artY: -0.7 },
-      {
-        id: 2,
-        name: 'Tour de la lisière',
-        x: 31,
-        y: 21,
-        artX: 33.5,
-        artY: 20.5,
-      },
     ].map((t) => ({
       ...t,
       owned: false,

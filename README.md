@@ -86,7 +86,7 @@ L’alchimiste, représenté exclusivement par le Hex Shaman original du pack En
 - Crypte : **Solvant alchimique**, 90 or, 35 essence. Les attaques de l’alchimiste marquent leur cible 8 secondes : seuls les dégâts de feu sont doublés.
 - Forge : **Braises contagieuses**, 150 or, 40 bois, 60 essence, après les armes enflammées. La mort d’un ennemi embrasé propage une brûlure de 4 secondes aux voisins visibles à moins de 2,8 cases. Le solvant amplifie également cette brûlure.
 
-Les trois tours sont sélectionnables sur la carte ou dans « Tours du quartier ». Tenir leur porte sans ennemi proche pendant 8 secondes les capture. Leur rôle dépend de la créature affectée :
+Le premier niveau conserve uniquement la Tour du pont, à l’ouest, sélectionnable sur la carte ou dans « Tours du quartier ». Tenir sa porte sans ennemi proche pendant 8 secondes la capture. Son rôle dépend de la créature affectée :
 
 - **Gobelin — racket** : prélève 30 % d’une cargaison humaine proche, une fois par trajet, avec un stockage de 30 par ressource. Un autre gobelin libre doit rapporter le butin au manoir ; sa mort ou un nouvel ordre perd sa cargaison. Le racket augmente la suspicion.
 - **Squelette — guet** : combat à la porte et appelle les défenseurs disponibles dans un rayon de 8 cases lorsqu’un ennemi approche.
