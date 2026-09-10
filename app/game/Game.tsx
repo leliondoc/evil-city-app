@@ -640,20 +640,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               Fermer les détails ×
             </button>
           )}
-          <details className="tower-index">
-            <summary>Tours du quartier</summary>
-            {s.strategy.towers.map((tower) => (
-              <button
-                key={tower.id}
-                onClick={() => {
-                  setPendingBuild(null);
-                  select({ type: 'tower', id: tower.id });
-                }}
-              >
-                {tower.name} · {tower.owned ? 'à vous' : 'humaine'}
-              </button>
-            ))}
-          </details>
           <section>
             <p className="eyebrow">Chapitre I · Premiers méfaits</p>
             <div className="chapter">
