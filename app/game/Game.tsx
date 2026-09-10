@@ -661,7 +661,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <PanelSkin kind="notice" />
             <p className="eyebrow">Chapitre I · Premiers méfaits</p>
             <div className="chapter">
-              <Flag size={25} strokeWidth={1.4} />
+              <PackIcon asset="ui-sword" />
               <h2>Un si joli quartier.</h2>
             </div>
             <p className="intro-copy">
