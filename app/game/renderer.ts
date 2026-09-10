@@ -558,8 +558,13 @@ export class Renderer {
       for (let i = 1; i < 3; i++)
         ctx.drawImage(im, 0, 64, 64, 64, x, y + i * 64, 64, 64);
     } else {
-      for (let i = 1; i < 3; i++)
+      const site = this.getState().sites.find((site) => site.home === l.id);
+      for (let i = 1; i < 3; i++) {
+        // Leave the supply yard accessible instead of drawing a fence over its worker and resource.
+        if (site && site.y - l.y >= i * 2 && site.y - l.y < (i + 1) * 2)
+          continue;
         ctx.drawImage(im, 192, 64, 64, 64, x + 192, y + i * 64, 64, 64);
+      }
       // Retain the two gateposts and leave a centered 40 px opening between them.
       for (const offset of [0, 148]) {
         ctx.drawImage(im, offset, 128, 108, 64, x + offset, y + 192, 108, 64);
