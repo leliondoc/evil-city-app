@@ -250,6 +250,7 @@ export function raiseSkeleton(s: State): string {
   s.recruits.push({
     kind: 'skeleton',
     remaining: 12,
+    duration: 12,
     source: room(s, 'crypt')!.id,
   });
   announce(

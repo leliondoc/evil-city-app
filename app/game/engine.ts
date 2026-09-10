@@ -759,7 +759,12 @@ export interface State {
   units: Unit[];
   elapsed: number;
   nextId: number;
-  recruits: { kind: CreatureKind; remaining: number; source?: number }[];
+  recruits: {
+    kind: CreatureKind;
+    remaining: number;
+    duration?: number;
+    source?: number;
+  }[];
   notice: string;
   noticeUntil: number;
   journal: string[];
@@ -1192,7 +1197,8 @@ export function recruit(s: State, kind: CreatureKind) {
   const error = recruitReason(s, kind);
   if (error) return error;
   pay(s, CREATURES[kind].cost);
-  s.recruits.push({ kind, remaining: kind === 'minotaur' ? 15 : 6 });
+  const duration = kind === 'minotaur' ? 15 : 6;
+  s.recruits.push({ kind, remaining: duration, duration });
   announce(s, `${CREATURES[kind].name} en route vers votre manoir.`);
   return '';
 }

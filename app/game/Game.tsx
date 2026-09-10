@@ -1448,24 +1448,68 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               {RECRUIT_OPTIONS.map((kind, i) => {
                 const c = CREATURES[kind],
                   reason = recruitReason(s, kind);
+                const orders = s.recruits.filter((r) => r.kind === kind);
+                const next = orders.reduce<
+                  State['recruits'][number] | undefined
+                >(
+                  (soonest, r) =>
+                    !soonest || r.remaining < soonest.remaining ? r : soonest,
+                  undefined,
+                );
+                const duration =
+                  next?.duration ??
+                  (next?.source !== undefined
+                    ? 12
+                    : kind === 'minotaur'
+                      ? 15
+                      : 6);
+                const progress = next
+                  ? Math.max(
+                      0,
+                      Math.min(100, (1 - next.remaining / duration) * 100),
+                    )
+                  : 0;
                 return (
-                  <button
-                    className={`build-card ${reason ? 'locked' : ''}`}
-                    key={kind}
-                    onClick={() => chooseRecruit(kind)}
-                    title={reason || `Recruter : ${c.name}`}
-                    aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
-                  >
-                    <CreaturePortrait kind={kind} />
-                    <div>
-                      <strong>{c.name}</strong>
-                      <small className={reason ? 'recruit-blocker' : undefined}>
-                        {reason || c.job}
-                      </small>
-                      <Costs cost={c.cost} available={s.resources} />
-                    </div>
-                    <span className="keyhint">{i + 1}</span>
-                  </button>
+                  <div className="recruit-option" key={kind}>
+                    <button
+                      className={`build-card ${reason ? 'locked' : ''}`}
+                      onClick={() => chooseRecruit(kind)}
+                      title={reason || `Recruter : ${c.name}`}
+                      aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
+                    >
+                      <CreaturePortrait kind={kind} />
+                      <div>
+                        <strong>{c.name}</strong>
+                        <small
+                          className={reason ? 'recruit-blocker' : undefined}
+                        >
+                          {reason || c.job}
+                        </small>
+                        <Costs cost={c.cost} available={s.resources} />
+                      </div>
+                      <span className="keyhint">{i + 1}</span>
+                    </button>
+                    {next && (
+                      <div className="recruit-progress">
+                        <div className="recruit-progress-label">
+                          <span>
+                            {orders.length > 1
+                              ? `${orders.length} en préparation`
+                              : next.source !== undefined
+                                ? 'Rituel en cours'
+                                : 'En préparation'}
+                          </span>
+                          <span>{Math.ceil(next.remaining)} s</span>
+                        </div>
+                        <progress
+                          max={100}
+                          value={progress}
+                          aria-label={`Production ${c.name}`}
+                          aria-valuetext={`${orders.length} en préparation. ${Math.ceil(next.remaining)} secondes avant la prochaine unité.`}
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
