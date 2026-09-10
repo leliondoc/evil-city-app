@@ -61,6 +61,7 @@ import {
   capacity,
   rates,
   goblinWorkforce,
+  GOBLIN_CAP,
   RESOURCE_CAP,
   foodBalance,
   hasBuilding,
@@ -565,8 +566,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         <button
           className="goblin-counter"
           disabled={workforce.total === 0}
-          title={`${workforce.total} gobelins : ${workforce.wood} au bois (+${Math.round(income.wood * 60)}/min), ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. L’or, les vivres et l’essence proviennent des bâtiments. Cliquer pour sélectionner tous les gobelins.`}
-          aria-label={`Gobelins : ${workforce.total}, dont ${workforce.wood} au bois et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
+          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois (+${Math.round(income.wood * 60)}/min), ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Maximum ${GOBLIN_CAP}, recrutements inclus. L’or, les vivres et l’essence proviennent des bâtiments. Cliquer pour sélectionner tous les gobelins.`}
+          aria-label={`Gobelins : ${workforce.total} sur ${GOBLIN_CAP}, ${workforce.queued} en recrutement, dont ${workforce.wood} au bois et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
           onClick={() => {
             select(
               unitSelection(
@@ -582,7 +583,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           <CreaturePortrait kind="goblin" />
           <div>
             <strong>
-              {workforce.total} <span>Gobelins</span>
+              {workforce.total}/{GOBLIN_CAP} <span>Gobelins</span>
             </strong>
             <small>
               Bois {workforce.wood}
@@ -1496,7 +1497,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         <small
                           className={reason ? 'recruit-blocker' : undefined}
                         >
-                          {reason || c.job}
+                          {reason ||
+                            (kind === 'goblin'
+                              ? `${c.job} · ${workforce.total + workforce.queued}/${GOBLIN_CAP} places réservées`
+                              : c.job)}
                         </small>
                         <Costs cost={c.cost} available={s.resources} />
                       </div>

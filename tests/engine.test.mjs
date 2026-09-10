@@ -106,11 +106,12 @@ test('Pathfinding connects every parcel entrance without crossing building footp
 
 test('Queued recruitment reserves beds and cannot overfill the domain', () => {
   const s = createGame();
+  s.lots[7].kind = 'crypt';
   s.resources = { gold: 9999, wood: 9999, food: 9999, mana: 9999 };
-  for (let i = 0; i < 9; i++) assert.equal(recruit(s, 'goblin'), '');
+  for (let i = 0; i < 9; i++) assert.equal(recruit(s, 'skeleton'), '');
   assert.equal(population(s), capacity(s));
   const before = s.resources.gold;
-  assert.ok(recruit(s, 'goblin'));
+  assert.ok(recruit(s, 'skeleton'));
   assert.equal(s.resources.gold, before);
   advance(s, 7);
   assert.equal(s.units.length, 12);

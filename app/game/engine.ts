@@ -1172,6 +1172,11 @@ export function claim(s: State, id: number) {
 }
 export function recruitReason(s: State, kind: CreatureKind) {
   if (s.won || s.lost) return 'La partie est terminée.';
+  if (kind === 'goblin') {
+    const workforce = goblinWorkforce(s);
+    if (workforce.total + workforce.queued >= GOBLIN_CAP)
+      return `Limite de ${GOBLIN_CAP} gobelins atteinte, recrutements en cours inclus.`;
+  }
   if (kind === 'alchemist' && !hasBuilding(s, 'crypt'))
     return 'Construisez une crypte pour recruter un alchimiste.';
   if (kind === 'troll' && !hasBuilding(s, 'forge'))
@@ -1391,6 +1396,7 @@ export function foodBalance(s: State) {
   );
   return { production, consumption, net: production - consumption };
 }
+export const GOBLIN_CAP = 6;
 const GOBLIN_WOOD_PER_SECOND = 0.22;
 function gathersWood(unit: Unit) {
   return (
