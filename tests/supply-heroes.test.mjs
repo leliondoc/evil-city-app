@@ -171,6 +171,48 @@ test('Archers fire travelling projectiles and buildings block their line of fire
   assert.equal(blocked.projectiles.length, 0);
   assert.equal(archer.fighting, true);
 });
+test('Archers face the building they shoot from either side, including during cooldown', () => {
+  for (const side of [-1, 1]) {
+    const s = createGame();
+    s.units = [];
+    s.workers = [];
+    const gate = entrance(s.lots[6]);
+    const archer = hero(s, 'archer', gate.x + side * 3.5, gate.y + 1);
+    archer.facing = side; // Arrived looking away from the manor.
+    tick(s, 0.1);
+    assert.equal(archer.fighting, true);
+    assert.equal(archer.facing, -side);
+    const arrow = s.projectiles.find(
+      (p) => p.target.type === 'lot' && p.target.id === 6,
+    );
+    assert.ok(arrow);
+    assert.equal(Math.sign(Math.cos(arrow.angle)), archer.facing);
+    tick(s, 0.1);
+    assert.equal(archer.facing, -side, 'Aim stays correct between arrows');
+  }
+});
+
+test('A nearby decoy cannot turn an archer away from the aggressor it is shooting', () => {
+  const s = createGame();
+  const [target, decoy] = s.units;
+  s.units = [target, decoy];
+  s.workers = [];
+  Object.assign(target, { x: 6.5, y: 10.5, task: 'move', path: [] });
+  Object.assign(decoy, { x: 11.8, y: 10.5, task: 'move', path: [] });
+  const archer = hero(s, 'archer', 10.5, 10.5);
+  archer.pursuitTarget = target.id;
+  tick(s, 0.1);
+  assert.equal(archer.facing, -1);
+  assert.equal(s.projectiles[0].target.id, target.id);
+  assert.ok(Math.cos(s.projectiles[0].angle) < 0);
+  tick(s, 0.1);
+  assert.equal(
+    archer.facing,
+    -1,
+    'Body separation must preserve the actual aim',
+  );
+});
+
 test('Monks retaliate before healing and deal double damage to skeletons and specters', () => {
   const losses = {};
   for (const kind of ['troll', 'skeleton', 'specter']) {

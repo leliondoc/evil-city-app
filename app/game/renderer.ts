@@ -26,6 +26,7 @@ import {
   buildingArt,
   buildingDoorX,
   workerArt,
+  sheepReactionFrame,
   type AssetKey,
   type Animation,
 } from './art';
@@ -88,6 +89,10 @@ export class Renderer {
   private motions = new Map<number, Motion>();
   private particles = new ParticleFeedback();
   private endedAt: number | null = null;
+  private attackFeedback: {
+    order: NonNullable<State['attackOrder']>;
+    since: number;
+  } | null = null;
   private resizeObserver: ResizeObserver;
   private frame = 0;
   private disposed = false;
@@ -161,6 +166,7 @@ export class Renderer {
                   'ui-gold',
                   'ui-wood-icon',
                   'ui-food',
+                  'ui-back',
                 ].includes(k)),
           )
           .map(
@@ -236,6 +242,14 @@ export class Renderer {
   public zoomBy(factor: number) {
     this.zoom = Math.max(0.75, Math.min(3.6, this.zoom * factor));
     this.recalculate();
+  }
+  public audioPosition(point: Point) {
+    const x = this.origin.x + point.x * CELL * this.scale;
+    const y = this.origin.y + point.y * CELL * this.scale;
+    if (x < 0 || y < 0 || x > this.width || y > this.height) return null;
+    const pan = (x / this.width - 0.5) * 2;
+    const distance = Math.hypot(pan, (y / this.height - 0.5) * 2);
+    return { pan: pan * 0.65, gain: Math.max(0.25, 1 - distance * 0.45) };
   }
   public resetView() {
     this.pointerCancel();
@@ -846,7 +860,9 @@ export class Renderer {
       for (let i = 1; i < 3; i++)
         ctx.drawImage(im, 0, 64, 64, 64, x, y + i * 64, 64, 64);
     } else {
-      const site = this.getState().sites.find((site) => site.home === l.id);
+      const site = this.getState().sites.find(
+        (site) => site.home === l.id && site.x >= l.x && site.x < l.x + 8,
+      );
       for (let i = 1; i < 3; i++) {
         // Leave the supply yard accessible instead of drawing a fence over its worker and resource.
         if (site && site.y - l.y >= i * 2 && site.y - l.y < (i + 1) * 2)
@@ -946,17 +962,24 @@ export class Renderer {
           );
           hit.selection = { type: 'tower', id: tower.id };
           this.hits.push(hit);
+          const occupant = towerOccupant(s, tower);
+          const barY = hit.y - 8 / this.scale;
+          const activityY = barY - 2 - (12 * this.uiScale) / this.scale;
           if (
             (this.selection.type === 'tower' &&
               this.selection.id === tower.id) ||
             tower.progress > 0 ||
             tower.reclaim > 0
           ) {
-            this.label(tower.artX * CELL, tower.artY * CELL + 20, tower.name);
+            this.label(
+              tower.artX * CELL,
+              activityY - (occupant ? (22 * this.uiScale) / this.scale : 0),
+              tower.name,
+            );
             if (tower.progress || tower.reclaim)
               this.bar(
                 tower.artX * CELL,
-                tower.artY * CELL - 90,
+                barY,
                 (tower.progress || tower.reclaim) / 8,
               );
           }
@@ -968,11 +991,10 @@ export class Renderer {
               0.65,
               Math.floor(t * 10) % ASSETS['haunt-wisp'].frames,
             );
-          const occupant = towerOccupant(s, tower);
           if (occupant)
             this.label(
               tower.artX * CELL,
-              tower.artY * CELL - 105,
+              activityY,
               occupant.kind === 'goblin'
                 ? 'Racket'
                 : occupant.kind === 'skeleton'
@@ -1189,13 +1211,19 @@ export class Renderer {
           const selected =
             this.selection.type === 'resource' && this.selection.id === site.id;
           const active = site.hp > 0;
-          const key = SUPPLIES[site.kind].art as AssetKey;
+          const reaction = this.reducedMotion
+            ? null
+            : sheepReactionFrame(site, s.elapsed);
+          const key =
+            reaction !== null
+              ? 'sheep-hit'
+              : (SUPPLIES[site.kind].art as AssetKey);
           const hit = this.sprite(
             key,
             site.x * CELL,
             site.y * CELL,
             site.kind === 'wood' ? 0.65 : site.kind === 'gold' ? 0.75 : 0.8,
-            active ? Math.floor(t * 10) % ASSETS[key].frames : 0,
+            reaction ?? (active ? Math.floor(t * 10) % ASSETS[key].frames : 0),
             active ? 1 : 0.4,
           );
           hit.selection = { type: 'resource', id: site.id };
@@ -1525,6 +1553,23 @@ export class Renderer {
           ctx.restore();
         },
       });
+    // Remains lie on the ground, underneath living actors and scenery.
+    for (const corpse of s.domain.corpses.filter((c) => !c.carrier)) {
+      const x = corpse.x * CELL,
+        y = corpse.y * CELL;
+      const frame = this.reducedMotion
+        ? 10
+        : Math.min(10, Math.floor((s.elapsed - corpse.at) / FRAME_SECONDS));
+      this.sprite('unit-death', x, y, 0.8, frame);
+    }
+    for (const death of s.domain.deaths) {
+      if (this.reducedMotion) continue;
+      const frame = Math.min(
+        ASSETS['unit-death'].frames - 1,
+        Math.floor((s.elapsed - death.at) / FRAME_SECONDS),
+      );
+      this.sprite('unit-death', death.x * CELL, death.y * CELL, 0.8, frame);
+    }
     drawables.sort((a, b) => a.depth - b.depth);
     for (const d of drawables) d.draw();
     for (const r of s.domain.resurrections)
@@ -1560,22 +1605,6 @@ export class Renderer {
         particle.scale,
         frame,
       );
-    }
-    for (const corpse of s.domain.corpses.filter((c) => !c.carrier)) {
-      const x = corpse.x * CELL,
-        y = corpse.y * CELL;
-      const frame = this.reducedMotion
-        ? 10
-        : Math.min(10, Math.floor((s.elapsed - corpse.at) / FRAME_SECONDS));
-      this.sprite('unit-death', x, y, 0.8, frame);
-    }
-    for (const death of s.domain.deaths) {
-      if (this.reducedMotion) continue;
-      const frame = Math.min(
-        ASSETS['unit-death'].frames - 1,
-        Math.floor((s.elapsed - death.at) / FRAME_SECONDS),
-      );
-      this.sprite('unit-death', death.x * CELL, death.y * CELL, 0.8, frame);
     }
     for (const lot of s.lots.filter((l) => isHaunted(s, l))) {
       const x = (lot.x + 4) * CELL,
@@ -1631,19 +1660,18 @@ export class Renderer {
         supplyActive(s, site) ? '#ffe0a3' : '#c5c5b5',
       );
     for (const l of s.lots) {
-      const x = (l.x + 4) * CELL,
-        y = (l.y + 8) * CELL,
-        labelY = y + (!l.owned && l.kind !== 'empty' ? 32 : 16);
+      const x = (l.x + 4) * CELL;
       const bar = buildingBars.get(l.id);
+      // Anchor names to the visible roof, above both health and construction bars.
+      const stackedBar =
+        l.construction && l.hp < l.maxHp ? 14 + 3 / this.scale : 0;
+      const labelY = bar
+        ? bar.y - stackedBar - 2 - (12 * this.uiScale) / this.scale
+        : (l.y + 8) * CELL + 16;
       if (bar) {
         if (l.hp < l.maxHp) this.bar(bar.x, bar.y, l.hp / l.maxHp, 80);
         if (l.construction)
-          this.bar(
-            bar.x,
-            bar.y - (l.hp < l.maxHp ? 14 + 3 / this.scale : 0),
-            l.construction.progress,
-            90,
-          );
+          this.bar(bar.x, bar.y - stackedBar, l.construction.progress, 90);
       }
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
@@ -1708,6 +1736,42 @@ export class Renderer {
           bar.name,
           bar.enemy ? '#ffcf83' : '#eee4ce',
         );
+    }
+    // Confirm accepted attacks with the original orange Tiny Swords arrow.
+    // Wall time makes the cue finish even when an order is issued while paused.
+    if (s.attackOrder && this.attackFeedback?.order !== s.attackOrder)
+      this.attackFeedback = { order: s.attackOrder, since: performance.now() };
+    if (this.attackFeedback && !s.won && !s.lost) {
+      const age = (performance.now() - this.attackFeedback.since) / 1000;
+      const { target } = this.attackFeedback.order;
+      let anchor: Point | undefined;
+      if (target.type === 'lot') {
+        const lot = s.lots.find((lot) => lot.id === target.id);
+        if (lot && !lot.owned && lot.hp > 0 && lot.kind !== 'empty')
+          anchor = buildingBars.get(lot.id);
+      } else if (target.type === 'resource') {
+        const site = s.sites.find((site) => site.id === target.id);
+        if (site && supplyActive(s, site))
+          anchor = { x: site.x * CELL, y: site.y * CELL - 44 };
+      } else {
+        const actors = target.type === 'enemy' ? s.enemies : s.workers;
+        const actor = actors.find(
+          (actor) => actor.id === target.id && actor.hp > 0,
+        );
+        if (actor) anchor = { x: actor.x * CELL, y: actor.y * CELL - 76 };
+      }
+      if (anchor && age < 1.8) {
+        const ui = this.uiScale / this.scale;
+        const bounce = this.reducedMotion ? 0 : Math.sin(age * Math.PI * 4) * 3;
+        this.sprite(
+          'ui-back',
+          anchor.x + 34 * ui,
+          anchor.y - (22 + bounce) * ui,
+          0.85 * ui,
+          0,
+          Math.min(1, (1.8 - age) / 0.3),
+        );
+      }
     }
     // Resource deliveries float above their contributor and the combat overlays.
     for (const gain of s.resourceGains) {

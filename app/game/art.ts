@@ -19,6 +19,16 @@ export const ASSETS = Object.fromEntries(
 export type AssetKey = keyof typeof ASSETS;
 export type Animation = 'idle' | 'walk' | 'attack';
 export const FRAME_SECONDS = 0.1;
+export function sheepReactionFrame(
+  site: ResourceSite,
+  time: number,
+): number | null {
+  if (site.kind !== 'food' || site.hitAt === undefined) return null;
+  const age = time - site.hitAt;
+  return age >= 0 && age < ASSETS['sheep-hit'].frames * FRAME_SECONDS
+    ? Math.floor(age / FRAME_SECONDS)
+    : null;
+}
 /** Original sheets may contain several rows, such as the shared death animation. */
 export function spriteFrame(key: AssetKey, frame: number) {
   const a = ASSETS[key];
@@ -71,8 +81,7 @@ export function animationFrame(sequence: AssetKey[], seconds: number) {
   }
   return { key: sequence[0], frame: 0 };
 }
-export const portrait = (kind: CreatureKind) =>
-  ASSETS[`${kind}-avatar`].src;
+export const portrait = (kind: CreatureKind) => ASSETS[`${kind}-avatar`].src;
 
 export function workerArt(worker: HumanWorker, site: ResourceSite): AssetKey {
   const action =

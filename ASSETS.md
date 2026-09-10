@@ -48,3 +48,14 @@ Les textures UI sont des planches de morceaux séparés. `PackUI.tsx` répète l
 L’alchimiste emploie les séquences Idle, Walk et Attack du Hex Shaman original, ainsi que `Hex Shaman_Avatar.png`, sans retouche. `scripts/import-alchemist.ps1` copie ces quatre ressources vers les entrées `alchemist-*`. Les tours emploient les tours bleues et violettes déjà importées. Les combos utilisent Fire_01 et le rituel humain l’animation de soins du moine, tous issus du pack.
 
 Les jardins conservent les couleurs originales du pack, sans modification de palette. Les notices du haut utilisent le parchemin enroulé `ui-banner.png` et la pause le ruban bleu `ui-ribbons.png`, avec leurs bordures et ornements originaux. Les rampes de terrain emploient leurs deux moitiés (128 × 128 pixels) et les surfaces de sol contiguës partagent une même palette. L’aperçu de construction réutilise le sprite final avec une opacité réduite.
+
+La réaction des moutons utilise les six images originales de `Resources/Sheep/HappySheep_Bouncing.png` (Tiny Swords Update 010), copiées sans retouche par `scripts/import-sheep-pack.py` vers `sheep-hit.png`. Elle accompagne la récolte de viande des bergers et gobelins ainsi que les dégâts de sabotage, puis revient au cycle normal. Elle suit le temps de simulation et respecte la réduction des animations.
+
+## Essai sonore TomMusic
+
+Source : [Free Fantasy 200 SFX Pack — TomMusic](https://tommusic.itch.io/free-fantasy-200-sfx-pack).
+L’archive fournie par l’utilisateur a servi à importer 11 fichiers WAV originaux (1,37 Mo) : deux coupes de bois, deux extractions, deux attaques d’épée, un arc, deux sorts, une fermeture de coffre et une ouverture de porte. La sélection exacte est dans `scripts/import-tommusic.ps1`.
+
+La page de l’auteur autorise l’utilisation dans des projets commerciaux ou personnels et interdit la revente ou redistribution du pack seul. TomMusic est crédité dans l’aide du jeu. Pour cet essai local, les fichiers audio sont ignorés par Git : ils ne sont pas publiés comme banque de sons dans le dépôt public.
+
+Importer l’archive : `powershell -NoProfile -File scripts/import-tommusic.ps1 -Archive "C:/chemin/Free Fantasy SFX Pack By TomMusic.zip"`. Les fichiers arrivent dans `public/audio/tommusic/`. Une future publication sonore devra fournir ces fichiers au build par un canal privé ; ils sont copiés par Vite dans le jeu compilé localement. En leur absence, le jeu reste jouable sans son et indique leur indisponibilité dans les paramètres.

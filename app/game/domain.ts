@@ -26,7 +26,10 @@ export interface Death extends Point {
   at: number;
 }
 export interface Corpse extends Point {
-  human?: Pick<Enemy, 'kind' | 'role' | 'level' | 'maxHp' | 'damage'>;
+  human?: Pick<
+    Enemy,
+    'kind' | 'role' | 'level' | 'maxHp' | 'damage' | 'garrisonLotId'
+  >;
   id: number;
   at: number;
   side: 'human' | 'evil';
@@ -279,7 +282,12 @@ export function leaveDeath(s: State, actor: Point) {
 export function leaveCorpse(
   s: State,
   actor: Point &
-    Partial<Pick<Enemy, 'role' | 'level' | 'maxHp' | 'damage' | 'revived'>> & {
+    Partial<
+      Pick<
+        Enemy,
+        'role' | 'level' | 'maxHp' | 'damage' | 'revived' | 'garrisonLotId'
+      >
+    > & {
       kind?: string;
     },
   side: Corpse['side'],
@@ -298,6 +306,7 @@ export function leaveCorpse(
             level: actor.level!,
             maxHp: actor.maxHp!,
             damage: actor.damage!,
+            garrisonLotId: actor.garrisonLotId,
           }
         : undefined,
     expiresAt: s.elapsed + 100,

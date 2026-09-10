@@ -140,7 +140,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   guild: {
     name: 'Guilde des héros',
     description:
-      'Les Lames de l’Aube préparent des expéditions contre votre manoir. Prenez leur guilde pour interrompre les prochains raids.',
+      'Les Lames de l’Aube reforment leur garnison 60 s après sa défaite et préparent des expéditions contre votre manoir. Conquérez la guilde pour couper ces renforts.',
     short: 'Source des expéditions',
     art: 4,
     cost: {},
@@ -311,8 +311,9 @@ export const RECRUIT_OPTIONS: CreatureKind[] = [
 export const BOARD = 32;
 export const STARTS = [2, 12, 22];
 export interface Lot {
-  /** The visible guild defenders have left their posts; never duplicate them. */
+  /** The visible guild defenders have left their posts. */
   garrisonReleased?: boolean;
+  garrisonReturnsAt?: number;
   hauntedUntil?: number;
   hauntedBy?: number;
   id: number;
@@ -446,6 +447,10 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  /** Actual ranged target for this simulation step, including between arrows. */
+  shotTarget?: Projectile['target'];
+  /** Guild defenders are separate from the offensive expedition waves. */
+  garrisonLotId?: number;
   /** A living aggressor is pursued without a distance or timeout leash. */
   pursuitTarget?: number;
   aggressors?: number[];
@@ -551,6 +556,7 @@ export const SUPPLIES = {
 } as const;
 export const UPGRADE_SUPPLIES = { gold: 25, wood: 20, food: 15 };
 export interface ResourceSite extends Point {
+  hitAt?: number;
   id: number;
   kind: Supply;
   home: number;
@@ -559,9 +565,14 @@ export interface ResourceSite extends Point {
   repairAt: number;
   recruitAt: number;
 }
+function resourceHit(s: State, site: ResourceSite) {
+  // Let the six original reaction frames finish before another harvesting blow.
+  if (site.kind === 'food' && s.elapsed - (site.hitAt ?? -Infinity) >= 0.8)
+    site.hitAt = s.elapsed;
+}
 const SUPPLY_LOCATIONS: (Point & { kind: Supply; home: number; hp: number })[] =
   [
-    { kind: 'food', home: 1, x: 19, y: 4.5, hp: 110 },
+    { kind: 'food', home: 1, ...ISLAND_SITES.food, hp: 110 },
     { kind: 'gold', home: 5, ...ISLAND_SITES.gold, hp: 140 },
     { kind: 'wood', home: 8, ...ISLAND_SITES.wood, hp: 120 },
   ];
@@ -592,7 +603,7 @@ export function resourceApproach(
     ? { x: site.x + 0.75, y: site.y + 0.25 }
     : site.kind === 'gold'
       ? { x: site.x - 1, y: site.y }
-      : { x: site.x, y: site.y };
+      : { x: site.x - 1, y: site.y };
 }
 export function suppliesAvailable(
   s: State,
@@ -650,6 +661,7 @@ export function raidSupply(s: State, target: Selection) {
       target.type === 'resource' ? 'sabotage' : 'hunt',
       target.id,
     );
+  markAttackOrder(s, { type: target.type, id: target.id });
   announce(
     s,
     'Votre armée part couper le ravitaillement humain. La garde peut intervenir sur le trajet.',
@@ -705,6 +717,7 @@ function advanceEconomy(s: State, dt: number) {
       w.progress = 0;
     }
     if (w.phase === 'harvest') {
+      resourceHit(s, site);
       w.facing = site.x >= w.x ? 1 : -1;
       w.progress += dt;
       if (w.progress >= 6) {
@@ -773,6 +786,10 @@ export function resourceGain(
   });
 }
 export interface State {
+  attackOrder?: {
+    sequence: number;
+    target: { type: 'lot' | 'enemy' | 'worker' | 'resource'; id: number };
+  };
   strategy: StrategyState;
   domain: DomainState;
   resourceGains: ResourceGain[];
@@ -982,9 +999,11 @@ function navigationLot(x: number, y: number) {
     ? null
     : { id: row * 3 + col, x: STARTS[col], y: STARTS[row] };
 }
-function supplyGateRow(lot: { id: number; y: number }) {
+function supplyGateRow(lot: { id: number; x: number; y: number }) {
   const site = SUPPLY_LOCATIONS.find((site) => site.home === lot.id);
-  return site ? Math.floor(resourceApproach(site).y) - lot.y : -1;
+  return site && site.x >= lot.x && site.x < lot.x + 8
+    ? Math.floor(resourceApproach(site).y) - lot.y
+    : -1;
 }
 function walkableCell(x: number, y: number) {
   if (x < 0 || y < 0 || x >= BOARD || y >= BOARD) return isIslandPathCell(x, y);
@@ -1004,10 +1023,11 @@ function navigationPoint(x: number, y: number): Point {
   return { x: x + (gate ? 0 : 0.5), y: y + 0.5 };
 }
 const PATH_MIN_X = -14;
+const PATH_MAX_X = 47;
 const PATH_MAX_Y = 36;
-const PATH_WIDTH = BOARD - PATH_MIN_X;
+const PATH_WIDTH = PATH_MAX_X - PATH_MIN_X + 1;
 function navigationTarget(point: Point): Point {
-  let x = Math.min(BOARD - 1, Math.max(PATH_MIN_X, Math.floor(point.x)));
+  let x = Math.min(PATH_MAX_X, Math.max(PATH_MIN_X, Math.floor(point.x)));
   let y = Math.min(PATH_MAX_Y, Math.max(0, Math.floor(point.y)));
   const lot = navigationLot(x, y);
   if (!walkableCell(x, y) && lot) {
@@ -1041,7 +1061,7 @@ function crossesGate(
   );
 }
 export function findPath(from: Point, to: Point): Point[] {
-  const sx = Math.min(BOARD - 1, Math.max(PATH_MIN_X, Math.floor(from.x))),
+  const sx = Math.min(PATH_MAX_X, Math.max(PATH_MIN_X, Math.floor(from.x))),
     sy = Math.min(PATH_MAX_Y, Math.max(0, Math.floor(from.y)));
   const destination = navigationTarget(to),
     tx = Math.floor(destination.x),
@@ -1073,6 +1093,8 @@ export function findPath(from: Point, to: Point): Point[] {
       const nx = x + dx,
         ny = y + dy,
         next = ny * PATH_WIDTH + nx - PATH_MIN_X;
+      if (nx < PATH_MIN_X || nx > PATH_MAX_X || ny < 0 || ny > PATH_MAX_Y)
+        continue;
       if (!walkableCell(nx, ny) || prev[next] !== -1) continue;
       const lot = navigationLot(nx, ny);
       // A third-party garden must never serve as a shortcut between streets.
@@ -1263,6 +1285,7 @@ export function attack(s: State, id: number) {
   const error = attackReason(s, id);
   if (error) return error;
   for (const u of army(s)) assign(u, entrance(s.lots[id]), 'attack', id);
+  markAttackOrder(s, { type: 'lot', id });
   announce(
     s,
     `Votre armée marche vers ${BUILDINGS[s.lots[id].kind].name.toLowerCase()}.`,
@@ -1279,6 +1302,15 @@ export function moveUnit(s: State, id: number, point: Point) {
   const u = s.units.find((v) => v.id === id);
   if (!u) return;
   assign(u, point, 'move', null);
+}
+function markAttackOrder(
+  s: State,
+  target: NonNullable<State['attackOrder']>['target'],
+) {
+  s.attackOrder = {
+    sequence: (s.attackOrder?.sequence ?? 0) + 1,
+    target: { ...target },
+  };
 }
 /** Right-click orders apply only to the selected creature. */
 export function commandUnit(
@@ -1314,6 +1346,7 @@ export function commandUnit(
     const enemy = s.enemies.find((e) => e.id === target.id && e.hp > 0);
     if (!enemy) return 'Cet ennemi n’est plus dans le quartier.';
     assign(unit, enemy, 'defend', enemy.id);
+    markAttackOrder(s, { type: 'enemy', id: enemy.id });
     announce(
       s,
       `${CREATURES[unit.kind].name} intercepte ${enemyDefinition(enemy).name.toLowerCase()}.`,
@@ -1322,6 +1355,7 @@ export function commandUnit(
     const error = attackReason(s, lot.id);
     if (error) return error;
     assign(unit, entrance(lot), 'attack', lot.id);
+    markAttackOrder(s, { type: 'lot', id: lot.id });
     announce(
       s,
       `${CREATURES[unit.kind].name} attaque ${BUILDINGS[lot.kind].name.toLowerCase()}.`,
@@ -1339,6 +1373,7 @@ export function commandUnit(
       target.type === 'resource' ? 'sabotage' : 'hunt',
       target.id,
     );
+    markAttackOrder(s, { type: target.type, id: target.id });
     announce(
       s,
       `${CREATURES[unit.kind].name} part couper le ravitaillement humain.`,
@@ -1583,6 +1618,7 @@ function advanceGathering(s: State, u: Unit, dt: number): boolean {
     return true;
   }
   g.phase = 'harvest';
+  resourceHit(s, site);
   u.facing = site.x >= u.x ? 1 : -1;
   g.progress += dt;
   // Material resources enter storage only after a complete physical round trip.
@@ -1806,9 +1842,38 @@ export function rememberAggressor(s: State, enemy: Enemy, attacker: Unit) {
     enemy.path = [];
   }
 }
+export const GUILD_RECOVERY_SECONDS = 60;
+function advanceGuildGarrisons(s: State) {
+  for (const lot of s.lots) {
+    if (lot.kind !== 'guild' || lot.owned || lot.hp <= 0) {
+      lot.garrisonReturnsAt = undefined;
+      continue;
+    }
+    if (!lot.garrisonReleased) continue;
+    if (s.enemies.some((e) => e.hp > 0 && e.garrisonLotId === lot.id)) {
+      lot.garrisonReturnsAt = undefined;
+      continue;
+    }
+    if (lot.garrisonReturnsAt === undefined) {
+      lot.garrisonReturnsAt = s.elapsed + GUILD_RECOVERY_SECONDS;
+      announce(
+        s,
+        `La garnison est vaincue ! De nouveaux héros arriveront dans ${GUILD_RECOVERY_SECONDS} s. Conquérez la guilde pour empêcher leur retour.`,
+      );
+    } else if (s.elapsed >= lot.garrisonReturnsAt && !isHaunted(s, lot)) {
+      lot.garrisonReleased = false;
+      lot.garrisonReturnsAt = undefined;
+      announce(
+        s,
+        'Quatre nouveaux héros ont rejoint la guilde. Sa garnison est de nouveau prête à défendre le bâtiment.',
+      );
+    }
+  }
+}
 function releaseGuildDefenders(s: State, lot: Lot, attackers: Unit[]) {
-  if (lot.garrisonReleased) return;
+  if (lot.garrisonReleased || lot.hp <= 0 || lot.owned) return;
   lot.garrisonReleased = true;
+  lot.garrisonReturnsAt = undefined;
   const level = humanLevel(s);
   const point = entrance(lot);
   for (const [i, role] of GUILD_ROLES.entries()) {
@@ -1817,6 +1882,7 @@ function releaseGuildDefenders(s: State, lot: Lot, attackers: Unit[]) {
     s.enemies.push({
       id: s.nextId++,
       kind: 'hero',
+      garrisonLotId: lot.id,
       role,
       ...point,
       x: point.x - 0.9 + i * 0.6,
@@ -1852,7 +1918,7 @@ function mobilize(s: State) {
     const settings = PRESSURE[kind],
       m = s.mobilization[kind],
       source = sourceBuilding(s, kind);
-    if (!source || source.owned) {
+    if (!source || source.owned || source.hp <= 0) {
       m.active = false;
       m.starved = false;
       m.nextRaidAt = null;
@@ -1982,6 +2048,8 @@ export function clearShot(from: Point, to: Point) {
   return true;
 }
 function shoot(s: State, e: Enemy, target: Projectile['target'], point: Point) {
+  e.shotTarget = target;
+  e.facing = point.x >= e.x ? 1 : -1;
   if (e.attackCooldown > 0) return;
   e.attackCooldown = 0.8;
   s.projectiles.push({
@@ -2029,6 +2097,7 @@ function advanceEnemies(s: State, dt: number) {
     e.fighting = false;
     e.moving = false;
     e.healTarget = null;
+    e.shotTarget = undefined;
     e.attackCooldown -= dt;
     const def = enemyDefinition(e);
     e.aggressors = e.aggressors?.filter((id) =>
@@ -2132,6 +2201,7 @@ function advanceEnemies(s: State, dt: number) {
       ) {
         e.path = [];
         e.fighting = e.damage > 0;
+        e.facing = destination.x >= e.x ? 1 : -1;
         const lot = s.lots[e.target];
         if (e.role === 'archer')
           shoot(s, e, { type: 'lot', id: lot.id }, destination);
@@ -2309,7 +2379,12 @@ function separateCombatants(s: State, dt: number) {
   for (const { actor } of bodies) {
     const goal = goals.get(actor.id);
     if (moved.has(actor.id) && goal) actor.path = findPath(actor, goal);
-    const opponent = opponents.get(actor.id);
+    const shot = 'shotTarget' in actor ? actor.shotTarget : undefined;
+    const opponent = shot
+      ? shot.type === 'lot'
+        ? entrance(s.lots[shot.id])
+        : s.units.find((u) => u.id === shot.id && u.hp > 0)
+      : opponents.get(actor.id);
     if (opponent && Math.abs(opponent.x - actor.x) > 0.05)
       actor.facing = opponent.x > actor.x ? 1 : -1;
   }
@@ -2423,6 +2498,7 @@ function tickStep(s: State, dt: number) {
         u.fighting = true;
         u.facing = target.x >= u.x ? 1 : -1;
         target.hp = Math.max(0, target.hp - armyDamage(s, u) * dt);
+        if ('repairAt' in target) resourceHit(s, target);
         if ('repairAt' in target && target.hp === 0) {
           s.domain.suspicion = Math.min(100, s.domain.suspicion + 10);
           target.repairAt = s.elapsed + 90;
@@ -2555,6 +2631,7 @@ function tickStep(s: State, dt: number) {
   s.defeatedEnemies += defeated.length;
   creditResource(s, 'gold', defeated.length * 12);
   s.enemies = s.enemies.filter((e) => e.hp > 0);
+  advanceGuildGarrisons(s);
   for (const lot of s.lots.filter((l) => l.owned && l.hp > 0)) {
     if (!nearest(entrance(lot), s.enemies, 4))
       lot.hp = Math.min(lot.maxHp, lot.hp + dt * 1.5);

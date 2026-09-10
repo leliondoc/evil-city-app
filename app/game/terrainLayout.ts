@@ -140,7 +140,10 @@ export const HIGHLANDS: GroundPatch[] = [
     w: 7,
     h: 6,
     rows: ['..####.', '..#####', '.######', '#######', '######.', '####...'],
-    stairs: [{ tx: 4, ty: 4, side: 'left' }],
+    stairs: [
+      { tx: 4, ty: 4, side: 'left' },
+      { tx: 1, ty: 5, side: 'left' },
+    ],
   },
   {
     key: 'terrain-2',

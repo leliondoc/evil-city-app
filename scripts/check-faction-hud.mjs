@@ -34,7 +34,8 @@ try {
       assert.equal(await menu.locator('.district-group').count(), 2);
       const map = await page.locator('.world-wrap').boundingBox();
       const rail = await menu.boundingBox();
-      assert.ok(rail.x < map.x + 40);
+      assert.ok(rail.x > map.x + map.width / 2);
+      assert.ok(rail.x + rail.width <= width && width - rail.x - rail.width < 40);
     } else {
       assert.equal(await menu.locator('.district-group').count(), 1);
       await menu.getByRole('button', { name: 'Humains', exact: true }).click();

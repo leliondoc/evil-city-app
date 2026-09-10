@@ -7,8 +7,10 @@ import {
   commandUnit,
   HEROES,
   PRESSURE,
+  GUILD_RECOVERY_SECONDS,
 } from '../app/game/engine.ts';
 import { hitEnemy } from '../app/game/strategy.ts';
+import { leaveCorpse } from '../app/game/domain.ts';
 
 function assault() {
   const s = createGame();
@@ -27,6 +29,123 @@ function assault() {
   });
   return { s, u, guild: s.lots[0] };
 }
+
+function defeatedGarrison() {
+  const setup = assault();
+  const { s, u, guild } = setup;
+  s.workers = [];
+  s.economy.workerReadyAt = Infinity;
+  tick(s, 0.1);
+  const oldIds = s.enemies.map((e) => e.id);
+  for (const e of s.enemies) e.hp = 0;
+  s.units = [];
+  tick(s, 0.1);
+  return { s, u, guild, oldIds };
+}
+
+test('Guild recovery waits for the last defender and restores four defenders after 60 simulation seconds', () => {
+  const { s, guild } = assault();
+  s.workers = [];
+  tick(s, 0.1);
+  s.units = [];
+  for (const e of s.enemies.slice(1)) e.hp = 0;
+  tick(s, 0.1);
+  assert.equal(guild.garrisonReturnsAt, undefined);
+  s.enemies[0].hp = 0;
+  tick(s, 0.1);
+  const deadline = guild.garrisonReturnsAt;
+  assert.equal(deadline, s.elapsed + GUILD_RECOVERY_SECONDS);
+  tick(s, 0);
+  assert.equal(
+    guild.garrisonReturnsAt,
+    deadline,
+    'Pausing does not advance recovery',
+  );
+  tick(s, GUILD_RECOVERY_SECONDS - 0.2);
+  assert.equal(guild.garrisonReleased, true);
+  tick(s, 0.3);
+  assert.equal(
+    guild.garrisonReleased,
+    false,
+    'The visible four-person garrison is restored',
+  );
+  assert.equal(guild.garrisonReturnsAt, undefined);
+  assert.equal(
+    s.enemies.length,
+    0,
+    'Restored defenders stay at the guild until attacked',
+  );
+});
+
+test('A restored guild deploys four fresh heroes once and can recover again after another defeat', () => {
+  const { s, u, guild, oldIds } = defeatedGarrison();
+  tick(s, GUILD_RECOVERY_SECONDS + 0.1);
+  Object.assign(u, entrance(guild), {
+    task: 'attack',
+    target: guild.id,
+    path: [],
+    fighting: false,
+  });
+  s.units = [u];
+  tick(s, 0.1);
+  assert.equal(s.enemies.length, 4);
+  assert.ok(
+    s.enemies.every(
+      (e) => e.garrisonLotId === guild.id && !oldIds.includes(e.id),
+    ),
+  );
+  assert.ok(s.enemies.every((e) => e.pursuitTarget === u.id));
+  const ids = s.enemies.map((e) => e.id);
+  tick(s, 0.5);
+  assert.deepEqual(
+    s.enemies.map((e) => e.id),
+    ids,
+  );
+  s.units = [];
+  for (const e of s.enemies) e.hp = 0;
+  tick(s, 0.1);
+  assert.equal(guild.garrisonReturnsAt, s.elapsed + GUILD_RECOVERY_SECONDS);
+});
+
+test('Conquering or destroying the guild cancels its pending return and offensive raids', () => {
+  for (const destroyed of [false, true]) {
+    const { s, guild } = defeatedGarrison();
+    if (destroyed) guild.hp = 0;
+    else guild.owned = true;
+    s.economy.stocks = { gold: 1000, food: 1000, wood: 1000 };
+    tick(s, GUILD_RECOVERY_SECONDS + 1);
+    assert.equal(guild.garrisonReturnsAt, undefined);
+    assert.equal(s.enemies.length, 0);
+    assert.equal(s.mobilization.hero.active, false);
+  }
+});
+
+test('Haunting blocks the return until it ends without creating duplicate defenders', () => {
+  const { s, u, guild } = defeatedGarrison();
+  Object.assign(u, { kind: 'specter', task: 'haunt', target: guild.id, path: [] });
+  s.units = [u];
+  guild.hauntedBy = u.id;
+  guild.hauntedUntil = s.elapsed + GUILD_RECOVERY_SECONDS + 5;
+  tick(s, GUILD_RECOVERY_SECONDS + 1);
+  assert.equal(guild.garrisonReleased, true);
+  assert.ok(guild.garrisonReturnsAt < s.elapsed);
+  tick(s, 5);
+  assert.equal(guild.garrisonReleased, false);
+  tick(s, 5);
+  assert.equal(guild.garrisonReturnsAt, undefined);
+});
+
+test('Guild identity survives resurrection data and a living defender cancels replacement', () => {
+  const { s, guild } = assault();
+  tick(s, 0.1);
+  const defender = s.enemies[0];
+  leaveCorpse(s, defender, 'human');
+  assert.equal(s.domain.corpses.at(-1).human.garrisonLotId, guild.id);
+  guild.garrisonReturnsAt = s.elapsed + 10;
+  tick(s, 0.1);
+  assert.equal(guild.garrisonReturnsAt, undefined);
+  assert.equal(guild.garrisonReleased, true);
+});
 
 test('The four visible guild defenders deploy once on actual damage, even without reinforcement funds', () => {
   const { s, u, guild } = assault();

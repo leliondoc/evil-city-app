@@ -402,7 +402,7 @@ export function ThreatPanel({
                 <PopoverContent
                   className="district-popover"
                   data-camp={group.id}
-                  side={compact ? 'bottom' : 'right'}
+                  side={compact ? 'bottom' : 'left'}
                   align="start"
                   sideOffset={10}
                 >

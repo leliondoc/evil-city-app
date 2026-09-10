@@ -1783,5 +1783,13 @@
     "frameWidth": 256,
     "frames": 1,
     "anchor": 0.67
+  },
+  "sheep-hit": {
+    "src": "/tiny-swords/sheep-hit.png",
+    "width": 768,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 6,
+    "anchor": 0.67
   }
 }

@@ -21,9 +21,19 @@ try {
       selection = page.locator('.sidebar');
     const left = await mission.boundingBox(),
       map = await page.locator('.world-wrap').boundingBox(),
-      right = await selection.boundingBox();
+      selected = await selection.boundingBox(),
+      caption = await page.locator('.map-caption').boundingBox();
     assert.ok(
-      left.x + left.width <= map.x + 1 && map.x + map.width <= right.x + 1,
+      left.x + left.width <= selected.x + 1 &&
+        selected.x + selected.width <= map.x + 1,
+    );
+    const chapter = await mission.locator('.mission-card').boundingBox();
+    assert.ok(
+      caption.y + caption.height < chapter.y,
+      'Map ribbon sits above the mission',
+    );
+    assert.ok(
+      caption.x >= left.x && caption.x + caption.width <= left.x + left.width,
     );
     assert.equal(await selection.locator('.mission-card').count(), 0);
     await mission.evaluate((el) => (el.scrollTop = 70));
@@ -34,7 +44,8 @@ try {
     assert.match(await page.locator('.selection-name').innerText(), /or/i);
     const name = await page.locator('.selection-name').boundingBox();
     assert.ok(
-      name.y >= right.y && name.y + name.height <= right.y + right.height,
+      name.y >= selected.y &&
+        name.y + name.height <= selected.y + selected.height,
     );
     assert.ok((await selection.evaluate((el) => el.scrollTop)) < 50);
     assert.equal(await mission.evaluate((el) => el.scrollTop), missionScroll);

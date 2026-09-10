@@ -1,5 +1,6 @@
 /** Tile coordinates shared by resource placement, paths and scenery. */
 export const ISLAND_SITES = {
+  food: { x: 36.5, y: 3.5 },
   wood: { x: -8.25, y: 12.25 },
   gold: { x: -5.5, y: 31.5 },
 };
@@ -19,9 +20,20 @@ export const ISLAND_BRIDGES = [
   { left: -176, right: 16, top: 624, bottom: 688 },
   { left: -272, right: -208, top: 736, bottom: 864 },
 ];
+/** Approach the northeast pasture through its southern ramp, never the cliff. */
+export const PASTURE_PATH = [
+  { x: 31.5, y: 10.5 },
+  { x: 33.5, y: 10.5 },
+  { x: 33.5, y: 7.5 },
+  { x: 34.5, y: 7.5 },
+  { x: 34.5, y: 5.5 },
+  { x: 35.5, y: 5.5 },
+  { x: 35.5, y: 3.5 },
+  ISLAND_SITES.food,
+];
+const RESOURCE_PATHS = [...ISLAND_PATHS, PASTURE_PATH];
 export function isIslandPathCell(x: number, y: number) {
-  if (x >= 0) return false;
-  return ISLAND_PATHS.some((path) =>
+  return RESOURCE_PATHS.some((path) =>
     path.slice(1).some((b, i) => {
       const a = path[i];
       const ax = Math.floor(a.x),
@@ -48,7 +60,7 @@ export function inIslandClearing(x: number, y: number) {
     )
   )
     return true;
-  return ISLAND_PATHS.some((path) =>
+  return RESOURCE_PATHS.some((path) =>
     path.slice(1).some((b, i) => {
       const a = path[i];
       return (

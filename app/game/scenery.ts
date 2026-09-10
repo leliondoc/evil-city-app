@@ -85,14 +85,12 @@ export function makeScenery(lots: Lot[]): Decoration[] {
       key: `tree-${(n % 4) + 1}` as AssetKey,
       scale: n === 0 ? 0.45 : 0.58,
     });
-    // Only the food supply remains inside its delivery building's garden.
-    if (n !== 1)
-      decorations.push({
-        x: (lot.x + 7) * 32,
-        y: (lot.y + 2) * 32,
-        key: `bush-${(n % 4) + 1}` as AssetKey,
-        scale: 0.65,
-      });
+    decorations.push({
+      x: (lot.x + 7) * 32,
+      y: (lot.y + 2) * 32,
+      key: `bush-${(n % 4) + 1}` as AssetKey,
+      scale: 0.65,
+    });
   }
   // Small groves frame clearings; species and spacing belong to each grove.
   const groves = [

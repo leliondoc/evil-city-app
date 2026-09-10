@@ -1,7 +1,14 @@
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { recruit, tick, commandUnits, entrance } from '../app/game/engine.ts';
+import {
+  recruit,
+  tick,
+  commandUnits,
+  entrance,
+  attack,
+  raidSupply,
+} from '../app/game/engine.ts';
 import {
   dragIntent,
   unitSelection,
@@ -69,6 +76,44 @@ function party() {
   tick(s, 7);
   return s;
 }
+
+test('Only accepted attack orders produce target feedback, including repeated paused orders', () => {
+  const s = party();
+  const fighter = s.units.find((u) => u.kind === 'troll');
+  const target = { type: 'lot', id: 1 };
+  const point = entrance(s.lots[1]);
+  assert.notEqual(commandUnits(s, [s.units[0].id], target, point), '');
+  assert.equal(s.attackOrder, undefined);
+  assert.equal(commandUnits(s, [fighter.id], null, point), '');
+  assert.equal(s.attackOrder, undefined);
+  assert.equal(commandUnits(s, [fighter.id], target, point), '');
+  assert.deepEqual(s.attackOrder.target, target);
+  const previous = s.attackOrder;
+  assert.equal(attack(s, 1), '');
+  assert.ok(s.attackOrder.sequence > previous.sequence);
+  assert.deepEqual(s.attackOrder.target, target);
+  assert.notEqual(attack(s, 6), '');
+  assert.deepEqual(
+    s.attackOrder.target,
+    target,
+    'A rejected friendly target never gets a marker',
+  );
+});
+
+test('Attack feedback identifies enemy units and peasants for individual and army orders', () => {
+  const s = party();
+  const fighter = s.units.find((u) => u.kind === 'troll');
+  const enemy = { id: s.nextId++, hp: 100, kind: 'guard', x: 10.5, y: 10.5 };
+  s.enemies.push(enemy);
+  assert.equal(
+    commandUnits(s, [fighter.id], { type: 'enemy', id: enemy.id }, enemy),
+    '',
+  );
+  assert.deepEqual(s.attackOrder.target, { type: 'enemy', id: enemy.id });
+  const target = { type: 'worker', id: s.workers[0].id };
+  assert.equal(raidSupply(s, target), '');
+  assert.deepEqual(s.attackOrder.target, target);
+});
 test('Group movement sends only the selected living units to the requested street', () => {
   const s = party();
   const untouched = structuredClone(s.units[2]);

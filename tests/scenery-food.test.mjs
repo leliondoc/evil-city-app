@@ -127,8 +127,12 @@ test('Wood and gold occupy dry islands and all supply sites remain reachable', (
   for (const site of s.sites) {
     const home = s.lots[site.home];
     if (site.kind === 'food') {
-      assert.ok(site.x > home.x && site.x < home.x + 8);
-      assert.ok(site.y > home.y && site.y < home.y + 8);
+      assert.ok(
+        site.x > 32 && site.y < 6,
+        'Sheep live in the northeast pasture',
+      );
+      assert.ok(onPatch(HIGHLANDS[0], site.x * 32, site.y * 32));
+      assert.ok(isDryGround(site.x * 32, site.y * 32));
     } else {
       assert.ok(site.x < 0);
       assert.ok(isDryGround(site.x * 32, site.y * 32));

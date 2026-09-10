@@ -36,7 +36,8 @@ test('The opening funds two manual workers and reaches six within 90 seconds thr
 });
 
 for (const kind of ['gold', 'wood', 'food']) {
-  test(`An opening worker delivers ${kind} within 40 seconds without credit during harvesting`, () => {
+  const limit = kind === 'food' ? 55 : 40; // The northeast pasture is farther from the manor.
+  test(`An opening worker delivers ${kind} within ${limit} seconds without credit during harvesting`, () => {
     const s = createGame();
     recruit(s, 'goblin');
     until(s, () => s.units.length === 1, 7);
@@ -48,8 +49,8 @@ for (const kind of ['gold', 'wood', 'food']) {
     );
     until(s, () => u.gathering.cargo > 0, 25);
     assert.ok(s.resources[kind] <= before);
-    until(s, () => u.gathering.cargo === 0, 15);
-    assert.ok(s.elapsed < 40, `${kind} delivered at ${s.elapsed}`);
+    until(s, () => u.gathering.cargo === 0, kind === 'food' ? 25 : 15);
+    assert.ok(s.elapsed < limit, `${kind} delivered at ${s.elapsed}`);
     assert.ok(s.resources[kind] > before + 25);
     assert.ok(
       s.resourceGains.some((gain) => gain.kind === kind && gain.amount === 30),

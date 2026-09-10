@@ -3,6 +3,7 @@ import { ArrowLeft, Shield, Swords } from 'lucide-react';
 import { enemyAnimationSequence, type Animation } from './art';
 import {
   GUILD_ROLES,
+  GUILD_RECOVERY_SECONDS,
   HEROES,
   heroParty,
   humanLevel,
@@ -12,15 +13,44 @@ import {
 } from './engine';
 import { GameButton as Button } from './PackUI';
 import { Sprite } from './Sprite';
+import { AbilityCard } from './AbilityCard';
+import { isHaunted } from './domain';
 
 type Props = { state: State; onSelect: (selection: Selection) => void };
 
 export function GuildRoster({ state, onSelect }: Props) {
   const guild = sourceBuilding(state, 'hero');
   const level = humanLevel(state);
+  const returning = guild?.garrisonReturnsAt;
+  const defenders = state.enemies.filter(
+    (e) => e.hp > 0 && e.garrisonLotId === guild?.id,
+  ).length;
   return (
     <div className="guild-roster">
       <h4>Les Lames de l’Aube</h4>
+      {guild && !guild.owned && guild.hp > 0 && (
+        <AbilityCard
+          title="Garnison de la guilde"
+          icon="ui-shield"
+          badge={
+            returning !== undefined
+              ? `${Math.max(0, Math.ceil(returning - state.elapsed))} s`
+              : guild.garrisonReleased
+                ? `${defenders}/4`
+                : '4/4'
+          }
+        >
+          <p>
+            {returning !== undefined
+              ? isHaunted(state, guild)
+                ? 'Le retour des héros est bloqué tant que la guilde est hantée.'
+                : 'De nouveaux héros arrivent. Conquérez la guilde avant leur retour.'
+              : guild.garrisonReleased
+                ? 'Les défenseurs sont sortis combattre. Leur remplacement commence après la mort du dernier.'
+                : `Quatre défenseurs prêts. La garnison se reforme ${GUILD_RECOVERY_SECONDS} s après sa défaite.`}
+          </p>
+        </AbilityCard>
+      )}
       <div className="guild-members">
         {GUILD_ROLES.map((role, id) => (
           <button
@@ -38,7 +68,7 @@ export function GuildRoster({ state, onSelect }: Props) {
       </div>
       <p className="reason">
         {guild?.owned
-          ? 'Guilde conquise : les nouvelles expéditions sont interrompues.'
+          ? 'Guilde conquise : la garnison ne revient plus et les nouvelles expéditions sont interrompues.'
           : `Expédition au niveau ${level} : ${heroParty(level)
               .map((role) => HEROES[role].short)
               .join(', ')}.`}
