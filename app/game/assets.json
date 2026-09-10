@@ -1,0 +1,418 @@
+{
+  "goblin-idle": {
+    "src": "/tiny-swords/goblin-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "goblin-walk": {
+    "src": "/tiny-swords/goblin-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "goblin-attack": {
+    "src": "/tiny-swords/goblin-attack.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "goblin-avatar": {
+    "src": "/tiny-swords/goblin-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "troll-idle": {
+    "src": "/tiny-swords/troll-idle.png",
+    "width": 4608,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 12,
+    "anchor": 0.67
+  },
+  "troll-walk": {
+    "src": "/tiny-swords/troll-walk.png",
+    "width": 3840,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "troll-attack": {
+    "src": "/tiny-swords/troll-attack.png",
+    "width": 2304,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "troll-avatar": {
+    "src": "/tiny-swords/troll-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "skeleton-idle": {
+    "src": "/tiny-swords/skeleton-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "skeleton-walk": {
+    "src": "/tiny-swords/skeleton-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "skeleton-attack": {
+    "src": "/tiny-swords/skeleton-attack.png",
+    "width": 1344,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "skeleton-avatar": {
+    "src": "/tiny-swords/skeleton-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "minotaur-idle": {
+    "src": "/tiny-swords/minotaur-idle.png",
+    "width": 5120,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 16,
+    "anchor": 0.67
+  },
+  "minotaur-walk": {
+    "src": "/tiny-swords/minotaur-walk.png",
+    "width": 2560,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "minotaur-attack": {
+    "src": "/tiny-swords/minotaur-attack.png",
+    "width": 3840,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 12,
+    "anchor": 0.67
+  },
+  "minotaur-avatar": {
+    "src": "/tiny-swords/minotaur-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "troll-windup": {
+    "src": "/tiny-swords/troll-windup.png",
+    "width": 1920,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 5,
+    "anchor": 0.67
+  },
+  "troll-recovery": {
+    "src": "/tiny-swords/troll-recovery.png",
+    "width": 3840,
+    "height": 384,
+    "frameWidth": 384,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "den": {
+    "src": "/tiny-swords/den.png",
+    "width": 3072,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 16,
+    "anchor": 0.8
+  },
+  "cave": {
+    "src": "/tiny-swords/cave.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.78
+  },
+  "fence": {
+    "src": "/tiny-swords/fence.png",
+    "width": 256,
+    "height": 192,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "bones": {
+    "src": "/tiny-swords/bones.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "skull-spike": {
+    "src": "/tiny-swords/skull-spike.png",
+    "width": 64,
+    "height": 128,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "hq-purple": {
+    "src": "/tiny-swords/hq-purple.png",
+    "width": 320,
+    "height": 256,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "forge-purple": {
+    "src": "/tiny-swords/forge-purple.png",
+    "width": 192,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "canteen-purple": {
+    "src": "/tiny-swords/canteen-purple.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "crypt-purple": {
+    "src": "/tiny-swords/crypt-purple.png",
+    "width": 192,
+    "height": 320,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "house-purple": {
+    "src": "/tiny-swords/house-purple.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "tavern-purple": {
+    "src": "/tiny-swords/tavern-purple.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "tower-purple": {
+    "src": "/tiny-swords/tower-purple.png",
+    "width": 128,
+    "height": 256,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "hq-blue": {
+    "src": "/tiny-swords/hq-blue.png",
+    "width": 320,
+    "height": 256,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "forge-blue": {
+    "src": "/tiny-swords/forge-blue.png",
+    "width": 192,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "canteen-blue": {
+    "src": "/tiny-swords/canteen-blue.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "crypt-blue": {
+    "src": "/tiny-swords/crypt-blue.png",
+    "width": 192,
+    "height": 320,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "house-blue": {
+    "src": "/tiny-swords/house-blue.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "tavern-blue": {
+    "src": "/tiny-swords/tavern-blue.png",
+    "width": 128,
+    "height": 192,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "tower-blue": {
+    "src": "/tiny-swords/tower-blue.png",
+    "width": 128,
+    "height": 256,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "grass": {
+    "src": "/tiny-swords/grass.png",
+    "width": 576,
+    "height": 384,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "grass-dark": {
+    "src": "/tiny-swords/grass-dark.png",
+    "width": 576,
+    "height": 384,
+    "frameWidth": 576,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "water": {
+    "src": "/tiny-swords/water.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "foam": {
+    "src": "/tiny-swords/foam.png",
+    "width": 3072,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 16,
+    "anchor": 0.5
+  },
+  "tree": {
+    "src": "/tiny-swords/tree.png",
+    "width": 1536,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.8
+  },
+  "tree-small": {
+    "src": "/tiny-swords/tree-small.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.78
+  },
+  "bush": {
+    "src": "/tiny-swords/bush.png",
+    "width": 1024,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "rock": {
+    "src": "/tiny-swords/rock.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "wood": {
+    "src": "/tiny-swords/wood.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "gold": {
+    "src": "/tiny-swords/gold.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "meat": {
+    "src": "/tiny-swords/meat.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "stump": {
+    "src": "/tiny-swords/stump.png",
+    "width": 192,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.8
+  },
+  "guard-idle": {
+    "src": "/tiny-swords/guard-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "guard-attack": {
+    "src": "/tiny-swords/guard-attack.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "wood-panel": {
+    "src": "/tiny-swords/wood-panel.png",
+    "width": 448,
+    "height": 448,
+    "frameWidth": 448,
+    "frames": 1,
+    "anchor": 0.67
+  }
+}
