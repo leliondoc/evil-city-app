@@ -7,6 +7,7 @@ import {
   SUPPLIES,
   supplyActive,
   entrance,
+  atEntrance,
   type State,
   type Point,
   type Selection,
@@ -722,7 +723,9 @@ export class Renderer {
             draw: () => {
               const fighting = s.units.some(
                   (u) =>
-                    u.target === l.id && u.task === 'attack' && !u.path.length,
+                    u.target === l.id &&
+                    u.task === 'attack' &&
+                    atEntrance(u, l),
                 ),
                 role = l.kind === 'guild' ? GUILD_ROLES[i] : undefined,
                 key = role
@@ -860,7 +863,9 @@ export class Renderer {
             ? 'attack'
             : u.path.length
               ? 'walk'
-              : u.task === 'attack'
+              : u.task === 'attack' &&
+                  u.target !== null &&
+                  atEntrance(u, s.lots[u.target])
                 ? 'attack'
                 : 'idle';
           let motion = this.motions.get(u.id);
@@ -893,7 +898,11 @@ export class Renderer {
           hit.selection = { type: 'unit', id: u.id };
           this.hits.push(hit);
           if (u.task === 'forage') this.sprite('wood', x + 20, y - 4, 0.45);
-          if (u.task === 'build' && !u.path.length) {
+          if (
+            u.task === 'build' &&
+            u.target !== null &&
+            atEntrance(u, s.lots[u.target])
+          ) {
             ctx.fillStyle = '#ffe49c';
             for (let i = 0; i < 3; i++)
               ctx.fillRect(

@@ -408,6 +408,12 @@ export interface ResourceSite extends Point {
   repairAt: number;
   recruitAt: number;
 }
+const SUPPLY_LOCATIONS: (Point & { kind: Supply; home: number; hp: number })[] =
+  [
+    { kind: 'food', home: 1, x: 19, y: 4.5, hp: 110 },
+    { kind: 'gold', home: 5, x: 29, y: 14.5, hp: 140 },
+    { kind: 'wood', home: 8, x: 28.75, y: 26.25, hp: 120 },
+  ];
 export interface HumanWorker extends Point {
   id: number;
   site: number;
@@ -423,7 +429,9 @@ export function supplyActive(s: State, site: ResourceSite) {
   return !s.lots[site.home].owned && site.hp > 0;
 }
 /** A worker stands beside the resource, never inside its drawing. */
-export function resourceApproach(site: ResourceSite): Point {
+export function resourceApproach(
+  site: Pick<ResourceSite, 'kind' | 'x' | 'y'>,
+): Point {
   return site.kind === 'wood'
     ? { x: site.x + 0.75, y: site.y + 0.25 }
     : { x: site.x, y: site.y };
@@ -614,41 +622,13 @@ export function createGame(): State {
       nextUpgradeAt: 120,
     },
     workers: [],
-    sites: [
-      {
-        id: 0,
-        kind: 'food',
-        home: 1,
-        x: 19,
-        y: 4.5,
-        hp: 110,
-        maxHp: 110,
-        repairAt: 0,
-        recruitAt: 0,
-      },
-      {
-        id: 1,
-        kind: 'gold',
-        home: 5,
-        x: 29,
-        y: 14.5,
-        hp: 140,
-        maxHp: 140,
-        repairAt: 0,
-        recruitAt: 0,
-      },
-      {
-        id: 2,
-        kind: 'wood',
-        home: 8,
-        x: 28.75,
-        y: 26.25,
-        hp: 120,
-        maxHp: 120,
-        repairAt: 0,
-        recruitAt: 0,
-      },
-    ],
+    sites: SUPPLY_LOCATIONS.map((site, id) => ({
+      ...site,
+      id,
+      maxHp: site.hp,
+      repairAt: 0,
+      recruitAt: 0,
+    })),
     elapsed: 0,
     nextId: 1,
     lots: kinds.map((kind, id) => ({
@@ -716,7 +696,7 @@ export function createGame(): State {
   return state;
 }
 export function entrance(lot: Lot): Point {
-  return { x: lot.x + 4.5, y: lot.y + 7.5 };
+  return { x: lot.x + 4, y: lot.y + 7.5 };
 }
 export function population(s: State) {
   return (
@@ -758,34 +738,92 @@ export function announce(s: State, message: string) {
   s.noticeUntil = s.elapsed + 6;
   s.journal = [message, ...s.journal].slice(0, 5);
 }
-function blocked(x: number, y: number) {
+function buildingBlocked(x: number, y: number) {
   if (x < 0 || y < 0 || x >= BOARD || y >= BOARD) return true;
   return (
     STARTS.some((a) => x >= a + 1 && x <= a + 6) &&
     STARTS.some((b) => y >= b + 1 && y <= b + 5)
   );
 }
+function navigationLot(x: number, y: number) {
+  const col = STARTS.findIndex((start) => x >= start && x < start + 8);
+  const row = STARTS.findIndex((start) => y >= start && y < start + 8);
+  return col < 0 || row < 0
+    ? null
+    : { id: row * 3 + col, x: STARTS[col], y: STARTS[row] };
+}
+function supplyGateRow(lot: { id: number; y: number }) {
+  const site = SUPPLY_LOCATIONS.find((site) => site.home === lot.id);
+  return site ? Math.floor(resourceApproach(site).y) - lot.y : -1;
+}
+function walkableCell(x: number, y: number) {
+  if (x < 0 || y < 0 || x >= BOARD || y >= BOARD) return false;
+  const lot = navigationLot(x, y);
+  if (!lot) return true; // The public street network.
+  const dx = x - lot.x,
+    dy = y - lot.y;
+  // Front courtyard and driveway; the rest of each plot is an obstacle.
+  if (dy === 7 && dx >= 1 && dx <= 6) return true;
+  if (dx === 4 && dy === 6) return true;
+  const row = supplyGateRow(lot);
+  return row >= 0 && dx === 7 && dy >= row && dy <= 7;
+}
+function navigationPoint(x: number, y: number): Point {
+  // Align the driveway and its street exit with the visible 40 px gate.
+  const gate = x % 10 === 6 && (y % 10 >= 8 || y % 10 === 0);
+  return { x: x + (gate ? 0 : 0.5), y: y + 0.5 };
+}
+function navigationTarget(point: Point): Point {
+  let x = Math.min(BOARD - 1, Math.max(0, Math.floor(point.x)));
+  let y = Math.min(BOARD - 1, Math.max(0, Math.floor(point.y)));
+  const lot = navigationLot(x, y);
+  if (!walkableCell(x, y) && lot) {
+    x = lot.x + 4;
+    y = lot.y + 7;
+  }
+  return navigationPoint(x, y);
+}
+function crossesGate(
+  x: number,
+  y: number,
+  nx: number,
+  ny: number,
+  sideAccess: Set<number>,
+) {
+  const a = navigationLot(x, y),
+    b = navigationLot(nx, ny);
+  if (a?.id === b?.id) return true;
+  const lot = a || b;
+  if (!lot) return true;
+  const ix = a ? x : nx,
+    iy = a ? y : ny;
+  const ox = a ? nx : x,
+    oy = a ? ny : y;
+  return (
+    (ix === lot.x + 4 && iy === lot.y + 7 && oy === lot.y + 8) ||
+    (sideAccess.has(lot.id) &&
+      ix === lot.x + 7 &&
+      ox === lot.x + 8 &&
+      iy === lot.y + supplyGateRow(lot))
+  );
+}
 export function findPath(from: Point, to: Point): Point[] {
   const sx = Math.min(31, Math.max(0, Math.floor(from.x))),
     sy = Math.min(31, Math.max(0, Math.floor(from.y)));
-  let tx = Math.min(31, Math.max(0, Math.floor(to.x))),
-    ty = Math.min(31, Math.max(0, Math.floor(to.y)));
-  if (blocked(tx, ty)) {
-    let best = Infinity;
-    for (let y = 0; y < BOARD; y++)
-      for (let x = 0; x < BOARD; x++) {
-        const d = (x - tx) ** 2 + (y - ty) ** 2;
-        if (!blocked(x, y) && d < best) {
-          best = d;
-          to = { x: x + 0.5, y: y + 0.5 };
-        }
-      }
-    tx = Math.floor(to.x);
-    ty = Math.floor(to.y);
+  const destination = navigationTarget(to),
+    tx = Math.floor(destination.x),
+    ty = Math.floor(destination.y);
+  if (!walkableCell(sx, sy)) return [];
+  const sourceLot = navigationLot(sx, sy)?.id,
+    targetLot = navigationLot(tx, ty)?.id;
+  const sideAccess = new Set<number>();
+  for (const p of [from, destination]) {
+    const lot = navigationLot(p.x, p.y);
+    if (lot && p.x >= lot.x + 7) sideAccess.add(lot.id);
   }
   const start = sy * BOARD + sx,
     goal = ty * BOARD + tx;
-  if (start === goal) return [{ x: tx + 0.5, y: ty + 0.5 }];
+  if (start === goal) return [destination];
   const prev = new Int32Array(BOARD * BOARD).fill(-1);
   prev[start] = start;
   const queue = [start];
@@ -802,7 +840,11 @@ export function findPath(from: Point, to: Point): Point[] {
       const nx = x + dx,
         ny = y + dy,
         next = ny * BOARD + nx;
-      if (blocked(nx, ny) || prev[next] !== -1) continue;
+      if (!walkableCell(nx, ny) || prev[next] !== -1) continue;
+      const lot = navigationLot(nx, ny);
+      // A third-party garden must never serve as a shortcut between streets.
+      if (lot && lot.id !== sourceLot && lot.id !== targetLot) continue;
+      if (!crossesGate(x, y, nx, ny, sideAccess)) continue;
       prev[next] = id;
       queue.push(next);
     }
@@ -810,8 +852,18 @@ export function findPath(from: Point, to: Point): Point[] {
   if (prev[goal] === -1) return [];
   const path: Point[] = [];
   for (let p = goal; p !== start; p = prev[p])
-    path.push({ x: (p % BOARD) + 0.5, y: Math.floor(p / BOARD) + 0.5 });
+    path.push(navigationPoint(p % BOARD, Math.floor(p / BOARD)));
+  // Start at the current cell's waypoint so a fresh order cannot cut a corner.
+  path.push(navigationPoint(sx, sy));
   return path.reverse();
+}
+function pursue(u: Point & { path: Point[] }, point: Point) {
+  const destination = navigationTarget(point),
+    last = u.path.at(-1);
+  if (last && last.x === destination.x && last.y === destination.y) return;
+  const next = u.path[0];
+  // Finish the current segment before changing direction, including at ×3 speed.
+  u.path = findPath(next || u, destination);
 }
 function assign(
   u: Unit,
@@ -1021,6 +1073,9 @@ export function rates(s: State): Resources {
 }
 const distanceBetween = (a: Point, b: Point) =>
   Math.hypot(a.x - b.x, a.y - b.y);
+export function atEntrance(u: Point & { path: Point[] }, lot: Lot) {
+  return !u.path.length && distanceBetween(u, entrance(lot)) < 0.75;
+}
 function nearest<T extends Point & { hp: number }>(
   from: Point,
   targets: T[],
@@ -1214,7 +1269,7 @@ export function clearShot(from: Point, to: Point) {
   const steps = Math.ceil(distanceBetween(from, to) * 4);
   for (let i = 1; i < steps; i++)
     if (
-      blocked(
+      buildingBlocked(
         Math.floor(from.x + ((to.x - from.x) * i) / steps),
         Math.floor(from.y + ((to.y - from.y) * i) / steps),
       )
@@ -1308,7 +1363,7 @@ function advanceEnemies(s: State, dt: number) {
         else victim.hp -= e.damage * dt;
         continue;
       }
-      e.path = findPath(e, victim);
+      pursue(e, victim);
     } else {
       if (!s.lots[e.target].owned) e.target = raidTarget(s, e).id;
       const destination = entrance(s.lots[e.target]);
@@ -1327,7 +1382,7 @@ function advanceEnemies(s: State, dt: number) {
         }
         continue;
       }
-      e.path = findPath(e, destination);
+      pursue(e, destination);
     }
     walk(e, def.speed * dt);
   }
@@ -1373,14 +1428,18 @@ function tickStep(s: State, dt: number) {
       }
       if (u.task === 'defend') {
         const threat = s.enemies.find((e) => e.id === u.target && e.hp > 0);
-        if (threat) u.path = findPath(u, threat);
+        if (threat) pursue(u, threat);
         else {
           u.task = 'idle';
           u.target = null;
           u.path = [];
         }
       }
-      const threat = nearest(u, s.enemies, 1.5);
+      const threat = nearest(
+        u,
+        s.enemies.filter((e) => clearShot(u, e)),
+        1.5,
+      );
       if (threat) {
         u.fighting = true;
         u.facing = threat.x >= u.x ? 1 : -1;
@@ -1422,7 +1481,7 @@ function tickStep(s: State, dt: number) {
             `${SUPPLIES[target.kind].name} sabotée ! +15 ${SUPPLIES[target.kind].label.toLowerCase()}. Production coupée pendant au moins 90 s.`,
           );
         }
-      } else if (approach) u.path = findPath(u, approach);
+      } else if (approach) pursue(u, approach);
     }
     if (!u.fighting) walk(u, CREATURES[u.kind].speed * dt);
     if (!u.path.length) {
@@ -1455,7 +1514,7 @@ function tickStep(s: State, dt: number) {
   for (const lot of s.lots) {
     if (lot.construction) {
       const workers = s.units.filter(
-        (u) => u.task === 'build' && u.target === lot.id && !u.path.length,
+        (u) => u.task === 'build' && u.target === lot.id && atEntrance(u, lot),
       );
       lot.construction.progress +=
         (dt * workers.length) / BUILDINGS[lot.construction.kind].duration;
@@ -1480,7 +1539,7 @@ function tickStep(s: State, dt: number) {
           !u.fighting &&
           u.task === 'attack' &&
           u.target === lot.id &&
-          !u.path.length,
+          atEntrance(u, lot),
       );
       if (attackers.length) {
         const damage = attackers.reduce((n, u) => n + armyDamage(s, u), 0);

@@ -11,6 +11,7 @@ import {
   HEROES,
   heroParty,
   entrance,
+  resourceApproach,
 } from '../app/game/engine.ts';
 import { ASSETS, enemyAnimationSequence, workerArt } from '../app/game/art.ts';
 import catalog from '../app/game/bestiary.json' with { type: 'json' };
@@ -98,7 +99,7 @@ test('Sabotage cuts a supply route; repair needs time and money; captured delive
   const s = createGame(),
     u = fighters(s),
     site = s.sites[2];
-  Object.assign(u, { x: site.x, y: site.y, path: [] });
+  Object.assign(u, resourceApproach(site), { path: [] });
   assert.equal(raidSupply(s, { type: 'resource', id: site.id }), '');
   tick(s, 20);
   assert.equal(site.hp, 0);
