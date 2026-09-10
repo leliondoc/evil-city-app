@@ -104,7 +104,7 @@ test('The lumberjack reaches the side of the trunk, faces it and completes repea
 });
 test('A canteen can be built with zero food, feeds the player and scales with upgrades', () => {
   const s = createGame();
-  s.resources.food = 0;
+  s.resources = { gold: 300, wood: 125, food: 0, mana: 0 };
   const humanFood = s.economy.stocks.food;
   assert.deepEqual(foodBalance(s), { production: 0, consumption: 9, net: -9 });
   assert.equal(build(s, 7, 'canteen'), '');

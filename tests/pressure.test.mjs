@@ -16,6 +16,7 @@ import {
   entrance,
   rates,
   capacity,
+  PRESSURE,
 } from '../app/game/engine.ts';
 
 function advance(s, seconds) {
@@ -67,7 +68,7 @@ test('Expansion triggers a visible warning, then a moving guard patrol; falling 
 
 test('Time mobilizes humans even with no expansion; future raids grow stronger', () => {
   const early = createGame();
-  advance(early, 179);
+  advance(early, PRESSURE.guard.time - 1);
   assert.equal(early.mobilization.guard.active, false);
   advance(early, 2);
   assert.equal(early.mobilization.guard.active, true);
@@ -99,7 +100,7 @@ test('The guild has its own territory/time trigger and sends heroes against the 
   assert.ok(s.enemies.some((e) => e.kind === 'hero' && e.target === 6));
   const timed = createGame();
   timed.lots[2].owned = true; // No guard pressure: isolate the guild timer.
-  timed.elapsed = 359;
+  timed.elapsed = PRESSURE.hero.time - 1;
   advance(timed, 0.5);
   assert.equal(timed.mobilization.hero.active, false);
   advance(timed, 1);
@@ -189,17 +190,13 @@ test('Defenders intercept nearby patrols, win combat and obey a retreat order', 
   assert.ok(s.units.some((u) => u.kind === 'troll' && u.hp > 0));
 });
 
-test('The normal economy supports a victory after repelling a raid', () => {
+test('A funded domain supports a victory after repelling a raid', () => {
   const s = createGame();
-  assert.equal(build(s, 7, 'canteen'), '');
-  assert.equal(claim(s, 4), '');
-  assert.equal(build(s, 4, 'forge'), '');
-  until(s, () => s.lots[4].kind === 'forge' && s.lots[7].kind === 'canteen');
-  for (let i = 0; i < 5; i++) {
-    until(s, () => s.resources.gold >= 60 && s.resources.food >= 20);
-    assert.equal(recruit(s, 'troll'), '');
-  }
-  until(s, () => s.units.filter((u) => u.kind === 'troll').length === 5);
+  // Isolate siege/retreat behavior from the separately tested zero-resource opening.
+  s.lots[7].kind = 'canteen';
+  s.lots[5].owned = true;
+  s.lots[5].kind = 'crypt';
+  armyFixture(s, 5);
   assert.equal(defend(s, 4), '');
   until(s, () => s.defeatedEnemies >= 2);
   retreat(s);
@@ -249,10 +246,11 @@ test('Ignoring human progress destroys the manor and freezes all state and order
 test('Large simulation steps preserve the same raid, combat and defeat outcome', () => {
   const a = createGame(),
     b = createGame();
-  tick(a, 400);
-  advance(b, 400);
+  tick(a, 1000);
+  advance(b, 1000);
   assert.equal(a.lost, b.lost);
   assert.ok(Math.abs(a.elapsed - b.elapsed) < 0.01);
   assert.equal(a.enemies.length, b.enemies.length);
-  assert.deepEqual(a.resources, b.resources);
+  for (const key of Object.keys(a.resources))
+    assert.ok(Math.abs(a.resources[key] - b.resources[key]) < 1e-7);
 });

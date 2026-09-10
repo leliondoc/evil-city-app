@@ -65,7 +65,7 @@ test('Upgrades wait for every required resource, spend stocks once, and stop at 
   s.workers = [];
   for (const site of s.sites) site.recruitAt = 10000;
   s.economy.stocks = { gold: 25, wood: 19, food: 15 };
-  s.elapsed = 121;
+  s.elapsed = s.economy.nextUpgradeAt + 1;
   tick(s, 1);
   assert.equal(humanLevel(s), 1);
   s.economy.stocks.wood = 20;

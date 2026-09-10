@@ -79,7 +79,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
       'Un ancien garage, beaucoup de suie. Débloque les trolls et améliore la puissance de toute votre armée.',
     short: 'Débloque les trolls',
     art: 3,
-    cost: { gold: 110, wood: 45 },
+    cost: { gold: 180, wood: 75 },
     duration: 24,
   },
   crypt: {
@@ -171,7 +171,7 @@ export const CREATURES: Record<
     description:
       'Le gros bras de votre quartier. Solide au combat, il exige une forge et des repas réguliers.',
     art: 1,
-    cost: { gold: 60, food: 20 },
+    cost: { gold: 90, food: 30 },
     hp: 100,
     damage: 12,
     speed: 1.7,
@@ -206,11 +206,22 @@ export const CREATURES: Record<
   },
 };
 export const BUILD_OPTIONS: BuildingKind[] = [
-  'canteen',
-  'forge',
   'den',
+  'canteen',
   'crypt',
+  'forge',
 ];
+export const BUILD_PREREQUISITES: Partial<Record<BuildingKind, BuildingKind>> =
+  {
+    canteen: 'den',
+    crypt: 'canteen',
+    forge: 'crypt',
+  };
+export function buildUnlockReason(s: State, kind: BuildingKind): string {
+  const required = BUILD_PREREQUISITES[kind];
+  if (!required || hasBuilding(s, required)) return '';
+  return `Terminez ${BUILDINGS[required].name.toLowerCase()} pour débloquer ce bâtiment.`;
+}
 export const RECRUIT_OPTIONS: CreatureKind[] = [
   'goblin',
   'troll',
@@ -365,19 +376,20 @@ export interface Mobilization {
 export const PRESSURE = {
   guard: {
     territory: 5 / 9,
-    time: 180,
+    time: 420,
     warning: 25,
     interval: 100,
     source: 'hall',
   },
   hero: {
     territory: 6 / 9,
-    time: 360,
+    time: 600,
     warning: 35,
     interval: 140,
     source: 'guild',
   },
   levelEvery: 120,
+  firstUpgradeAt: 360,
   maxLevel: 6,
 } as const;
 export function territory(s: State) {
@@ -658,12 +670,12 @@ export function createGame(): State {
   ];
   const state: State = {
     resourceGains: [],
-    resources: { gold: 300, wood: 125, food: 60, mana: 30 },
+    resources: { gold: 0, wood: 0, food: 0, mana: 0 },
     economy: {
       stocks: { gold: 45, wood: 25, food: 35 },
       delivered: { gold: 0, wood: 0, food: 0 },
       level: 1,
-      nextUpgradeAt: 120,
+      nextUpgradeAt: PRESSURE.firstUpgradeAt,
     },
     workers: [],
     sites: SUPPLY_LOCATIONS.map((site, id) => ({
@@ -955,6 +967,8 @@ export function buildReason(s: State, id: number, kind: BuildingKind): string {
     return 'Choisissez un terrain libre ou une maison conquise.';
   if (!BUILD_OPTIONS.includes(kind))
     return 'Ce bâtiment ne peut pas être construit.';
+  const locked = buildUnlockReason(s, kind);
+  if (locked) return locked;
   if (!canAfford(s, BUILDINGS[kind].cost))
     return 'Il manque des ressources pour ce chantier.';
   if (!s.units.some((u) => u.kind === 'goblin'))

@@ -20,6 +20,7 @@ import {
   Crown,
   ArrowUp,
   Hourglass,
+  LockKeyhole,
 } from 'lucide-react';
 import {
   GameButton as Button,
@@ -66,6 +67,7 @@ import {
   army,
   build,
   buildReason,
+  buildUnlockReason,
   recruit,
   recruitReason,
   claim,
@@ -272,6 +274,11 @@ export default function Game() {
 
   const chooseBuild = useCallback(
     (kind: BuildingKind) => {
+      const locked = buildUnlockReason(stateRef.current, kind);
+      if (locked) {
+        notify(locked);
+        return;
+      }
       setPendingBuild(kind);
       setTab('build');
       notify('Choisissez une parcelle à vous pour lancer le chantier.');
@@ -361,15 +368,17 @@ export default function Game() {
   const owned = s.lots.filter((l) => l.owned).length;
   const milestones = [
     hasBuilding(s, 'canteen'),
-    hasBuilding(s, 'forge'),
+    hasBuilding(s, 'crypt'),
     army(s).length >= 2,
+    hasBuilding(s, 'forge'),
     hasBuilding(s, 'guild'),
     s.won,
   ];
   const milestoneLabels = [
     'Ouvrir une cantine',
-    'Construire une forge',
+    'Construire une crypte',
     'Rassembler 2 combattants',
+    'Construire une forge',
     'Neutraliser la guilde',
     'Prendre la mairie et sécuriser les rues',
   ];
@@ -1199,20 +1208,27 @@ export default function Game() {
             <div className="card-row">
               {BUILD_OPTIONS.map((kind, i) => {
                 const b = BUILDINGS[kind];
+                const locked = buildUnlockReason(s, kind);
                 return (
                   <button
-                    className={`build-card ${pendingBuild === kind ? 'chosen' : ''}`}
+                    className={`build-card ${pendingBuild === kind ? 'chosen' : ''} ${locked ? 'locked' : ''}`}
                     key={kind}
                     onClick={() => chooseBuild(kind)}
                     aria-pressed={pendingBuild === kind}
+                    aria-disabled={!!locked}
+                    title={locked || b.short}
                   >
                     <Sprite asset={buildingArt(kind)} />
                     <div>
                       <strong>{b.name}</strong>
-                      <small>{b.short}</small>
+                      <small className={locked ? 'recruit-blocker' : undefined}>
+                        {locked || b.short}
+                      </small>
                       <Costs cost={b.cost} />
                     </div>
-                    <span className="keyhint">{i + 1}</span>
+                    <span className="keyhint">
+                      {locked ? <LockKeyhole size={13} /> : i + 1}
+                    </span>
                   </button>
                 );
               })}
@@ -1328,20 +1344,24 @@ export default function Game() {
                   <div>
                     <strong>Installez la cantine</strong>
                     <p>
-                      Choisissez « Cantine des hordes » en bas, puis cliquez sur
-                      votre terrain libre, à côté du manoir. Les gobelins
-                      construisent automatiquement.
+                      Vous commencez sans ressources. Le manoir produit l’or et
+                      l’essence, les gobelins récupèrent le bois. Dès que vous
+                      avez 80 or et 25 bois, choisissez « Cantine des hordes »,
+                      puis cliquez sur votre terrain libre, à côté du manoir.
+                      Les gobelins construisent automatiquement.
                     </p>
                   </div>
                 </div>
                 <div className="guide-step">
                   <b>02</b>
                   <div>
-                    <strong>Ouvrez votre forge</strong>
+                    <strong>Éveillez les premiers squelettes</strong>
                     <p>
                       Sélectionnez la friche au centre et revendiquez-la pour 40
-                      or et 18 essence. Construisez-y une forge. Les gobelins
-                      libres récupèrent du bois.
+                      or et 18 essence. Une fois la cantine terminée,
+                      construisez-y une crypte. Elle produit de l’essence et
+                      débloque les squelettes. Améliorer le manoir accélère
+                      aussi vos revenus.
                     </p>
                   </div>
                 </div>
@@ -1350,10 +1370,12 @@ export default function Game() {
                   <div>
                     <strong>Faites connaissance avec les voisins</strong>
                     <p>
-                      Dans « Créatures », recrutez 4 trolls. Sélectionnez
+                      Dans « Créatures », recrutez des squelettes. Sélectionnez
                       l’auberge voisine, puis « Envoyer l’armée ». Après la
-                      conquête, choisissez entre la mairie et la guilde pour
-                      couper leurs renforts.
+                      conquête, la crypte vous permet de construire une forge
+                      sur le terrain gagné : 180 or et 75 bois. Vous pouvez
+                      alors recruter des trolls pour 90 or et 30 vivres, avant
+                      de viser la mairie et la guilde.
                     </p>
                   </div>
                 </div>
@@ -1373,9 +1395,9 @@ export default function Game() {
                   <div>
                     <strong>Le quartier riposte</strong>
                     <p>
-                      La garde se mobilise à 5 parcelles sur 9 (56 %) ou après 3
+                      La garde se mobilise à 5 parcelles sur 9 (56 %) ou après 7
                       minutes, avec 25 secondes de préavis. La guilde s’éveille
-                      à 6 sur 9 (67 %) ou après 6 minutes, avec 35 secondes de
+                      à 6 sur 9 (67 %) ou après 10 minutes, avec 35 secondes de
                       préavis. Une fois mobilisées, elles continuent jusqu’à la
                       prise de leur bâtiment.
                     </p>
@@ -1386,14 +1408,15 @@ export default function Game() {
                   <div>
                     <strong>Défendez et contre-attaquez</strong>
                     <p>
-                      Les humains peuvent financer un niveau toutes les 2
-                      minutes, jusqu’au niveau 6, si leurs paysans livrent assez
-                      de ressources. Les gardes reprennent vos parcelles ; les
-                      héros visent le manoir. Vos combattants interceptent les
-                      ennemis proches. Cliquez sur un ennemi pour l’intercepter,
-                      ou rassemblez votre armée devant un bâtiment. Le repli
-                      reste prioritaire. Les bâtiments se réparent lentement
-                      hors de danger.
+                      Les humains peuvent financer leur premier niveau à 6
+                      minutes, puis un niveau toutes les 2 minutes, jusqu’au
+                      niveau 6, si leurs paysans livrent assez de ressources.
+                      Les gardes reprennent vos parcelles ; les héros visent le
+                      manoir. Vos combattants interceptent les ennemis proches.
+                      Cliquez sur un ennemi pour l’intercepter, ou rassemblez
+                      votre armée devant un bâtiment. Le repli reste
+                      prioritaire. Les bâtiments se réparent lentement hors de
+                      danger.
                     </p>
                   </div>
                 </div>

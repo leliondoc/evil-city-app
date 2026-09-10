@@ -140,6 +140,8 @@ test('An empty path does not allow attacks or construction from across the map',
   tick(s, 1);
   assert.equal(s.lots[0].hp, hp);
   const construction = createGame();
+  construction.resources.gold = 80;
+  construction.resources.wood = 25;
   assert.equal(build(construction, 7, 'canteen'), '');
   for (const worker of construction.units)
     Object.assign(worker, { x: 0.5, y: 0.5, path: [] });

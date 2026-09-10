@@ -16,6 +16,12 @@ import {
   upgrade,
   entrance,
   intercept,
+  defend,
+  army,
+  recruitReason,
+  upgradeReason,
+  buildReason,
+  claimReason,
 } from '../app/game/engine.ts';
 
 function advance(s, seconds) {
@@ -26,37 +32,40 @@ function until(s, condition, limit = 300) {
   assert.ok(condition(), 'Condition reached within simulation budget');
 }
 
-test('Playable opening reaches victory with earned resources and normal recruits', () => {
+test('Starting at zero reaches every construction tier, funds trolls and repels the first raid', () => {
   const s = createGame();
-  assert.equal(build(s, 7, 'canteen'), '');
+  assert.deepEqual(s.resources, { gold: 0, wood: 0, food: 0, mana: 0 });
+  const construct = (id, kind) => {
+    until(s, () => !buildReason(s, id, kind));
+    assert.equal(build(s, id, kind), '');
+    until(s, () => s.lots[id].kind === kind);
+  };
+  construct(7, 'canteen');
+  until(s, () => !upgradeReason(s, 6));
+  assert.equal(upgrade(s, 6), ''); // Reinvest earned tribute into the manor's economy.
+  until(s, () => !claimReason(s, 4));
   assert.equal(claim(s, 4), '');
-  assert.equal(build(s, 4, 'forge'), '');
-  until(s, () => s.lots[7].kind === 'canteen' && s.lots[4].kind === 'forge');
-  assert.ok(s.units.every((u) => u.kind === 'goblin'));
-  // Staggered arrivals expose the first fighter; fund a fifth troll for the siege.
-  for (let i = 0; i < 5; i++) {
-    until(s, () => s.resources.gold >= 60 && s.resources.food >= 20);
-    assert.equal(recruit(s, 'troll'), '');
+  construct(4, 'crypt');
+  for (let i = 0; i < 4; i++) {
+    until(s, () => !recruitReason(s, 'skeleton'));
+    assert.equal(recruit(s, 'skeleton'), '');
   }
-  until(s, () => s.units.filter((u) => u.kind === 'troll').length === 5);
-  assert.equal(attack(s, 0), '');
-  until(s, () => s.lots[0].owned);
-  assert.equal(attack(s, 1), '');
-  until(s, () => s.lots[1].owned);
-  assert.equal(attack(s, 2), '');
-  until(s, () => s.lots[2].owned);
-  until(s, () => {
-    if (s.enemies.length && !s.units.some((u) => u.task === 'defend'))
-      assert.equal(intercept(s, s.enemies[0].id), '');
-    return s.won;
-  });
-  assert.ok(s.lots[2].owned);
+  until(s, () => army(s).length === 4);
+  assert.equal(attack(s, 8), '');
+  until(s, () => s.lots[8].owned);
+  assert.equal(defend(s, 4), '');
+  construct(8, 'forge');
+  until(s, () => !recruitReason(s, 'troll'));
+  assert.equal(recruit(s, 'troll'), '');
+  until(s, () => s.defeatedEnemies >= 2 && s.recruits.length === 0);
   assert.ok(s.units.some((u) => u.kind === 'troll'));
+  assert.equal(s.lost, false);
+  assert.ok(s.lots[6].hp > 0);
   assert.ok(
     Object.values(s.resources).every((v) => v >= 0 && Number.isFinite(v)),
   );
   console.log(
-    `Normal opening: victory at ${Math.round(s.elapsed)} seconds with ${s.units.length} creatures.`,
+    `Zero-resource opening: forge and troll ready, raid repelled at ${Math.round(s.elapsed)}s.`,
   );
 });
 
@@ -69,6 +78,8 @@ test('Invalid orders never debit resources or change ownership', () => {
   assert.ok(claim(s, 0));
   assert.deepEqual(s.resources, before);
   assert.equal(s.lots[0].owned, false);
+  s.resources.gold = 80;
+  s.resources.wood = 25;
   assert.equal(build(s, 7, 'canteen'), '');
   const after = structuredClone(s.resources);
   assert.ok(build(s, 7, 'forge'));
@@ -110,6 +121,7 @@ test('Retreat stops attacks and injured creatures heal at the manor', () => {
   s.lots[4].owned = true;
   s.lots[4].kind = 'forge';
   s.resources.gold = 500;
+  s.resources.food = 60;
   assert.equal(recruit(s, 'troll'), '');
   advance(s, 7);
   assert.equal(attack(s, 1), '');
@@ -126,6 +138,8 @@ test('A defeated assault leaves time to recover, but indefinite waiting loses th
   s.lots[4].owned = true;
   s.lots[4].kind = 'forge';
   s.lots[1].owned = true;
+  s.resources.gold = CREATURES.troll.cost.gold;
+  s.resources.food = 60;
   assert.equal(recruit(s, 'troll'), '');
   advance(s, 7);
   assert.equal(attack(s, 2), '');
@@ -157,10 +171,13 @@ test('Upgrades change production and cannot exceed level three', () => {
 test('Skeleton and minotaur progression is reachable from a developed domain', () => {
   const s = createGame();
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
+  s.lots[5].owned = true;
+  s.lots[5].kind = 'canteen';
   assert.equal(claim(s, 4), '');
-  assert.equal(build(s, 4, 'forge'), '');
-  assert.equal(build(s, 7, 'crypt'), '');
-  until(s, () => s.lots[4].kind === 'forge' && s.lots[7].kind === 'crypt');
+  assert.equal(build(s, 4, 'crypt'), '');
+  until(s, () => s.lots[4].kind === 'crypt');
+  assert.equal(build(s, 7, 'forge'), '');
+  until(s, () => s.lots[7].kind === 'forge');
   assert.equal(recruit(s, 'skeleton'), '');
   assert.equal(recruit(s, 'minotaur'), '');
   advance(s, 16);
