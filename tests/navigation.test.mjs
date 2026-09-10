@@ -148,3 +148,61 @@ test('An empty path does not allow attacks or construction from across the map',
   tick(construction, 1);
   assert.equal(construction.lots[7].construction.progress, 0);
 });
+
+function duelPositions(from, to) {
+  const s = createGame(),
+    u = fighter(s);
+  Object.assign(u, from, { hp: 1000, task: 'defend', path: [] });
+  const enemy = {
+    ...to,
+    id: s.nextId++,
+    kind: 'hero',
+    role: 'warrior',
+    hp: 1000,
+    maxHp: 1000,
+    damage: 1,
+    level: 1,
+    target: 6,
+    path: [],
+    fighting: false,
+    facing: -1,
+    healTarget: null,
+    attackCooldown: 0,
+  };
+  s.enemies = [enemy];
+  s.workers = [];
+  u.target = enemy.id;
+  return { s, u, enemy };
+}
+for (const [name, from, to] of [
+  ['horizontal road', { x: 16, y: 20.1 }, { x: 16, y: 21.6 }],
+  ['narrow vertical road', { x: 10.5, y: 15 }, { x: 10.5, y: 16.5 }],
+  ['building gate', { x: 16, y: 19.5 }, { x: 16, y: 20.8 }],
+  ['overlapping spawn', { x: 16, y: 20.5 }, { x: 16, y: 20.5 }],
+]) {
+  test(`Melee fighters form a face-to-face lane on a ${name}, without crossing fences`, () => {
+    const { s, u, enemy } = duelPositions(from, to);
+    for (let i = 0; i < 40; i++) {
+      const previous = [u, enemy].map((a) => ({ x: a.x, y: a.y }));
+      tick(s, 0.1);
+      for (const [j, actor] of [u, enemy].entries()) {
+        onStreetOrGate(s, actor);
+        assert.ok(
+          Math.hypot(actor.x - previous[j].x, actor.y - previous[j].y) <= 0.4,
+          'No teleport to a combat position',
+        );
+      }
+    }
+    assert.ok(
+      Math.abs(u.y - enemy.y) < 0.3,
+      `Vertical overlap: ${u.y}, ${enemy.y}`,
+    );
+    assert.ok(Math.abs(u.x - enemy.x) >= 1.5, 'Separate horizontal positions');
+    assert.equal(u.facing, -enemy.facing);
+    assert.equal(u.facing, Math.sign(enemy.x - u.x));
+    assert.ok(u.hp < 1000 && enemy.hp < 1000, 'Both fighters still retaliate');
+    retreat(s);
+    for (let i = 0; i < 900 && u.task === 'move'; i++) tick(s, 0.1);
+    assert.equal(u.task, 'idle', 'A retreat still releases the fighter');
+  });
+}

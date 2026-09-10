@@ -197,6 +197,12 @@ test('A funded domain supports a victory after repelling a raid', () => {
   s.lots[5].owned = true;
   s.lots[5].kind = 'crypt';
   armyFixture(s, 5);
+  // Keep this siege/recovery scenario independent of scheduled meal/rest trips.
+  // Different combat positions can move the retreat across their 65 s threshold.
+  for (const u of s.units) {
+    u.nextMealAt = Infinity;
+    u.nextRestAt = Infinity;
+  }
   assert.equal(defend(s, 4), '');
   until(s, () => s.defeatedEnemies >= 2);
   retreat(s);

@@ -1844,6 +1844,23 @@ function separateCombatants(s: State, dt: number) {
     bodies.map(({ actor }) => [actor.id, actor.path.at(-1)]),
   );
   const moved = new Set<number>();
+  // The pack has side-facing attacks: radial separation alone still leaves
+  // opponents vertically stacked, even when their ground positions do not touch.
+  const opponents = new Map<number, Unit | Enemy>();
+  for (const body of bodies) {
+    if (!body.actor.fighting) continue;
+    const opponent = nearest(
+      body.actor,
+      bodies
+        .filter(
+          (other) =>
+            other.enemy !== body.enemy && clearShot(body.actor, other.actor),
+        )
+        .map((other) => other.actor),
+      2.4,
+    );
+    if (opponent) opponents.set(body.actor.id, opponent);
+  }
   const safeStep = (from: Point, to: Point) => {
     const steps = Math.max(1, Math.ceil(distanceBetween(from, to) / 0.08));
     let x = Math.floor(from.x),
@@ -1905,6 +1922,53 @@ function separateCombatants(s: State, dt: number) {
         const a = bodies[i],
           b = bodies[j];
         if (!a.actor.fighting && !b.actor.fighting) continue;
+        if (
+          a.enemy !== b.enemy &&
+          ((Math.abs(a.actor.x - b.actor.x) < 1.5 &&
+            Math.abs(a.actor.y - b.actor.y) > 0.3) ||
+            Math.abs(a.actor.x - b.actor.x) < 1.2) &&
+          (opponents.get(a.actor.id)?.id === b.actor.id ||
+            opponents.get(b.actor.id)?.id === a.actor.id)
+        ) {
+          const dx = b.actor.x - a.actor.x,
+            dy = b.actor.y - a.actor.y;
+          const side =
+            Math.abs(dx) > 0.05
+              ? Math.sign(dx)
+              : a.actor.id < b.actor.id
+                ? 1
+                : -1;
+          const aLot = navigationLot(a.actor.x, a.actor.y),
+            bLot = navigationLot(b.actor.x, b.actor.y);
+          if (!!aLot !== !!bLot) {
+            const lot = (aLot || bLot)!,
+              inside = aLot ? a.actor : b.actor,
+              outside = aLot ? b.actor : a.actor,
+              gateX = lot.x + 4,
+              streetY = lot.y + 8.5;
+            // Leave through the gate before opening a lane beside the opponent.
+            nudge(
+              inside,
+              gateX - inside.x,
+              Math.abs(gateX - inside.x) < 0.1 ? streetY - inside.y : 0,
+            );
+            nudge(
+              outside,
+              gateX + (aLot ? side : -side) * 0.85 - outside.x,
+              streetY - outside.y,
+            );
+            continue;
+          }
+          const gap =
+            ('kind' in a.actor && a.actor.kind === 'minotaur') ||
+            ('kind' in b.actor && b.actor.kind === 'minotaur')
+              ? 1.8
+              : 1.7;
+          // Close the vertical offset while opening a horizontal fighting lane.
+          // Each actor spends its bounded movement budget, respecting gates/walls.
+          nudge(a.actor, (dx - side * gap) / 2, dy / 2);
+          nudge(b.actor, (side * gap - dx) / 2, -dy / 2);
+        }
         const gap = a.enemy === b.enemy ? 1.05 : 1.65;
         const distance = distanceBetween(a.actor, b.actor);
         if (distance >= gap || !clearShot(a.actor, b.actor)) continue;
@@ -1927,6 +1991,9 @@ function separateCombatants(s: State, dt: number) {
   for (const { actor } of bodies) {
     const goal = goals.get(actor.id);
     if (moved.has(actor.id) && goal) actor.path = findPath(actor, goal);
+    const opponent = opponents.get(actor.id);
+    if (opponent && Math.abs(opponent.x - actor.x) > 0.05)
+      actor.facing = opponent.x > actor.x ? 1 : -1;
   }
 }
 export function tick(s: State, dt: number) {
