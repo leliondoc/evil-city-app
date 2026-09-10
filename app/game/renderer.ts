@@ -850,7 +850,7 @@ export class Renderer {
   private label(x: number, y: number, text: string, color = '#eee4ce') {
     const ctx = this.ctx;
     ctx.save();
-    const size = 16 / this.scale;
+    const size = 18 / this.scale;
     ctx.font = `400 ${size}px "Pixel Operator",monospace`;
     x =
       (Math.round(this.origin.x + x * this.scale) - this.origin.x) / this.scale;
@@ -1551,7 +1551,7 @@ export class Renderer {
         supplyActive(s, site) ? '#ffe0a3' : '#c5c5b5',
       );
     for (const l of s.lots) {
-      const x = (l.x + 4.4) * CELL,
+      const x = (l.x + 4) * CELL,
         y = (l.y + 8) * CELL,
         labelY = y + (!l.owned && l.kind !== 'empty' ? 32 : 16);
       const bar = buildingBars.get(l.id);
