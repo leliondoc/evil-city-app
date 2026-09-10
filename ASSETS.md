@@ -32,6 +32,8 @@ Les dimensions sont décrites dans `app/game/assets.json`. Les tags des sources 
 
 Les arbres, les buissons et la fumée de la tanière utilisent également les animations originales. La mairie utilise le château bleu, le manoir le château violet, la forge la caserne violette et la crypte le monastère violet. Les rues pavées sont une géométrie de terrain simple dessinée par le moteur.
 
+Les reliefs suivent le [guide des terrains de Pixel Frog](https://pixelfrog-assets.itch.io/tiny-swords/devlog/1138989/tilemap-guide) : surface herbeuse continue, puis une seule rangée de falaise avec un pied adapté à la terre ou à l’eau. La rangée de pelouse isolée n’est pas intercalée dans les falaises. Les ombres originales sont répétées sur la grille de 64 pixels, décalées d’une case vers le bas, sans étirement.
+
 Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les cinq recrutables ne possèdent pas encore de comportements jouables.
 
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.

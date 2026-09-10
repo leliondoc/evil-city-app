@@ -477,17 +477,15 @@ export class Renderer {
     h: number,
   ) {
     const im = this.images.get(key)!;
-    ctx.drawImage(
-      this.images.get('terrain-shadow')!,
-      0,
-      0,
-      192,
-      192,
-      x - 20,
-      y + 15,
-      w * 64 + 40,
-      h * 64 + 96,
-    );
+    // The shadow has transparent margins: stamp it on the tile grid, one
+    // tile below the upper ground, without stretching its pixels.
+    for (let ty = 0; ty < h; ty++)
+      for (let tx = 0; tx < w; tx++)
+        ctx.drawImage(
+          this.images.get('terrain-shadow')!,
+          x + tx * 64 - 64,
+          y + ty * 64,
+        );
     for (let ty = 0; ty < h; ty++)
       for (let tx = 0; tx < w; tx++) {
         const sx = 320 + (tx === 0 ? 0 : tx === w - 1 ? 128 : 64);
@@ -496,18 +494,27 @@ export class Renderer {
       }
     for (let tx = 0; tx < w; tx++) {
       const sx = 320 + (tx === 0 ? 0 : tx === w - 1 ? 128 : 64);
-      for (let row = 0; row < 2; row++)
-        ctx.drawImage(
-          im,
-          sx,
-          192 + row * 64,
-          64,
-          64,
-          x + tx * 64,
-          y + h * 64 + row * 64,
-          64,
-          64,
-        );
+      const cliffBottom = y + (h + 1) * 64;
+      const groundBelow = GROUND_PATCHES.some(
+        (p) =>
+          x + tx * 64 + 32 >= p.x &&
+          x + tx * 64 + 32 < p.x + p.w * 64 &&
+          cliffBottom >= p.y &&
+          cliffBottom < p.y + p.h * 64,
+      );
+      // Rows 256 and 320 are alternative cliff feet (land / water).
+      // Row 192 is a stand-alone strip of grass, not part of a cliff.
+      ctx.drawImage(
+        im,
+        sx,
+        groundBelow ? 256 : 320,
+        64,
+        64,
+        x + tx * 64,
+        y + h * 64,
+        64,
+        64,
+      );
     }
   }
   private makeTerrain() {

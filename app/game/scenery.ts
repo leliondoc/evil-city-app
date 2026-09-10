@@ -42,7 +42,7 @@ function inside(
 export function isDryGround(x: number, y: number) {
   if (HIGHLANDS.some((p) => inside(p, x, y, 24))) return true;
   // The cliff face cannot support the roots of a tree.
-  if (HIGHLANDS.some((p) => inside(p, x, y, 0, 128))) return false;
+  if (HIGHLANDS.some((p) => inside(p, x, y, 0, 64))) return false;
   return GROUND_PATCHES.some((p) => inside(p, x, y, 24));
 }
 export function isStreet(x: number, y: number) {
@@ -65,7 +65,7 @@ export function sceneryFits(d: Decoration) {
       if (water) {
         if (
           [...GROUND_PATCHES, ...HIGHLANDS].some((p) =>
-            inside(p, x, y, 0, HIGHLANDS.includes(p) ? 128 : 0),
+            inside(p, x, y, 0, HIGHLANDS.includes(p) ? 64 : 0),
           )
         )
           return false;
