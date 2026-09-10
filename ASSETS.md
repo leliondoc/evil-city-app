@@ -27,4 +27,4 @@ Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche
 
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.
 
-Les textures UI sont des planches de morceaux séparés. `PackUI.tsx` les assemble en SVG : neuf morceaux pour les panneaux et boutons, trois pour le ruban. Les bordures restent fixes lorsque leur contenu change de taille. Aucun PNG n’est redessiné.
+Les textures UI sont des planches de morceaux séparés. `PackUI.tsx` répète les morceaux des panneaux et boutons dans un canvas à échelle fixe, sans étirer le grain du bois ou le parchemin ; le ruban utilise trois morceaux SVG. Les coins restent à taille fixe. Le gisement d’or emploie Gold Stone 5 et Gold Stone 4, qui représentent des rochers plutôt que les petites pépites de Gold Stone 1. Le pack fourni ne contient pas de bâtiment de mine. Aucun PNG n’est redessiné.

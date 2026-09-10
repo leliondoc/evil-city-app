@@ -47,6 +47,8 @@ for i in range(1, 5):
     copy(f'tree-{i}', f'Terrain/Resources/Wood/Trees/Tree{i}.png', 192, anchor=.8)
 copy('sheep', 'Terrain/Resources/Meat/Sheep/Sheep_Grass.png', 128)
 copy('gold-rock', 'Terrain/Resources/Gold/Gold Stones/Gold Stone 1.png')
+copy('gold-deposit', 'Terrain/Resources/Gold/Gold Stones/Gold Stone 5.png')
+copy('gold-deposit-small', 'Terrain/Resources/Gold/Gold Stones/Gold Stone 4.png')
 copy('terrain-shadow', 'Terrain/Tileset/Shadow.png')
 for color in ['Blue', 'Purple']:
     for i in [2, 3]:

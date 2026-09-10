@@ -357,12 +357,12 @@ export function sourceBuilding(s: State, kind: EnemyKind) {
 export type Supply = 'gold' | 'wood' | 'food';
 export const SUPPLIES = {
   gold: {
-    name: 'Mine d’or',
+    name: 'Gisement d’or',
     worker: 'Mineur',
     label: 'Or',
     tool: 'Pickaxe',
     cargo: 'Gold',
-    art: 'gold-rock',
+    art: 'gold-deposit',
   },
   wood: {
     name: 'Camp de bûcherons',

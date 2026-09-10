@@ -1,44 +1,38 @@
-import type { ComponentProps } from 'react';
+import { useEffect, useRef, type ComponentProps } from 'react';
+import { paintPanel, type PanelKind } from './panelSkin';
 import { Button as BaseButton } from '@/components/ui/button';
 import { ASSETS } from './art';
 
-/** Nine-slice layout from the pack's separated tiles; corners never stretch. */
-export function PanelSkin({
-  kind = 'paper',
-}: {
-  kind?: 'paper' | 'wood' | 'banner' | 'button';
-}) {
-  const large = kind === 'wood' || kind === 'banner';
-  const parts = large
-    ? [
-        [0, 128],
-        [192, 64],
-        [320, 128],
-      ]
-    : [
-        [0, 64],
-        [128, 64],
-        [256, 64],
-      ];
-  const key = `ui-${kind}` as const;
+/** Paint separated pack tiles at a fixed pixel scale, including on resize. */
+export function PanelSkin({ kind = 'paper' }: { kind?: PanelKind }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current!;
+    const image = new Image();
+    let disposed = false;
+    const draw = () => {
+      if (disposed || !image.complete || !image.naturalWidth) return;
+      const { width, height } = canvas.getBoundingClientRect();
+      if (!width || !height) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      const ctx = canvas.getContext('2d')!;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paintPanel(ctx, image, kind, width, height);
+    };
+    image.onload = draw;
+    image.src = ASSETS[`ui-${kind}`].src;
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      image.onload = null;
+    };
+  }, [kind]);
   return (
-    <span className={`pack-skin pack-${kind}`} aria-hidden="true">
-      {parts.flatMap(([y, height], row) =>
-        parts.map(([x, width], col) => (
-          <svg
-            key={`${row}-${col}`}
-            viewBox={`${x} ${y} ${width} ${height}`}
-            preserveAspectRatio="none"
-          >
-            <image
-              href={ASSETS[key].src}
-              width={ASSETS[key].width}
-              height={ASSETS[key].height}
-            />
-          </svg>
-        )),
-      )}
-    </span>
+    <canvas ref={ref} className={`pack-skin pack-${kind}`} aria-hidden="true" />
   );
 }
 export function GameButton({

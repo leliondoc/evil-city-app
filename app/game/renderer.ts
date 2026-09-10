@@ -45,6 +45,10 @@ export class Renderer {
   private ctx: CanvasRenderingContext2D;
   private images = new Map<AssetKey, HTMLImageElement>();
   private pixels = new Map<AssetKey, Uint8ClampedArray>();
+  private bounds = new Map<
+    AssetKey,
+    { x: number; y: number; width: number; height: number }
+  >();
   private terrain: HTMLCanvasElement;
   private decorations: Decoration[] = [];
   private hits: Hit[] = [];
@@ -527,6 +531,54 @@ export class Renderer {
       flip,
     };
   }
+  private buildingSprite(
+    key: AssetKey,
+    x: number,
+    ground: number,
+    preferredScale: number,
+    frame: number,
+    alpha: number,
+  ) {
+    const a = ASSETS[key];
+    let bounds = this.bounds.get(key);
+    if (!bounds) {
+      const pixels = this.pixels.get(key)!;
+      let left = a.frameWidth,
+        right = 0,
+        top = a.height,
+        bottom = 0;
+      for (let y = 0; y < a.height; y++)
+        for (let x = 0; x < a.frameWidth; x++) {
+          if (pixels[(y * a.width + x) * 4 + 3] > 40) {
+            left = Math.min(left, x);
+            right = Math.max(right, x);
+            top = Math.min(top, y);
+            bottom = Math.max(bottom, y);
+          }
+        }
+      bounds = {
+        x: left,
+        y: top,
+        width: right - left + 1,
+        height: bottom - top + 1,
+      };
+      this.bounds.set(key, bounds);
+    }
+    // Fit the visible drawing within the plot, not the transparent sprite frame.
+    const scale = Math.min(
+      preferredScale,
+      192 / bounds.width,
+      184 / bounds.height,
+    );
+    return this.sprite(
+      key,
+      x + (a.frameWidth / 2 - bounds.x - bounds.width / 2) * scale,
+      ground + (a.height * a.anchor - bounds.y - bounds.height) * scale,
+      scale,
+      frame,
+      alpha,
+    );
+  }
   private bar(x: number, y: number, ratio: number, width = 60) {
     const ctx = this.ctx;
     ctx.fillStyle = '#293333';
@@ -640,8 +692,8 @@ export class Renderer {
       }
       if (l.kind !== 'guild' && l.kind !== 'hall') this.fence(l, false);
       const kind = l.construction?.kind || l.kind,
-        x = (l.x + 4.4) * CELL,
-        y = (l.y + 5.7) * CELL - (l.id === 0 ? 28 : 0);
+        x = (l.x + 4) * CELL,
+        y = (l.y + 6.2) * CELL - (l.id === 0 ? 28 : 0);
       drawables.push({
         depth: y,
         draw: () => {
@@ -674,7 +726,7 @@ export class Renderer {
                   : kind === 'crypt' || kind === 'guild'
                     ? 0.72
                     : 0.9;
-            const hit = this.sprite(
+            const hit = this.buildingSprite(
               key,
               x,
               y,
@@ -759,12 +811,29 @@ export class Renderer {
             key,
             site.x * CELL,
             site.y * CELL,
-            site.kind === 'wood' ? 0.8 : 0.9,
+            site.kind === 'wood' ? 0.8 : site.kind === 'gold' ? 1.4 : 0.9,
             active ? Math.floor(t * 10) % ASSETS[key].frames : 0,
             active ? 1 : 0.4,
           );
           hit.selection = { type: 'resource', id: site.id };
           this.hits.push(hit);
+          if (site.kind === 'gold') {
+            for (const [dx, dy, scale] of [
+              [-34, 12, 0.9],
+              [32, 18, 0.7],
+            ]) {
+              const rock = this.sprite(
+                'gold-deposit-small',
+                site.x * CELL + dx,
+                site.y * CELL + dy,
+                scale,
+                0,
+                active ? 1 : 0.4,
+              );
+              rock.selection = { type: 'resource', id: site.id };
+              this.hits.push(rock);
+            }
+          }
           if (selected || site.hp < site.maxHp)
             this.bar(
               site.x * CELL,
@@ -772,12 +841,6 @@ export class Renderer {
               site.hp / site.maxHp,
               60,
             );
-          this.label(
-            site.x * CELL,
-            site.y * CELL + 26,
-            `${active ? '' : '× '}${SUPPLIES[site.kind].name}`,
-            active ? '#ffe0a3' : '#c5c5b5',
-          );
         },
       });
     for (const worker of s.workers)
@@ -958,6 +1021,14 @@ export class Renderer {
       });
     drawables.sort((a, b) => a.depth - b.depth);
     for (const d of drawables) d.draw();
+    // Site labels stay in front of scenery, like parcel labels.
+    for (const site of s.sites)
+      this.label(
+        site.x * CELL,
+        site.y * CELL + 36,
+        `${supplyActive(s, site) ? '' : '× '}${SUPPLIES[site.kind].name}`,
+        supplyActive(s, site) ? '#ffe0a3' : '#c5c5b5',
+      );
     for (const l of s.lots) {
       const x = (l.x + 4.4) * CELL,
         y = (l.y + 8) * CELL;
