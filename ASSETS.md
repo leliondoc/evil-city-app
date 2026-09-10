@@ -51,11 +51,11 @@ Les jardins conservent les couleurs originales du pack, sans modification de pal
 
 La réaction des moutons utilise les six images originales de `Resources/Sheep/HappySheep_Bouncing.png` (Tiny Swords Update 010), copiées sans retouche par `scripts/import-sheep-pack.py` vers `sheep-hit.png`. Elle accompagne la récolte de viande des bergers et gobelins ainsi que les dégâts de sabotage, puis revient au cycle normal. Elle suit le temps de simulation et respecte la réduction des animations.
 
-## Essai sonore TomMusic
+## Effets sonores TomMusic
 
 Source : [Free Fantasy 200 SFX Pack — TomMusic](https://tommusic.itch.io/free-fantasy-200-sfx-pack).
 L’archive fournie par l’utilisateur a servi à importer 11 fichiers WAV originaux (1,37 Mo) : deux coupes de bois, deux extractions, deux attaques d’épée, un arc, deux sorts, une fermeture de coffre et une ouverture de porte. La sélection exacte est dans `scripts/import-tommusic.ps1`.
 
-La page de l’auteur autorise l’utilisation dans des projets commerciaux ou personnels et interdit la revente ou redistribution du pack seul. TomMusic est crédité dans l’aide du jeu. Pour cet essai local, les fichiers audio sont ignorés par Git : ils ne sont pas publiés comme banque de sons dans le dépôt public.
+La page de l’auteur autorise l’utilisation dans des projets commerciaux ou personnels et interdit la revente ou redistribution du pack seul. TomMusic est crédité dans l’aide du jeu. Seuls les 11 effets utilisés par Evil City sont inclus dans les ressources du jeu ; ils conservent les conditions de TomMusic et ne constituent pas une banque de sons réutilisable sous la licence du code.
 
-Importer l’archive : `powershell -NoProfile -File scripts/import-tommusic.ps1 -Archive "C:/chemin/Free Fantasy SFX Pack By TomMusic.zip"`. Les fichiers arrivent dans `public/audio/tommusic/`. Une future publication sonore devra fournir ces fichiers au build par un canal privé ; ils sont copiés par Vite dans le jeu compilé localement. En leur absence, le jeu reste jouable sans son et indique leur indisponibilité dans les paramètres.
+Importer à nouveau les originaux : `powershell -NoProfile -File scripts/import-tommusic.ps1 -Archive "C:/chemin/Free Fantasy SFX Pack By TomMusic.zip"`. Les fichiers arrivent dans `public/audio/tommusic/`. Ils sont suivis par Git et copiés par Vite dans le jeu compilé, y compris lors du déploiement GitHub Pages. `scripts/check-audio.mjs` vérifie leur chargement et leur lecture sur ordinateur, téléphone et tablette ; `GAME_URL` permet de viser la version publiée.

@@ -24,4 +24,4 @@ try {
     [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, (Join-Path $target "$($clip.Key).wav"), $true)
   }
 } finally { $zip.Dispose() }
-Write-Output "Imported $($clips.Count) TomMusic effects for the local audio trial."
+Write-Output "Imported $($clips.Count) TomMusic effects used by Evil City."

@@ -1,4 +1,4 @@
-// Import the local TomMusic archive before running this browser check.
+// Verify the game's included effects locally or against GAME_URL after deployment.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)(
