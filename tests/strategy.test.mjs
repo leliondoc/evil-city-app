@@ -154,6 +154,7 @@ test('Racket subtracts a cargo share once, then a separate courier must bring it
     { t } = station(s),
     w = s.workers[0];
   Object.assign(w, { x: t.x, y: t.y, cargo: 10 });
+  s.resources[s.sites[w.site].kind] = 500; // Leave room for the delivered cargo.
   const kind = s.sites[w.site].kind,
     before = s.resources[kind];
   advanceStrategy(s, 0.1);

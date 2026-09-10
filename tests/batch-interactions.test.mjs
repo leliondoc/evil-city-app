@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createGame,
+  goblinWorkforce,
+  rates,
   tick,
   recruit,
   commandUnit,
@@ -153,4 +155,36 @@ test('Harvest feedback reports actual deliveries once and expires without duplic
   }
   assert.deepEqual(reported, s.economy.delivered);
   assert.ok(Object.values(reported).every((amount) => amount >= 20));
+});
+
+test('Goblin workforce counts living gatherers, builders and other duties consistently with actual wood income', () => {
+  const s = createGame();
+  assert.deepEqual(goblinWorkforce(s), {
+    total: 3,
+    wood: 3,
+    building: 0,
+    other: 0,
+    queued: 0,
+  });
+  const fullIncome = rates(s).wood;
+  s.units[0].task = 'build';
+  s.units[1].task = 'rest';
+  s.recruits.push({ kind: 'goblin', remaining: 6 });
+  assert.deepEqual(goblinWorkforce(s), {
+    total: 3,
+    wood: 1,
+    building: 1,
+    other: 1,
+    queued: 1,
+  });
+  assert.ok(Math.abs(rates(s).wood - fullIncome / 3) < 1e-10);
+  s.units[2].hp = 0;
+  assert.deepEqual(goblinWorkforce(s), {
+    total: 2,
+    wood: 0,
+    building: 1,
+    other: 1,
+    queued: 1,
+  });
+  assert.equal(rates(s).wood, 0);
 });

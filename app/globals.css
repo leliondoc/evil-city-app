@@ -2688,3 +2688,91 @@ svg {
   padding-top: 12px;
   border-top: 1px solid #9fa78544;
 }
+
+.goblin-counter {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-align: left;
+  flex-shrink: 0;
+  padding: 4px;
+  color: #f4e6c7;
+  border-radius: 4px;
+}
+.goblin-counter img {
+  width: 32px;
+  height: 36px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.goblin-counter strong {
+  display: block;
+  font-size: 16px;
+}
+.goblin-counter strong span {
+  font-size: 12px;
+}
+.goblin-counter small {
+  display: block;
+  font-size: 10px;
+  color: #c6d4cb;
+}
+.goblin-counter:focus-visible {
+  outline: 2px solid #ffe1a0;
+}
+.goblin-counter:disabled {
+  opacity: 0.5;
+}
+.game-shell[data-compact='true'] .topbar {
+  grid-template-columns: 60px 1fr;
+}
+.game-shell[data-compact='true'] .brand {
+  display: none;
+}
+.game-shell[data-compact='true'] .goblin-counter {
+  grid-column: 1;
+  grid-row: 2;
+  gap: 2px;
+  padding: 0;
+  min-height: 44px;
+}
+.game-shell[data-compact='true'] .goblin-counter img {
+  width: 24px;
+  height: 30px;
+}
+.game-shell[data-compact='true'] .goblin-counter span {
+  display: none;
+}
+.game-shell[data-compact='true'] .goblin-counter small {
+  font-size: 9px;
+  white-space: nowrap;
+}
+@media (max-height: 500px) {
+  .game-shell[data-compact='true'] .topbar {
+    grid-template-columns: minmax(240px, 1fr) 60px auto;
+  }
+  .game-shell[data-compact='true'] .goblin-counter {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .game-shell[data-compact='true'] .top-actions {
+    grid-column: 3;
+  }
+}
+
+.resource strong .resource-cap {
+  display: inline;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9fb1b6;
+  margin-left: 3px;
+}
+.resource-full strong {
+  color: #ffd787;
+}
+.game-shell[data-compact='true'] .resource strong .resource-cap {
+  display: block;
+  font-size: 9px;
+  line-height: 1;
+  margin-left: 0;
+}

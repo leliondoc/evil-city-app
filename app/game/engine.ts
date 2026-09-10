@@ -711,7 +711,7 @@ function cleanupSupplies(s: State) {
     const site = s.sites[w.site];
     if (w.hp <= 0) {
       leaveCorpse(s, w, 'human');
-      s.resources[site.kind] += w.cargo || 4;
+      creditResource(s, site.kind, w.cargo || 4);
       site.recruitAt = s.elapsed + 40;
       announce(
         s,
@@ -890,6 +890,20 @@ export function capacity(s: State) {
 }
 export function hasBuilding(s: State, kind: BuildingKind) {
   return s.lots.some((l) => l.owned && l.kind === kind);
+}
+export const RESOURCE_CAP = 1000;
+/** All player income and loot share the same storage limit. Returns the credited amount. */
+export function creditResource(
+  s: State,
+  kind: keyof Resources,
+  amount: number,
+) {
+  const credited = Math.min(
+    Math.max(0, amount),
+    Math.max(0, RESOURCE_CAP - s.resources[kind]),
+  );
+  s.resources[kind] += credited;
+  return credited;
 }
 export function adjacent(s: State, lot: Lot) {
   return s.lots.some(
@@ -1369,8 +1383,22 @@ export function foodBalance(s: State) {
 const GOBLIN_WOOD_PER_SECOND = 0.22;
 function gathersWood(unit: Unit) {
   return (
-    unit.kind === 'goblin' && (unit.task === 'idle' || unit.task === 'forage')
+    unit.hp > 0 &&
+    unit.kind === 'goblin' &&
+    (unit.task === 'idle' || unit.task === 'forage')
   );
+}
+export function goblinWorkforce(s: State) {
+  const goblins = s.units.filter((u) => u.kind === 'goblin' && u.hp > 0);
+  const wood = goblins.filter(gathersWood).length;
+  const building = goblins.filter((u) => u.task === 'build').length;
+  return {
+    total: goblins.length,
+    wood,
+    building,
+    other: goblins.length - wood - building,
+    queued: s.recruits.filter((r) => r.kind === 'goblin').length,
+  };
 }
 export function rates(s: State): Resources {
   const rate: Resources = { gold: 0, wood: 0, food: 0, mana: 0 };
@@ -2023,12 +2051,23 @@ function tickStep(s: State, dt: number) {
   }
   mobilize(s);
   const income = rates(s);
-  for (const key of Object.keys(income) as (keyof Resources)[])
-    s.resources[key] = Math.max(0, s.resources[key] + income[key] * dt);
+  let creditedWood = 0;
+  for (const key of Object.keys(income) as (keyof Resources)[]) {
+    if (income[key] < 0)
+      s.resources[key] = Math.max(0, s.resources[key] + income[key] * dt);
+    else {
+      const credited = creditResource(s, key, income[key] * dt);
+      if (key === 'wood') creditedWood = credited;
+    }
+  }
   // Aggregate each goblin's already credited fractional income into visible +1 gains.
   for (const unit of s.units) {
     if (!gathersWood(unit)) continue;
-    unit.gatheredWood = (unit.gatheredWood ?? 0) + GOBLIN_WOOD_PER_SECOND * dt;
+    unit.gatheredWood =
+      (unit.gatheredWood ?? 0) +
+      (income.wood > 0
+        ? (creditedWood * GOBLIN_WOOD_PER_SECOND) / income.wood
+        : 0);
     const amount = Math.floor(unit.gatheredWood);
     if (amount > 0) {
       unit.gatheredWood -= amount;
@@ -2113,10 +2152,10 @@ function tickStep(s: State, dt: number) {
           s.domain.suspicion = Math.min(100, s.domain.suspicion + 10);
           target.repairAt = s.elapsed + 90;
           target.recruitAt = target.repairAt;
-          s.resources[target.kind] += 15;
+          const loot = creditResource(s, target.kind, 15);
           announce(
             s,
-            `${SUPPLIES[target.kind].name} sabotée ! +15 ${SUPPLIES[target.kind].label.toLowerCase()}. Production coupée pendant au moins 90 s.`,
+            `${SUPPLIES[target.kind].name} sabotée ! +${Math.floor(loot)} ${SUPPLIES[target.kind].label.toLowerCase()}. Production coupée pendant au moins 90 s.`,
           );
         }
       } else if (approach) pursue(u, approach);
@@ -2208,8 +2247,12 @@ function tickStep(s: State, dt: number) {
           lot.hp = lot.maxHp;
           s.captures++;
           s.domain.suspicion = Math.min(100, s.domain.suspicion + 8);
-          s.resources.gold += lot.kind === 'hall' ? 150 : 65;
-          s.resources.mana += 12;
+          const loot = creditResource(
+            s,
+            'gold',
+            lot.kind === 'hall' ? 150 : 65,
+          );
+          creditResource(s, 'mana', 12);
           for (const u of s.units.filter(
             (u) => u.target === lot.id && u.task === 'attack',
           )) {
@@ -2219,7 +2262,7 @@ function tickStep(s: State, dt: number) {
           }
           announce(
             s,
-            `${BUILDINGS[lot.kind].name} rejoint votre domaine. +${lot.kind === 'hall' ? 150 : 65} or.`,
+            `${BUILDINGS[lot.kind].name} rejoint votre domaine. +${Math.floor(loot)} or.`,
           );
           for (const kind of ['guard', 'hero'] as const) {
             if (lot.kind === PRESSURE[kind].source) {
@@ -2243,7 +2286,7 @@ function tickStep(s: State, dt: number) {
   const defeated = s.enemies.filter((e) => e.hp <= 0);
   for (const e of defeated) leaveCorpse(s, e, 'human');
   s.defeatedEnemies += defeated.length;
-  s.resources.gold += defeated.length * 12;
+  creditResource(s, 'gold', defeated.length * 12);
   s.enemies = s.enemies.filter((e) => e.hp > 0);
   for (const lot of s.lots.filter((l) => l.owned && l.hp > 0)) {
     if (!nearest(entrance(lot), s.enemies, 4))

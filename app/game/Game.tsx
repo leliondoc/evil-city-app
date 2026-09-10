@@ -60,6 +60,8 @@ import {
   population,
   capacity,
   rates,
+  goblinWorkforce,
+  RESOURCE_CAP,
   foodBalance,
   hasBuilding,
   army,
@@ -397,6 +399,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const def = chosenKind ? BUILDINGS[chosenKind] : undefined;
   const creature = selectedUnit ? CREATURES[selectedUnit.kind] : undefined;
   const income = rates(s);
+  const workforce = goblinWorkforce(s);
   const food = foodBalance(s);
   const owned = s.lots.filter((l) => l.owned).length;
   const milestones = [
@@ -512,13 +515,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             const rate = Math.round(income[key] * 60);
             return (
               <ResourceTag
-                className={`resource ${className}${key === 'food' ? ' food-action' : ''}`}
+                className={`resource ${className}${key === 'food' ? ' food-action' : ''}${s.resources[key] >= RESOURCE_CAP ? ' resource-full' : ''}`}
                 key={key}
-                title={
+                title={`Stockage : ${RESOURCE_CAP.toLocaleString('fr-FR')} maximum. L’excédent de production et de butin est perdu. ${
                   key === 'food'
                     ? `Cantines : +${food.production}/min · Créatures : −${food.consumption}/min. Voir la production de vivres.`
                     : `${label} : ${rate >= 0 ? '+' : ''}${rate} par minute`
-                }
+                }`}
                 aria-label={
                   key === 'food'
                     ? `Vivres : ${Math.floor(s.resources.food)}. Production ${food.production}, consommation ${food.consumption} par minute. Voir la cantine.`
@@ -534,6 +537,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 <div>
                   <strong>
                     {Math.floor(s.resources[key]).toLocaleString('fr-FR')}
+                    <small className="resource-cap">
+                      /{RESOURCE_CAP.toLocaleString('fr-FR')}
+                    </small>
                   </strong>
                   <span>
                     {label}{' '}
@@ -543,8 +549,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         color: rate < 0 ? '#d5a887' : undefined,
                       }}
                     >
-                      · {rate >= 0 ? '+' : ''}
-                      {rate}/min
+                      {s.resources[key] >= RESOURCE_CAP && rate >= 0
+                        ? ' · Plein'
+                        : ` · ${rate >= 0 ? '+' : ''}${rate}/min`}
                     </span>
                   </span>
                 </div>
@@ -552,6 +559,34 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             );
           })}
         </div>
+        <button
+          className="goblin-counter"
+          disabled={workforce.total === 0}
+          title={`${workforce.total} gobelins : ${workforce.wood} au bois (+${Math.round(income.wood * 60)}/min), ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. L’or, les vivres et l’essence proviennent des bâtiments. Cliquer pour sélectionner tous les gobelins.`}
+          aria-label={`Gobelins : ${workforce.total}, dont ${workforce.wood} au bois et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
+          onClick={() => {
+            select(
+              unitSelection(
+                s.units
+                  .filter((u) => u.kind === 'goblin' && u.hp > 0)
+                  .map((u) => u.id),
+              ),
+            );
+            setMobilePanel(null);
+            setTouchMode('inspect');
+          }}
+        >
+          <CreaturePortrait kind="goblin" />
+          <div>
+            <strong>
+              {workforce.total} <span>Gobelins</span>
+            </strong>
+            <small>
+              Bois {workforce.wood}
+              <span> · Chantiers {workforce.building}</span>
+            </small>
+          </div>
+        </button>
         <div className="top-actions">
           <Button
             className="speed-btn"

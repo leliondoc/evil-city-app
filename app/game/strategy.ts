@@ -1,5 +1,6 @@
 import {
   announce,
+  creditResource,
   assign,
   clearShot,
   CREATURES,
@@ -257,7 +258,7 @@ export function strategyUnit(s: State, u: Unit, dt: number) {
   if (u.task === 'deliver-loot') {
     if (distance(u, entrance(s.lots[6])) < 1 && u.loot) {
       for (const [key, amount] of Object.entries(u.loot))
-        s.resources[key as keyof Resources] += amount;
+        creditResource(s, key as keyof Resources, amount);
       announce(s, 'Le butin de la tour arrive au manoir.');
     }
     u.loot = undefined;

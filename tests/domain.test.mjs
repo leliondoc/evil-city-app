@@ -262,6 +262,7 @@ test('Corpse storage is capped and undead deaths never generate recyclable bodie
 });
 test('Meals and sleep use their buildings and yield immediately to explicit movement', () => {
   const s = prepared();
+  s.resources.food = 500; // Leave storage space while checking the meal's consumption.
   const u = s.units[0];
   Object.assign(u, entrance(s.lots[4]), {
     task: 'idle',
