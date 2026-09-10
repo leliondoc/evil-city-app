@@ -30,14 +30,16 @@ import {
   type Animation,
 } from './art';
 
-import {
-  BRIDGES,
-  GROUND_PATCHES,
-  HIGHLANDS,
-  makeScenery,
-  type Decoration,
-} from './scenery';
+import { BRIDGES, HIGHLANDS, makeScenery, type Decoration } from './scenery';
 import { ISLAND_PATHS } from './islandRoutes';
+import {
+  groundTiles,
+  patchTiles,
+  onGround,
+  onPatch,
+  type GroundPatch,
+  type GroundTile,
+} from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import {
   selectedUnitIds,
@@ -77,6 +79,7 @@ export class Renderer {
   >();
   private terrain: HTMLCanvasElement;
   private decorations: Decoration[] = [];
+  private shore: GroundTile[] = [];
   private hits: Hit[] = [];
   private motions = new Map<number, Motion>();
   private resizeObserver: ResizeObserver;
@@ -476,46 +479,81 @@ export class Renderer {
     w: number,
     h: number,
   ) {
-    const im = this.images.get(key)!;
-    // The shadow has transparent margins: stamp it on the tile grid, one
-    // tile below the upper ground, without stretching its pixels.
-    for (let ty = 0; ty < h; ty++)
-      for (let tx = 0; tx < w; tx++)
-        ctx.drawImage(
-          this.images.get('terrain-shadow')!,
-          x + tx * 64 - 64,
-          y + ty * 64,
-        );
-    for (let ty = 0; ty < h; ty++)
-      for (let tx = 0; tx < w; tx++) {
-        const sx = 320 + (tx === 0 ? 0 : tx === w - 1 ? 128 : 64);
-        const sy = ty === 0 ? 0 : ty === h - 1 ? 128 : 64;
-        ctx.drawImage(im, sx, sy, 64, 64, x + tx * 64, y + ty * 64, 64, 64);
-      }
-    for (let tx = 0; tx < w; tx++) {
-      const sx = 320 + (tx === 0 ? 0 : tx === w - 1 ? 128 : 64);
-      const cliffBottom = y + (h + 1) * 64;
-      const groundBelow = GROUND_PATCHES.some(
-        (p) =>
-          x + tx * 64 + 32 >= p.x &&
-          x + tx * 64 + 32 < p.x + p.w * 64 &&
-          cliffBottom >= p.y &&
-          cliffBottom < p.y + p.h * 64,
-      );
-      // Rows 256 and 320 are alternative cliff feet (land / water).
-      // Row 192 is a stand-alone strip of grass, not part of a cliff.
+    this.terrace(ctx, { key, x, y, w, h }, []);
+  }
+  private terrainSurface(
+    ctx: CanvasRenderingContext2D,
+    tiles: GroundTile[],
+    raised = false,
+  ) {
+    const cells = new Set(tiles.map((t) => `${t.x},${t.y}`));
+    for (const tile of tiles) {
+      // Quarter tiles connect adjoining patches without rectangular inner borders.
+      for (const qy of [0, 1])
+        for (const qx of [0, 1]) {
+          const horizontal = cells.has(`${tile.x + (qx ? 64 : -64)},${tile.y}`);
+          const vertical = cells.has(`${tile.x},${tile.y + (qy ? 64 : -64)}`);
+          const sx =
+            (raised ? 320 : 0) + (horizontal ? 64 + qx * 32 : qx ? 160 : 0);
+          const sy = vertical ? 64 + qy * 32 : qy ? 160 : 0;
+          ctx.drawImage(
+            this.images.get(tile.key)!,
+            sx,
+            sy,
+            32,
+            32,
+            tile.x + qx * 32,
+            tile.y + qy * 32,
+            32,
+            32,
+          );
+        }
+    }
+  }
+  private terrace(
+    ctx: CanvasRenderingContext2D,
+    p: GroundPatch,
+    lower: GroundPatch[],
+  ) {
+    const tiles = patchTiles(p);
+    for (const tile of tiles)
+      ctx.drawImage(this.images.get('terrain-shadow')!, tile.x - 64, tile.y);
+    this.terrainSurface(ctx, tiles, true);
+    const cliffs = tiles.filter(
+      (tile) => !onPatch(p, tile.x + 32, tile.y + 96),
+    );
+    const cliffCells = new Set(cliffs.map((t) => `${t.x},${t.y}`));
+    for (const tile of cliffs) {
+      const left = cliffCells.has(`${tile.x - 64},${tile.y}`);
+      const right = cliffCells.has(`${tile.x + 64},${tile.y}`);
+      const sx = !left && !right ? 512 : !left ? 320 : !right ? 448 : 384;
+      const land =
+        onGround(tile.x + 32, tile.y + 128) ||
+        lower.some((p) => onPatch(p, tile.x + 32, tile.y + 128));
       ctx.drawImage(
-        im,
+        this.images.get(p.key)!,
         sx,
-        groundBelow ? 256 : 320,
+        land ? 256 : 320,
         64,
         64,
-        x + tx * 64,
-        y + h * 64,
+        tile.x,
+        tile.y + 64,
         64,
         64,
       );
     }
+    for (const stair of p.stairs ?? [])
+      ctx.drawImage(
+        this.images.get(p.key)!,
+        stair.side === 'left' ? 0 : 192,
+        256,
+        64,
+        128,
+        p.x + stair.tx * 64,
+        p.y + stair.ty * 64,
+        64,
+        128,
+      );
   }
   private makeTerrain() {
     const c = this.terrain;
@@ -524,14 +562,24 @@ export class Renderer {
     const ctx = c.getContext('2d')!;
     ctx.imageSmoothingEnabled = false;
     ctx.translate(MARGIN, MARGIN);
-    const water = this.images.get('water')!;
-    for (let y = -MARGIN; y < SIZE + MARGIN; y += 64)
-      for (let x = -MARGIN; x < SIZE + MARGIN; x += 64)
-        ctx.drawImage(water, x, y, 64, 64);
-    // A river around the western bank, woodland islands and an eastern ridge.
-    for (const p of GROUND_PATCHES)
-      this.grassPatch(ctx, p.key, p.x, p.y, p.w, p.h);
-    for (const p of HIGHLANDS) this.plateau(ctx, p.key, p.x, p.y, p.w, p.h);
+    const ground = groundTiles();
+    const coast = new Map(ground.map((t) => [`${t.x},${t.y}`, t]));
+    for (const p of HIGHLANDS)
+      for (const tile of patchTiles(p)) {
+        coast.set(`${tile.x},${tile.y}`, tile);
+        if (!onPatch(p, tile.x + 32, tile.y + 96))
+          coast.set(`${tile.x},${tile.y + 64}`, { ...tile, y: tile.y + 64 });
+      }
+    this.shore = [...coast.values()].filter((t) =>
+      [
+        [-64, 0],
+        [64, 0],
+        [0, -64],
+        [0, 64],
+      ].some(([dx, dy]) => !coast.has(`${t.x + dx},${t.y + dy}`)),
+    );
+    this.terrainSurface(ctx, ground);
+    HIGHLANDS.forEach((p, i) => this.terrace(ctx, p, HIGHLANDS.slice(0, i)));
     // Only streets and entrances are paved; gardens retain their own vegetation.
     ctx.fillStyle = '#b9a67b';
     for (const edge of [0, 10, 20, 30]) {
@@ -814,9 +862,27 @@ export class Renderer {
     const grass = this.images.get('water')!,
       left = Math.floor(-this.origin.x / this.scale / 64) * 64,
       top = Math.floor(-this.origin.y / this.scale / 64) * 64;
-    for (let y = top; y < (this.height - this.origin.y) / this.scale; y += 64)
-      for (let x = left; x < (this.width - this.origin.x) / this.scale; x += 64)
-        ctx.drawImage(grass, 0, 0, 64, 64, x, y, 64, 64);
+    ctx.fillStyle = ctx.createPattern(grass, 'repeat')!;
+    ctx.fillRect(
+      left,
+      top,
+      this.width / this.scale + 128,
+      this.height / this.scale + 128,
+    );
+    for (const tile of this.shore) {
+      const frame = Math.floor(t * 10 + noise(tile.x, tile.y) * 16) % 16;
+      ctx.drawImage(
+        this.images.get('foam')!,
+        frame * 192,
+        0,
+        192,
+        192,
+        tile.x - 64,
+        tile.y - 64,
+        192,
+        192,
+      );
+    }
     ctx.drawImage(this.terrain, -MARGIN, -MARGIN);
     this.hits = [];
     if (s.elapsed === 0) this.motions.clear();

@@ -1,49 +1,28 @@
 import type { AssetKey } from './art';
 import type { Lot } from './engine';
 import { ISLAND_BRIDGES, inIslandClearing } from './islandRoutes.ts';
-
-export type GroundPatch = {
-  key: AssetKey;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-};
+import { HIGHLANDS, onPatch, onGround, onCliff } from './terrainLayout.ts';
+export { GROUND_PATCHES, HIGHLANDS } from './terrainLayout.ts';
 export type Decoration = { key: AssetKey; x: number; y: number; scale: number };
-export const GROUND_PATCHES: GroundPatch[] = [
-  { key: 'terrain-4', x: -64, y: -64, w: 18, h: 18 },
-  { key: 'terrain-4', x: -192, y: -128, w: 7, h: 7 },
-  { key: 'terrain-4', x: 896, y: 320, w: 7, h: 12 },
-  // This island reaches the western end of the bridge at y = 656.
-  { key: 'terrain-5', x: -448, y: 192, w: 5, h: 9 },
-  { key: 'terrain-2', x: -384, y: 832, w: 5, h: 5 },
-];
-export const HIGHLANDS: GroundPatch[] = [
-  { key: 'terrain-5', x: 1024, y: -192, w: 7, h: 5 },
-  { key: 'terrain-4', x: -352, y: -160, w: 4, h: 3 },
-];
 export const BRIDGES = ISLAND_BRIDGES;
 export const BRIDGE = BRIDGES[0];
 
-function inside(
-  p: GroundPatch,
-  x: number,
-  y: number,
-  inset = 0,
-  extraHeight = 0,
-) {
-  return (
-    x >= p.x + inset &&
-    x <= p.x + p.w * 64 - inset &&
-    y >= p.y + inset &&
-    y <= p.y + p.h * 64 + extraHeight - inset
-  );
-}
 export function isDryGround(x: number, y: number) {
-  if (HIGHLANDS.some((p) => inside(p, x, y, 24))) return true;
-  // The cliff face cannot support the roots of a tree.
-  if (HIGHLANDS.some((p) => inside(p, x, y, 0, 64))) return false;
-  return GROUND_PATCHES.some((p) => inside(p, x, y, 24));
+  const surfaceAt = (px: number, py: number) => {
+    for (const p of [...HIGHLANDS].reverse()) {
+      if (onPatch(p, px, py)) return p;
+      if (onCliff(p, px, py)) return null;
+    }
+    return onGround(px, py) ? 'ground' : null;
+  };
+  const surface = surfaceAt(x, y);
+  // Keep roots and bridge landings clear of the visible shoreline / cliff lip.
+  return (
+    surface !== null &&
+    [-24, 0, 24].every((dx) =>
+      [-24, 0, 24].every((dy) => surfaceAt(x + dx, y + dy) === surface),
+    )
+  );
 }
 export function isStreet(x: number, y: number) {
   return (
@@ -55,6 +34,18 @@ export function isStreet(x: number, y: number) {
   );
 }
 export function sceneryFits(d: Decoration) {
+  if (
+    HIGHLANDS.some((p) =>
+      p.stairs?.some(
+        (stair) =>
+          d.x >= p.x + stair.tx * 64 - 28 &&
+          d.x <= p.x + (stair.tx + 1) * 64 + 28 &&
+          d.y >= p.y + stair.ty * 64 - 24 &&
+          d.y <= p.y + (stair.ty + 2) * 64 + 32,
+      ),
+    )
+  )
+    return false;
   const water = d.key.startsWith('water-rock-');
   const halfWidth = water ? 24 : 20;
   const halfHeight = water ? 24 : 12;
@@ -64,9 +55,8 @@ export function sceneryFits(d: Decoration) {
         y = d.y + dy;
       if (water) {
         if (
-          [...GROUND_PATCHES, ...HIGHLANDS].some((p) =>
-            inside(p, x, y, 0, HIGHLANDS.includes(p) ? 64 : 0),
-          )
+          onGround(x, y) ||
+          HIGHLANDS.some((p) => onPatch(p, x, y) || onCliff(p, x, y))
         )
           return false;
         if (
@@ -110,34 +100,51 @@ export function makeScenery(lots: Lot[]): Decoration[] {
         scale: 0.65,
       });
   }
-  for (let i = 0; i < 12; i++) {
-    decorations.push({
-      x: 72 + i * 80,
-      y: -24,
-      key: `tree-${(i % 4) + 1}` as AssetKey,
-      scale: 0.6 + (i % 3) * 0.07,
-    });
-    decorations.push({
-      x: 1140 + (i % 2) * 110 + (i % 3) * 6,
-      y: 400 + Math.floor(i / 2) * 120,
-      key: `tree-${(i % 4) + 1}` as AssetKey,
-      scale: 0.65,
-    });
+  // Small groves frame clearings; species and spacing belong to each grove.
+  const groves = [
+    [172, -82, 1],
+    [320, -70, 2],
+    [828, -70, 1],
+    [-254, -94, 2],
+    [1232, -30, 2],
+    [1128, 80, 2],
+    [1160, 390, 2],
+    [1290, 490, 2],
+    [1190, 720, 3],
+    [1300, 880, 1],
+    [1150, 1000, 3],
+    [-330, 310, 4],
+    [-350, 510, 4],
+    [-354, 652, 3],
+    [-295, 1020, 2],
+    [250, 1120, 1],
+    [850, 1160, 2],
+  ];
+  const offsets = [
+    [-48, -28],
+    [12, -38],
+    [48, 4],
+    [-20, 22],
+    [18, 58],
+  ];
+  for (const [index, [cx, cy, species]] of groves.entries()) {
+    for (const [i, [dx, dy]] of offsets.entries())
+      decorations.push({
+        x: cx + dx + (index % 2 ? 8 : -6),
+        y: cy + dy,
+        key: `tree-${species}` as AssetKey,
+        scale: 0.57 + ((i + index) % 3) * 0.07,
+      });
+    decorations.push(
+      {
+        x: cx + 56,
+        y: cy + 54,
+        key: `bush-${species}` as AssetKey,
+        scale: 0.7,
+      },
+      { x: cx - 52, y: cy + 48, key: 'rock-3', scale: 0.8 },
+    );
   }
-  for (let i = 0; i < 11; i++)
-    decorations.push({
-      x: -380 + (i % 3) * 74,
-      y: 280 + Math.floor(i / 3) * 88,
-      key: `tree-${(i % 4) + 1}` as AssetKey,
-      scale: 0.65,
-    });
-  for (let i = 0; i < 4; i++)
-    decorations.push({
-      x: 1084 + i * 110,
-      y: -110,
-      key: `tree-${i + 1}` as AssetKey,
-      scale: 0.65,
-    });
   for (const [i, [x, y]] of [
     [-464, 60],
     [-96, 400],

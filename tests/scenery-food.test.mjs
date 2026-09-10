@@ -18,6 +18,54 @@ import {
   makeScenery,
   sceneryFits,
 } from '../app/game/scenery.ts';
+import {
+  GROUND_PATCHES,
+  HIGHLANDS,
+  patchTiles,
+  onPatch,
+  onGround,
+} from '../app/game/terrainLayout.ts';
+
+test('Coastal terraces remain connected and every stair joins an upper surface to dry lower ground', () => {
+  for (const p of [...GROUND_PATCHES, ...HIGHLANDS]) {
+    if (p.rows) {
+      assert.equal(p.rows.length, p.h);
+      assert.ok(p.rows.every((row) => row.length === p.w));
+    }
+    const tiles = patchTiles(p);
+    const remaining = new Set(tiles.map((tile) => `${tile.x},${tile.y}`));
+    const queue = [tiles[0]];
+    remaining.delete(`${tiles[0].x},${tiles[0].y}`);
+    for (const tile of queue)
+      for (const [dx, dy] of [
+        [-64, 0],
+        [64, 0],
+        [0, -64],
+        [0, 64],
+      ]) {
+        const next = { ...tile, x: tile.x + dx, y: tile.y + dy };
+        if (remaining.delete(`${next.x},${next.y}`)) queue.push(next);
+      }
+    assert.equal(remaining.size, 0, 'No accidentally detached terrain cells');
+  }
+  for (const [index, p] of HIGHLANDS.entries())
+    for (const stair of p.stairs ?? []) {
+      const x = p.x + stair.tx * 64 + 32;
+      const y = p.y + stair.ty * 64 + 32;
+      assert.ok(onPatch(p, x, y), 'Stairs start on the terrace');
+      assert.ok(!onPatch(p, x, y + 64), 'Stairs span its front cliff');
+      assert.ok(
+        onGround(x, y + 128) ||
+          HIGHLANDS.slice(0, index).some((lower) => onPatch(lower, x, y + 128)),
+        'Stairs end on lower land',
+      );
+      assert.equal(
+        sceneryFits({ key: 'tree-1', x, y, scale: 0.6 }),
+        false,
+        'Keep the passage clear',
+      );
+    }
+});
 
 test('The bridge reaches dry land at both ends across an actual channel', () => {
   for (const y of [
