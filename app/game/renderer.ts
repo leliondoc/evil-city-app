@@ -608,6 +608,19 @@ export class Renderer {
               ? 'terrain-3'
               : 'terrain-1';
       this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4);
+      if (lot.id === 0 && !lot.owned) {
+        this.terrace(
+          ctx,
+          {
+            key: 'terrain-2',
+            x: (lot.x + 1) * CELL,
+            y: (lot.y + 1) * CELL - 40,
+            w: 3,
+            h: 3,
+          },
+          [],
+        );
+      }
     }
     // The same routes guide both the peasants and the visible dirt tracks.
     ctx.strokeStyle = '#b9a67b';
@@ -757,6 +770,22 @@ export class Renderer {
   private approach(lot: Lot, doorX: number, ground: number) {
     const ctx = this.ctx;
     const center = (lot.x + 4) * CELL;
+    if (lot.id === 0 && !lot.owned) {
+      // The original grassy slope is the church's only entrance.
+      // A paved stroke here would cut an artificial passage through the cliff.
+      ctx.drawImage(
+        this.images.get('terrain-2')!,
+        128,
+        256,
+        128,
+        128,
+        center - 64,
+        (lot.y + 5) * CELL - 40,
+        128,
+        128,
+      );
+      return;
+    }
     const bend = (lot.y + 6.3) * CELL;
     ctx.save();
     ctx.strokeStyle = '#c0aa7c';
@@ -967,7 +996,7 @@ export class Renderer {
       }
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
-        y = (l.y + 6.2) * CELL,
+        y = (l.y + 6.2) * CELL - (l.id === 0 && !l.owned ? 28 : 0),
         key =
           kind === 'house'
             ? (`house-${l.owned ? 'purple' : 'blue'}-${(l.id % 2) + 2}` as AssetKey)
