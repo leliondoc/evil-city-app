@@ -145,7 +145,7 @@ svg {
   margin-top: 3px;
 }
 .food-production {
-  color: #3e5144;
+  color: #c7d6c9;
   margin: 12px 0;
   font-size: 13px;
   line-height: 1.5;
@@ -987,7 +987,8 @@ svg {
     font-size: 16px;
   }
   .brand-mark {
-    display: none;
+    width: 26px;
+    height: 26px;
   }
   .resources {
     gap: 9px;
@@ -1097,9 +1098,13 @@ svg {
   box-shadow: none;
 }
 .brand-mark {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
+  flex-shrink: 0;
+}
+.game-shell .brand-mark {
+  image-rendering: auto;
 }
 .brand h1 {
   font-weight: 700;
@@ -1347,8 +1352,8 @@ svg {
     font-size: 20px;
   }
   .brand-mark {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
   }
   .selection-art,
   .selection-art .sprite-preview {
@@ -1446,34 +1451,41 @@ svg {
   position: relative;
   isolation: isolate;
   padding: 22px 20px 25px;
-  color: #363a38;
+  color: #d4ddcf;
   margin: 0 -10px;
 }
 .selection-panel .eyebrow {
-  color: #59645b;
+  color: #b7cac4;
   letter-spacing: 1.1px;
 }
 .selection-panel .selection-name {
-  color: #303e43;
+  color: #ffe4a0;
 }
 .selection-panel .selection-text,
 .selection-panel .reason,
 .selection-panel .selection-stats,
 .selection-panel .building-health {
-  color: #515647;
+  color: #c7d6c9;
 }
 .selection-panel .selection-art {
-  background: radial-gradient(ellipse at center, #93835740, transparent 70%);
+  background: none;
   height: 120px;
 }
 .selection-panel .selection-art .sprite-preview {
   height: 120px;
 }
+.selection-panel .selection-art.empty-art {
+  height: 82px;
+}
+.selection-panel .selection-art.empty-art .sprite-preview {
+  width: 80px;
+  height: 80px;
+}
 .guild-roster {
   margin-top: 18px;
 }
 .guild-roster h4 {
-  color: #303e43;
+  color: #ffe4a0;
   font-size: 17px;
 }
 .guild-members {
@@ -1487,7 +1499,7 @@ svg {
   flex-direction: column;
   align-items: center;
   padding: 0 4px 8px;
-  color: #34474a;
+  color: #d4ddcf;
   cursor: pointer;
 }
 .guild-members .sprite-preview {
@@ -1503,12 +1515,12 @@ svg {
   flex: 1;
   padding: 6px 4px;
   font-size: 13px;
-  color: #34474a;
+  color: #d4ddcf;
   cursor: pointer;
 }
 .guild-members button:hover,
 .guild-actions button:hover {
-  background: #6d784326;
+  background: #ffffff12;
 }
 .guild-actions button[aria-pressed='true'] {
   color: #fff4d8;
@@ -1516,23 +1528,23 @@ svg {
 }
 .guild-members button:focus-visible,
 .guild-actions button:focus-visible {
-  outline: 2px solid #3c6064;
+  outline: 2px solid #ffe4a0;
   outline-offset: 2px;
 }
 .selection-panel .subtle-btn {
-  color: #364d53 !important;
-  background: #78674913 !important;
-  border-color: #7c715747 !important;
+  color: #d3ddd2 !important;
+  background: #ffffff08 !important;
+  border-color: transparent !important;
 }
 .selection-panel .selection-heading button {
-  color: #3b5760;
+  color: #c4d9d5;
 }
 .selection-panel .healthbar {
   margin-bottom: 12px;
-  background: #574c3f;
+  background: #20303a;
 }
 .selection-panel .card-cost {
-  color: #515647;
+  color: #e6d4a2;
 }
 .primary-btn.pack-action {
   position: relative;
@@ -1764,15 +1776,6 @@ svg {
   .map-caption h2 {
     font-size: 17px;
   }
-}
-
-/* Keep dark text legible while the original paper PNG is loading. */
-.selection-panel::before {
-  content: '';
-  position: absolute;
-  inset: 16px 12px 18px;
-  z-index: -2;
-  background: #e8dfb9;
 }
 
 /* The pack shortcuts float over the map; details never shrink the play area. */

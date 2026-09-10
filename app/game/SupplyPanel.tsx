@@ -1,6 +1,6 @@
 import { Progress } from '@/components/ui/progress';
 import { Sprite } from './Sprite';
-import { GameButton, PanelSkin, ResourceIcon } from './PackUI';
+import { GameButton, ResourceIcon } from './PackUI';
 import {
   type State,
   type Selection,
@@ -94,7 +94,6 @@ export function SupplySelection({
   if (!site)
     return (
       <section className="selection-panel">
-        <PanelSkin />
         <p>
           Ce paysan a quitté le quartier. Sélectionnez un site de production.
         </p>
@@ -105,7 +104,6 @@ export function SupplySelection({
   const reason = raidSupplyReason(s, selection);
   return (
     <section className="selection-panel" aria-label="Détails du ravitaillement">
-      <PanelSkin />
       <p className="eyebrow">Économie humaine</p>
       <h3 className="selection-name">{worker ? def.worker : def.name}</h3>
       <div className="selection-art">

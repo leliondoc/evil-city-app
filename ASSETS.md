@@ -6,7 +6,9 @@ Auteur : Pixel Frog. [Source officielle](https://pixelfrog-assets.itch.io/tiny-s
 
 Le dossier Tiny Swords (Free Pack) a été fourni par l’utilisateur dans Downloads le 10 septembre 2026. Tiny Swords (Enemy Pack).zip a été acheté et fourni par l’utilisateur le même jour.
 
-Les archives complètes et les fichiers Aseprite restent hors du site distribué. Les PNG intégrés sont copiés sans modification de leur dessin. Aucune image générée n’est utilisée dans cette version.
+Les archives complètes et les fichiers Aseprite restent hors du site distribué. Les PNG des packs sont copiés sans modification de leur dessin.
+
+Le logo `public/evil-city-logo.png` provient de `eclogo.png`, fourni par l’utilisateur. Son fond a été retiré avec l’outil imagegen intégré, avec cette consigne : « Retirer uniquement le fond blanc, fournir un PNG à transparence réelle, conserver le dessin, les couleurs et les proportions du logo, nettoyer les contours sans halo blanc et garder une petite marge transparente. » Il est affiché à 40 px sur ordinateur et 30 px sur petit écran.
 
 La licence indiquée sur la page officielle autorise l’usage personnel et commercial ainsi que la modification. Elle interdit la redistribution, la revente et le reconditionnement des ressources comme pack, y compris après modification. Ces ressources sont réservées à leur intégration dans le jeu ; ne pas les redistribuer séparément. Le crédit, facultatif selon l’auteur, figure dans le guide.
 

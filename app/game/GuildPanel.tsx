@@ -10,7 +10,7 @@ import {
   type Selection,
   type State,
 } from './engine';
-import { GameButton as Button, PanelSkin } from './PackUI';
+import { GameButton as Button } from './PackUI';
 import { Sprite } from './Sprite';
 
 type Props = { state: State; onSelect: (selection: Selection) => void };
@@ -67,7 +67,6 @@ export function GuildHeroSelection({
       className="selection-panel"
       aria-label="Fiche de classe de la guilde"
     >
-      <PanelSkin kind="banner" />
       <p className="eyebrow">Les Lames de l’Aube · Classe de héros</p>
       <h3 className="selection-name">{hero.name}</h3>
       <div className="selection-art">

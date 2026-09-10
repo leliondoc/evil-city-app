@@ -30,12 +30,7 @@ import {
   Hourglass,
   X,
 } from 'lucide-react';
-import {
-  GameButton as Button,
-  PanelSkin,
-  ResourceIcon,
-  RibbonSkin,
-} from './PackUI';
+import { GameButton as Button, ResourceIcon, RibbonSkin } from './PackUI';
 import { SupplySelection } from './SupplyPanel';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -411,7 +406,13 @@ export default function Game() {
     <main className="game-shell">
       <header className="topbar">
         <div className="brand">
-          <img className="brand-mark" src={portrait('minotaur')} alt="" />
+          <img
+            className="brand-mark"
+            src={`${import.meta.env.BASE_URL}evil-city-logo.png`}
+            width={40}
+            height={40}
+            alt=""
+          />
           <div>
             <h1>EVIL CITY</h1>
             <small>LE PREMIER QUARTIER</small>
@@ -580,7 +581,6 @@ export default function Game() {
               className="selection-panel"
               aria-label="Détails de la sélection"
             >
-              <PanelSkin kind="banner" />
               <div className="selection-heading">
                 <p className="eyebrow">
                   <span
@@ -617,7 +617,9 @@ export default function Game() {
                   def?.name ||
                   'Unité disparue'}
               </h3>
-              <div className="selection-art">
+              <div
+                className={`selection-art${chosenKind === 'empty' ? ' empty-art' : ''}`}
+              >
                 {selectedEnemy ? (
                   <Sprite
                     asset={
