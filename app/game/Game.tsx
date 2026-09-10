@@ -936,15 +936,18 @@ export default function Game() {
                     </>
                   )}
                   {selectedLot.owned && (
-                    <Button
-                      className="subtle-btn"
-                      disabled={s.won || s.lost || !army(s).length}
-                      onClick={() =>
-                        run((state) => defend(state, selectedLot.id))
-                      }
-                    >
-                      <Shield size={14} /> Rassembler l’armée ici
-                    </Button>
+                    <div className="rally-action">
+                      <Button
+                        className="subtle-btn rally-button"
+                        disabled={s.won || s.lost || !army(s).length}
+                        onClick={() =>
+                          run((state) => defend(state, selectedLot.id))
+                        }
+                      >
+                        <Shield size={16} aria-hidden="true" />
+                        <span>Rassembler l’armée ici</span>
+                      </Button>
+                    </div>
                   )}
                   {selectedLot.kind === 'guild' && (
                     <GuildRoster state={s} onSelect={select} />

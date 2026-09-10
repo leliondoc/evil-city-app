@@ -1539,6 +1539,31 @@ svg {
 .selection-panel .selection-heading button {
   color: #c4d9d5;
 }
+.rally-action {
+  padding-top: 14px;
+  padding-bottom: 8px;
+}
+.selection-panel .rally-button {
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 12px !important;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: center;
+  border: 0 !important;
+  border-radius: 4px;
+  box-shadow: none;
+  background: #3a4e59 !important;
+}
+.rally-button span {
+  min-width: 0;
+}
+.selection-panel .rally-button:hover:not(:disabled) {
+  background: #46616e !important;
+}
 .selection-panel .healthbar {
   margin-bottom: 12px;
   background: #20303a;
