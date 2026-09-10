@@ -622,6 +622,20 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             );
           })}
         </div>
+        <div
+          className="session-status"
+          aria-label="Progression et durée de la partie"
+        >
+          <span>
+            <Flag size={15} />
+            {owned}/9 <span className="session-status-label">parcelles</span>
+          </span>
+          <span>
+            <Hourglass size={13} />
+            <time>{clock(s.elapsed)}</time>
+            {s.lost ? ' · Défaite' : s.won ? ' · Victoire' : ''}
+          </span>
+        </div>
         <button
           className="goblin-counter"
           disabled={workforce.total === 0}
@@ -1191,13 +1205,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <RibbonSkin />
             <h2>Les Tilleuls</h2>
             <p>QUARTIER FICTIF · PROTOTYPE 0.4</p>
-          </div>
-          <div className="map-status">
-            <Flag size={15} />
-            {owned}/9 parcelles <span style={{ opacity: 0.5 }}>│</span>
-            <Hourglass size={13} />
-            {clock(s.elapsed)}{' '}
-            {s.lost ? '· Défaite' : s.won ? '· Victoire' : ''}
           </div>
           <div className="canvas-help">
             <span>
