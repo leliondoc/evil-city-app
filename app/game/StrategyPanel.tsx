@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CREATURES, RESOURCE_LABELS, type State, type Lot } from './engine';
+import { CREATURES, type State, type Lot } from './engine';
 import {
   RESEARCH,
   research,
@@ -15,15 +15,8 @@ import {
 } from './strategy';
 import { ASSETS } from './art';
 import { GameButton as Button } from './PackUI';
+import { AbilityCard, AbilityCosts } from './AbilityCard';
 type Action = (action: (s: State) => string | void) => unknown;
-const costs = (value: Partial<State['resources']>) =>
-  Object.entries(value)
-    .filter(([, n]) => n > 0)
-    .map(
-      ([key, n]) =>
-        `${n} ${RESOURCE_LABELS[key as keyof typeof RESOURCE_LABELS]}`,
-    )
-    .join(' · ');
 export function ResearchPanel({
   state: s,
   lot,
@@ -35,36 +28,49 @@ export function ResearchPanel({
 }) {
   if (!lot.owned || !['forge', 'crypt'].includes(lot.kind)) return null;
   return (
-    <div className="domain-card">
-      <strong>Atelier des combos</strong>
-      <p>
-        Feu + solvant : dégâts de feu doublés. Les braises propagent l’incendie.
-        Les améliorations s’appliquent à toute l’armée.
-      </p>
+    <AbilityCard
+      title="Recherches"
+      icon={lot.kind === 'crypt' ? 'alchemist-avatar' : 'ui-sword'}
+    >
+      <p className="ability-meta">Améliorations permanentes · toute l’armée</p>
       {(Object.keys(RESEARCH) as Research[])
         .filter((key) => RESEARCH[key].room === lot.kind)
         .map((key) => {
           const r = RESEARCH[key],
-            error = researchReason(s, key);
+            error = researchReason(s, key),
+            acquired = s.strategy.research.includes(key);
           return (
             <div className="research-choice" key={key}>
-              <strong>{r.name}</strong>
+              <h5>{r.name}</h5>
               <p>{r.text}</p>
-              <p>{costs(r.cost)}</p>
+              {!acquired && (
+                <AbilityCosts cost={r.cost} available={s.resources} />
+              )}
               <Button
-                className="subtle-btn"
+                className="primary-btn"
                 disabled={!!error}
                 title={error || r.text}
                 onClick={() => onAction((s) => research(s, key))}
               >
-                {s.strategy.research.includes(key) ? 'Acquise' : 'Rechercher'}
+                {acquired ? 'Recherche acquise' : 'Rechercher'}
               </Button>
-              {error && <p className="reason">{error}</p>}
+              {!acquired && (
+                <p className="ability-status" data-blocked={!!error}>
+                  {error || 'Recherche disponible'}
+                </p>
+              )}
             </div>
           );
         })}
-      <p>{s.strategy.comboHits} impacts combinés déclenchés.</p>
-    </div>
+      <details className="ability-details">
+        <summary>Combiner les effets</summary>
+        <p>
+          Feu + solvant : dégâts de feu doublés. Les braises propagent
+          l’incendie.
+        </p>
+      </details>
+      <p className="ability-footer">{s.strategy.comboHits} impacts combinés</p>
+    </AbilityCard>
   );
 }
 export function TowerPanel({
@@ -152,43 +158,48 @@ export function TowerPanel({
           >
             Rappeler la garnison
           </Button>
-          <div className="domain-card">
-            <strong>Butin : {costs(tower.loot) || 'aucun'}</strong>
+          <AbilityCard title="Racket" icon="goblin-avatar">
+            <p className="ability-meta">
+              {Object.values(tower.loot).some((value) => value > 0)
+                ? 'Butin à rapporter'
+                : 'Aucun butin stocké'}
+            </p>
+            <AbilityCosts cost={tower.loot} label="Butin stocké" />
             <p>
               Le gobelin prélève 30 % des cargaisons proches. Limite : 30 par
               ressource. Le racket augmente la suspicion.
             </p>
             <Button
-              className="subtle-btn"
+              className="primary-btn"
               disabled={!!lootError}
               title={lootError}
               onClick={() => onAction((s) => collectLoot(s, id))}
             >
               Rapporter le butin
             </Button>
-            <p className="reason">
+            <p className="ability-status" data-blocked={!!lootError}>
               {lootError ||
                 'Un gobelin libre rapporte le butin à pied. Sa mort ou un nouvel ordre fait perdre la cargaison.'}
             </p>
-          </div>
-          <div className="domain-card">
-            <strong>Fausse alerte · 15 essence</strong>
+          </AbilityCard>
+          <AbilityCard title="Fausse alerte" icon="specter-avatar">
             <p>
               Attire les patrouilles proches pendant 12 s. Un combat engagé
               reste prioritaire ; les moines ne sont pas dupes.
             </p>
+            <AbilityCosts cost={{ mana: 15 }} available={s.resources} />
             <Button
-              className="subtle-btn"
+              className="primary-btn"
               disabled={!!alarmError}
               title={alarmError}
               onClick={() => onAction((s) => falseAlarm(s, id))}
             >
-              Déclencher la fausse alerte
+              Déclencher l’alerte
             </Button>
-            <p className="reason">
+            <p className="ability-status" data-blocked={!!alarmError}>
               {alarmError || 'Disponible · récupération 60 s'}
             </p>
-          </div>
+          </AbilityCard>
           <p>
             Sans garnison, les humains reprennent la tour en 8 s. Le butin
             stocké est perdu.

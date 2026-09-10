@@ -2892,3 +2892,90 @@ svg {
     top: calc(env(safe-area-inset-top, 0px) + 48px);
   }
 }
+
+/* Building abilities use the original Tiny Swords rolled parchment and buttons. */
+.domain-card.ability-card {
+  position: relative;
+  isolation: isolate;
+  margin: 16px 0;
+  padding: 24px 20px 30px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: #352c23;
+  font: 13px/1.5 'Trebuchet MS', sans-serif;
+  text-shadow: none;
+}
+.ability-card > .pack-skin { z-index: -1; }
+.ability-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ability-heading > img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.ability-card .ability-heading h4 {
+  flex: 1;
+  margin: 0;
+  color: #352c23;
+  font: 700 15px/1.2 'Trebuchet MS', sans-serif;
+}
+.ability-card .ability-badge {
+  padding: 2px 5px;
+  font-weight: 700;
+  font-size: 12px;
+  color: #3b4331;
+  border-bottom: 2px solid #8c7950;
+}
+.ability-card p { margin: 10px 0; font-size: 13px; line-height: 1.5; color: inherit; }
+.ability-card .ability-meta { font-size: 11px; color: #625440; }
+.ability-card .research-choice { margin: 14px 0; padding-top: 12px; border-color: #a8916266; }
+.ability-card h5 { margin: 0; font: 700 14px/1.35 'Trebuchet MS', sans-serif; color: #433326; }
+.ability-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+.ability-costs li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  background: #fff7de99;
+  color: #35432d;
+  font-size: 12px;
+  border-bottom: 2px solid #829067;
+}
+.ability-costs li[data-missing='true'] { color: #862f27; border-color: #aa6250; }
+.ability-costs img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; }
+.ability-costs svg { color: #76517e; flex: 0 0 auto; }
+.ability-card .primary-btn.pack-action {
+  min-height: 44px;
+  margin: 4px 0;
+  font: 700 13px/1.3 'Trebuchet MS', sans-serif;
+}
+.ability-card .primary-btn.pack-action:disabled { opacity: 1; filter: saturate(0.2); cursor: not-allowed; }
+.ability-card .ability-status { font-size: 12px; color: #405234; }
+.ability-card .ability-status[data-blocked='true'] {
+  color: #7e3028;
+  border-left: 3px solid #ad6d53;
+  padding: 5px 0 5px 8px;
+}
+.ability-details { margin-top: 12px; border-top: 1px solid #a8916266; padding-top: 8px; }
+.ability-details summary { cursor: pointer; font-size: 12px; font-weight: 700; padding: 4px 0; }
+.ability-details summary:focus-visible { outline: 2px solid #345968; outline-offset: 3px; }
+.ability-card .ability-footer { color: #625440; font-size: 11px; margin: 12px 0 0; }
+.ability-card .domain-toggle { align-items: center; min-height: 44px; margin-top: 14px; padding-top: 10px; border-top: 1px solid #a8916266; }
+.ability-card .domain-toggle input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: #356475; }
+.ability-card .domain-toggle span { font-weight: 700; }
+.ability-card .domain-toggle small { display: block; font-size: 11px; font-weight: 400; color: #625440; }
+.ability-costs:empty { display: none; }

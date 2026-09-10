@@ -12,6 +12,7 @@ import {
   thought,
 } from './domain';
 import { GameButton as Button } from './PackUI';
+import { AbilityCard, AbilityCosts } from './AbilityCard';
 import { ResearchPanel } from './StrategyPanel';
 
 export function DomainPanel({
@@ -33,100 +34,136 @@ export function DomainPanel({
     <>
       {lot && <ResearchPanel state={s} lot={lot} onAction={onAction} />}
       {lot && !lot.owned && (
-        <div className="domain-card">
-          <strong>Résurrection humaine</strong>
+        <AbilityCard
+          title="Résurrection humaine"
+          icon="ui-shield"
+          badge={`${s.domain.souls.filter((body) => body.home === lot.id).length} ici`}
+        >
           <p>
-            {s.domain.souls.filter((body) => body.home === lot.id).length}{' '}
-            dépouilles prêtes ici. Rituel : 10 s, 25 or et 15 viande humains,
-            retour à 60 % de vie, une seule fois. Attaquer le moine, hanter ou
-            capturer le bâtiment interrompt le rituel.
+            Le moine rend <b>60 % de vie</b> à un humain tombé, une seule fois.
           </p>
-          <p>{s.domain.resurrected} résurrections dans le quartier.</p>
-        </div>
+          <AbilityCosts cost={{ gold: 25, food: 15 }} />
+          <p className="ability-meta">Stocks humains · rituel de 10 s</p>
+          <details className="ability-details">
+            <summary>Comment l’interrompre</summary>
+            <p>Attaquez le moine, hantez ou capturez le bâtiment.</p>
+          </details>
+          <p className="ability-footer">
+            {s.domain.resurrected} résurrections dans le quartier
+          </p>
+        </AbilityCard>
       )}
       {unit && (
-        <div className="domain-card">
-          <strong>{thought(s, unit) || 'Prêt à recevoir vos ordres'}</strong>
+        <AbilityCard
+          title={thought(s, unit) || 'Ordres et besoins'}
+          icon={unit.kind === 'specter' ? 'specter-avatar' : 'ui-info'}
+        >
           {unit.kind === 'specter' ? (
-            <p>
-              Envoyez ce spectre sur un bâtiment humain pour le hanter.
-              Récupération :{' '}
-              {Math.ceil(Math.max(0, (unit.hauntReadyAt ?? 0) - s.elapsed))} s.
-            </p>
+            <>
+              <p>Envoyez le spectre hanter un bâtiment humain.</p>
+              <p className="ability-meta">
+                Récupération :{' '}
+                {Math.ceil(Math.max(0, (unit.hauntReadyAt ?? 0) - s.elapsed))} s
+              </p>
+            </>
           ) : (
             <p>
-              Au calme, les créatures rejoignent leur cantine ou leur lieu de
-              repos. Vos ordres passent en priorité.
+              Au calme, les créatures vont manger et se reposer. Vos ordres
+              restent prioritaires.
             </p>
           )}
-        </div>
+        </AbilityCard>
       )}
       {lot && !lot.owned && lot.kind !== 'empty' && (
-        <div className="domain-card">
-          <strong>
-            {isHaunted(s, lot)
-              ? `Hanté · ${Math.ceil((lot.hauntedUntil ?? 0) - s.elapsed)} s`
-              : 'Un mauvais voisinage'}
-          </strong>
+        <AbilityCard
+          title="Hantise"
+          icon="specter-avatar"
+          badge={
+            isHaunted(s, lot)
+              ? `${Math.ceil((lot.hauntedUntil ?? 0) - s.elapsed)} s`
+              : undefined
+          }
+        >
           <p>
-            Un spectre suspend les livraisons et les départs de renforts pendant
-            30 s. Le moine de la guilde le fait sortir et l’affronte dans la
-            rue.
+            Bloque les livraisons et les renforts pendant <b>30 s</b>.
           </p>
+          <p className="ability-meta">Nécessite un spectre disponible</p>
           <Button
-            className="subtle-btn"
+            className="primary-btn"
             disabled={!!hauntError}
             title={hauntError || 'Envoyer un spectre'}
             onClick={() => onAction((state) => haunt(state, lot.id))}
           >
-            Hanter ce bâtiment
+            Hanter le bâtiment
           </Button>
-          {hauntError && <p className="reason">{hauntError}</p>}
-        </div>
+          {hauntError && (
+            <p className="ability-status" data-blocked="true">
+              {hauntError}
+            </p>
+          )}
+          <details className="ability-details">
+            <summary>Réaction des humains</summary>
+            <p>Le moine fait sortir le spectre et l’affronte dans la rue.</p>
+          </details>
+        </AbilityCard>
       )}
       {lot?.kind === 'hall' && !lot.owned && (
-        <div className="domain-card">
-          <strong>Acheter le silence · {BRIBE_GOLD} or</strong>
+        <AbilityCard title="Pot-de-vin" icon="ui-gold">
           <p>
-            Un gobelin livre la bourse à pied. À l’arrivée : prochaine
-            patrouille retardée de 45 s et suspicion −15. Bourse perdue s’il est
-            tué ou rappelé.
+            Retarde la patrouille de <b>45 s</b> et retire{' '}
+            <b>15 de suspicion</b> à la livraison.
           </p>
+          <AbilityCosts cost={{ gold: BRIBE_GOLD }} available={s.resources} />
           <Button
-            className="subtle-btn"
+            className="primary-btn"
             disabled={!!bribeError}
             title={bribeError || 'Envoyer la bourse'}
             onClick={() => onAction(sendBribe)}
           >
-            Envoyer un pot-de-vin
+            Envoyer la bourse
           </Button>
-          <p className="reason">
-            {bribeError || 'Une bourse au maximum toutes les 120 s.'}
+          <p className="ability-status" data-blocked={!!bribeError}>
+            {bribeError || 'Disponible · récupération 120 s'}
           </p>
-          {s.domain.lastBribe && <p>{s.domain.lastBribe}</p>}
-        </div>
+          <details className="ability-details">
+            <summary>Transport de la bourse</summary>
+            <p>
+              Un gobelin la livre à pied. Elle est perdue s’il est tué ou
+              rappelé.
+            </p>
+          </details>
+          {s.domain.lastBribe && (
+            <p className="ability-footer">{s.domain.lastBribe}</p>
+          )}
+        </AbilityCard>
       )}
       {lot?.owned && lot.kind === 'crypt' && (
-        <div className="domain-card">
-          <strong>
-            Dépouilles · {s.domain.remains}/{REMAINS_CAP}
-          </strong>
+        <AbilityCard
+          title="Relever les morts"
+          icon="skeleton-avatar"
+          badge={`${s.domain.remains}/${REMAINS_CAP}`}
+        >
           <p>
-            Les gobelins libres rapportent les morts hors du danger. Les paysans
-            récupèrent aussi les leurs. Les squelettes et spectres ne laissent
-            aucun reste utilisable.
+            Transforme deux dépouilles en <b>un squelette</b>.
+          </p>
+          <AbilityCosts
+            cost={{ mana: 12 }}
+            available={s.resources}
+            remains={{ needed: 2, available: s.domain.remains }}
+          />
+          <p className="ability-meta">
+            Rituel 12 s · récupération 45 s · 1 place
           </p>
           <Button
-            className="subtle-btn"
+            className="primary-btn"
             disabled={!!ritualError}
             title={ritualError || 'Deux dépouilles et 12 essence'}
             onClick={() => onAction(raiseSkeleton)}
           >
-            Relever un squelette · 12 essence
+            Relever un squelette
           </Button>
-          <p className="reason">
-            {ritualError ||
-              '2 dépouilles · rituel 12 s · récupération 45 s · 1 place.'}
+          <p className="ability-status" data-blocked={!!ritualError}>
+            {ritualError || 'Rituel disponible'}
           </p>
           <label className="domain-toggle">
             <input
@@ -139,13 +176,23 @@ export function DomainPanel({
                 })
               }
             />
-            Collecte automatique des dépouilles
+            <span>
+              Collecte automatique<small>Par les gobelins disponibles</small>
+            </span>
           </label>
-          <p>
-            {s.domain.corpses.filter((c) => !c.carrier).length} dépouilles au
-            sol · {s.domain.recoveredByHumans} récupérées par les humains.
+          <details className="ability-details">
+            <summary>Où trouver des dépouilles ?</summary>
+            <p>
+              Les gobelins les ramassent hors du danger. Les paysans récupèrent
+              aussi les leurs. Squelettes et spectres ne laissent aucun reste
+              utilisable.
+            </p>
+          </details>
+          <p className="ability-footer">
+            {s.domain.corpses.filter((c) => !c.carrier).length} au sol ·{' '}
+            {s.domain.recoveredByHumans} récupérées par les humains
           </p>
-        </div>
+        </AbilityCard>
       )}
     </>
   );
