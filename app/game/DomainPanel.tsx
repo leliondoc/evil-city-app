@@ -30,10 +30,16 @@ export function DomainPanel({
   const hauntError = lot ? hauntReason(s, lot.id) : '';
   const bribeError = bribeReason(s);
   const ritualError = ritualReason(s);
+  const resurrectionSite =
+    lot &&
+    !lot.owned &&
+    lot.kind !== 'empty' &&
+    (s.sites.some((site) => site.home === lot.id) ||
+      s.domain.souls.some((body) => body.home === lot.id));
   return (
     <>
       {lot && <ResearchPanel state={s} lot={lot} onAction={onAction} />}
-      {lot && !lot.owned && (
+      {resurrectionSite && (
         <AbilityCard
           title="Résurrection humaine"
           icon="ui-shield"
