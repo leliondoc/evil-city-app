@@ -1370,3 +1370,161 @@ svg {
     grid-template-columns: 1fr;
   }
 }
+
+/* Visible warning and counterplay before a raid begins. */
+.pressure-strip {
+  display: grid;
+  grid-template-columns: minmax(155px, 0.7fr) 1fr 1fr minmax(200px, 0.85fr);
+  flex: 0 0 auto;
+  background: #1d3039;
+  border-bottom: 1px solid #526975;
+  padding: 8px 22px;
+  gap: 12px;
+  color: #d2ded7;
+}
+.pressure-strip > div,
+.pressure-faction {
+  min-width: 0;
+  text-align: left;
+  padding: 6px 12px;
+  border-left: 2px solid #556e77;
+}
+.pressure-strip span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.pressure-strip strong {
+  display: block;
+  color: #ffe1a0;
+  font-size: 14px;
+  margin-top: 3px;
+}
+.pressure-strip small {
+  font-size: 11px;
+  color: #b6cac5;
+  font-weight: normal;
+}
+.pressure-faction > span small {
+  margin-left: auto;
+}
+.pressure-faction:hover {
+  background: #2c444e;
+}
+.pressure-faction:focus-visible,
+.pressure-home button:focus-visible {
+  outline: 2px solid #ffe1a0;
+  outline-offset: 2px;
+}
+.pressure-strip .mobilizing {
+  border-color: #e6b567;
+  background: #55442d44;
+}
+.pressure-strip .raiding {
+  border-color: #ef9476;
+  background: #80463344;
+}
+.pressure-strip .raiding > strong {
+  color: #ffb39b;
+}
+.territory-meter {
+  background: #43505b;
+  height: 4px;
+  max-width: 150px;
+  margin-top: 6px;
+}
+.territory-meter i {
+  display: block;
+  height: 100%;
+  background: #b79ed6;
+}
+.pressure-home > button {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+.pressure-home strong {
+  margin: 0 0 0 auto;
+  font-size: 12px;
+}
+.pressure-home .defend-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 7px;
+  border: 1px solid #7b8d80;
+  border-radius: 3px;
+  padding: 5px;
+  color: #ffe4a9;
+  font-size: 12px;
+  background: #354b53;
+}
+.defend-button:hover {
+  background: #47606a;
+}
+.defend-button:disabled {
+  opacity: 0.5;
+}
+.building-health {
+  font-size: 12px;
+  color: #c7d6c9;
+  margin: -5px 0 12px;
+}
+@media (max-width: 1000px) {
+  .pressure-strip {
+    padding: 6px 10px;
+    gap: 5px;
+    grid-template-columns: 0.65fr 1fr 1fr 1fr;
+  }
+  .pressure-strip > div,
+  .pressure-faction {
+    padding: 5px 7px;
+  }
+  .pressure-strip strong {
+    font-size: 12px;
+  }
+  .pressure-faction > span {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .pressure-faction > span small {
+    margin-left: 0;
+  }
+}
+@media (max-width: 650px) {
+  .pressure-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pressure-territory {
+    order: 2;
+  }
+  .pressure-home {
+    order: 3;
+  }
+  .pressure-home .defend-button {
+    margin-top: 3px;
+  }
+  .pressure-strip span {
+    font-size: 11px;
+  }
+  .pressure-strip strong {
+    font-size: 12px;
+  }
+}
+.objectives-disclosure {
+  margin-top: 12px;
+}
+.objectives-disclosure summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: #e4d2a5;
+}
+.objectives-disclosure summary span {
+  float: right;
+  color: #b5c9bb;
+}
+.objectives-disclosure .quest-list {
+  margin-top: 12px;
+}

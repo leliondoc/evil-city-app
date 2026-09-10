@@ -1,6 +1,7 @@
 import {
   BUILDINGS,
   CREATURES,
+  ENEMIES,
   STARTS,
   entrance,
   type State,
@@ -492,7 +493,7 @@ export class Renderer {
     ctx.drawImage(this.terrain, -MARGIN, -MARGIN);
     this.hits = [];
     if (s.elapsed === 0) this.motions.clear();
-    const alive = new Set(s.units.map((u) => u.id));
+    const alive = new Set([...s.units, ...s.enemies].map((u) => u.id));
     for (const id of this.motions.keys())
       if (!alive.has(id)) this.motions.delete(id);
     const drawables: { depth: number; draw: () => void }[] = [];
@@ -551,7 +552,7 @@ export class Renderer {
                 ? 0.78
                 : kind === 'den'
                   ? 0.94
-                  : kind === 'crypt'
+                  : kind === 'crypt' || kind === 'guild'
                     ? 0.72
                     : 0.9;
             const hit = this.sprite(
@@ -582,7 +583,11 @@ export class Renderer {
         gx = gate.x * CELL,
         gy = gate.y * CELL;
       if (!l.owned && l.kind !== 'empty')
-        for (let i = 0; i < (l.kind === 'hall' ? 2 : 1); i++)
+        for (
+          let i = 0;
+          i < (l.kind === 'hall' || l.kind === 'guild' ? 2 : 1);
+          i++
+        )
           drawables.push({
             depth: gy,
             draw: () => {
@@ -630,11 +635,13 @@ export class Renderer {
             def = CREATURES[u.kind],
             selected =
               this.selection.type === 'unit' && this.selection.id === u.id;
-          const action: Animation = u.path.length
-            ? 'walk'
-            : u.task === 'attack'
-              ? 'attack'
-              : 'idle';
+          const action: Animation = u.fighting
+            ? 'attack'
+            : u.path.length
+              ? 'walk'
+              : u.task === 'attack'
+                ? 'attack'
+                : 'idle';
           let motion = this.motions.get(u.id);
           if (!motion || motion.action !== action || motion.since > t) {
             motion = { action, since: t };
@@ -684,6 +691,52 @@ export class Renderer {
             );
         },
       });
+    for (const e of s.enemies) {
+      drawables.push({
+        depth: e.y * CELL + 1,
+        draw: () => {
+          const x = e.x * CELL,
+            y = e.y * CELL;
+          const selected =
+            this.selection.type === 'enemy' && this.selection.id === e.id;
+          const key: AssetKey = e.fighting ? 'guard-attack' : 'guard-idle';
+          let motion = this.motions.get(e.id);
+          const action: Animation = e.fighting ? 'attack' : 'idle';
+          if (!motion || motion.action !== action || motion.since > t) {
+            motion = { action, since: t };
+            this.motions.set(e.id, motion);
+          }
+          ctx.strokeStyle = selected
+            ? '#fff1af'
+            : e.kind === 'hero'
+              ? '#ffc85c'
+              : '#ed886f';
+          ctx.lineWidth = (selected ? 3 : 2) / this.scale;
+          ctx.beginPath();
+          ctx.ellipse(x, y, e.kind === 'hero' ? 28 : 21, 11, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          const hit = this.sprite(
+            key,
+            x,
+            y,
+            e.kind === 'hero' ? 0.82 : 0.65,
+            Math.floor((t - motion.since) * 10) % ASSETS[key].frames,
+            1,
+            e.facing < 0,
+          );
+          hit.selection = { type: 'enemy', id: e.id };
+          this.hits.push(hit);
+          this.bar(x, y - (e.kind === 'hero' ? 74 : 56), e.hp / e.maxHp, 44);
+          if (e.kind === 'hero' || selected)
+            this.label(
+              x,
+              y + 32,
+              `${e.kind === 'hero' ? '★ Héros' : ENEMIES[e.kind].name} · ${e.level}`,
+              '#ffcf83',
+            );
+        },
+      });
+    }
     drawables.sort((a, b) => a.depth - b.depth);
     for (const d of drawables) d.draw();
     for (const l of s.lots) {
@@ -696,7 +749,7 @@ export class Renderer {
         ctx.lineWidth = 2;
         ctx.strokeRect(l.x * CELL + 14, l.y * CELL + 18, 16, 16);
       }
-      if (!l.owned && l.hp < l.maxHp) this.bar(x, y - 10, l.hp / l.maxHp, 80);
+      if (l.hp < l.maxHp) this.bar(x, y - 10, l.hp / l.maxHp, 80);
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
           x,
@@ -707,6 +760,13 @@ export class Renderer {
         );
       else if (l.kind === 'hall' && !l.owned)
         this.label(x, y + 16, 'La mairie');
+      else if (l.kind === 'guild')
+        this.label(
+          x,
+          y + 16,
+          l.owned ? 'Guilde neutralisée' : '★ Guilde des héros',
+          '#ffcf83',
+        );
     }
     if (this.selection.type === 'unit') {
       const u = s.units.find((u) => u.id === this.selection.id);

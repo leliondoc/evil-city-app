@@ -32,11 +32,13 @@ test('Playable opening reaches victory with earned resources and normal recruits
   assert.equal(build(s, 4, 'forge'), '');
   until(s, () => s.lots[7].kind === 'canteen' && s.lots[4].kind === 'forge');
   assert.ok(s.units.every((u) => u.kind === 'goblin'));
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     until(s, () => s.resources.gold >= 60 && s.resources.food >= 20);
     assert.equal(recruit(s, 'troll'), '');
   }
-  until(s, () => s.units.filter((u) => u.kind === 'troll').length === 3);
+  until(s, () => s.units.filter((u) => u.kind === 'troll').length === 4);
+  assert.equal(attack(s, 0), '');
+  until(s, () => s.lots[0].owned);
   assert.equal(attack(s, 1), '');
   until(s, () => s.lots[1].owned);
   assert.equal(attack(s, 2), '');
@@ -112,7 +114,7 @@ test('Retreat stops attacks and injured creatures heal at the manor', () => {
   assert.equal(s.units.find((u) => u.kind === 'troll').hp, CREATURES.troll.hp);
 });
 
-test('A defeated assault is recoverable; resources stay finite over long simulation', () => {
+test('A defeated assault leaves time to recover, but indefinite waiting loses the manor', () => {
   const s = createGame();
   s.lots[4].owned = true;
   s.lots[4].kind = 'forge';
@@ -122,12 +124,15 @@ test('A defeated assault is recoverable; resources stay finite over long simulat
   assert.equal(attack(s, 2), '');
   until(s, () => !s.units.some((u) => u.kind === 'troll'));
   assert.equal(s.won, false);
-  advance(s, 900);
+  advance(s, 90);
   assert.ok(
     Object.values(s.resources).every((v) => v >= 0 && Number.isFinite(v)),
   );
   assert.ok(s.units.length >= 3);
   assert.ok(s.resources.gold > 60);
+  advance(s, 900);
+  assert.equal(s.lost, true);
+  assert.equal(s.lots[6].hp, 0);
 });
 
 test('Upgrades change production and cannot exceed level three', () => {

@@ -2,9 +2,13 @@ import manifest from './assets.json' with { type: 'json' };
 import type { BuildingKind, CreatureKind } from './engine';
 
 export const ASSETS = Object.fromEntries(
-  Object.entries(manifest).map(([key, asset]) => [key, {
-    ...asset, src: (import.meta.env?.BASE_URL ?? '/') + asset.src.replace(/^\//, ''),
-  }]),
+  Object.entries(manifest).map(([key, asset]) => [
+    key,
+    {
+      ...asset,
+      src: (import.meta.env?.BASE_URL ?? '/') + asset.src.replace(/^\//, ''),
+    },
+  ]),
 ) as typeof manifest;
 export type AssetKey = keyof typeof ASSETS;
 export type Animation = 'idle' | 'walk' | 'attack';
@@ -12,7 +16,7 @@ export const FRAME_SECONDS = 0.1;
 export function buildingArt(kind: BuildingKind, owned = true): AssetKey {
   if (kind === 'den') return 'den';
   if (kind === 'empty') return 'wood';
-  const name = kind === 'hall' ? 'hq' : kind;
+  const name = kind === 'hall' ? 'hq' : kind === 'guild' ? 'crypt' : kind;
   return `${name}-${owned ? 'purple' : 'blue'}` as AssetKey;
 }
 export function animationSequence(

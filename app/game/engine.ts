@@ -5,6 +5,7 @@ export type BuildingKind =
   | 'forge'
   | 'crypt'
   | 'hall'
+  | 'guild'
   | 'house'
   | 'tavern'
   | 'empty';
@@ -17,7 +18,7 @@ export type Resources = {
   mana: number;
 };
 export type Cost = Partial<Resources>;
-export type Selection = { type: 'lot' | 'unit'; id: number };
+export type Selection = { type: 'lot' | 'unit' | 'enemy'; id: number };
 export type BuildingDef = {
   name: string;
   description: string;
@@ -75,9 +76,18 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   hall: {
     name: 'Hôtel de ville',
     description:
-      'Le dernier bastion des gens du coin. Prenez la mairie pour devenir le seigneur du quartier.',
+      'La mairie mobilise la garde. Sa conquête arrête les renforts, mais les soldats déjà sortis restent dangereux.',
     short: 'Objectif de conquête',
     art: 5,
+    cost: {},
+    duration: 0,
+  },
+  guild: {
+    name: 'Guilde des héros',
+    description:
+      'Les Lames de l’Aube préparent des expéditions contre votre manoir. Prenez leur guilde pour interrompre les prochains raids.',
+    short: 'Source des expéditions',
+    art: 4,
     cost: {},
     duration: 0,
   },
@@ -200,17 +210,86 @@ export interface Lot {
   hp: number;
   maxHp: number;
   level: number;
+  humanKind: BuildingKind;
   construction: null | { kind: BuildingKind; progress: number };
 }
 export interface Unit extends Point {
   id: number;
   kind: CreatureKind;
   hp: number;
-  task: 'idle' | 'build' | 'attack' | 'move' | 'forage';
+  task: 'idle' | 'build' | 'attack' | 'move' | 'forage' | 'defend';
   path: Point[];
   target: number | null;
   idleTime: number;
   facing: number;
+  fighting: boolean;
+}
+export type EnemyKind = 'guard' | 'hero';
+export const ENEMIES = {
+  guard: {
+    name: 'Garde du quartier',
+    hp: 55,
+    damage: 6,
+    speed: 1.35,
+    description:
+      'Reprend vos propriétés, puis attaque le manoir. Ses renforts viennent de la mairie.',
+  },
+  hero: {
+    name: 'Chevalier de l’Aube',
+    hp: 140,
+    damage: 12,
+    speed: 1.5,
+    description:
+      'Un héros de la guilde. Il vise le manoir et combat les créatures qui lui barrent la route.',
+  },
+} as const;
+export interface Enemy extends Point {
+  id: number;
+  kind: EnemyKind;
+  hp: number;
+  maxHp: number;
+  damage: number;
+  level: number;
+  path: Point[];
+  target: number;
+  facing: number;
+  fighting: boolean;
+}
+export interface Mobilization {
+  active: boolean;
+  nextRaidAt: number | null;
+  waves: number;
+  reason: string;
+}
+export const PRESSURE = {
+  guard: {
+    territory: 5 / 9,
+    time: 180,
+    warning: 25,
+    interval: 100,
+    source: 'hall',
+  },
+  hero: {
+    territory: 6 / 9,
+    time: 360,
+    warning: 35,
+    interval: 140,
+    source: 'guild',
+  },
+  levelEvery: 120,
+  maxLevel: 6,
+} as const;
+export function territory(s: State) {
+  return s.lots.filter((l) => l.owned).length / s.lots.length;
+}
+export function humanLevel(s: State) {
+  return Math.min(
+    PRESSURE.maxLevel,
+    1 + Math.floor(s.elapsed / PRESSURE.levelEvery),
+  );
+}
+export function sourceBuilding(s: State, kind: EnemyKind) {
+  return s.lots.find((l) => l.kind === PRESSURE[kind].source);
 }
 export interface State {
   resources: Resources;
@@ -223,13 +302,18 @@ export interface State {
   noticeUntil: number;
   journal: string[];
   won: boolean;
+  lost: boolean;
+  enemies: Enemy[];
+  mobilization: Record<EnemyKind, Mobilization>;
+  defeatedEnemies: number;
+  humanLevelAnnounced: number;
   captures: number;
   recruited: number;
 }
 
 export function createGame(): State {
   const kinds: BuildingKind[] = [
-    'house',
+    'guild',
     'tavern',
     'hall',
     'den',
@@ -249,9 +333,28 @@ export function createGame(): State {
       y: STARTS[Math.floor(id / 3)],
       kind,
       owned: [3, 6, 7].includes(id),
-      hp: kind === 'hall' ? 360 : kind === 'tavern' ? 140 : 85,
-      maxHp: kind === 'hall' ? 360 : kind === 'tavern' ? 140 : 85,
+      hp:
+        kind === 'hq'
+          ? 500
+          : kind === 'hall'
+            ? 360
+            : kind === 'guild'
+              ? 220
+              : kind === 'tavern'
+                ? 140
+                : 85,
+      maxHp:
+        kind === 'hq'
+          ? 500
+          : kind === 'hall'
+            ? 360
+            : kind === 'guild'
+              ? 220
+              : kind === 'tavern'
+                ? 140
+                : 85,
       level: 1,
+      humanKind: kind === 'den' ? 'house' : kind,
       construction: null,
     })),
     units: [],
@@ -260,6 +363,14 @@ export function createGame(): State {
     noticeUntil: 0,
     journal: ['Trois gobelins, un manoir… le quartier ne se doute de rien.'],
     won: false,
+    lost: false,
+    enemies: [],
+    mobilization: {
+      guard: { active: false, nextRaidAt: null, waves: 0, reason: '' },
+      hero: { active: false, nextRaidAt: null, waves: 0, reason: '' },
+    },
+    defeatedEnemies: 0,
+    humanLevelAnnounced: 1,
     captures: 0,
     recruited: 0,
   };
@@ -389,9 +500,11 @@ function spawnUnit(s: State, kind: CreatureKind) {
     target: null,
     idleTime: id * 0.5,
     facing: 1,
+    fighting: false,
   });
 }
 export function buildReason(s: State, id: number, kind: BuildingKind): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
   const l = s.lots[id];
   if (!l || !l.owned) return 'Sélectionnez une parcelle à vous.';
   if (l.construction) return 'Un chantier est déjà en cours.';
@@ -434,6 +547,7 @@ function allocateWorkers(s: State) {
 }
 export const CLAIM_COST: Cost = { gold: 40, mana: 18 };
 export function claimReason(s: State, id: number) {
+  if (s.won || s.lost) return 'La partie est terminée.';
   const l = s.lots[id];
   if (!l || l.owned || l.kind !== 'empty')
     return 'Ce terrain ne peut pas être revendiqué.';
@@ -451,6 +565,7 @@ export function claim(s: State, id: number) {
   return '';
 }
 export function recruitReason(s: State, kind: CreatureKind) {
+  if (s.won || s.lost) return 'La partie est terminée.';
   if (kind === 'troll' && !hasBuilding(s, 'forge'))
     return 'Construisez une forge pour recruter les trolls.';
   if (kind === 'skeleton' && !hasBuilding(s, 'crypt'))
@@ -478,6 +593,7 @@ export function army(s: State) {
   return s.units.filter((u) => u.kind !== 'goblin');
 }
 export function attackReason(s: State, id: number) {
+  if (s.won || s.lost) return 'La partie est terminée.';
   const l = s.lots[id];
   if (!l || l.owned || l.kind === 'empty')
     return 'Choisissez un bâtiment ennemi.';
@@ -496,10 +612,12 @@ export function attack(s: State, id: number) {
   return '';
 }
 export function retreat(s: State) {
+  if (s.won || s.lost) return;
   for (const u of army(s)) assign(u, entrance(s.lots[6]), 'move', null);
   announce(s, 'Repli au manoir. Les blessés s’y rétabliront.');
 }
 export function moveUnit(s: State, id: number, point: Point) {
+  if (s.won || s.lost) return;
   const u = s.units.find((v) => v.id === id);
   if (!u) return;
   assign(u, point, 'move', null);
@@ -508,6 +626,7 @@ export function upgradeCost(l: Lot): Cost {
   return { gold: 80 * l.level, wood: 35 * l.level };
 }
 export function upgradeReason(s: State, id: number) {
+  if (s.won || s.lost) return 'La partie est terminée.';
   const l = s.lots[id];
   if (!l?.owned || l.kind === 'empty' || l.construction)
     return 'Choisissez un bâtiment terminé.';
@@ -542,6 +661,7 @@ export function rates(s: State): Resources {
       rate.gold += 1;
       rate.mana += 0.5;
     }
+    if (l.kind === 'guild') rate.mana += 0.3 * n;
   }
   for (const u of s.units) {
     if (u.kind === 'goblin' && (u.task === 'idle' || u.task === 'forage'))
@@ -550,8 +670,234 @@ export function rates(s: State): Resources {
   }
   return rate;
 }
+const distanceBetween = (a: Point, b: Point) =>
+  Math.hypot(a.x - b.x, a.y - b.y);
+function nearest<T extends Point & { hp: number }>(
+  from: Point,
+  targets: T[],
+  range: number,
+): T | undefined {
+  let closest: T | undefined;
+  for (const target of targets) {
+    const distance = distanceBetween(from, target);
+    if (target.hp > 0 && distance < range) {
+      closest = target;
+      range = distance;
+    }
+  }
+  return closest;
+}
+function walk(u: Point & { path: Point[]; facing: number }, distance: number) {
+  while (u.path.length && distance > 0) {
+    const p = u.path[0],
+      dx = p.x - u.x,
+      dy = p.y - u.y,
+      d = Math.hypot(dx, dy);
+    if (Math.abs(dx) > 0.001) u.facing = dx >= 0 ? 1 : -1;
+    if (d <= distance) {
+      u.x = p.x;
+      u.y = p.y;
+      u.path.shift();
+      distance -= d;
+    } else {
+      u.x += (dx / d) * distance;
+      u.y += (dy / d) * distance;
+      distance = 0;
+    }
+  }
+}
+function armyDamage(s: State, u: Unit) {
+  const forge = Math.max(
+    1,
+    ...s.lots.filter((l) => l.owned && l.kind === 'forge').map((l) => l.level),
+  );
+  return (
+    CREATURES[u.kind].damage *
+    (1 + (forge - 1) * 0.15) *
+    (s.resources.food <= 0 && u.kind !== 'skeleton' ? 0.6 : 1)
+  );
+}
+export function defend(s: State, id = 6): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  if (!s.lots[id]?.owned) return 'Choisissez un bâtiment à vous.';
+  if (!army(s).length)
+    return 'Recrutez des combattants pour défendre le quartier.';
+  for (const u of army(s)) assign(u, entrance(s.lots[id]), 'move', null);
+  announce(
+    s,
+    `Votre armée se rassemble devant ${BUILDINGS[s.lots[id].kind].name.toLowerCase()}.`,
+  );
+  return '';
+}
+export function intercept(s: State, id: number): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  const enemy = s.enemies.find((e) => e.id === id && e.hp > 0);
+  if (!enemy) return 'Cet ennemi a déjà été vaincu.';
+  if (!army(s).length)
+    return 'Recrutez des combattants pour intercepter cet ennemi.';
+  for (const u of army(s)) assign(u, enemy, 'defend', id);
+  return '';
+}
+function raidTarget(s: State, e: Pick<Enemy, 'kind' | 'x' | 'y'>): Lot {
+  if (e.kind === 'hero') return s.lots[6];
+  const outer = s.lots.filter((l) => l.owned && l.kind !== 'hq');
+  return (
+    outer.sort(
+      (a, b) =>
+        distanceBetween(e, entrance(a)) - distanceBetween(e, entrance(b)),
+    )[0] ?? s.lots[6]
+  );
+}
+function mobilize(s: State) {
+  for (const kind of ['guard', 'hero'] as const) {
+    const settings = PRESSURE[kind],
+      m = s.mobilization[kind],
+      source = sourceBuilding(s, kind);
+    if (!source || source.owned) {
+      m.active = false;
+      m.nextRaidAt = null;
+      continue;
+    }
+    if (
+      !m.active &&
+      (territory(s) >= settings.territory || s.elapsed >= settings.time)
+    ) {
+      m.active = true;
+      m.reason =
+        territory(s) >= settings.territory
+          ? `${Math.round(territory(s) * 100)} % du quartier sous votre influence`
+          : 'Les humains ont eu le temps de se préparer';
+      m.nextRaidAt = s.elapsed + settings.warning;
+      announce(
+        s,
+        `${kind === 'guard' ? 'La garde se mobilise' : 'La guilde prépare une expédition'} : ${m.reason.toLowerCase()}. Départ dans ${settings.warning} s !`,
+      );
+    }
+    if (m.nextRaidAt === null || s.elapsed < m.nextRaidAt) continue;
+    if (s.enemies.length >= 16) continue;
+    const level = humanLevel(s),
+      def = ENEMIES[kind],
+      point = entrance(source);
+    const count =
+      kind === 'guard'
+        ? 2 + Math.floor((level - 1) / 2)
+        : 1 + Math.floor(level / 2);
+    for (let i = 0; i < count; i++) {
+      const hp = Math.round(def.hp * (1 + (level - 1) * 0.15));
+      const enemy: Enemy = {
+        id: s.nextId++,
+        kind,
+        ...point,
+        x: point.x + i * 0.35,
+        hp,
+        maxHp: hp,
+        damage: def.damage * (1 + (level - 1) * 0.12),
+        level,
+        path: [],
+        target: 6,
+        facing: -1,
+        fighting: false,
+      };
+      const target = raidTarget(s, enemy);
+      enemy.target = target.id;
+      enemy.path = findPath(enemy, entrance(target));
+      s.enemies.push(enemy);
+    }
+    m.waves++;
+    m.nextRaidAt =
+      s.elapsed + Math.max(55, settings.interval - (level - 1) * 8);
+    announce(
+      s,
+      kind === 'guard'
+        ? `${count} gardes de niveau ${level} sortent de la mairie pour reprendre vos propriétés !`
+        : `${count} héros de niveau ${level} quittent la guilde. Ils visent votre manoir !`,
+    );
+  }
+}
+function loseLot(s: State, lot: Lot) {
+  if (lot.kind === 'hq') {
+    lot.hp = 0;
+    s.lost = true;
+    announce(
+      s,
+      'Votre manoir est détruit. Les humains ont repris le quartier.',
+    );
+    return;
+  }
+  const previousName = BUILDINGS[lot.kind].name;
+  lot.owned = false;
+  lot.kind = lot.humanKind;
+  lot.construction = null;
+  lot.level = 1;
+  lot.maxHp =
+    lot.kind === 'hall'
+      ? 360
+      : lot.kind === 'guild'
+        ? 220
+        : lot.kind === 'tavern'
+          ? 140
+          : 85;
+  lot.hp = lot.maxHp;
+  for (const u of s.units.filter(
+    (u) => u.task === 'build' && u.target === lot.id,
+  )) {
+    u.task = 'idle';
+    u.target = null;
+    u.path = [];
+  }
+  announce(
+    s,
+    `${previousName} a été repris par la garde. Vous perdez sa production.`,
+  );
+}
+function advanceEnemies(s: State, dt: number) {
+  for (const e of s.enemies) {
+    if (e.hp <= 0 || s.lost) continue;
+    e.fighting = false;
+    const victim = nearest(e, s.units, 4);
+    if (victim) {
+      if (distanceBetween(e, victim) <= 1.4) {
+        e.fighting = true;
+        e.facing = victim.x >= e.x ? 1 : -1;
+        victim.hp -= e.damage * dt;
+        continue;
+      }
+      e.path = findPath(e, victim);
+    } else {
+      if (!s.lots[e.target].owned) e.target = raidTarget(s, e).id;
+      const destination = entrance(s.lots[e.target]);
+      if (distanceBetween(e, destination) <= 1.3) {
+        e.fighting = true;
+        const lot = s.lots[e.target];
+        lot.hp = Math.max(0, lot.hp - e.damage * dt);
+        if (lot.hp <= 0) loseLot(s, lot);
+        continue;
+      }
+      e.path = findPath(e, destination);
+    }
+    walk(e, ENEMIES[e.kind].speed * dt);
+  }
+}
 export function tick(s: State, dt: number) {
+  if (!Number.isFinite(dt) || dt <= 0) return;
+  // Fixed maximum step keeps interception and combat reliable at ×3 speed.
+  for (
+    let remaining = dt;
+    remaining > 1e-8 && !s.won && !s.lost;
+    remaining -= 0.1
+  )
+    tickStep(s, Math.min(0.1, remaining));
+}
+function tickStep(s: State, dt: number) {
   s.elapsed += dt;
+  if (humanLevel(s) > s.humanLevelAnnounced) {
+    s.humanLevelAnnounced = humanLevel(s);
+    announce(
+      s,
+      `Les humains passent au niveau ${humanLevel(s)}. Leurs défenses et leurs prochains renforts se renforcent.`,
+    );
+  }
+  mobilize(s);
   const income = rates(s);
   for (const key of Object.keys(income) as (keyof Resources)[])
     s.resources[key] = Math.max(0, s.resources[key] + income[key] * dt);
@@ -564,24 +910,29 @@ export function tick(s: State, dt: number) {
   s.recruits = s.recruits.filter((r) => r.remaining > 0);
   allocateWorkers(s);
   for (const u of s.units) {
-    let distance = CREATURES[u.kind].speed * dt;
-    while (u.path.length && distance > 0) {
-      const p = u.path[0],
-        dx = p.x - u.x,
-        dy = p.y - u.y,
-        d = Math.hypot(dx, dy);
-      if (Math.abs(dx) > 0.001) u.facing = dx >= 0 ? 1 : -1;
-      if (d <= distance) {
-        u.x = p.x;
-        u.y = p.y;
-        u.path.shift();
-        distance -= d;
-      } else {
-        u.x += (dx / d) * distance;
-        u.y += (dy / d) * distance;
-        distance = 0;
+    u.fighting = false;
+    if (u.kind !== 'goblin' && u.task !== 'move') {
+      if (u.task === 'idle') {
+        const threat = nearest(u, s.enemies, 4.5);
+        if (threat) assign(u, threat, 'defend', threat.id);
+      }
+      if (u.task === 'defend') {
+        const threat = s.enemies.find((e) => e.id === u.target && e.hp > 0);
+        if (threat) u.path = findPath(u, threat);
+        else {
+          u.task = 'idle';
+          u.target = null;
+          u.path = [];
+        }
+      }
+      const threat = nearest(u, s.enemies, 1.5);
+      if (threat) {
+        u.fighting = true;
+        u.facing = threat.x >= u.x ? 1 : -1;
+        threat.hp -= armyDamage(s, u) * dt;
       }
     }
+    if (!u.fighting) walk(u, CREATURES[u.kind].speed * dt);
     if (!u.path.length) {
       if (u.task === 'move' || u.task === 'forage') {
         u.task = 'idle';
@@ -590,7 +941,11 @@ export function tick(s: State, dt: number) {
       if (u.task === 'idle') {
         u.idleTime += dt;
         const home = entrance(s.lots[6]);
-        if (Math.hypot(u.x - home.x, u.y - home.y) < 4)
+        if (
+          !u.fighting &&
+          !nearest(u, s.enemies, 4) &&
+          Math.hypot(u.x - home.x, u.y - home.y) < 4
+        )
           u.hp = Math.min(CREATURES[u.kind].hp, u.hp + 2 * dt);
         if (u.kind === 'goblin' && u.idleTime > 4 + (u.id % 3)) {
           const plots = s.lots.filter((l) => l.owned);
@@ -616,6 +971,7 @@ export function tick(s: State, dt: number) {
         lot.kind = lot.construction.kind;
         lot.construction = null;
         lot.level = 1;
+        lot.hp = lot.maxHp = 180;
         announce(s, `${BUILDINGS[lot.kind].name} est prête.`);
         for (const u of s.units.filter(
           (u) => u.task === 'build' && u.target === lot.id,
@@ -627,24 +983,25 @@ export function tick(s: State, dt: number) {
     }
     if (!lot.owned) {
       const attackers = s.units.filter(
-        (u) => u.task === 'attack' && u.target === lot.id && !u.path.length,
+        (u) =>
+          u.hp > 0 &&
+          !u.fighting &&
+          u.task === 'attack' &&
+          u.target === lot.id &&
+          !u.path.length,
       );
       if (attackers.length) {
-        const forge = s.lots
-          .filter((l) => l.owned && l.kind === 'forge')
-          .reduce((n, l) => Math.max(n, l.level), 0);
-        const damage =
-          attackers.reduce(
-            (n, u) =>
-              n +
-              CREATURES[u.kind].damage *
-                (s.resources.food <= 0 && u.kind !== 'skeleton' ? 0.6 : 1),
-            0,
-          ) *
-          (1 + Math.max(0, forge - 1) * 0.15);
+        const damage = attackers.reduce((n, u) => n + armyDamage(s, u), 0);
         lot.hp = Math.max(0, lot.hp - damage * dt);
         const retaliation =
-          lot.kind === 'hall' ? 18 : lot.kind === 'tavern' ? 11 : 7;
+          (lot.kind === 'hall'
+            ? 18
+            : lot.kind === 'guild'
+              ? 14
+              : lot.kind === 'tavern'
+                ? 11
+                : 7) *
+          (1 + (humanLevel(s) - 1) * 0.12);
         for (const u of attackers)
           u.hp -= (retaliation * dt) / attackers.length;
         if (lot.hp <= 0) {
@@ -664,16 +1021,46 @@ export function tick(s: State, dt: number) {
             s,
             `${BUILDINGS[lot.kind].name} rejoint votre domaine. +${lot.kind === 'hall' ? 150 : 65} or.`,
           );
-          if (lot.kind === 'hall') s.won = true;
+          for (const kind of ['guard', 'hero'] as const) {
+            if (lot.kind === PRESSURE[kind].source) {
+              s.mobilization[kind].active = false;
+              s.mobilization[kind].nextRaidAt = null;
+              announce(
+                s,
+                `${BUILDINGS[lot.kind].name} neutralisée. Les renforts sont coupés ; éliminez les ennemis encore dans les rues.`,
+              );
+            }
+          }
         }
       }
     }
   }
+  advanceEnemies(s, dt);
+  const defeated = s.enemies.filter((e) => e.hp <= 0);
+  s.defeatedEnemies += defeated.length;
+  s.resources.gold += defeated.length * 12;
+  s.enemies = s.enemies.filter((e) => e.hp > 0);
+  for (const lot of s.lots.filter((l) => l.owned && l.hp > 0)) {
+    if (!nearest(entrance(lot), s.enemies, 4))
+      lot.hp = Math.min(lot.maxHp, lot.hp + dt * 1.5);
+  }
   const fallen = s.units.filter((u) => u.hp <= 0);
-  if (fallen.length)
+  if (fallen.length && !s.lost)
     announce(
       s,
       `${fallen.length} créature${fallen.length > 1 ? 's sont tombées' : ' est tombée'}. Un repli permet de soigner les autres.`,
     );
   s.units = s.units.filter((u) => u.hp > 0);
+  if (
+    !s.lost &&
+    hasBuilding(s, 'hall') &&
+    hasBuilding(s, 'guild') &&
+    !s.enemies.length
+  ) {
+    s.won = true;
+    announce(
+      s,
+      'La mairie et la guilde sont à vous. Le quartier est enfin soumis.',
+    );
+  }
 }

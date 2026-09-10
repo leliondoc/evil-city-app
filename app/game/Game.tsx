@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Castle,
   Coins,
   Trees,
   Wheat,
@@ -42,10 +41,12 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Renderer } from './renderer';
 import { Sprite } from './Sprite';
+import { ThreatPanel } from './ThreatPanel';
 import { buildingArt, portrait, type Animation } from './art';
 import {
   BUILDINGS,
   CREATURES,
+  ENEMIES,
   BUILD_OPTIONS,
   RECRUIT_OPTIONS,
   createGame,
@@ -64,6 +65,8 @@ import {
   attack,
   attackReason,
   retreat,
+  defend,
+  intercept,
   upgrade,
   upgradeReason,
   upgradeCost,
@@ -84,6 +87,7 @@ const unitsText = {
   build: 'Au chantier',
   attack: 'En expédition',
   move: 'En déplacement',
+  defend: 'Intercepte un ennemi',
 };
 function Costs({ cost }: { cost: Cost }) {
   return (
@@ -124,7 +128,7 @@ export default function Game() {
   const [tab, setTab] = useState('build');
   const [bestiaryAction, setBestiaryAction] = useState<Animation>('idle');
   const [modal, setModal] = useState<
-    'guide' | 'bestiary' | 'restart' | 'victory' | null
+    'guide' | 'bestiary' | 'restart' | 'victory' | 'defeat' | null
   >(null);
   const [ready, setReady] = useState(false);
   const [artError, setArtError] = useState('');
@@ -200,9 +204,12 @@ export default function Game() {
       if (c.ready && !c.paused && !document.hidden) {
         tick(stateRef.current, dt * c.speed);
         refresh((n) => n + 1);
-        if (stateRef.current.won && !victoryShown.current) {
+        if (
+          (stateRef.current.won || stateRef.current.lost) &&
+          !victoryShown.current
+        ) {
           victoryShown.current = true;
-          setModal('victory');
+          setModal(stateRef.current.lost ? 'defeat' : 'victory');
         }
       }
     }, 100);
@@ -277,6 +284,11 @@ export default function Game() {
     selection.type === 'unit'
       ? s.units.find((u) => u.id === selection.id)
       : undefined;
+  const selectedEnemy =
+    selection.type === 'enemy'
+      ? s.enemies.find((e) => e.id === selection.id)
+      : undefined;
+  const enemyDef = selectedEnemy ? ENEMIES[selectedEnemy.kind] : undefined;
   const chosenKind =
     selectedLot &&
     (selectedLot.kind === 'empty' ||
@@ -294,13 +306,15 @@ export default function Game() {
     hasBuilding(s, 'canteen'),
     hasBuilding(s, 'forge'),
     army(s).length >= 2,
+    hasBuilding(s, 'guild'),
     s.won,
   ];
   const milestoneLabels = [
     'Ouvrir une cantine',
     'Construire une forge',
     'Rassembler 2 combattants',
-    'Prendre la mairie',
+    'Neutraliser la guilde',
+    'Prendre la mairie et sécuriser les rues',
   ];
   const currentMilestone = milestones.findIndex((done) => !done);
   const message = feedback || (s.noticeUntil > s.elapsed ? s.notice : '');
@@ -429,6 +443,14 @@ export default function Game() {
         </div>
       </header>
 
+      <ThreatPanel
+        state={s}
+        onSelect={(id) => {
+          setPendingBuild(null);
+          setSelection({ type: 'lot', id });
+        }}
+        onDefend={() => run((state) => defend(state))}
+      />
       <div className="game-body">
         <aside className="sidebar" aria-label="Objectifs et sélection">
           <section>
@@ -438,27 +460,31 @@ export default function Game() {
               <h2>Un si joli quartier.</h2>
             </div>
             <p className="intro-copy">
-              Installez vos créatures.
-              <br />
-              Faites-vous une petite place…
-              <br />
-              Puis prenez celle des autres.
+              Soumettez le quartier. Protégez votre manoir.
             </p>
-            <div className="quest-list">
-              {milestoneLabels.map((label, i) => (
-                <div
-                  className={`quest ${milestones[i] ? 'done' : i === currentMilestone ? 'active' : ''}`}
-                  key={label}
-                >
-                  {milestones[i] ? (
-                    <CheckCircle2 size={17} />
-                  ) : (
-                    <Circle size={17} />
-                  )}
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
+            <details className="objectives-disclosure">
+              <summary>
+                Objectifs{' '}
+                <span>
+                  {milestones.filter(Boolean).length}/{milestones.length}
+                </span>
+              </summary>
+              <div className="quest-list">
+                {milestoneLabels.map((label, i) => (
+                  <div
+                    className={`quest ${milestones[i] ? 'done' : i === currentMilestone ? 'active' : ''}`}
+                    key={label}
+                  >
+                    {milestones[i] ? (
+                      <CheckCircle2 size={17} />
+                    ) : (
+                      <Circle size={17} />
+                    )}
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
           </section>
           <div className="side-rule" />
           <section aria-label="Détails de la sélection">
@@ -467,11 +493,13 @@ export default function Game() {
                 <span
                   className={`owner-dot ${selectedLot && !selectedLot.owned ? 'neutral' : ''}`}
                 />
-                {selectedUnit
-                  ? 'Votre créature'
-                  : selectedLot?.owned
-                    ? 'Votre domaine'
-                    : 'Quartier libre'}
+                {selectedEnemy
+                  ? 'Force humaine'
+                  : selectedUnit
+                    ? 'Votre créature'
+                    : selectedLot?.owned
+                      ? 'Votre domaine'
+                      : 'Quartier libre'}
               </p>
               <div style={{ display: 'flex' }}>
                 <button
@@ -491,18 +519,27 @@ export default function Game() {
               </div>
             </div>
             <h3 className="selection-name">
-              {creature?.name || def?.name || 'Créature disparue'}
+              {enemyDef?.name ||
+                creature?.name ||
+                def?.name ||
+                'Créature disparue'}
             </h3>
             <div className="selection-art">
-              {selectedUnit ? (
+              {selectedEnemy ? (
+                <Sprite
+                  asset={selectedEnemy.fighting ? 'guard-attack' : 'guard-idle'}
+                />
+              ) : selectedUnit ? (
                 <Sprite
                   creature={selectedUnit.kind}
                   action={
-                    selectedUnit.path.length
-                      ? 'walk'
-                      : selectedUnit.task === 'attack'
-                        ? 'attack'
-                        : 'idle'
+                    selectedUnit.fighting
+                      ? 'attack'
+                      : selectedUnit.path.length
+                        ? 'walk'
+                        : selectedUnit.task === 'attack'
+                          ? 'attack'
+                          : 'idle'
                   }
                 />
               ) : chosenKind ? (
@@ -510,10 +547,36 @@ export default function Game() {
               ) : null}
             </div>
             <p className="selection-text">
-              {creature?.description ||
+              {enemyDef?.description ||
+                creature?.description ||
                 def?.description ||
                 'Sélectionnez une autre créature ou une parcelle.'}
             </p>
+            {selectedEnemy && (
+              <>
+                <div className="selection-stats">
+                  <Shield size={14} /> {Math.ceil(selectedEnemy.hp)} /{' '}
+                  {selectedEnemy.maxHp} · Niv. {selectedEnemy.level}
+                </div>
+                <Progress
+                  className="healthbar"
+                  value={(selectedEnemy.hp / selectedEnemy.maxHp) * 100}
+                  aria-label="Santé de l’ennemi"
+                />
+                <p className="reason">
+                  Objectif : {BUILDINGS[s.lots[selectedEnemy.target].kind].name}
+                </p>
+                <Button
+                  className="primary-btn"
+                  disabled={s.won || s.lost || !army(s).length}
+                  onClick={() =>
+                    run((state) => intercept(state, selectedEnemy.id))
+                  }
+                >
+                  <Swords size={15} /> Intercepter
+                </Button>
+              </>
+            )}
             {selectedUnit && creature && (
               <>
                 <div className="selection-stats">
@@ -545,6 +608,19 @@ export default function Game() {
             )}
             {selectedLot && (
               <>
+                {selectedLot.owned && selectedLot.kind !== 'empty' && (
+                  <>
+                    <Progress
+                      className="healthbar"
+                      value={(selectedLot.hp / selectedLot.maxHp) * 100}
+                      aria-label="Résistance du bâtiment"
+                    />
+                    <p className="building-health">
+                      {Math.ceil(selectedLot.hp)} / {selectedLot.maxHp}{' '}
+                      résistance
+                    </p>
+                  </>
+                )}
                 <div className="selection-stats">
                   <span>
                     {selectedLot.owned ? (
@@ -704,7 +780,7 @@ export default function Game() {
                     <p className="reason">
                       {attackReason(s, selectedLot.id) ||
                         (selectedLot.kind === 'hall'
-                          ? '3 trolls en bonne santé sont conseillés.'
+                          ? '4 trolls en bonne santé sont conseillés. Surveillez les raids pendant le siège.'
                           : `${army(s).length} combattant${army(s).length > 1 ? 's' : ''} prêt${army(s).length > 1 ? 's' : ''} à marcher.`)}
                     </p>
                     {army(s).some((u) => u.task === 'attack') && (
@@ -716,6 +792,17 @@ export default function Game() {
                       </Button>
                     )}
                   </>
+                )}
+                {selectedLot.owned && (
+                  <Button
+                    className="subtle-btn"
+                    disabled={s.won || s.lost || !army(s).length}
+                    onClick={() =>
+                      run((state) => defend(state, selectedLot.id))
+                    }
+                  >
+                    <Shield size={14} /> Rassembler l’armée ici
+                  </Button>
                 )}
               </>
             )}
@@ -737,13 +824,14 @@ export default function Game() {
           />
           <div className="map-caption">
             <h2>Les Tilleuls</h2>
-            <p>QUARTIER FICTIF · PROTOTYPE 0.2</p>
+            <p>QUARTIER FICTIF · PROTOTYPE 0.3</p>
           </div>
           <div className="map-status">
             <Flag size={15} />
             {owned}/9 parcelles <span style={{ opacity: 0.5 }}>│</span>
             <Hourglass size={13} />
-            {clock(s.elapsed)}
+            {clock(s.elapsed)}{' '}
+            {s.lost ? '· Défaite' : s.won ? '· Victoire' : ''}
           </div>
           <div className="canvas-help">
             <span>
@@ -921,8 +1009,9 @@ export default function Game() {
             <>
               <DialogTitle>Le guide du mauvais voisin</DialogTitle>
               <DialogDescription>
-                Votre objectif : prendre la mairie. Commencez petit, nourrissez
-                vos troupes et avancez de parcelle en parcelle.
+                Prenez la mairie et la guilde, puis éliminez les ennemis encore
+                dans les rues. Protégez votre manoir : sa destruction met fin à
+                la partie.
               </DialogDescription>
               <div className="guide-steps">
                 <div className="guide-step">
@@ -952,9 +1041,10 @@ export default function Game() {
                   <div>
                     <strong>Faites connaissance avec les voisins</strong>
                     <p>
-                      Dans « Créatures », recrutez 3 trolls. Sélectionnez
+                      Dans « Créatures », recrutez 4 trolls. Sélectionnez
                       l’auberge voisine, puis « Envoyer l’armée ». Après la
-                      conquête, avancez vers la mairie.
+                      conquête, choisissez entre la mairie et la guilde pour
+                      couper leurs renforts.
                     </p>
                   </div>
                 </div>
@@ -966,6 +1056,34 @@ export default function Game() {
                       Les blessés se soignent près du manoir. Une crypte
                       débloque les squelettes ; avec une forge, elle permet
                       d’invoquer le Minotaure.
+                    </p>
+                  </div>
+                </div>
+                <div className="guide-step">
+                  <b>05</b>
+                  <div>
+                    <strong>Le quartier riposte</strong>
+                    <p>
+                      La garde se mobilise à 5 parcelles sur 9 (56 %) ou après 3
+                      minutes, avec 25 secondes de préavis. La guilde s’éveille
+                      à 6 sur 9 (67 %) ou après 6 minutes, avec 35 secondes de
+                      préavis. Une fois mobilisées, elles continuent jusqu’à la
+                      prise de leur bâtiment.
+                    </p>
+                  </div>
+                </div>
+                <div className="guide-step">
+                  <b>06</b>
+                  <div>
+                    <strong>Défendez et contre-attaquez</strong>
+                    <p>
+                      Les humains gagnent un niveau toutes les 2 minutes,
+                      jusqu’au niveau 6. Les gardes reprennent vos parcelles ;
+                      les héros visent le manoir. Vos combattants interceptent
+                      les ennemis proches. Cliquez sur un ennemi pour
+                      l’intercepter, ou rassemblez votre armée devant un
+                      bâtiment. Le repli reste prioritaire. Les bâtiments se
+                      réparent lentement hors de danger.
                     </p>
                   </div>
                 </div>
@@ -1057,7 +1175,7 @@ export default function Game() {
                 Le quartier est à vous.
               </DialogTitle>
               <DialogDescription style={{ textAlign: 'center' }}>
-                La mairie a changé de drapeau. Bienvenue à Evil City.
+                La mairie et la guilde sont neutralisées. Les rues sont à vous.
               </DialogDescription>
               <div className="victory-stats">
                 <div>
@@ -1074,10 +1192,38 @@ export default function Game() {
                 </div>
               </div>
               <Button className="primary-btn" onClick={() => setModal(null)}>
-                Continuer à régner
+                Observer le quartier
               </Button>
               <Button className="subtle-btn" onClick={reset}>
                 Une nouvelle conquête
+              </Button>
+            </>
+          )}
+          {modal === 'defeat' && (
+            <>
+              <Shield className="victory-seal" strokeWidth={1.2} />
+              <DialogTitle>Le quartier vous a résisté.</DialogTitle>
+              <DialogDescription>
+                Votre manoir a été détruit après {clock(s.elapsed)}. Les humains
+                se renforcent avec le temps : coupez leurs renforts en prenant
+                la mairie et la guilde, et gardez une armée prête à défendre
+                votre domaine.
+              </DialogDescription>
+              <div className="victory-stats">
+                <div>
+                  <strong>{s.defeatedEnemies}</strong>
+                  <span>Ennemis vaincus</span>
+                </div>
+                <div>
+                  <strong>{owned}/9</strong>
+                  <span>Parcelles restantes</span>
+                </div>
+              </div>
+              <Button className="primary-btn" onClick={reset}>
+                Retenter la conquête
+              </Button>
+              <Button className="subtle-btn" onClick={() => setModal(null)}>
+                Observer le quartier
               </Button>
             </>
           )}
