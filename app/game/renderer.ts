@@ -42,6 +42,8 @@ import {
 } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
+import { corruptGrassPixels } from './corruption';
+import { hasResearch, towerOccupant } from './strategy';
 import {
   selectedUnitIds,
   unitSelection,
@@ -79,6 +81,9 @@ export class Renderer {
     { x: number; y: number; width: number; height: number }
   >();
   private terrain: HTMLCanvasElement;
+  private corruptedGrass: HTMLCanvasElement | null = null;
+  private ownership = '';
+  private pointer: Point | null = null;
   private decorations: Decoration[] = [];
   private shore: GroundTile[] = [];
   private hits: Hit[] = [];
@@ -132,6 +137,7 @@ export class Renderer {
     this.resize();
     canvas.addEventListener('pointerdown', this.pointerDown);
     canvas.addEventListener('pointermove', this.pointerMove);
+    canvas.addEventListener('pointerleave', this.pointerLeave);
     canvas.addEventListener('pointerup', this.pointerUp);
     canvas.addEventListener('pointercancel', this.pointerCancel);
     canvas.addEventListener('contextmenu', this.contextMenu);
@@ -179,6 +185,23 @@ export class Renderer {
           ),
       );
       if (this.disposed) return;
+      this.corruptedGrass = document.createElement('canvas');
+      this.corruptedGrass.width = this.corruptedGrass.height = 192;
+      const corruptContext = this.corruptedGrass.getContext('2d')!;
+      corruptContext.drawImage(
+        this.images.get('terrain-5')!,
+        0,
+        0,
+        192,
+        192,
+        0,
+        0,
+        192,
+        192,
+      );
+      const corruptedPixels = corruptContext.getImageData(0, 0, 192, 192);
+      corruptGrassPixels(corruptedPixels.data);
+      corruptContext.putImageData(corruptedPixels, 0, 0);
       this.makeTerrain();
       this.makeDecorations();
       this.ready = true;
@@ -303,6 +326,7 @@ export class Renderer {
   };
   private pointerMove = (e: PointerEvent) => {
     const p = this.point(e);
+    this.pointer = p;
     if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, p);
     if (this.pinch) {
       if (this.touches.size === 2) {
@@ -452,6 +476,10 @@ export class Renderer {
     const point = this.point(e);
     this.onCommand(this.toWorld(point), this.hit(point));
   };
+  private pointerLeave = () => {
+    this.pointer = null;
+    this.hover = null;
+  };
   private wheel = (e: WheelEvent) => {
     e.preventDefault();
     if (this.down) return;
@@ -465,8 +493,12 @@ export class Renderer {
     y: number,
     w: number,
     h: number,
+    corrupted = false,
   ) {
-    const im = this.images.get(key)!;
+    const im =
+      corrupted && this.corruptedGrass
+        ? this.corruptedGrass
+        : this.images.get(key)!;
     for (let ty = 0; ty < h; ty++)
       for (let tx = 0; tx < w; tx++) {
         const sx = tx === 0 ? 0 : tx === w - 1 ? 128 : 64,
@@ -559,6 +591,9 @@ export class Renderer {
       );
   }
   private makeTerrain() {
+    this.ownership = this.getState()
+      .lots.map((l) => Number(l.owned))
+      .join('');
     const c = this.terrain;
     c.width = SIZE + MARGIN * 2;
     c.height = SIZE + MARGIN * 2;
@@ -605,8 +640,8 @@ export class Renderer {
             : lot.id === 8
               ? 'terrain-3'
               : 'terrain-1';
-      this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4);
-      if (lot.id === 0) {
+      this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4, lot.owned);
+      if (lot.id === 0 && !lot.owned) {
         this.plateau(
           ctx,
           'terrain-2',
@@ -776,7 +811,7 @@ export class Renderer {
     ctx.lineTo(center, bend);
     ctx.lineTo(center, (lot.y + 8) * CELL);
     ctx.stroke();
-    if (lot.id === 0) {
+    if (lot.id === 0 && !lot.owned) {
       ctx.drawImage(
         this.images.get('terrain-2')!,
         256,
@@ -843,6 +878,10 @@ export class Renderer {
       (Math.round(this.origin.y + y * this.scale) - this.origin.y) / this.scale;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#172224';
+    ctx.lineWidth = 2.5 / this.scale;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(text, x, y);
     ctx.fillStyle = '#203235';
     ctx.fillText(text, x + 1 / this.scale, y + 1 / this.scale);
     ctx.fillStyle = color;
@@ -856,6 +895,8 @@ export class Renderer {
       s = this.getState(),
       t = this.reducedMotion ? 0 : s.elapsed,
       dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (this.ownership !== s.lots.map((l) => Number(l.owned)).join(''))
+      this.makeTerrain();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#648b73';
@@ -899,6 +940,55 @@ export class Renderer {
       ratio: number;
       enemy: boolean;
     }[] = [];
+    for (const tower of s.strategy.towers) {
+      drawables.push({
+        depth: tower.artY * CELL,
+        draw: () => {
+          const hit = this.sprite(
+            tower.owned ? 'tower-purple' : 'tower-blue',
+            tower.artX * CELL,
+            tower.artY * CELL,
+            0.5,
+          );
+          hit.selection = { type: 'tower', id: tower.id };
+          this.hits.push(hit);
+          if (
+            (this.selection.type === 'tower' &&
+              this.selection.id === tower.id) ||
+            tower.progress > 0 ||
+            tower.reclaim > 0
+          ) {
+            this.label(tower.artX * CELL, tower.artY * CELL + 20, tower.name);
+            if (tower.progress || tower.reclaim)
+              this.bar(
+                tower.artX * CELL,
+                tower.artY * CELL - 90,
+                (tower.progress || tower.reclaim) / 8,
+              );
+          }
+          if (tower.lureUntil > s.elapsed)
+            this.sprite(
+              'haunt-wisp',
+              tower.artX * CELL,
+              tower.artY * CELL - 70,
+              0.65,
+              Math.floor(t * 10) % ASSETS['haunt-wisp'].frames,
+            );
+          const occupant = towerOccupant(s, tower);
+          if (occupant)
+            this.label(
+              tower.artX * CELL,
+              tower.artY * CELL - 105,
+              occupant.kind === 'goblin'
+                ? 'Racket'
+                : occupant.kind === 'skeleton'
+                  ? 'Guet'
+                  : 'Leurre',
+              '#ffe2b0',
+            );
+        },
+      });
+    }
     for (const l of s.lots) {
       const selected =
           this.selection.type === 'lot' && this.selection.id === l.id,
@@ -931,7 +1021,7 @@ export class Renderer {
       }
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
-        y = (l.y + 6.2) * CELL - (l.id === 0 ? 28 : 0),
+        y = (l.y + 6.2) * CELL - (l.id === 0 && !l.owned ? 28 : 0),
         key =
           kind === 'house'
             ? (`house-${l.owned ? 'purple' : 'blue'}-${(l.id % 2) + 2}` as AssetKey)
@@ -1149,6 +1239,14 @@ export class Renderer {
           );
           hit.selection = { type: 'worker', id: worker.id };
           this.hits.push(hit);
+          if (worker.recovery?.returning)
+            this.sprite(
+              'unit-death',
+              worker.x * CELL + 20,
+              worker.y * CELL - 8,
+              0.5,
+              10,
+            );
           if (
             (this.selection.type === 'worker' &&
               this.selection.id === worker.id) ||
@@ -1212,6 +1310,21 @@ export class Renderer {
           if (bubble && u.task !== 'duel')
             this.label(x, y - 102, bubble, '#d3efdd');
           if (u.task === 'bribe') this.sprite('ui-gold', x + 22, y - 22, 0.5);
+          if (u.task === 'deliver-loot')
+            this.sprite('ui-gold', x + 22, y - 22, 0.5);
+          if (
+            u.fighting &&
+            hasResearch(s, 'embers') &&
+            !['alchemist', 'specter'].includes(u.kind) &&
+            !this.reducedMotion
+          )
+            this.sprite(
+              'fx-fire',
+              x + u.facing * 20,
+              y - 28,
+              0.6,
+              Math.floor(t * 10) % ASSETS['fx-fire'].frames,
+            );
           if (u.task === 'deliver') {
             this.sprite('unit-death', x + 20, y - 8, 0.55, 10);
           }
@@ -1315,6 +1428,32 @@ export class Renderer {
               `${e.kind === 'hero' ? HEROES[e.role].short : ENEMIES[e.kind].name} · ${e.level}`,
               '#ffcf83',
             );
+          if ((e.burningUntil ?? 0) > s.elapsed && !this.reducedMotion)
+            this.sprite(
+              'fx-fire',
+              x,
+              y - 18,
+              0.65,
+              Math.floor(t * 10) % ASSETS['fx-fire'].frames,
+            );
+          if ((e.solventUntil ?? 0) > s.elapsed)
+            this.label(x, y - 86, 'Vulnérable au feu', '#e6d2a6');
+          if ((e.comboAt ?? -10) + 0.8 > s.elapsed)
+            this.label(x, y - 105, 'COMBO ×2', '#ffb875');
+          if ((e.resurrectionProgress ?? 0) > 0) {
+            this.sprite(
+              'hero-heal',
+              x,
+              y,
+              0.7,
+              Math.floor(t * 10) % ASSETS['hero-heal'].frames,
+            );
+            this.label(
+              x,
+              y - 95,
+              `Résurrection · ${Math.ceil(10 - e.resurrectionProgress!)} s`,
+            );
+          }
         },
       });
     }
@@ -1331,6 +1470,15 @@ export class Renderer {
       });
     drawables.sort((a, b) => a.depth - b.depth);
     for (const d of drawables) d.draw();
+    for (const r of s.domain.resurrections)
+      if (!this.reducedMotion)
+        this.sprite(
+          'hero-heal',
+          r.x * CELL,
+          r.y * CELL,
+          0.85,
+          Math.floor((s.elapsed - r.at) * 10) % ASSETS['hero-heal'].frames,
+        );
     if (s.won || s.lost) this.endedAt ??= performance.now();
     else this.endedAt = null;
     // Let the final impact finish after defeat, when simulation time stops.
@@ -1534,6 +1682,32 @@ export class Renderer {
       ctx.strokeRect(x, y, width, height);
       ctx.restore();
     }
+    if (this.buildKind && this.pointer) {
+      const point = this.toWorld(this.pointer);
+      const lot =
+        this.hover?.type === 'lot' ? s.lots[this.hover.id] : undefined;
+      const key = buildingArt(this.buildKind, true);
+      const p = this.buildingPlacement(
+        key,
+        (lot ? lot.x + 4 : point.x) * CELL,
+        (lot ? lot.y + 6.2 : point.y) * CELL,
+        this.buildKind === 'den'
+          ? 0.94
+          : this.buildKind === 'crypt'
+            ? 0.72
+            : 0.9,
+      );
+      ctx.save();
+      this.sprite(
+        key,
+        p.x,
+        p.y,
+        p.scale,
+        0,
+        lot && !buildReason(s, lot.id, this.buildKind) ? 0.6 : 0.35,
+      );
+      ctx.restore();
+    }
     this.frame = requestAnimationFrame(this.render);
   };
   destroy() {
@@ -1542,6 +1716,7 @@ export class Renderer {
     this.resizeObserver.disconnect();
     this.canvas.removeEventListener('pointerdown', this.pointerDown);
     this.canvas.removeEventListener('pointermove', this.pointerMove);
+    this.canvas.removeEventListener('pointerleave', this.pointerLeave);
     this.canvas.removeEventListener('pointerup', this.pointerUp);
     this.canvas.removeEventListener('pointercancel', this.pointerCancel);
     this.canvas.removeEventListener('contextmenu', this.contextMenu);

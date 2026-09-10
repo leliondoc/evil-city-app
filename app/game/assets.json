@@ -1751,5 +1751,37 @@
     "frameWidth": 64,
     "frames": 8,
     "anchor": 0.5
+  },
+  "alchemist-idle": {
+    "src": "/tiny-swords/alchemist-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "alchemist-walk": {
+    "src": "/tiny-swords/alchemist-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "alchemist-attack": {
+    "src": "/tiny-swords/alchemist-attack.png",
+    "width": 1920,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "alchemist-avatar": {
+    "src": "/tiny-swords/alchemist-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
   }
 }

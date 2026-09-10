@@ -13,8 +13,20 @@ import {
   haunt,
   isHaunted,
   exorcise,
+  resurrect,
   type DomainState,
 } from './domain.ts';
+import {
+  createStrategy,
+  advanceStrategy,
+  strategyUnit,
+  towerOrder,
+  divertEnemy,
+  hitEnemy,
+  hasResearch,
+  spreadBraises,
+  type StrategyState,
+} from './strategy.ts';
 
 export type BuildingKind =
   | 'hq'
@@ -32,7 +44,8 @@ export type CreatureKind =
   | 'troll'
   | 'skeleton'
   | 'minotaur'
-  | 'specter';
+  | 'specter'
+  | 'alchemist';
 export type Point = { x: number; y: number };
 export type Resources = {
   gold: number;
@@ -49,7 +62,14 @@ export const RESOURCE_LABELS: Record<keyof Resources, string> = {
 };
 export type Selection =
   | {
-      type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource' | 'guildHero';
+      type:
+        | 'lot'
+        | 'unit'
+        | 'enemy'
+        | 'worker'
+        | 'resource'
+        | 'guildHero'
+        | 'tower';
       id: number;
     }
   | { type: 'none'; id?: never }
@@ -169,6 +189,19 @@ export const CREATURES: Record<
     population: number;
   }
 > = {
+  alchemist: {
+    name: 'Alchimiste',
+    job: 'Maître des mixtures',
+    description:
+      'Le chaman du pack projette ses mixtures à distance. Avec le solvant alchimique, ses cibles deviennent vulnérables aux armes enflammées et aux braises.',
+    art: 5,
+    cost: { gold: 100, mana: 35, food: 15 },
+    hp: 60,
+    damage: 3,
+    speed: 1.8,
+    size: 38,
+    population: 1,
+  },
   specter: {
     name: 'Spectre',
     job: 'Saboteur des ombres',
@@ -273,6 +306,7 @@ export const RECRUIT_OPTIONS: CreatureKind[] = [
   'skeleton',
   'minotaur',
   'specter',
+  'alchemist',
 ];
 export const BOARD = 32;
 export const STARTS = [2, 12, 22];
@@ -291,6 +325,7 @@ export interface Lot {
   construction: null | { kind: BuildingKind; progress: number };
 }
 export interface Unit extends Point {
+  loot?: Cost;
   nextRestAt?: number;
   nextMealAt?: number;
   activityProgress?: number;
@@ -301,6 +336,9 @@ export interface Unit extends Point {
   kind: CreatureKind;
   hp: number;
   task:
+    | 'tower'
+    | 'collect-loot'
+    | 'deliver-loot'
     | 'idle'
     | 'build'
     | 'attack'
@@ -399,6 +437,14 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  revived?: boolean;
+  resurrecting?: number;
+  resurrectionProgress?: number;
+  resurrectionHp?: number;
+  solventUntil?: number;
+  burningUntil?: number;
+  comboAt?: number;
+  spreadFire?: boolean;
   /** Specter being tracked, then challenged outside the haunted property. */
   exorcising?: number;
   exorcismStreet?: Point;
@@ -508,6 +554,7 @@ const SUPPLY_LOCATIONS: (Point & { kind: Supply; home: number; hp: number })[] =
     { kind: 'wood', home: 8, ...ISLAND_SITES.wood, hp: 120 },
   ];
 export interface HumanWorker extends Point {
+  taxed?: boolean;
   recovery?: { corpseId: number; returning: boolean };
   moving?: boolean;
   id: number;
@@ -696,6 +743,7 @@ function resourceGain(s: State, point: Point, kind: Supply, amount: number) {
   });
 }
 export interface State {
+  strategy: StrategyState;
   domain: DomainState;
   resourceGains: ResourceGain[];
   resources: Resources;
@@ -740,6 +788,7 @@ export function createGame(): State {
   ];
   const state: State = {
     domain: createDomain(),
+    strategy: createStrategy(),
     resourceGains: [],
     resources: { gold: 0, wood: 0, food: 0, mana: 0 },
     economy: {
@@ -1007,6 +1056,7 @@ export function assign(
   task: Unit['task'],
   target: number | null,
 ) {
+  if (u.task === 'deliver-loot' && task !== 'deliver-loot') u.loot = undefined;
   u.path = findPath(u, point);
   u.task = task;
   u.target = target;
@@ -1098,6 +1148,8 @@ export function claim(s: State, id: number) {
 }
 export function recruitReason(s: State, kind: CreatureKind) {
   if (s.won || s.lost) return 'La partie est terminée.';
+  if (kind === 'alchemist' && !hasBuilding(s, 'crypt'))
+    return 'Construisez une crypte pour recruter un alchimiste.';
   if (kind === 'troll' && !hasBuilding(s, 'forge'))
     return 'Construisez une forge pour recruter les trolls.';
   if (kind === 'skeleton' && !hasBuilding(s, 'crypt'))
@@ -1132,7 +1184,11 @@ export function recruit(s: State, kind: CreatureKind) {
 }
 export function army(s: State) {
   return s.units.filter(
-    (u) => u.hp > 0 && u.kind !== 'goblin' && u.kind !== 'specter',
+    (u) =>
+      u.hp > 0 &&
+      (u.kind !== 'goblin' || hasResearch(s, 'embers')) &&
+      u.kind !== 'specter' &&
+      !['tower', 'collect-loot', 'deliver-loot'].includes(u.task),
   );
 }
 export function attackReason(s: State, id: number) {
@@ -1175,6 +1231,7 @@ export function commandUnit(
   if (s.won || s.lost) return 'La partie est terminée.';
   const unit = s.units.find((u) => u.id === id && u.hp > 0);
   if (!unit) return 'Cette créature n’est plus disponible.';
+  if (target?.type === 'tower') return towerOrder(s, target.id, id);
   const lot =
     target?.type === 'lot'
       ? s.lots[target.id]
@@ -1190,7 +1247,7 @@ export function commandUnit(
     if (lot) return haunt(s, lot.id, unit.id);
     return 'Le spectre hante les bâtiments. Clic droit sur une propriété humaine.';
   }
-  if (hostile && unit.kind === 'goblin')
+  if (hostile && unit.kind === 'goblin' && !hasResearch(s, 'embers'))
     return 'Les gobelins construisent. Sélectionnez un combattant pour attaquer.';
   if (target?.type === 'enemy') {
     const enemy = s.enemies.find((e) => e.id === target.id && e.hp > 0);
@@ -1242,6 +1299,20 @@ export function commandUnits(
   if (!living.length)
     return 'Aucune créature sélectionnée n’est encore disponible.';
   if (living.length === 1) return commandUnit(s, living[0], target, point);
+  if (target?.type === 'tower') {
+    const tower = s.strategy.towers[target.id];
+    const chosen = living.find(
+      (id) =>
+        !tower?.owned ||
+        s.units.some(
+          (u) =>
+            u.id === id && ['goblin', 'skeleton', 'specter'].includes(u.kind),
+        ),
+    );
+    return chosen === undefined
+      ? 'Affectez un gobelin, un squelette ou un spectre à cette tour.'
+      : commandUnit(s, chosen, target, point);
+  }
   let ordered = 0;
   let error = '';
   for (const id of living) {
@@ -1457,7 +1528,9 @@ function armyDamage(s: State, u: Unit) {
     ...s.lots.filter((l) => l.owned && l.kind === 'forge').map((l) => l.level),
   );
   return (
-    CREATURES[u.kind].damage *
+    (u.kind === 'goblin' && hasResearch(s, 'embers')
+      ? 4
+      : CREATURES[u.kind].damage) *
     (1 + (forge - 1) * 0.15) *
     (s.resources.food <= 0 && u.kind !== 'skeleton' ? 0.6 : 1)
   );
@@ -1683,6 +1756,7 @@ function advanceEnemies(s: State, dt: number) {
         2.2,
       );
       if (attacker) {
+        e.resurrectionProgress = 0;
         e.path = [];
         e.fighting = true;
         e.facing = attacker.x >= e.x ? 1 : -1;
@@ -1691,6 +1765,7 @@ function advanceEnemies(s: State, dt: number) {
       }
     }
     if (e.role === 'monk' && exorcise(s, e, dt)) continue;
+    if (e.role === 'monk' && resurrect(s, e, dt)) continue;
     if (e.role === 'monk') {
       const ally = nearest(
         e,
@@ -1730,6 +1805,7 @@ function advanceEnemies(s: State, dt: number) {
       }
       pursue(e, victim);
     } else {
+      if (divertEnemy(s, e, dt)) continue;
       if (!s.lots[e.target].owned) e.target = raidTarget(s, e).id;
       const destination = entrance(s.lots[e.target]);
       if (
@@ -1866,6 +1942,7 @@ export function tick(s: State, dt: number) {
 function tickStep(s: State, dt: number) {
   s.elapsed += dt;
   advanceDomain(s, dt);
+  advanceStrategy(s, dt);
   s.resourceGains = s.resourceGains.filter(
     (gain) => s.elapsed - gain.at < RESOURCE_GAIN_LIFETIME,
   );
@@ -1908,8 +1985,13 @@ function tickStep(s: State, dt: number) {
   for (const u of s.units) {
     if (u.hp <= 0) continue;
     u.fighting = false;
+    if (strategyUnit(s, u, dt)) continue;
     if (advanceSpecialUnit(s, u, dt)) continue;
-    if (u.kind !== 'goblin' && u.kind !== 'specter' && u.task !== 'move') {
+    if (
+      (u.kind !== 'goblin' || hasResearch(s, 'embers')) &&
+      u.kind !== 'specter' &&
+      u.task !== 'move'
+    ) {
       if (u.task === 'idle') {
         const threat = nearest(u, s.enemies, 4.5);
         if (threat) assign(u, threat, 'defend', threat.id);
@@ -1926,12 +2008,12 @@ function tickStep(s: State, dt: number) {
       const threat = nearest(
         u,
         s.enemies.filter((e) => clearShot(u, e)),
-        1.9,
+        u.kind === 'alchemist' ? 4 : 1.9,
       );
       if (threat) {
         u.fighting = true;
         u.facing = threat.x >= u.x ? 1 : -1;
-        threat.hp -= armyDamage(s, u) * dt;
+        hitEnemy(s, u, threat, armyDamage(s, u), dt);
       }
     }
     if (!u.fighting && (u.task === 'sabotage' || u.task === 'hunt')) {
@@ -2090,6 +2172,7 @@ function tickStep(s: State, dt: number) {
   advanceEnemies(s, dt);
   separateCombatants(s, dt);
   advanceProjectiles(s, dt);
+  spreadBraises(s);
   const defeated = s.enemies.filter((e) => e.hp <= 0);
   for (const e of defeated) leaveCorpse(s, e, 'human');
   s.defeatedEnemies += defeated.length;

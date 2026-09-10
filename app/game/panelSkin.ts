@@ -1,4 +1,4 @@
-export type PanelKind = 'paper' | 'wood' | 'banner' | 'button';
+export type PanelKind = 'paper' | 'notice' | 'wood' | 'banner' | 'button';
 type Slice = readonly [start: number, size: number];
 const regular: Slice[] = [
   [0, 64],
@@ -19,7 +19,17 @@ export function paintPanel(
   width: number,
   height: number,
 ) {
-  const cols = kind === 'wood' || kind === 'banner' ? large : regular;
+  const paperNotice: Slice[] = [
+    [0, 64],
+    [144, 32],
+    [256, 64],
+  ];
+  const cols =
+    kind === 'wood' || kind === 'banner'
+      ? large
+      : kind === 'notice'
+        ? paperNotice
+        : regular;
   const rows: Slice[] =
     kind === 'wood' || kind === 'banner'
       ? [
@@ -27,7 +37,9 @@ export function paintPanel(
           [192, 64],
           [320, 112],
         ]
-      : regular;
+      : kind === 'notice'
+        ? paperNotice
+        : regular;
   const scale = kind === 'button' ? 0.25 : 0.5;
   const xs = [0, cols[0][1] * scale, width - cols[2][1] * scale, width];
   const ys = [0, rows[0][1] * scale, height - rows[2][1] * scale, height];

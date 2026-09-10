@@ -46,7 +46,7 @@ Voir ASSETS.md pour la provenance et les réglages.
 ## Limites
 
 - Quartier fictif de neuf parcelles, sans import de carte réelle.
-- Cinq créatures recrutables : gobelin, troll, squelette, minotaure et spectre (sprite du voleur). Le catalogue animé présente les 22 créatures du pack Enemy et les 4 héros humains. Les 17 autres créatures du pack ne sont pas encore recrutables ni dotées de comportements en jeu.
+- Six créatures recrutables : gobelin, troll, squelette, minotaure, spectre (sprite du voleur) et alchimiste (Hex Shaman). Le catalogue animé présente les 22 créatures du pack Enemy et les 4 héros humains. Les 16 autres créatures du pack ne sont pas encore recrutables ni dotées de comportements en jeu.
 - Combat continu avec défenseurs fixes. Les dégâts ne sont pas encore synchronisés sur l’image précise de chaque frappe.
 - Les gobelins utilisent leur cycle de repos pendant le chantier ; le pack ne fournit pas de cycle de construction pour ce personnage.
 - Mobilisation adverse par paliers de temps et d’expansion, financée par une économie humaine simplifiée. Pas de sous-sol ni de relief influant sur le déplacement.
@@ -72,6 +72,28 @@ Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, 
 - `app/game/Game.tsx` : interface et commandes.
 - `public/tiny-swords/` : ressources graphiques intégrées au jeu.
 
-Les 76 tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
+Les 87 tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
 
-Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Le clic droit commande les unités sélectionnées. Les gobelins d’un groupe mixte ne participent pas aux attaques.
+Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Le clic droit commande les unités sélectionnées. Les gobelins d’un groupe mixte ne participent aux attaques qu’après la recherche Armes enflammées.
+
+## Résurrection, combos et tours de quartier
+
+Les paysans ramènent physiquement les dépouilles humaines. Un moine rejoint le bâtiment de dépôt, puis canalise 10 secondes : 25 or et 15 vivres des stocks humains rendent au combattant 60 % de ses PV. Chaque combattant ne revient qu’une fois. Les dépouilles déposées attendent au maximum 120 secondes (six places). Une menace proche, des dégâts ou une hantise interrompent le rituel ; conquérir le dépôt le supprime. La guilde peut envoyer un moine de secours pour 15 or et 10 vivres, avec 90 secondes entre deux envois. Les paysans enterrés ne sont pas ressuscités.
+
+L’alchimiste, représenté exclusivement par le Hex Shaman original du pack Enemy, se recrute à la crypte pour 100 or, 35 essence et 15 vivres. Trois recherches permanentes composent les combos :
+
+- Forge : **Armes enflammées**, 120 or, 50 bois, 20 essence. Arme aussi les gobelins (4 dégâts/s physiques), ajoute 3 dégâts/s de feu aux frappes et une brûlure de 3 secondes (2 dégâts/s).
+- Crypte : **Solvant alchimique**, 90 or, 35 essence. Les attaques de l’alchimiste marquent leur cible 8 secondes : seuls les dégâts de feu sont doublés.
+- Forge : **Braises contagieuses**, 150 or, 40 bois, 60 essence, après les armes enflammées. La mort d’un ennemi embrasé propage une brûlure de 4 secondes aux voisins visibles à moins de 2,8 cases. Le solvant amplifie également cette brûlure.
+
+Les trois tours sont sélectionnables sur la carte ou dans « Tours du quartier ». Tenir leur porte sans ennemi proche pendant 8 secondes les capture. Leur rôle dépend de la créature affectée :
+
+- **Gobelin — racket** : prélève 30 % d’une cargaison humaine proche, une fois par trajet, avec un stockage de 30 par ressource. Un autre gobelin libre doit rapporter le butin au manoir ; sa mort ou un nouvel ordre perd sa cargaison. Le racket augmente la suspicion.
+- **Squelette — guet** : combat à la porte et appelle les défenseurs disponibles dans un rayon de 8 cases lorsqu’un ennemi approche.
+- **Spectre — fausse alerte** : pour 15 essence, détourne pendant 12 secondes les patrouilles proches qui ne combattent pas déjà ; les moines restent concentrés. Récupération de 60 secondes.
+
+Une tour sans garnison peut être reprise en 8 secondes par les humains proches, ce qui perd son butin. Les effets exigent que l’occupant soit réellement arrivé. Un ordre de groupe affecte une seule créature à la tour.
+
+Les jardins du joueur reprennent l’herbe originale avec une palette brun sombre et des touches rouille ; la couleur suit les conquêtes et reprises. Les textes de carte ont un contour sombre, le bâtiment choisi apparaît en transparence sous le pointeur et les notifications utilisent le parchemin Tiny Swords en haut au centre, adapté au mobile.
+
+La scène locale `/tests/strategy-preview.html` permet d’examiner les sprites, recherches, tours et notifications. Les 11 tests de `tests/strategy.test.mjs` vérifient dépenses, combos, captures, transports, interruptions et résurrection complète dans la simulation.

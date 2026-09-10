@@ -46,6 +46,7 @@ import { ThreatPanel } from './ThreatPanel';
 import { GuildRoster, GuildHeroSelection } from './GuildPanel';
 import { Bestiary } from './Bestiary';
 import { DomainPanel } from './DomainPanel';
+import { TowerPanel } from './StrategyPanel';
 import { buildingArt, enemyAnimationSequence, type Animation } from './art';
 import {
   BUILDINGS,
@@ -92,6 +93,9 @@ import {
 
 const unitsText = {
   idle: 'Disponible',
+  tower: 'En poste à la tour',
+  'collect-loot': 'Récupère le butin',
+  'deliver-loot': 'Rapporte le butin',
   forage: 'Récupère du bois',
   build: 'Au chantier',
   attack: 'En expédition',
@@ -608,6 +612,20 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               Fermer les détails ×
             </button>
           )}
+          <details className="tower-index">
+            <summary>Tours du quartier</summary>
+            {s.strategy.towers.map((tower) => (
+              <button
+                key={tower.id}
+                onClick={() => {
+                  setPendingBuild(null);
+                  select({ type: 'tower', id: tower.id });
+                }}
+              >
+                {tower.name} · {tower.owned ? 'à vous' : 'humaine'}
+              </button>
+            ))}
+          </details>
           <section>
             <p className="eyebrow">Chapitre I · Premiers méfaits</p>
             <div className="chapter">
@@ -692,6 +710,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   : 'Clic dans le vide ou Échap : désélectionner. Clic droit : déplacer la créature sélectionnée ou attaquer une cible ennemie.'}
               </p>
             </section>
+          ) : selection.type === 'tower' ? (
+            <TowerPanel state={s} id={selection.id} onAction={run} />
           ) : selection.type === 'worker' || selection.type === 'resource' ? (
             <SupplySelection
               state={s}
@@ -1250,9 +1270,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </Button>
           </div>
           {message && (
-            <div className="toast-message" role="status" aria-live="polite">
-              {message}
-            </div>
+            <output className="toast-message" aria-live="polite">
+              <PanelSkin kind="notice" />
+              <span>{message}</span>
+            </output>
           )}
           {paused && (
             <div className="paused-label">Le mal prend une pause.</div>

@@ -38,8 +38,13 @@ La composition des abords utilise des silhouettes de tuiles découpées : anses,
 
 Les particules `Dust_01`, `Dust_02`, `Explosion_01`, `Explosion_02` et `Fire_01` du dossier `Particle FX` sont copiées sans retouche par `scripts/import-particle-fx.ps1`. Elles accompagnent le travail des bâtisseurs, les impacts réels, les fins de chantier, les changements de propriétaire et la destruction du manoir. Quelques flammes signalent les bâtiments sous 40 % de résistance. Ces effets restent visuels, suivent la pause et la vitesse de simulation et sont masqués avec la réduction des animations ; seul l’impact final termine sa lecture après la défaite.
 
-Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les cinq recrutables ne possèdent pas encore de comportements jouables.
+Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les six recrutables ne possèdent pas encore de comportements jouables.
 
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.
 
 Les textures UI sont des planches de morceaux séparés. `PackUI.tsx` répète les morceaux des panneaux et boutons dans un canvas à échelle fixe, sans étirer le grain du bois ou le parchemin ; le ruban utilise trois morceaux SVG. Les coins restent à taille fixe. Le gisement d’or emploie Gold Stone 5 et Gold Stone 4, qui représentent des rochers plutôt que les petites pépites de Gold Stone 1. Le pack fourni ne contient pas de bâtiment de mine. Aucun PNG n’est redessiné.
+
+
+L’alchimiste emploie les séquences Idle, Walk et Attack du Hex Shaman original, ainsi que `Hex Shaman_Avatar.png`, sans retouche. `scripts/import-alchemist.ps1` copie ces quatre ressources vers les entrées `alchemist-*`. Les tours emploient les tours bleues et violettes déjà importées. Les combos utilisent Fire_01 et le rituel humain l’animation de soins du moine, tous issus du pack.
+
+La corruption des jardins est une modification de palette à l’exécution (`corruption.ts`) appliquée uniquement au terrain appartenant au joueur. La géométrie et la transparence des tuiles terrain-5 sont conservées ; les brins clairs deviennent brun rouille. Les notices du haut utilisent `ui-paper.png`, avec les coins originaux et un échantillon intérieur qui évite les jointures répétées. L’aperçu de construction réutilise le sprite final avec une opacité réduite.

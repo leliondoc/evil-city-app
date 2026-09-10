@@ -30,7 +30,8 @@ export function PanelSkin({
       paintPanel(ctx, image, kind, width, height);
     };
     image.onload = draw;
-    image.src = ASSETS[asset ?? `ui-${kind}`].src;
+    image.src =
+      ASSETS[asset ?? (kind === 'notice' ? 'ui-paper' : `ui-${kind}`)].src;
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => {

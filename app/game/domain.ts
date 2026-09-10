@@ -25,6 +25,7 @@ export interface Death extends Point {
   at: number;
 }
 export interface Corpse extends Point {
+  human?: Pick<Enemy, 'kind' | 'role' | 'level' | 'maxHp' | 'damage'>;
   id: number;
   at: number;
   side: 'human' | 'evil';
@@ -32,6 +33,15 @@ export interface Corpse extends Point {
   carrier?: { side: 'human' | 'evil'; id: number };
 }
 export interface DomainState {
+  souls: {
+    id: number;
+    home: number;
+    human: NonNullable<Corpse['human']>;
+    expiresAt: number;
+  }[];
+  nextRescuerAt: number;
+  resurrections: (Point & { at: number })[];
+  resurrected: number;
   deaths: Death[];
   corpses: Corpse[];
   remains: number;
@@ -46,6 +56,10 @@ export interface DomainState {
 }
 export function createDomain(): DomainState {
   return {
+    souls: [],
+    nextRescuerAt: 0,
+    resurrections: [],
+    resurrected: 0,
     deaths: [],
     corpses: [],
     remains: 0,
@@ -251,13 +265,30 @@ export function monkDamage(monk: Enemy, target: Unit): number {
 export function leaveDeath(s: State, actor: Point) {
   s.domain.deaths.push({ x: actor.x, y: actor.y, at: s.elapsed });
 }
-export function leaveCorpse(s: State, actor: Point, side: Corpse['side']) {
+export function leaveCorpse(
+  s: State,
+  actor: Point &
+    Partial<Pick<Enemy, 'role' | 'level' | 'maxHp' | 'damage' | 'revived'>> & {
+      kind?: string;
+    },
+  side: Corpse['side'],
+) {
   s.domain.corpses.push({
     id: s.nextId++,
     at: s.elapsed,
     x: actor.x,
     y: actor.y,
     side,
+    human:
+      side === 'human' && actor.role && !actor.revived
+        ? {
+            kind: actor.kind === 'hero' ? 'hero' : 'guard',
+            role: actor.role,
+            level: actor.level!,
+            maxHp: actor.maxHp!,
+            damage: actor.damage!,
+          }
+        : undefined,
     expiresAt: s.elapsed + 100,
   });
   s.domain.suspicion = Math.min(100, s.domain.suspicion + 2);
@@ -265,6 +296,44 @@ export function leaveCorpse(s: State, actor: Point, side: Corpse['side']) {
 
 export function advanceDomain(s: State, dt: number) {
   const d = s.domain;
+  d.resurrections = d.resurrections.filter((r) => s.elapsed - r.at < 1.5);
+  d.souls = d.souls.filter(
+    (soul) => soul.expiresAt > s.elapsed && !s.lots[soul.home].owned,
+  );
+  const guild = s.lots.find((l) => l.kind === 'guild' && !l.owned);
+  if (
+    d.souls.length &&
+    guild &&
+    !isHaunted(s, guild) &&
+    d.nextRescuerAt <= s.elapsed &&
+    !s.enemies.some((e) => e.hp > 0 && e.role === 'monk') &&
+    s.economy.stocks.gold >= 15 &&
+    s.economy.stocks.food >= 10
+  ) {
+    s.economy.stocks.gold -= 15;
+    s.economy.stocks.food -= 10;
+    d.nextRescuerAt = s.elapsed + 90;
+    s.enemies.push({
+      id: s.nextId++,
+      kind: 'hero',
+      role: 'monk',
+      ...entrance(guild),
+      hp: 85,
+      maxHp: 85,
+      damage: 0,
+      level: 1,
+      path: [],
+      target: 6,
+      facing: 1,
+      fighting: false,
+      healTarget: null,
+      attackCooldown: 0,
+    });
+    announce(
+      s,
+      'Un moine quitte la guilde pour ressusciter les morts récupérés.',
+    );
+  }
   d.deaths = d.deaths.filter((death) => s.elapsed - death.at < DEATH_SECONDS);
   d.suspicion = Math.max(0, d.suspicion - dt * 0.04);
   for (const lot of s.lots) {
@@ -361,10 +430,87 @@ export function advanceDomain(s: State, dt: number) {
     } else if (w.recovery.returning && distance(w, entrance(home)) < 1) {
       d.corpses = d.corpses.filter((body) => body.id !== c.id);
       d.recoveredByHumans++;
+      if (c.human && d.souls.length < 6)
+        d.souls.push({
+          id: c.id,
+          home: home.id,
+          human: c.human,
+          expiresAt: s.elapsed + 120,
+        });
       w.recovery = undefined;
       w.phase = 'return';
     }
   }
+}
+
+export function resurrect(s: State, monk: Enemy, dt: number): boolean {
+  const candidates = s.domain.souls.filter(
+    (soul) =>
+      !s.lots[soul.home].owned &&
+      !s.enemies.some(
+        (e) => e.id !== monk.id && e.hp > 0 && e.resurrecting === soul.id,
+      ),
+  );
+  const soul =
+    candidates.find((soul) => soul.id === monk.resurrecting) ?? candidates[0];
+  if (!soul) {
+    monk.resurrecting = undefined;
+    monk.resurrectionProgress = 0;
+    return false;
+  }
+  if (monk.resurrecting !== soul.id) monk.resurrectionProgress = 0;
+  monk.resurrecting = soul.id;
+  const home = s.lots[soul.home],
+    target = entrance(home);
+  if (
+    isHaunted(s, home) ||
+    s.units.some((u) => u.hp > 0 && distance(u, monk) < 3) ||
+    (monk.resurrectionHp !== undefined && monk.hp < monk.resurrectionHp)
+  ) {
+    monk.resurrectionProgress = 0;
+    monk.resurrectionHp = monk.hp;
+    return false;
+  }
+  monk.resurrectionHp = monk.hp;
+  if (distance(monk, target) > 1) {
+    if (!monk.path.length || distance(monk.path.at(-1)!, target) > 1)
+      monk.path = findPath(monk, target);
+    walk(s, monk, 1.35 * dt);
+    return true;
+  }
+  monk.path = [];
+  if (s.economy.stocks.gold < 25 || s.economy.stocks.food < 15) {
+    monk.resurrectionProgress = 0;
+    return false;
+  }
+  monk.resurrectionProgress = (monk.resurrectionProgress ?? 0) + dt;
+  if (monk.resurrectionProgress >= 10) {
+    s.economy.stocks.gold -= 25;
+    s.economy.stocks.food -= 15;
+    s.domain.souls = s.domain.souls.filter((body) => body.id !== soul.id);
+    s.enemies.push({
+      ...soul.human,
+      ...target,
+      id: s.nextId++,
+      hp: Math.ceil(soul.human.maxHp * 0.6),
+      revived: true,
+      path: findPath(target, entrance(s.lots[6])),
+      target: 6,
+      facing: 1,
+      fighting: false,
+      healTarget: null,
+      attackCooldown: 0,
+    });
+    s.domain.resurrected++;
+    s.domain.resurrections.push({ ...target, at: s.elapsed });
+    monk.resurrecting = undefined;
+    monk.resurrectionProgress = 0;
+    announce(
+      s,
+      'Résurrection ! Un humain revient avec 60 % de sa vie. Il ne pourra plus être ressuscité.',
+    );
+  }
+  return true;
 }
 
 export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {

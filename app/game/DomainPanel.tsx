@@ -12,6 +12,7 @@ import {
   thought,
 } from './domain';
 import { GameButton as Button } from './PackUI';
+import { ResearchPanel } from './StrategyPanel';
 
 export function DomainPanel({
   state: s,
@@ -30,12 +31,26 @@ export function DomainPanel({
   const ritualError = ritualReason(s);
   return (
     <>
+      {lot && <ResearchPanel state={s} lot={lot} onAction={onAction} />}
+      {lot && !lot.owned && (
+        <div className="domain-card">
+          <strong>Résurrection humaine</strong>
+          <p>
+            {s.domain.souls.filter((body) => body.home === lot.id).length}{' '}
+            dépouilles prêtes ici. Rituel : 10 s, 25 or et 15 viande humains,
+            retour à 60 % de vie, une seule fois. Attaquer le moine, hanter ou
+            capturer le bâtiment interrompt le rituel.
+          </p>
+          <p>{s.domain.resurrected} résurrections dans le quartier.</p>
+        </div>
+      )}
       {unit && (
         <div className="domain-card">
           <strong>{thought(s, unit) || 'Prêt à recevoir vos ordres'}</strong>
           {unit.kind === 'specter' ? (
             <p>
-              Envoyez ce spectre sur un bâtiment humain pour le hanter. Récupération :{' '}
+              Envoyez ce spectre sur un bâtiment humain pour le hanter.
+              Récupération :{' '}
               {Math.ceil(Math.max(0, (unit.hauntReadyAt ?? 0) - s.elapsed))} s.
             </p>
           ) : (

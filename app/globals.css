@@ -2571,3 +2571,91 @@ svg {
     min-height: 44px;
   }
 }
+
+/* Pack parchment notices stay above the action on every screen size. */
+.game-shell .toast-message,
+.game-shell[data-compact='true'] .toast-message {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 84px);
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 28px));
+  max-width: none;
+  min-height: 76px;
+  padding: 22px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+  color: #34291f;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 45;
+}
+.toast-message > span {
+  position: relative;
+  z-index: 1;
+}
+.toast-message > .pack-skin {
+  z-index: 0;
+}
+.game-shell[data-compact='true'] .toast-message {
+  top: calc(env(safe-area-inset-top, 0px) + 100px);
+  font-size: 12px;
+}
+@media (max-height: 500px) {
+  .game-shell[data-compact='true'] .toast-message {
+    top: calc(env(safe-area-inset-top, 0px) + 48px);
+    width: min(520px, calc(100vw - 28px));
+  }
+}
+.tower-index {
+  margin: 12px 0;
+  font-size: 13px;
+}
+.tower-index summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: #f2d99b;
+}
+.tower-index button {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px;
+  text-align: left;
+}
+.tower-portrait {
+  display: block;
+  width: 100px;
+  height: 120px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  margin: 10px auto;
+}
+.tower-choice {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.tower-choice select {
+  width: 100%;
+  min-height: 44px;
+  color: #f2e8d2;
+  background: #263b44;
+  border: 1px solid #849491;
+  padding: 8px;
+}
+.research-choice {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #9fa78544;
+}
