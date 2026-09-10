@@ -483,16 +483,6 @@ export class Renderer {
         ctx.drawImage(im, sx, sy, 64, 64, x + tx * 64, y + ty * 64, 64, 64);
       }
   }
-  private plateau(
-    ctx: CanvasRenderingContext2D,
-    key: AssetKey,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-  ) {
-    this.terrace(ctx, { key, x, y, w, h }, []);
-  }
   private terrainSurface(
     ctx: CanvasRenderingContext2D,
     tiles: GroundTile[],
@@ -618,17 +608,6 @@ export class Renderer {
               ? 'terrain-3'
               : 'terrain-1';
       this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4);
-      if (lot.id === 0 && !lot.owned) {
-        // The church foundation must sit on the upper surface, ahead of the cliff.
-        this.plateau(
-          ctx,
-          'terrain-2',
-          (lot.x + 1) * CELL,
-          (lot.y + 1) * CELL - 40,
-          3,
-          3,
-        );
-      }
     }
     // The same routes guide both the peasants and the visible dirt tracks.
     ctx.strokeStyle = '#b9a67b';
@@ -790,20 +769,6 @@ export class Renderer {
     ctx.lineTo(center, bend);
     ctx.lineTo(center, (lot.y + 8) * CELL);
     ctx.stroke();
-    if (lot.id === 0 && !lot.owned) {
-      // Keep both halves of the original ramp, including its lower landing.
-      ctx.drawImage(
-        this.images.get('terrain-2')!,
-        128,
-        256,
-        128,
-        128,
-        center - 64,
-        (lot.y + 5) * CELL - 40,
-        128,
-        128,
-      );
-    }
     ctx.restore();
   }
   private bar(x: number, y: number, ratio: number, width = 60) {
@@ -1002,7 +967,7 @@ export class Renderer {
       }
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
-        y = (l.y + 6.2) * CELL - (l.id === 0 && !l.owned ? 28 : 0),
+        y = (l.y + 6.2) * CELL,
         key =
           kind === 'house'
             ? (`house-${l.owned ? 'purple' : 'blue'}-${(l.id % 2) + 2}` as AssetKey)
