@@ -41,6 +41,7 @@ import {
   type GroundTile,
 } from './terrainLayout';
 import { isHaunted, thought } from './domain';
+import { ParticleFeedback } from './particles';
 import {
   selectedUnitIds,
   unitSelection,
@@ -82,6 +83,8 @@ export class Renderer {
   private shore: GroundTile[] = [];
   private hits: Hit[] = [];
   private motions = new Map<number, Motion>();
+  private particles = new ParticleFeedback();
+  private endedAt: number | null = null;
   private resizeObserver: ResizeObserver;
   private frame = 0;
   private disposed = false;
@@ -985,6 +988,21 @@ export class Renderer {
             this.hits.push(hit);
             if (l.construction)
               this.bar(x, y - 35, l.construction.progress, 90);
+            if (
+              !this.reducedMotion &&
+              !l.construction &&
+              l.hp > 0 &&
+              l.hp < l.maxHp * 0.4
+            )
+              for (const side of [-1, 1])
+                this.sprite(
+                  'fx-fire',
+                  x + side * 38,
+                  y - 35,
+                  1,
+                  Math.floor(t * 10 + l.id + side * 2 + 8) %
+                    ASSETS['fx-fire'].frames,
+                );
             if (l.level > 1) this.label(x, y - 40, '★'.repeat(l.level - 1));
           }
         },
@@ -1201,15 +1219,18 @@ export class Renderer {
           if (
             u.task === 'build' &&
             u.target !== null &&
-            atEntrance(u, s.lots[u.target])
+            atEntrance(u, s.lots[u.target]) &&
+            s.lots[u.target].construction &&
+            !this.reducedMotion
           ) {
-            ctx.fillStyle = '#ffe49c';
-            for (let i = 0; i < 3; i++)
-              ctx.fillRect(
-                x + 18 + i * 6,
-                y - 30 - ((t * 25 + i * 8) % 22),
-                4,
-                4,
+            const frame = Math.floor(t * 10 + u.id * 3) % 16;
+            if (frame < ASSETS['fx-dust-small'].frames)
+              this.sprite(
+                'fx-dust-small',
+                x + u.facing * 20,
+                y - 18,
+                0.65,
+                frame,
               );
           }
           if (selected || u.hp < def.hp || action === 'attack')
@@ -1310,6 +1331,31 @@ export class Renderer {
       });
     drawables.sort((a, b) => a.depth - b.depth);
     for (const d of drawables) d.draw();
+    if (s.won || s.lost) this.endedAt ??= performance.now();
+    else this.endedAt = null;
+    // Let the final impact finish after defeat, when simulation time stops.
+    const particleTime =
+      s.elapsed +
+      (this.endedAt === null
+        ? 0
+        : Math.min(1.1, (performance.now() - this.endedAt) / 1000));
+    for (const particle of this.particles.update(
+      s,
+      this.reducedMotion,
+      particleTime,
+    )) {
+      const frame = Math.min(
+        ASSETS[particle.key].frames - 1,
+        Math.floor((particleTime - particle.at) / FRAME_SECONDS),
+      );
+      this.sprite(
+        particle.key,
+        particle.x * CELL,
+        particle.y * CELL,
+        particle.scale,
+        frame,
+      );
+    }
     for (const corpse of s.domain.corpses.filter((c) => !c.carrier)) {
       const x = corpse.x * CELL,
         y = corpse.y * CELL;

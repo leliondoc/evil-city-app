@@ -36,6 +36,8 @@ Les reliefs suivent le [guide des terrains de Pixel Frog](https://pixelfrog-asse
 
 La composition des abords utilise des silhouettes de tuiles découpées : anses, presqu’îles et terrasses superposées. Les escaliers, l’écume animée et les bosquets utilisent les images originales. Les formes du terrain servent également à exclure les décors de l’eau, des falaises et des escaliers ; les ponts et les trajets de ravitaillement gardent leurs accès.
 
+Les particules `Dust_01`, `Dust_02`, `Explosion_01`, `Explosion_02` et `Fire_01` du dossier `Particle FX` sont copiées sans retouche par `scripts/import-particle-fx.ps1`. Elles accompagnent le travail des bâtisseurs, les impacts réels, les fins de chantier, les changements de propriétaire et la destruction du manoir. Quelques flammes signalent les bâtiments sous 40 % de résistance. Ces effets restent visuels, suivent la pause et la vitesse de simulation et sont masqués avec la réduction des animations ; seul l’impact final termine sa lecture après la défaite.
+
 Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les cinq recrutables ne possèdent pas encore de comportements jouables.
 
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.

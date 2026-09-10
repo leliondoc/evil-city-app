@@ -1711,5 +1711,45 @@
     "frameWidth": 192,
     "frames": 6,
     "anchor": 0.67
+  },
+  "fx-dust-small": {
+    "src": "/tiny-swords/fx-dust-small.png",
+    "width": 512,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 8,
+    "anchor": 0.5
+  },
+  "fx-dust-large": {
+    "src": "/tiny-swords/fx-dust-large.png",
+    "width": 640,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 10,
+    "anchor": 0.5
+  },
+  "fx-impact": {
+    "src": "/tiny-swords/fx-impact.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.5
+  },
+  "fx-explosion": {
+    "src": "/tiny-swords/fx-explosion.png",
+    "width": 1920,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 10,
+    "anchor": 0.5
+  },
+  "fx-fire": {
+    "src": "/tiny-swords/fx-fire.png",
+    "width": 512,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 8,
+    "anchor": 0.5
   }
 }
