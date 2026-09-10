@@ -771,6 +771,7 @@ export class Renderer {
     return {
       x: x + (a.frameWidth / 2 - bounds.x - bounds.width / 2) * scale,
       y: ground + (a.height * a.anchor - bounds.y - bounds.height) * scale,
+      top: ground - bounds.height * scale,
       scale,
     };
   }
@@ -913,6 +914,7 @@ export class Renderer {
     for (const id of this.motions.keys())
       if (!alive.has(id)) this.motions.delete(id);
     const drawables: { depth: number; draw: () => void }[] = [];
+    const buildingBars = new Map<number, Point>();
     const combatBars: {
       x: number;
       y: number;
@@ -1017,6 +1019,8 @@ export class Renderer {
           kind === 'empty'
             ? null
             : this.buildingPlacement(key, x, y, preferredScale);
+      if (placement)
+        buildingBars.set(l.id, { x, y: placement.top - 10 - 8 / this.scale });
       const doorX = placement
         ? Math.round(
             placement.x - (ASSETS[key].frameWidth * placement.scale) / 2,
@@ -1055,8 +1059,6 @@ export class Renderer {
             );
             hit.selection = { type: 'lot', id: l.id };
             this.hits.push(hit);
-            if (l.construction)
-              this.bar(x, y - 35, l.construction.progress, 90);
             if (
               !this.reducedMotion &&
               !l.construction &&
@@ -1552,7 +1554,17 @@ export class Renderer {
       const x = (l.x + 4.4) * CELL,
         y = (l.y + 8) * CELL,
         labelY = y + (!l.owned && l.kind !== 'empty' ? 32 : 16);
-      if (l.hp < l.maxHp) this.bar(x, y - 10, l.hp / l.maxHp, 80);
+      const bar = buildingBars.get(l.id);
+      if (bar) {
+        if (l.hp < l.maxHp) this.bar(bar.x, bar.y, l.hp / l.maxHp, 80);
+        if (l.construction)
+          this.bar(
+            bar.x,
+            bar.y - (l.hp < l.maxHp ? 14 + 3 / this.scale : 0),
+            l.construction.progress,
+            90,
+          );
+      }
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
           x,
