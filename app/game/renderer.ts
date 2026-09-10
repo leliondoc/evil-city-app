@@ -5,6 +5,7 @@ import {
   GUILD_ROLES,
   HEROES,
   SUPPLIES,
+  RESOURCE_GAIN_LIFETIME,
   supplyActive,
   entrance,
   atEntrance,
@@ -28,12 +29,13 @@ import {
 } from './art';
 
 import {
-  BRIDGE,
+  BRIDGES,
   GROUND_PATCHES,
   HIGHLANDS,
   makeScenery,
   type Decoration,
 } from './scenery';
+import { ISLAND_PATHS } from './islandRoutes';
 
 const CELL = 32,
   SIZE = 32 * CELL,
@@ -84,16 +86,13 @@ export class Renderer {
   private reducedMotion = false;
   public selection: Selection = { type: 'lot', id: 7 };
   public buildKind: BuildingKind | null = null;
-  private get buildMode() {
-    return this.buildKind !== null;
-  }
   public ready = false;
 
   constructor(
     private canvas: HTMLCanvasElement,
     private getState: () => State,
     private onSelect: (s: Selection) => void,
-    private onMove: (p: Point) => void,
+    private onCommand: (p: Point, target: Selection | null) => void,
     private onReady: (error?: string) => void,
   ) {
     this.ctx = canvas.getContext('2d')!;
@@ -121,7 +120,13 @@ export class Renderer {
               !k.endsWith('avatar') &&
               k !== 'wood-panel' &&
               !k.startsWith('bestiary-') &&
-              !k.startsWith('ui-'),
+              (!k.startsWith('ui-') ||
+                [
+                  'ui-selection-corners',
+                  'ui-gold',
+                  'ui-wood-icon',
+                  'ui-food',
+                ].includes(k)),
           )
           .map(
             (key) =>
@@ -287,7 +292,8 @@ export class Renderer {
   }
   private contextMenu = (e: MouseEvent) => {
     e.preventDefault();
-    this.onMove(this.toWorld(this.point(e)));
+    const point = this.point(e);
+    this.onCommand(this.toWorld(point), this.hit(point));
   };
   private wheel = (e: WheelEvent) => {
     e.preventDefault();
@@ -401,24 +407,44 @@ export class Renderer {
         );
       }
     }
-    // Both ends rest on dry land; the eastern end meets the 64 px street.
-    const { left, right, top, bottom } = BRIDGE;
-    ctx.fillStyle = '#354957';
-    ctx.fillRect(left - 4, top + 4, right - left + 8, bottom - top + 4);
-    for (let x = left; x < right; x += 16) {
-      ctx.fillStyle = x % 32 ? '#a87e4e' : '#c1975c';
-      ctx.fillRect(x, top, 14, bottom - top);
+    // The same routes guide both the peasants and the visible dirt tracks.
+    ctx.strokeStyle = '#b9a67b';
+    ctx.lineWidth = 40;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (const path of ISLAND_PATHS) {
+      ctx.beginPath();
+      path.forEach((p, i) =>
+        i
+          ? ctx.lineTo(p.x * CELL, p.y * CELL)
+          : ctx.moveTo(p.x * CELL, p.y * CELL),
+      );
+      ctx.stroke();
     }
-    ctx.fillStyle = '#684c3b';
-    ctx.fillRect(left, top, right - left, 6);
-    ctx.fillRect(left, bottom - 6, right - left, 6);
-    // A kitchen garden inside an already blocked building plot.
-    for (let row = 0; row < 4; row++) {
-      ctx.fillStyle = '#94754e';
-      ctx.fillRect(890, 795 + row * 18, 60, 11);
-      for (let col = 0; col < 5; col++) {
-        ctx.fillStyle = '#d6ce79';
-        ctx.fillRect(892 + col * 12, 794 + row * 18, 5, 5);
+    ctx.lineCap = 'butt';
+    // Each bridge overlaps dry ground at both ends.
+    for (const { left, right, top, bottom } of BRIDGES) {
+      const vertical = bottom - top > right - left;
+      ctx.fillStyle = '#354957';
+      ctx.fillRect(left - 4, top + 4, right - left + 8, bottom - top + 4);
+      if (vertical) {
+        for (let y = top; y < bottom; y += 16) {
+          ctx.fillStyle = y % 32 ? '#a87e4e' : '#c1975c';
+          ctx.fillRect(left, y, right - left, 14);
+        }
+      } else {
+        for (let x = left; x < right; x += 16) {
+          ctx.fillStyle = x % 32 ? '#a87e4e' : '#c1975c';
+          ctx.fillRect(x, top, 14, bottom - top);
+        }
+      }
+      ctx.fillStyle = '#684c3b';
+      if (vertical) {
+        ctx.fillRect(left, top, 6, bottom - top);
+        ctx.fillRect(right - 6, top, 6, bottom - top);
+      } else {
+        ctx.fillRect(left, top, right - left, 6);
+        ctx.fillRect(left, bottom - 6, right - left, 6);
       }
     }
   }
@@ -636,30 +662,41 @@ export class Renderer {
     for (const id of this.motions.keys())
       if (!alive.has(id)) this.motions.delete(id);
     const drawables: { depth: number; draw: () => void }[] = [];
+    const combatBars: {
+      x: number;
+      y: number;
+      ratio: number;
+      enemy: boolean;
+    }[] = [];
     for (const l of s.lots) {
       const selected =
           this.selection.type === 'lot' && this.selection.id === l.id,
         hover = this.hover?.type === 'lot' && this.hover.id === l.id;
       if (selected || hover) {
-        ctx.fillStyle = selected ? '#ffdc7125' : '#fff4bd14';
-        ctx.fillRect(
-          l.x * CELL + 6,
-          l.y * CELL + 6,
-          8 * CELL - 12,
-          8 * CELL - 12,
-        );
-        ctx.strokeStyle = this.buildMode
-          ? '#ffe08a'
-          : selected
-            ? '#ffeeb5'
-            : '#ffebac88';
-        ctx.lineWidth = (selected ? 3 : 1.5) / this.scale;
-        ctx.strokeRect(
-          l.x * CELL + 6,
-          l.y * CELL + 6,
-          8 * CELL - 12,
-          8 * CELL - 12,
-        );
+        const corner = Math.min(20, 10 / this.scale);
+        const inset = 24;
+        const marker = this.images.get('ui-selection-corners')!;
+        ctx.save();
+        ctx.globalAlpha = selected ? 0.9 : 0.45;
+        for (const [right, bottom] of [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+          [1, 1],
+        ]) {
+          ctx.drawImage(
+            marker,
+            right * 96,
+            bottom * 96,
+            32,
+            32,
+            l.x * CELL + (right ? 8 * CELL - inset - corner : inset),
+            l.y * CELL + (bottom ? 8 * CELL - inset - corner : inset),
+            corner,
+            corner,
+          );
+        }
+        ctx.restore();
       }
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
@@ -734,7 +771,8 @@ export class Renderer {
         });
       const gate = entrance(l),
         gx = gate.x * CELL,
-        gy = gate.y * CELL;
+        // Put the feet on the street in front of the gate, clear of walls and fencing.
+        gy = (l.y + 8.25) * CELL;
       if (!l.owned && l.kind !== 'empty')
         for (
           let i = 0;
@@ -761,24 +799,26 @@ export class Renderer {
                     ? 'guard-attack'
                     : 'guard-idle',
                 heroX = gx - 72 + i * 48,
+                guardX = l.kind === 'hall' ? gx - 22 + i * 44 : gx,
                 selected =
                   role &&
                   this.selection.type === 'guildHero' &&
                   this.selection.id === i;
               const hit = this.sprite(
                 key,
-                role ? heroX : gx + 22 + i * 32,
+                role ? heroX : guardX,
                 gy,
                 role === 'lancer' ? 0.58 : role ? 0.78 : 0.65,
                 Math.floor(t * 10 + i) % ASSETS[key].frames,
                 1,
                 true,
               );
-              if (role) {
-                hit.selection = { type: 'guildHero', id: i };
-                this.hits.push(hit);
-                if (selected) this.label(heroX, gy + 24, HEROES[role].short);
-              }
+              hit.selection = role
+                ? { type: 'guildHero', id: i }
+                : { type: 'lot', id: l.id };
+              this.hits.push(hit);
+              if (role && selected)
+                this.label(heroX, gy + 24, HEROES[role].short);
             },
           });
       drawables.push({
@@ -853,9 +893,11 @@ export class Renderer {
             worker.x * CELL,
             worker.y * CELL,
             0.72,
-            Math.floor(
-              (worker.phase === 'harvest' ? worker.progress : t) * 10,
-            ) % ASSETS[key].frames,
+            worker.phase !== 'harvest' && worker.moving === false
+              ? 0
+              : Math.floor(
+                  (worker.phase === 'harvest' ? worker.progress : t) * 10,
+                ) % ASSETS[key].frames,
             1,
             worker.facing < 0,
           );
@@ -885,7 +927,7 @@ export class Renderer {
               this.selection.type === 'unit' && this.selection.id === u.id;
           const action: Animation = u.fighting
             ? 'attack'
-            : u.path.length
+            : u.path.length && u.moving !== false
               ? 'walk'
               : u.task === 'attack' &&
                   u.target !== null &&
@@ -936,13 +978,13 @@ export class Renderer {
                 4,
               );
           }
-          if (selected || u.hp < def.hp)
-            this.bar(
+          if (selected || u.hp < def.hp || action === 'attack')
+            combatBars.push({
               x,
-              y - (u.kind === 'troll' || u.kind === 'minotaur' ? 84 : 58),
-              u.hp / def.hp,
-              48,
-            );
+              y: y - (u.kind === 'troll' || u.kind === 'minotaur' ? 84 : 58),
+              ratio: u.hp / def.hp,
+              enemy: false,
+            });
         },
       });
     for (const e of s.enemies) {
@@ -957,7 +999,7 @@ export class Renderer {
             e,
             e.fighting || e.healTarget !== null
               ? 'attack'
-              : e.path.length
+              : e.path.length && e.moving !== false
                 ? 'walk'
                 : 'idle',
           );
@@ -965,7 +1007,7 @@ export class Renderer {
           const action: Animation =
             e.fighting || e.healTarget !== null
               ? 'attack'
-              : e.path.length
+              : e.path.length && e.moving !== false
                 ? 'walk'
                 : 'idle';
           if (!motion || motion.action !== action || motion.since > t) {
@@ -993,7 +1035,12 @@ export class Renderer {
           );
           hit.selection = { type: 'enemy', id: e.id };
           this.hits.push(hit);
-          this.bar(x, y - (e.kind === 'hero' ? 74 : 56), e.hp / e.maxHp, 44);
+          combatBars.push({
+            x,
+            y: y - (e.kind === 'hero' ? 74 : 56),
+            ratio: e.hp / e.maxHp,
+            enemy: true,
+          });
           if (e.healTarget !== null) {
             const ally = s.enemies.find((ally) => ally.id === e.healTarget);
             if (ally)
@@ -1039,29 +1086,23 @@ export class Renderer {
       );
     for (const l of s.lots) {
       const x = (l.x + 4.4) * CELL,
-        y = (l.y + 8) * CELL;
-      if (l.owned) {
-        ctx.fillStyle = '#b492df';
-        ctx.fillRect(l.x * CELL + 14, l.y * CELL + 18, 16, 16);
-        ctx.strokeStyle = '#443858';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(l.x * CELL + 14, l.y * CELL + 18, 16, 16);
-      }
+        y = (l.y + 8) * CELL,
+        labelY = y + (!l.owned && l.kind !== 'empty' ? 32 : 16);
       if (l.hp < l.maxHp) this.bar(x, y - 10, l.hp / l.maxHp, 80);
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
           x,
-          y + 16,
+          labelY,
           l.construction
             ? `Chantier · ${Math.floor(l.construction.progress * 100)} %`
             : BUILDINGS[l.kind].name,
         );
       else if (l.kind === 'hall' && !l.owned)
-        this.label(x, y + 16, 'La mairie');
+        this.label(x, labelY, 'La mairie');
       else if (l.kind === 'guild')
         this.label(
           x,
-          y + 16,
+          labelY,
           l.owned ? 'Guilde neutralisée' : '★ Guilde des héros',
           '#ffcf83',
         );
@@ -1084,6 +1125,68 @@ export class Renderer {
       const x = ((t * (7 + i * 2) + i * 640) % 2050) - 480;
       const y = [-110, 170, 980][i];
       this.sprite(`cloud-${i + 1}` as AssetKey, x, y, 0.95, 0, 0.32);
+    }
+    // Draw combat health above all sprites and effects, at a readable size when zoomed out.
+    const barWidth = Math.max(48, 32 / this.scale);
+    const barHeight = Math.max(6, 4 / this.scale);
+    const border = Math.max(2, 1 / this.scale);
+    for (const bar of combatBars) {
+      ctx.fillStyle = '#15212b';
+      ctx.fillRect(
+        bar.x - barWidth / 2 - border,
+        bar.y - border,
+        barWidth + border * 2,
+        barHeight + border * 2,
+      );
+      ctx.fillStyle = bar.enemy ? '#ef7972' : '#9ed779';
+      ctx.fillRect(
+        bar.x - barWidth / 2,
+        bar.y,
+        barWidth * Math.max(0, Math.min(1, bar.ratio)),
+        barHeight,
+      );
+    }
+    // Resource deliveries float above their contributor and the combat overlays.
+    for (const gain of s.resourceGains) {
+      const progress = Math.max(
+        0,
+        Math.min(1, (s.elapsed - gain.at) / RESOURCE_GAIN_LIFETIME),
+      );
+      const iconKey =
+        gain.kind === 'gold'
+          ? 'ui-gold'
+          : gain.kind === 'wood'
+            ? 'ui-wood-icon'
+            : 'ui-food';
+      const size = Math.max(18, 13 / this.scale);
+      const x = gain.x * CELL;
+      const y = gain.y * CELL - 84 - (this.reducedMotion ? 0 : progress * 32);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (1 - progress) * 3);
+      ctx.font = `bold ${size}px "Trebuchet MS", sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      const text = `+${gain.amount}`;
+      const width = ctx.measureText(text).width + size + 4;
+      ctx.strokeStyle = '#15212b';
+      ctx.lineWidth = Math.max(3, 2 / this.scale);
+      ctx.lineJoin = 'round';
+      ctx.strokeText(text, x - width / 2, y);
+      ctx.fillStyle =
+        gain.kind === 'gold'
+          ? '#ffe59b'
+          : gain.kind === 'wood'
+            ? '#c9f2a0'
+            : '#ffd0bd';
+      ctx.fillText(text, x - width / 2, y);
+      ctx.drawImage(
+        this.images.get(iconKey)!,
+        x + width / 2 - size,
+        y - size / 2,
+        size,
+        size,
+      );
+      ctx.restore();
     }
     this.frame = requestAnimationFrame(this.render);
   };

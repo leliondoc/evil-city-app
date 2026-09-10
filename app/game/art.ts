@@ -67,7 +67,7 @@ export function workerArt(worker: HumanWorker, site: ResourceSite): AssetKey {
       ? 'work'
       : worker.phase === 'return'
         ? 'carry'
-        : worker.path.length
+        : worker.path.length && worker.moving !== false
           ? 'walk'
           : 'idle';
   return `pawn-${site.kind}-${action}` as AssetKey;

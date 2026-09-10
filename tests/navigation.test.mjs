@@ -126,7 +126,7 @@ test('Supply access remains open without routing through the delivery building',
       assert.ok(p.y >= lot.y + 7 || p.x >= lot.x + 7);
     }
   }
-  tick(s, 65);
+  tick(s, 150); // Island routes now include the bridges and a return across town.
   for (const amount of Object.values(s.economy.delivered))
     assert.ok(amount >= 20);
 });

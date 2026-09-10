@@ -1,3 +1,9 @@
+import {
+  ISLAND_SITES,
+  isIslandPathCell,
+  isIslandGroundCell,
+} from './islandRoutes.ts';
+
 export type BuildingKind =
   | 'hq'
   | 'den'
@@ -18,6 +24,12 @@ export type Resources = {
   mana: number;
 };
 export type Cost = Partial<Resources>;
+export const RESOURCE_LABELS: Record<keyof Resources, string> = {
+  gold: 'or',
+  wood: 'bois',
+  food: 'viande',
+  mana: 'essence',
+};
 export type Selection =
   | {
       type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource' | 'guildHero';
@@ -54,7 +66,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   canteen: {
     name: 'Cantine des hordes',
     description:
-      'La boulangerie a changé de clientèle. Ses fournées nourrissent votre armée et permettent de recruter.',
+      'La cantine prépare la viande qui remplit votre réserve de vivres. Cette même réserve nourrit vos créatures et paie leur recrutement.',
     short: '+45 vivres/min',
     art: 2,
     cost: { gold: 80, wood: 25 },
@@ -219,6 +231,8 @@ export interface Lot {
   construction: null | { kind: BuildingKind; progress: number };
 }
 export interface Unit extends Point {
+  moving?: boolean;
+  gatheredWood?: number;
   id: number;
   kind: CreatureKind;
   hp: number;
@@ -252,7 +266,7 @@ export const HEROES = {
     hp: 140,
     damage: 12,
     speed: 1.5,
-    range: 1.4,
+    range: 1.9,
     description:
       'Le combattant de première ligne de la guilde. Il marche sur votre manoir et affronte vos créatures au corps à corps.',
   },
@@ -313,6 +327,7 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  moving?: boolean;
   id: number;
   kind: EnemyKind;
   role: HeroRole;
@@ -329,7 +344,7 @@ export interface Enemy extends Point {
 }
 export function enemyDefinition(enemy: Pick<Enemy, 'kind' | 'role'>) {
   return enemy.kind === 'guard'
-    ? { ...ENEMIES.guard, range: 1.4 }
+    ? { ...ENEMIES.guard, range: 1.9 }
     : HEROES[enemy.role];
 }
 export interface Projectile extends Point {
@@ -413,10 +428,11 @@ export interface ResourceSite extends Point {
 const SUPPLY_LOCATIONS: (Point & { kind: Supply; home: number; hp: number })[] =
   [
     { kind: 'food', home: 1, x: 19, y: 4.5, hp: 110 },
-    { kind: 'gold', home: 5, x: 29, y: 14.5, hp: 140 },
-    { kind: 'wood', home: 8, x: 28.75, y: 26.25, hp: 120 },
+    { kind: 'gold', home: 5, ...ISLAND_SITES.gold, hp: 140 },
+    { kind: 'wood', home: 8, ...ISLAND_SITES.wood, hp: 120 },
   ];
 export interface HumanWorker extends Point {
+  moving?: boolean;
   id: number;
   site: number;
   hp: number;
@@ -436,7 +452,9 @@ export function resourceApproach(
 ): Point {
   return site.kind === 'wood'
     ? { x: site.x + 0.75, y: site.y + 0.25 }
-    : { x: site.x, y: site.y };
+    : site.kind === 'gold'
+      ? { x: site.x - 1, y: site.y }
+      : { x: site.x, y: site.y };
 }
 export function suppliesAvailable(
   s: State,
@@ -528,7 +546,7 @@ function advanceEconomy(s: State, dt: number) {
   for (const w of s.workers) {
     const site = s.sites[w.site];
     if (w.hp <= 0 || !supplyActive(s, site)) continue;
-    walk(w, 1.8 * dt);
+    walk(s, w, 1.8 * dt);
     if (w.path.length) continue;
     if (w.phase === 'outbound') {
       w.phase = 'harvest';
@@ -545,6 +563,7 @@ function advanceEconomy(s: State, dt: number) {
     } else if (w.phase === 'return') {
       s.economy.stocks[site.kind] += w.cargo;
       s.economy.delivered[site.kind] += w.cargo;
+      resourceGain(s, w, site.kind, w.cargo);
       w.cargo = 0;
       w.phase = 'outbound';
       w.path = findPath(w, resourceApproach(site));
@@ -576,7 +595,26 @@ function cleanupSupplies(s: State) {
     (w) => w.hp > 0 && supplyActive(s, s.sites[w.site]),
   );
 }
+export interface ResourceGain extends Point {
+  id: number;
+  kind: Supply;
+  amount: number;
+  at: number;
+}
+export const RESOURCE_GAIN_LIFETIME = 1.8;
+function resourceGain(s: State, point: Point, kind: Supply, amount: number) {
+  if (amount <= 0) return;
+  s.resourceGains.push({
+    id: s.nextId++,
+    x: point.x,
+    y: point.y,
+    kind,
+    amount,
+    at: s.elapsed,
+  });
+}
 export interface State {
+  resourceGains: ResourceGain[];
   resources: Resources;
   economy: {
     stocks: Record<Supply, number>;
@@ -618,6 +656,7 @@ export function createGame(): State {
     'house',
   ];
   const state: State = {
+    resourceGains: [],
     resources: { gold: 300, wood: 125, food: 60, mana: 30 },
     economy: {
       stocks: { gold: 45, wood: 25, food: 35 },
@@ -743,7 +782,8 @@ export function announce(s: State, message: string) {
   s.journal = [message, ...s.journal].slice(0, 5);
 }
 function buildingBlocked(x: number, y: number) {
-  if (x < 0 || y < 0 || x >= BOARD || y >= BOARD) return true;
+  if (x < 0 || y < 0 || x >= BOARD || y >= BOARD)
+    return !isIslandGroundCell(x, y);
   return (
     STARTS.some((a) => x >= a + 1 && x <= a + 6) &&
     STARTS.some((b) => y >= b + 1 && y <= b + 5)
@@ -761,7 +801,7 @@ function supplyGateRow(lot: { id: number; y: number }) {
   return site ? Math.floor(resourceApproach(site).y) - lot.y : -1;
 }
 function walkableCell(x: number, y: number) {
-  if (x < 0 || y < 0 || x >= BOARD || y >= BOARD) return false;
+  if (x < 0 || y < 0 || x >= BOARD || y >= BOARD) return isIslandPathCell(x, y);
   const lot = navigationLot(x, y);
   if (!lot) return true; // The public street network.
   const dx = x - lot.x,
@@ -777,9 +817,12 @@ function navigationPoint(x: number, y: number): Point {
   const gate = x % 10 === 6 && (y % 10 >= 8 || y % 10 === 0);
   return { x: x + (gate ? 0 : 0.5), y: y + 0.5 };
 }
+const PATH_MIN_X = -14;
+const PATH_MAX_Y = 36;
+const PATH_WIDTH = BOARD - PATH_MIN_X;
 function navigationTarget(point: Point): Point {
-  let x = Math.min(BOARD - 1, Math.max(0, Math.floor(point.x)));
-  let y = Math.min(BOARD - 1, Math.max(0, Math.floor(point.y)));
+  let x = Math.min(BOARD - 1, Math.max(PATH_MIN_X, Math.floor(point.x)));
+  let y = Math.min(PATH_MAX_Y, Math.max(0, Math.floor(point.y)));
   const lot = navigationLot(x, y);
   if (!walkableCell(x, y) && lot) {
     x = lot.x + 4;
@@ -812,8 +855,8 @@ function crossesGate(
   );
 }
 export function findPath(from: Point, to: Point): Point[] {
-  const sx = Math.min(31, Math.max(0, Math.floor(from.x))),
-    sy = Math.min(31, Math.max(0, Math.floor(from.y)));
+  const sx = Math.min(BOARD - 1, Math.max(PATH_MIN_X, Math.floor(from.x))),
+    sy = Math.min(PATH_MAX_Y, Math.max(0, Math.floor(from.y)));
   const destination = navigationTarget(to),
     tx = Math.floor(destination.x),
     ty = Math.floor(destination.y);
@@ -825,16 +868,16 @@ export function findPath(from: Point, to: Point): Point[] {
     const lot = navigationLot(p.x, p.y);
     if (lot && p.x >= lot.x + 7) sideAccess.add(lot.id);
   }
-  const start = sy * BOARD + sx,
-    goal = ty * BOARD + tx;
+  const start = sy * PATH_WIDTH + sx - PATH_MIN_X,
+    goal = ty * PATH_WIDTH + tx - PATH_MIN_X;
   if (start === goal) return [destination];
-  const prev = new Int32Array(BOARD * BOARD).fill(-1);
+  const prev = new Int32Array(PATH_WIDTH * (PATH_MAX_Y + 1)).fill(-1);
   prev[start] = start;
   const queue = [start];
   for (let head = 0; head < queue.length && prev[goal] === -1; head++) {
     const id = queue[head],
-      x = id % BOARD,
-      y = Math.floor(id / BOARD);
+      x = (id % PATH_WIDTH) + PATH_MIN_X,
+      y = Math.floor(id / PATH_WIDTH);
     for (const [dx, dy] of [
       [1, 0],
       [0, 1],
@@ -843,7 +886,7 @@ export function findPath(from: Point, to: Point): Point[] {
     ]) {
       const nx = x + dx,
         ny = y + dy,
-        next = ny * BOARD + nx;
+        next = ny * PATH_WIDTH + nx - PATH_MIN_X;
       if (!walkableCell(nx, ny) || prev[next] !== -1) continue;
       const lot = navigationLot(nx, ny);
       // A third-party garden must never serve as a shortcut between streets.
@@ -856,7 +899,12 @@ export function findPath(from: Point, to: Point): Point[] {
   if (prev[goal] === -1) return [];
   const path: Point[] = [];
   for (let p = goal; p !== start; p = prev[p])
-    path.push(navigationPoint(p % BOARD, Math.floor(p / BOARD)));
+    path.push(
+      navigationPoint(
+        (p % PATH_WIDTH) + PATH_MIN_X,
+        Math.floor(p / PATH_WIDTH),
+      ),
+    );
   // Start at the current cell's waypoint so a fresh order cannot cut a corner.
   path.push(navigationPoint(sx, sy));
   return path.reverse();
@@ -971,8 +1019,15 @@ export function recruitReason(s: State, kind: CreatureKind) {
     return 'Le Minotaure exige une forge et une crypte.';
   if (population(s) + CREATURES[kind].population > capacity(s))
     return 'Plus de place. Construisez ou améliorez une tanière.';
-  if (!canAfford(s, CREATURES[kind].cost))
-    return 'Il manque des ressources pour ce recrutement.';
+  if (!canAfford(s, CREATURES[kind].cost)) {
+    const missing = Object.entries(CREATURES[kind].cost)
+      .filter(([key, amount]) => s.resources[key as keyof Resources] < amount)
+      .map(
+        ([key, amount]) =>
+          `${Math.ceil(amount - s.resources[key as keyof Resources])} ${RESOURCE_LABELS[key as keyof Resources]}`,
+      );
+    return `Il manque : ${missing.join(', ')}.${s.resources.food < (CREATURES[kind].cost.food ?? 0) ? ' La cantine produit la viande.' : ''}`;
+  }
   return '';
 }
 export function recruit(s: State, kind: CreatureKind) {
@@ -1016,6 +1071,67 @@ export function moveUnit(s: State, id: number, point: Point) {
   if (!u) return;
   assign(u, point, 'move', null);
 }
+/** Right-click orders apply only to the selected creature. */
+export function commandUnit(
+  s: State,
+  id: number,
+  target: Selection | null,
+  point: Point,
+): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  const unit = s.units.find((u) => u.id === id && u.hp > 0);
+  if (!unit) return 'Cette créature n’est plus disponible.';
+  const lot =
+    target?.type === 'lot'
+      ? s.lots[target.id]
+      : target?.type === 'guildHero'
+        ? s.lots[0]
+        : undefined;
+  const hostile =
+    target?.type === 'enemy' ||
+    target?.type === 'worker' ||
+    target?.type === 'resource' ||
+    (lot && !lot.owned && lot.kind !== 'empty');
+  if (hostile && unit.kind === 'goblin')
+    return 'Les gobelins construisent. Sélectionnez un combattant pour attaquer.';
+  if (target?.type === 'enemy') {
+    const enemy = s.enemies.find((e) => e.id === target.id && e.hp > 0);
+    if (!enemy) return 'Cet ennemi n’est plus dans le quartier.';
+    assign(unit, enemy, 'defend', enemy.id);
+    announce(
+      s,
+      `${CREATURES[unit.kind].name} intercepte ${enemyDefinition(enemy).name.toLowerCase()}.`,
+    );
+  } else if (lot && !lot.owned && lot.kind !== 'empty') {
+    const error = attackReason(s, lot.id);
+    if (error) return error;
+    assign(unit, entrance(lot), 'attack', lot.id);
+    announce(
+      s,
+      `${CREATURES[unit.kind].name} attaque ${BUILDINGS[lot.kind].name.toLowerCase()}.`,
+    );
+  } else if (target?.type === 'worker' || target?.type === 'resource') {
+    const error = raidSupplyReason(s, target);
+    if (error) return error;
+    const destination =
+      target.type === 'resource'
+        ? resourceApproach(s.sites.find((site) => site.id === target.id)!)
+        : s.workers.find((worker) => worker.id === target.id)!;
+    assign(
+      unit,
+      destination,
+      target.type === 'resource' ? 'sabotage' : 'hunt',
+      target.id,
+    );
+    announce(
+      s,
+      `${CREATURES[unit.kind].name} part couper le ravitaillement humain.`,
+    );
+  } else {
+    moveUnit(s, id, point);
+  }
+  return '';
+}
 export function upgradeCost(l: Lot): Cost {
   return { gold: 80 * l.level, wood: 35 * l.level };
 }
@@ -1050,6 +1166,12 @@ export function foodBalance(s: State) {
   );
   return { production, consumption, net: production - consumption };
 }
+const GOBLIN_WOOD_PER_SECOND = 0.22;
+function gathersWood(unit: Unit) {
+  return (
+    unit.kind === 'goblin' && (unit.task === 'idle' || unit.task === 'forage')
+  );
+}
 export function rates(s: State): Resources {
   const rate: Resources = { gold: 0, wood: 0, food: 0, mana: 0 };
   for (const l of s.lots.filter((l) => l.owned)) {
@@ -1069,8 +1191,7 @@ export function rates(s: State): Resources {
     if (l.kind === 'guild') rate.mana += 0.3 * n;
   }
   for (const u of s.units) {
-    if (u.kind === 'goblin' && (u.task === 'idle' || u.task === 'forage'))
-      rate.wood += 0.22;
+    if (gathersWood(u)) rate.wood += GOBLIN_WOOD_PER_SECOND;
   }
   rate.food = foodBalance(s).net / 60;
   return rate;
@@ -1095,23 +1216,110 @@ function nearest<T extends Point & { hp: number }>(
   }
   return closest;
 }
-function walk(u: Point & { path: Point[]; facing: number }, distance: number) {
+type Walker = Unit | Enemy | HumanWorker;
+function inStreet(point: Point) {
+  const x = Math.floor(point.x),
+    y = Math.floor(point.y);
+  return !navigationLot(x, y) && walkableCell(x, y);
+}
+function trafficDistance(
+  s: State,
+  actor: Walker,
+  dx: number,
+  dy: number,
+  distance: number,
+) {
+  const destination = {
+    x: actor.x + dx * distance,
+    y: actor.y + dy * distance,
+  };
+  // Courtyards stay free: units must be able to assemble at a building entrance.
+  if (!inStreet(actor) && !inStreet(destination)) return distance;
+  const ownArmy = s.units.some((unit) => unit.id === actor.id);
+  const goal = actor.path.at(-1);
+  let allowed = distance;
+  for (const other of [...s.units, ...s.enemies, ...s.workers]) {
+    if (other.id === actor.id || other.hp <= 0 || !inStreet(other)) continue;
+    const forward = (other.x - actor.x) * dx + (other.y - actor.y) * dy;
+    const sideways = Math.abs(
+      (other.x - actor.x) * dy - (other.y - actor.y) * dx,
+    );
+    const gap =
+      ('kind' in actor && actor.kind === 'minotaur') ||
+      ('kind' in other && other.kind === 'minotaur')
+        ? 1.6
+        : 1.15;
+    if (forward < -0.02 || forward > allowed + gap || sideways >= gap * 0.8)
+      continue;
+    const friendly = ownArmy === s.units.some((unit) => unit.id === other.id);
+    // Combat handles opponents; civilian traffic must never blockade construction.
+    if (!friendly) continue;
+    // The marching file opens into combat positions around an engaged ally.
+    if ('fighting' in other && other.fighting) continue;
+    const next = other.path.find(
+      (point) => distanceBetween(other, point) > 0.02,
+    );
+    if (!next) continue;
+    if (friendly && next) {
+      const length = distanceBetween(other, next);
+      const alignment =
+        ((next.x - other.x) * dx + (next.y - other.y) * dy) / length;
+      const otherGoal = other.path.at(-1);
+      const sameDestination =
+        goal && otherGoal && distanceBetween(goal, otherGoal) < 0.1;
+      if (sameDestination) {
+        const remaining = (walker: Walker) =>
+          walker.path.reduce(
+            (total, p, i) =>
+              total + distanceBetween(i ? walker.path[i - 1] : walker, p),
+            0,
+          );
+        const difference = remaining(actor) - remaining(other);
+        if (
+          difference < -0.02 ||
+          (Math.abs(difference) <= 0.02 && actor.id < other.id)
+        )
+          continue;
+      }
+      // Only follow the same convoy; crossing routes must remain open.
+      if (alignment < -0.5) continue;
+      if (Math.abs(alignment) < 0.5 && !sameDestination) continue;
+    }
+    // Let one member lead out when a group starts at exactly the same spot.
+    if (friendly && Math.abs(forward) < 0.02 && actor.id < other.id) continue;
+    allowed = Math.min(
+      allowed,
+      Math.max(0, forward - Math.sqrt(gap * gap - sideways * sideways)),
+    );
+  }
+  return allowed;
+}
+function walk(s: State, u: Walker, distance: number) {
+  u.moving = false;
   while (u.path.length && distance > 0) {
     const p = u.path[0],
       dx = p.x - u.x,
       dy = p.y - u.y,
       d = Math.hypot(dx, dy);
+    if (d < 0.00001) {
+      u.path.shift();
+      continue;
+    }
     if (Math.abs(dx) > 0.001) u.facing = dx >= 0 ? 1 : -1;
-    if (d <= distance) {
+    const wanted = Math.min(d, distance);
+    const advance = trafficDistance(s, u, dx / d, dy / d, wanted);
+    if (advance < 0.00001) break;
+    u.moving = true;
+    if (d <= advance) {
       u.x = p.x;
       u.y = p.y;
       u.path.shift();
-      distance -= d;
     } else {
-      u.x += (dx / d) * distance;
-      u.y += (dy / d) * distance;
-      distance = 0;
+      u.x += (dx / d) * advance;
+      u.y += (dy / d) * advance;
     }
+    distance -= advance;
+    if (advance < wanted) break;
   }
 }
 function armyDamage(s: State, u: Unit) {
@@ -1388,7 +1596,108 @@ function advanceEnemies(s: State, dt: number) {
       }
       pursue(e, destination);
     }
-    walk(e, def.speed * dt);
+    walk(s, e, def.speed * dt);
+  }
+}
+
+/** Keep bodies apart during fights without pushing them through walls or fences. */
+function separateCombatants(s: State, dt: number) {
+  const bodies = [
+    ...s.units
+      .filter((u) => u.hp > 0)
+      .map((actor) => ({ actor, enemy: false })),
+    ...s.enemies
+      .filter((actor) => actor.hp > 0)
+      .map((actor) => ({ actor, enemy: true })),
+  ];
+  const remaining = new Map(bodies.map(({ actor }) => [actor.id, dt * 1.8]));
+  const goals = new Map(
+    bodies.map(({ actor }) => [actor.id, actor.path.at(-1)]),
+  );
+  const moved = new Set<number>();
+  const safeStep = (from: Point, to: Point) => {
+    const steps = Math.max(1, Math.ceil(distanceBetween(from, to) / 0.08));
+    let x = Math.floor(from.x),
+      y = Math.floor(from.y);
+    const sideAccess = new Set<number>();
+    const lot = navigationLot(from.x, from.y);
+    if (lot && from.x >= lot.x + 7) sideAccess.add(lot.id);
+    for (let i = 1; i <= steps; i++) {
+      const nx = Math.floor(from.x + ((to.x - from.x) * i) / steps);
+      const ny = Math.floor(from.y + ((to.y - from.y) * i) / steps);
+      if (!walkableCell(nx, ny)) return false;
+      // Do not cut a blocked corner, even during a small diagonal nudge.
+      if (
+        nx !== x &&
+        ny !== y &&
+        (!walkableCell(nx, y) ||
+          !walkableCell(x, ny) ||
+          !crossesGate(x, y, nx, y, sideAccess) ||
+          !crossesGate(nx, y, nx, ny, sideAccess) ||
+          !crossesGate(x, y, x, ny, sideAccess) ||
+          !crossesGate(x, ny, nx, ny, sideAccess))
+      )
+        return false;
+      if (!crossesGate(x, y, nx, ny, sideAccess)) return false;
+      x = nx;
+      y = ny;
+    }
+    return true;
+  };
+  const nudge = (actor: Unit | Enemy, dx: number, dy: number) => {
+    // Let marching and retreating units finish their route instead of repeatedly
+    // snapping their path back to a cell center when a nearby enemy attacks.
+    if (!actor.fighting) return;
+    const distance = Math.hypot(dx, dy);
+    const budget = Math.min(distance, remaining.get(actor.id) ?? 0);
+    if (budget <= 0 || distance <= 0) return;
+    dx *= budget / distance;
+    dy *= budget / distance;
+    for (const [x, y] of [
+      [dx, dy],
+      [dx, 0],
+      [0, dy],
+    ]) {
+      const next = { x: actor.x + x, y: actor.y + y };
+      if (Math.hypot(x, y) < 0.001 || !safeStep(actor, next)) continue;
+      actor.x = next.x;
+      actor.y = next.y;
+      remaining.set(
+        actor.id,
+        (remaining.get(actor.id) ?? 0) - Math.hypot(x, y),
+      );
+      moved.add(actor.id);
+      return;
+    }
+  };
+  for (let pass = 0; pass < 2; pass++)
+    for (let i = 0; i < bodies.length; i++)
+      for (let j = i + 1; j < bodies.length; j++) {
+        const a = bodies[i],
+          b = bodies[j];
+        if (!a.actor.fighting && !b.actor.fighting) continue;
+        const gap = a.enemy === b.enemy ? 1.05 : 1.65;
+        const distance = distanceBetween(a.actor, b.actor);
+        if (distance >= gap || !clearShot(a.actor, b.actor)) continue;
+        // Stable direction also separates actors starting at precisely the same position.
+        const angle =
+          (((a.actor.id * 17 + b.actor.id * 31) % 16) * Math.PI) / 8;
+        const dx =
+          distance > 0.001
+            ? (b.actor.x - a.actor.x) / distance
+            : Math.cos(angle);
+        const dy =
+          distance > 0.001
+            ? (b.actor.y - a.actor.y) / distance
+            : Math.sin(angle);
+        const amount = (gap - distance) / 2;
+        nudge(a.actor, -dx * amount, -dy * amount);
+        nudge(b.actor, dx * amount, dy * amount);
+      }
+  // Reconnect displaced actors to the street graph before they resume their orders.
+  for (const { actor } of bodies) {
+    const goal = goals.get(actor.id);
+    if (moved.has(actor.id) && goal) actor.path = findPath(actor, goal);
   }
 }
 export function tick(s: State, dt: number) {
@@ -1403,6 +1712,9 @@ export function tick(s: State, dt: number) {
 }
 function tickStep(s: State, dt: number) {
   s.elapsed += dt;
+  s.resourceGains = s.resourceGains.filter(
+    (gain) => s.elapsed - gain.at < RESOURCE_GAIN_LIFETIME,
+  );
   advanceEconomy(s, dt);
   if (humanLevel(s) > s.humanLevelAnnounced) {
     s.humanLevelAnnounced = humanLevel(s);
@@ -1415,6 +1727,16 @@ function tickStep(s: State, dt: number) {
   const income = rates(s);
   for (const key of Object.keys(income) as (keyof Resources)[])
     s.resources[key] = Math.max(0, s.resources[key] + income[key] * dt);
+  // Aggregate each goblin's already credited fractional income into visible +1 gains.
+  for (const unit of s.units) {
+    if (!gathersWood(unit)) continue;
+    unit.gatheredWood = (unit.gatheredWood ?? 0) + GOBLIN_WOOD_PER_SECOND * dt;
+    const amount = Math.floor(unit.gatheredWood);
+    if (amount > 0) {
+      unit.gatheredWood -= amount;
+      resourceGain(s, unit, 'wood', amount);
+    }
+  }
   for (const r of s.recruits) r.remaining -= dt;
   for (const r of s.recruits.filter((r) => r.remaining <= 0)) {
     spawnUnit(s, r.kind);
@@ -1442,7 +1764,7 @@ function tickStep(s: State, dt: number) {
       const threat = nearest(
         u,
         s.enemies.filter((e) => clearShot(u, e)),
-        1.5,
+        1.9,
       );
       if (threat) {
         u.fighting = true;
@@ -1487,7 +1809,17 @@ function tickStep(s: State, dt: number) {
         }
       } else if (approach) pursue(u, approach);
     }
-    if (!u.fighting) walk(u, CREATURES[u.kind].speed * dt);
+    if (!u.fighting) {
+      // Resume the siege after a skirmish has displaced a unit from the gate.
+      if (
+        u.task === 'attack' &&
+        u.target !== null &&
+        !u.path.length &&
+        !atEntrance(u, s.lots[u.target])
+      )
+        u.path = findPath(u, entrance(s.lots[u.target]));
+      walk(s, u, CREATURES[u.kind].speed * dt);
+    }
     if (!u.path.length) {
       if (u.task === 'move' || u.task === 'forage') {
         u.task = 'idle';
@@ -1592,6 +1924,7 @@ function tickStep(s: State, dt: number) {
   }
   cleanupSupplies(s);
   advanceEnemies(s, dt);
+  separateCombatants(s, dt);
   advanceProjectiles(s, dt);
   const defeated = s.enemies.filter((e) => e.hp <= 0);
   s.defeatedEnemies += defeated.length;

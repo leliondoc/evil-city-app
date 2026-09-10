@@ -66,6 +66,7 @@ for kind, tool, cargo in [('wood', 'Axe', 'Wood'), ('gold', 'Pickaxe', 'Gold'), 
 ui = 'UI Elements/UI Elements'
 for key, relative in {
     'ui-paper': 'Papers/RegularPaper.png', 'ui-banner': 'Banners/Banner.png',
+    'ui-building-frame': 'Papers/SpecialPaper.png',
     'ui-wood': 'Wood Table/WoodTable.png', 'ui-ribbons': 'Ribbons/BigRibbons.png',
     'ui-button': 'Buttons/BigBlueButton_Regular.png',
     'ui-button-pressed': 'Buttons/BigBlueButton_Pressed.png',
@@ -74,6 +75,7 @@ for key, relative in {
     'ui-cursor': 'Cursors/Cursor_01.png',
     'ui-cursor-hand': 'Cursors/Cursor_02.png',
     'ui-cursor-forbidden': 'Cursors/Cursor_03.png',
+    'ui-selection-corners': 'Cursors/Cursor_04.png',
     'ui-play': 'Icons/Icon_07.png',
     'ui-back': 'Icons/Icon_08.png',
     'ui-settings': 'Icons/Icon_10.png',

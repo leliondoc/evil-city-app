@@ -2,11 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Coins,
-  Trees,
-  Wheat,
   Sparkles,
   Users,
+  Swords,
   Pause,
   BookOpen,
   Plus,
@@ -26,6 +24,7 @@ import {
 import {
   GameButton as Button,
   PackIcon,
+  PanelSkin,
   ResourceIcon,
   RibbonSkin,
 } from './PackUI';
@@ -52,6 +51,7 @@ import {
 import {
   BUILDINGS,
   CREATURES,
+  RESOURCE_LABELS,
   enemyDefinition,
   BUILD_OPTIONS,
   RECRUIT_OPTIONS,
@@ -79,6 +79,7 @@ import {
   upgradeReason,
   upgradeCost,
   moveUnit,
+  commandUnit,
   entrance,
   type State,
   type Selection,
@@ -88,7 +89,6 @@ import {
   type Point,
 } from './engine';
 
-const icons = { gold: Coins, wood: Trees, food: Wheat, mana: Sparkles };
 const unitsText = {
   idle: 'Disponible',
   forage: 'Récupère du bois',
@@ -99,14 +99,25 @@ const unitsText = {
   sabotage: 'Sabote la production',
   hunt: 'Attaque un paysan',
 };
-function Costs({ cost }: { cost: Cost }) {
+function Costs({ cost, available }: { cost: Cost; available?: Cost }) {
   return (
     <div className="card-cost">
       {Object.entries(cost).map(([key, value]) => {
-        const Icon = icons[key as keyof Cost];
+        const resource = key as keyof Cost;
+        const missing =
+          available !== undefined && (available[resource] ?? 0) < value;
         return (
-          <span key={key}>
-            <Icon size={12} />
+          <span
+            key={key}
+            className={missing ? 'cost-missing' : undefined}
+            title={`${value} ${RESOURCE_LABELS[resource]}${missing ? ` · manque ${Math.ceil(value - (available?.[resource] ?? 0))}` : ''}`}
+            aria-label={`${value} ${RESOURCE_LABELS[resource]}`}
+          >
+            {resource === 'mana' ? (
+              <Sparkles size={14} />
+            ) : (
+              <ResourceIcon kind={resource} />
+            )}
             {value}
           </span>
         );
@@ -184,18 +195,19 @@ export default function Game() {
     },
     [notify],
   );
-  const move = useCallback(
-    (point: Point) => {
+  const command = useCallback(
+    (point: Point, target: Selection | null) => {
       const selected = selectionRef.current;
       if (selected.type === 'unit') {
-        moveUnit(stateRef.current, selected.id, point);
-        refresh((n) => n + 1);
+        setPendingBuild(null);
+        if (run((state) => commandUnit(state, selected.id, target, point)))
+          setFeedback('');
       } else
         notify(
-          'Sélectionnez une créature pour lui donner un ordre de déplacement.',
+          'Sélectionnez une de vos créatures pour lui donner un ordre au clic droit.',
         );
     },
-    [notify],
+    [notify, run],
   );
 
   useEffect(() => {
@@ -203,7 +215,7 @@ export default function Game() {
       canvasRef.current!,
       () => stateRef.current,
       select,
-      move,
+      command,
       (error) => {
         if (error) setArtError(error);
         else setReady(true);
@@ -233,7 +245,7 @@ export default function Game() {
       clearInterval(interval);
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
     };
-  }, [select, move]);
+  }, [select, command]);
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.selection = selection;
@@ -414,12 +426,8 @@ export default function Game() {
             src={`${import.meta.env.BASE_URL}evil-city-logo.png`}
             width={40}
             height={40}
-            alt=""
+            alt="Evil City"
           />
-          <div>
-            <h1>EVIL CITY</h1>
-            <small>LE PREMIER QUARTIER</small>
-          </div>
         </div>
         <div className="resources" aria-label="Vos ressources">
           {(
@@ -430,7 +438,6 @@ export default function Game() {
               { key: 'mana', label: 'Essence', className: 'mana' },
             ] as const
           ).map(({ key, label, className }) => {
-            const Icon = icons[key];
             const ResourceTag = key === 'food' ? 'button' : 'div';
             const rate = Math.round(income[key] * 60);
             return (
@@ -450,7 +457,7 @@ export default function Game() {
                 onClick={key === 'food' ? showFoodProduction : undefined}
               >
                 {key === 'mana' ? (
-                  <Icon strokeWidth={1.6} />
+                  <Sparkles strokeWidth={1.6} />
                 ) : (
                   <ResourceIcon kind={key} />
                 )}
@@ -470,18 +477,6 @@ export default function Game() {
                       {rate}/min
                     </span>
                   </span>
-                  {key === 'food' && (
-                    <span className="food-source">
-                      {food.production
-                        ? `Cantines : +${food.production}/min →`
-                        : s.lots.some(
-                              (l) =>
-                                l.owned && l.construction?.kind === 'canteen',
-                            )
-                          ? 'Cantine en chantier →'
-                          : 'Construire une cantine →'}
-                    </span>
-                  )}
                 </div>
               </ResourceTag>
             );
@@ -580,7 +575,7 @@ export default function Game() {
               </p>
               <p className="reason">
                 Clic dans le vide ou Échap : désélectionner. Clic droit :
-                déplacer la créature sélectionnée.
+                déplacer la créature sélectionnée ou attaquer une cible ennemie.
               </p>
             </section>
           ) : selection.type === 'worker' || selection.type === 'resource' ? (
@@ -634,8 +629,11 @@ export default function Game() {
                   'Unité disparue'}
               </h3>
               <div
-                className={`selection-art${chosenKind === 'empty' ? ' empty-art' : ''}`}
+                className={`selection-art${chosenKind === 'empty' ? ' empty-art' : selectedLot && chosenKind ? ' building-art' : ''}`}
               >
+                {selectedLot && chosenKind && chosenKind !== 'empty' && (
+                  <PanelSkin kind="paper" asset="ui-building-frame" />
+                )}
                 {selectedEnemy ? (
                   <Sprite
                     asset={
@@ -644,7 +642,8 @@ export default function Game() {
                         selectedEnemy.fighting ||
                           selectedEnemy.healTarget !== null
                           ? 'attack'
-                          : selectedEnemy.path.length
+                          : selectedEnemy.path.length &&
+                              selectedEnemy.moving !== false
                             ? 'walk'
                             : 'idle',
                       )[0]
@@ -657,7 +656,8 @@ export default function Game() {
                     action={
                       selectedUnit.fighting
                         ? 'attack'
-                        : selectedUnit.path.length
+                        : selectedUnit.path.length &&
+                            selectedUnit.moving !== false
                           ? 'walk'
                           : selectedUnit.task === 'attack'
                             ? 'attack'
@@ -713,7 +713,13 @@ export default function Game() {
                       <Shield size={14} />
                       {Math.ceil(selectedUnit.hp)} / {creature.hp}
                     </span>
-                    <span>{unitsText[selectedUnit.task]}</span>
+                    <span>
+                      {selectedUnit.path.length &&
+                      selectedUnit.moving === false &&
+                      !selectedUnit.fighting
+                        ? 'Attend le passage'
+                        : unitsText[selectedUnit.task]}
+                    </span>
                   </div>
                   <Progress
                     className="healthbar"
@@ -735,7 +741,8 @@ export default function Game() {
                     Rentrer au manoir
                   </Button>
                   <p className="reason">
-                    Clic droit dans la rue pour déplacer cette créature.
+                    Clic droit au sol : déplacer cette créature. Sur un ennemi
+                    ou un bâtiment ennemi : attaquer avec cette créature.
                   </p>
                 </>
               )}
@@ -1098,11 +1105,18 @@ export default function Game() {
             ))}
           </div>
           <p className="army-note">
-            {s.recruits.length
-              ? `${s.recruits.length} créature${s.recruits.length > 1 ? 's' : ''} en route…`
-              : s.resources.food === 0
-                ? 'Les ventres vides affaiblissent vos troupes.'
-                : 'Une armée commence par un bon repas.'}
+            {s.recruits.length ? (
+              `${s.recruits.length} créature${s.recruits.length > 1 ? 's' : ''} en route…`
+            ) : s.resources.food < 20 ? (
+              <button
+                className="army-food-shortcut"
+                onClick={showFoodProduction}
+              >
+                Viande insuffisante ? Voir la cantine →
+              </button>
+            ) : (
+              'Une armée commence par un bon repas.'
+            )}
           </p>
         </section>
         <Tabs
@@ -1119,7 +1133,7 @@ export default function Game() {
               Bâtiments
             </TabsTrigger>
             <TabsTrigger value="recruit">
-              <PackIcon asset="ui-sword" />
+              <Swords size={14} />
               Créatures
             </TabsTrigger>
           </TabsList>
@@ -1162,8 +1176,10 @@ export default function Game() {
                     <img src={portrait(kind)} alt="" />
                     <div>
                       <strong>{c.name}</strong>
-                      <small>{c.job}</small>
-                      <Costs cost={c.cost} />
+                      <small className={reason ? 'recruit-blocker' : undefined}>
+                        {reason || c.job}
+                      </small>
+                      <Costs cost={c.cost} available={s.resources} />
                     </div>
                     <span className="keyhint">{i + 1}</span>
                   </button>

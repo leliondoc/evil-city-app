@@ -212,7 +212,11 @@ test('The normal economy supports a victory after repelling a raid', () => {
   }
   if (s.enemies.length) {
     assert.equal(intercept(s, s.enemies[0].id), '');
-    until(s, () => s.won);
+    until(s, () => {
+      if (s.enemies.length && !s.units.some((u) => u.task === 'defend'))
+        assert.equal(intercept(s, s.enemies[0].id), '');
+      return s.won;
+    });
   }
   assert.equal(s.won, true);
   assert.ok(s.defeatedEnemies >= 2);

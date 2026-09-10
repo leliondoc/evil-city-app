@@ -50,12 +50,17 @@ test('Scenery rejects roots in water, foam on grass, cliff faces and streets', (
   assert.ok(scenery.filter((d) => d.key.startsWith('tree-')).length >= 30);
   assert.ok(scenery.filter((d) => d.key.startsWith('water-rock-')).length >= 4);
 });
-test('Each supply site occupies its delivery building’s garden and remains reachable', () => {
+test('Wood and gold occupy dry islands and all supply sites remain reachable', () => {
   const s = createGame();
   for (const site of s.sites) {
     const home = s.lots[site.home];
-    assert.ok(site.x > home.x && site.x < home.x + 8);
-    assert.ok(site.y > home.y && site.y < home.y + 8);
+    if (site.kind === 'food') {
+      assert.ok(site.x > home.x && site.x < home.x + 8);
+      assert.ok(site.y > home.y && site.y < home.y + 8);
+    } else {
+      assert.ok(site.x < 0);
+      assert.ok(isDryGround(site.x * 32, site.y * 32));
+    }
     assert.equal(isStreet(site.x * 32, site.y * 32), false);
     const destination = resourceApproach(site);
     const path = findPath(entrance(home), destination);
@@ -74,7 +79,11 @@ test('The lumberjack reaches the side of the trunk, faces it and completes repea
   const destination = resourceApproach(site);
   let arrivals = 0;
   let previousPhase = 'outbound';
-  for (let i = 0; i < 1200; i++) {
+  for (const mobilization of Object.values(s.mobilization)) {
+    mobilization.active = true;
+    mobilization.nextRaidAt = 10000;
+  }
+  for (let i = 0; i < 4400; i++) {
     tick(s, 0.05);
     const worker = s.workers.find((worker) => worker.site === site.id);
     if (worker.phase === 'harvest') {

@@ -1,5 +1,6 @@
 import type { AssetKey } from './art';
 import type { Lot } from './engine';
+import { ISLAND_BRIDGES, inIslandClearing } from './islandRoutes.ts';
 
 export type GroundPatch = {
   key: AssetKey;
@@ -15,13 +16,14 @@ export const GROUND_PATCHES: GroundPatch[] = [
   { key: 'terrain-4', x: 896, y: 320, w: 7, h: 12 },
   // This island reaches the western end of the bridge at y = 640.
   { key: 'terrain-5', x: -448, y: 192, w: 5, h: 9 },
-  { key: 'terrain-2', x: -384, y: 768, w: 5, h: 6 },
+  { key: 'terrain-2', x: -384, y: 832, w: 5, h: 5 },
 ];
 export const HIGHLANDS: GroundPatch[] = [
   { key: 'terrain-5', x: 1024, y: -192, w: 7, h: 5 },
   { key: 'terrain-4', x: -352, y: -160, w: 4, h: 3 },
 ];
-export const BRIDGE = { left: -176, right: 16, top: 640, bottom: 704 };
+export const BRIDGES = ISLAND_BRIDGES;
+export const BRIDGE = BRIDGES[0];
 
 function inside(
   p: GroundPatch,
@@ -68,10 +70,13 @@ export function sceneryFits(d: Decoration) {
         )
           return false;
         if (
-          x >= BRIDGE.left &&
-          x <= BRIDGE.right &&
-          y >= BRIDGE.top - 8 &&
-          y <= BRIDGE.bottom + 8
+          BRIDGES.some(
+            (bridge) =>
+              x >= bridge.left - 8 &&
+              x <= bridge.right + 8 &&
+              y >= bridge.top - 8 &&
+              y <= bridge.bottom + 8,
+          )
         )
           return false;
       } else if (!isDryGround(x, y) || isStreet(x, y)) return false;
@@ -96,8 +101,8 @@ export function makeScenery(lots: Lot[]): Decoration[] {
         scale: 0.75,
       },
     );
-    // The eastern edge of these gardens is reserved for their supply site.
-    if (![1, 5, 8].includes(n))
+    // Only the food supply remains inside its delivery building's garden.
+    if (n !== 1)
       decorations.push({
         x: (lot.x + 7) * 32,
         y: (lot.y + 2) * 32,
@@ -148,12 +153,10 @@ export function makeScenery(lots: Lot[]): Decoration[] {
       scale: 0.85,
     });
   decorations.push(
-    { x: -275, y: 930, key: 'sheep', scale: 0.75 },
-    { x: -190, y: 970, key: 'sheep', scale: 0.65 },
-    { x: 1170, y: 45, key: 'gold-rock', scale: 1 },
-    { x: 1280, y: 70, key: 'gold-rock', scale: 0.8 },
     { x: 1260, y: 880, key: 'rock-3', scale: 1.4 },
     { x: -265, y: -48, key: 'rock-4', scale: 1.2 },
   );
-  return decorations.filter(sceneryFits);
+  return decorations.filter(
+    (d) => sceneryFits(d) && !inIslandClearing(d.x, d.y),
+  );
 }

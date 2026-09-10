@@ -1646,5 +1646,21 @@
     "frameWidth": 64,
     "frames": 1,
     "anchor": 0.67
+  },
+  "ui-building-frame": {
+    "src": "/tiny-swords/ui-building-frame.png",
+    "width": 320,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "ui-selection-corners": {
+    "src": "/tiny-swords/ui-selection-corners.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
   }
 }

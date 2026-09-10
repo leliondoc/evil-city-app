@@ -15,6 +15,7 @@ import {
   rates,
   upgrade,
   entrance,
+  intercept,
 } from '../app/game/engine.ts';
 
 function advance(s, seconds) {
@@ -32,17 +33,23 @@ test('Playable opening reaches victory with earned resources and normal recruits
   assert.equal(build(s, 4, 'forge'), '');
   until(s, () => s.lots[7].kind === 'canteen' && s.lots[4].kind === 'forge');
   assert.ok(s.units.every((u) => u.kind === 'goblin'));
-  for (let i = 0; i < 4; i++) {
+  // Staggered arrivals expose the first fighter; fund a fifth troll for the siege.
+  for (let i = 0; i < 5; i++) {
     until(s, () => s.resources.gold >= 60 && s.resources.food >= 20);
     assert.equal(recruit(s, 'troll'), '');
   }
-  until(s, () => s.units.filter((u) => u.kind === 'troll').length === 4);
+  until(s, () => s.units.filter((u) => u.kind === 'troll').length === 5);
   assert.equal(attack(s, 0), '');
   until(s, () => s.lots[0].owned);
   assert.equal(attack(s, 1), '');
   until(s, () => s.lots[1].owned);
   assert.equal(attack(s, 2), '');
-  until(s, () => s.won);
+  until(s, () => s.lots[2].owned);
+  until(s, () => {
+    if (s.enemies.length && !s.units.some((u) => u.task === 'defend'))
+      assert.equal(intercept(s, s.enemies[0].id), '');
+    return s.won;
+  });
   assert.ok(s.lots[2].owned);
   assert.ok(s.units.some((u) => u.kind === 'troll'));
   assert.ok(
