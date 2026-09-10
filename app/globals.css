@@ -2180,3 +2180,32 @@ svg {
     url('/tiny-swords/ui-cursor-forbidden.png') 32 32,
     not-allowed;
 }
+
+.selected-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.selected-group button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  background: #24343d;
+  color: #ffe5a3;
+  border-radius: 6px;
+}
+.selected-group button:hover,
+.selected-group button:focus-visible {
+  background: #3d555c;
+  outline: 1px solid #bfa971;
+}
+.selected-group img {
+  width: 48px;
+  height: 48px;
+}
+.selected-group small {
+  color: #bfcdca;
+}

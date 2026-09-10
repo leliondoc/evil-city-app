@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Renderer } from './renderer';
+import { selectedUnitIds, unitSelection } from './selection';
 import { Sprite } from './Sprite';
 import { ThreatPanel } from './ThreatPanel';
 import { GuildRoster, GuildHeroSelection } from './GuildPanel';
@@ -79,7 +80,7 @@ import {
   upgradeReason,
   upgradeCost,
   moveUnit,
-  commandUnit,
+  commandUnits,
   entrance,
   type State,
   type Selection,
@@ -179,6 +180,8 @@ export default function Game() {
   const select = useCallback(
     (next: Selection) => {
       setSelection(next);
+      selectionRef.current = next;
+      if (next.type === 'unit' || next.type === 'units') setPendingBuild(null);
       if (next.type === 'none') {
         setPendingBuild(null);
         setFeedback('');
@@ -198,9 +201,13 @@ export default function Game() {
   const command = useCallback(
     (point: Point, target: Selection | null) => {
       const selected = selectionRef.current;
-      if (selected.type === 'unit') {
+      if (selected.type === 'unit' || selected.type === 'units') {
         setPendingBuild(null);
-        if (run((state) => commandUnit(state, selected.id, target, point)))
+        if (
+          run((state) =>
+            commandUnits(state, selectedUnitIds(selected), target, point),
+          )
+        )
           setFeedback('');
       } else
         notify(
@@ -286,6 +293,7 @@ export default function Game() {
         setPaused((p) => !p);
       }
       if (event.key === 'Escape') {
+        rendererRef.current?.cancelGesture();
         setPendingBuild(null);
         setFeedback('');
         setSelection({ type: 'none' });
@@ -316,6 +324,16 @@ export default function Game() {
   }, [modal, tab, chooseBuild, chooseRecruit, run]);
 
   const s = stateRef.current;
+  const group = s.units.filter(
+    (u) => u.hp > 0 && selectedUnitIds(selection).includes(u.id),
+  );
+  useEffect(() => {
+    const ids = selectedUnitIds(selection);
+    const living = ids.filter((id) =>
+      s.units.some((u) => u.id === id && u.hp > 0),
+    );
+    if (living.length !== ids.length) select(unitSelection(living));
+  }, [selection, s.units, select]);
   const selectedLot =
     selection.type === 'lot' ? s.lots[selection.id] : undefined;
   const selectedUnit =
@@ -565,13 +583,53 @@ export default function Game() {
               </div>
             </details>
           </section>
-          {selection.type === 'none' ? (
+          {selection.type === 'units' ? (
+            <section
+              className="selection-panel"
+              aria-label="Groupe sélectionné"
+            >
+              <p className="eyebrow">Vos créatures</p>
+              <h3 className="selection-name">
+                {group.length} unités sélectionnées
+              </h3>
+              <div className="selected-group">
+                {group.map((unit) => (
+                  <button
+                    key={unit.id}
+                    onClick={() => select({ type: 'unit', id: unit.id })}
+                    aria-label={`Sélectionner ${CREATURES[unit.kind].name}, ${Math.ceil(unit.hp)} PV`}
+                  >
+                    <img
+                      src={portrait(unit.kind)}
+                      alt=""
+                      width={48}
+                      height={48}
+                    />
+                    <span>{CREATURES[unit.kind].name}</span>
+                    <small>
+                      {Math.ceil(unit.hp)} / {CREATURES[unit.kind].hp} PV
+                    </small>
+                  </button>
+                ))}
+              </div>
+              <p className="reason">
+                Clic droit : déplacer le groupe ou attaquer une cible. Les
+                gobelins ne combattent pas.
+              </p>
+              <p className="reason">
+                Maj + clic : ajouter ou retirer une unité. Maj + rectangle :
+                compléter la sélection. Échap ou clic dans le vide :
+                désélectionner.
+              </p>
+            </section>
+          ) : selection.type === 'none' ? (
             <section className="selection-panel" aria-label="Aucune sélection">
               <p className="eyebrow">Le quartier vous attend</p>
               <h3 className="selection-name">Aucune sélection</h3>
               <p className="selection-text">
                 Cliquez sur une créature ou une parcelle pour afficher ses
-                actions.
+                actions. Maintenez le clic gauche un quart de seconde, puis
+                tracez un rectangle pour sélectionner plusieurs unités.
               </p>
               <p className="reason">
                 Clic dans le vide ou Échap : désélectionner. Clic droit :
@@ -994,7 +1052,7 @@ export default function Game() {
             className="world-canvas"
             ref={canvasRef}
             tabIndex={0}
-            aria-label="Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Utilisez les flèches pour déplacer la carte. Les boutons du panneau permettent aussi de parcourir les parcelles."
+            aria-label="Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Maintenez le clic gauche un quart de seconde puis glissez pour sélectionner un groupe. Maj complète la sélection. Glisser immédiatement, clic molette ou flèches : déplacer la carte. Les boutons du panneau permettent aussi de parcourir les parcelles."
           />
           <div className="map-caption">
             <RibbonSkin />
@@ -1011,11 +1069,11 @@ export default function Game() {
           <div className="canvas-help">
             <span>
               <PackIcon asset="ui-cursor" />
-              Sélectionner
+              Clic long + rectangle : groupe
             </span>
             <span>
               <PackIcon asset="ui-cursor-hand" />
-              Glisser pour explorer
+              Glisser : explorer
             </span>
             <span>Molette : zoom</span>
           </div>
@@ -1354,9 +1412,11 @@ export default function Game() {
                 </div>
               </div>
               <p className="controls-guide">
-                Glisser : déplacer la carte · Molette : zoom · Espace : pause ·
-                1-4 : bâtiment ou créature · R : repli · Échap : annuler un
-                chantier avant sa pose.
+                Clic gauche maintenu ¼ s puis rectangle : sélectionner un groupe
+                · Maj : compléter la sélection · Glisser immédiatement :
+                déplacer la carte · Molette : zoom · Espace : pause · 1-4 :
+                bâtiment ou créature · R : repli · Échap : désélectionner ou
+                annuler un chantier avant sa pose.
                 <br />
                 Les parties ne sont pas conservées après fermeture. Le quartier
                 est fictif.

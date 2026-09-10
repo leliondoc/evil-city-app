@@ -35,7 +35,8 @@ export type Selection =
       type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource' | 'guildHero';
       id: number;
     }
-  | { type: 'none'; id?: never };
+  | { type: 'none'; id?: never }
+  | { type: 'units'; ids: number[]; id?: never };
 export type BuildingDef = {
   name: string;
   description: string;
@@ -1130,6 +1131,32 @@ export function commandUnit(
   } else {
     moveUnit(s, id, point);
   }
+  return '';
+}
+export function commandUnits(
+  s: State,
+  ids: number[],
+  target: Selection | null,
+  point: Point,
+): string {
+  const living = [...new Set(ids)].filter((id) =>
+    s.units.some((u) => u.id === id && u.hp > 0),
+  );
+  if (!living.length)
+    return 'Aucune créature sélectionnée n’est encore disponible.';
+  if (living.length === 1) return commandUnit(s, living[0], target, point);
+  let ordered = 0;
+  let error = '';
+  for (const id of living) {
+    const result = commandUnit(s, id, target, point);
+    if (result) error ||= result;
+    else ordered++;
+  }
+  if (!ordered) return error;
+  announce(
+    s,
+    `Ordre donné à ${ordered} créatures.${ordered < living.length ? ' Les gobelins restent à leur tâche : ils ne combattent pas.' : ''}`,
+  );
   return '';
 }
 export function upgradeCost(l: Lot): Cost {

@@ -36,6 +36,13 @@ import {
   type Decoration,
 } from './scenery';
 import { ISLAND_PATHS } from './islandRoutes';
+import {
+  selectedUnitIds,
+  unitSelection,
+  unitsInRectangle,
+  extendUnitSelection,
+  dragIntent,
+} from './selection';
 
 const CELL = 32,
   SIZE = 32 * CELL,
@@ -79,8 +86,17 @@ export class Renderer {
   private panX = 0;
   private panY = 0;
   private origin = { x: 0, y: 0 };
-  private down: { x: number; y: number; panX: number; panY: number } | null =
-    null;
+  private down: {
+    x: number;
+    y: number;
+    panX: number;
+    panY: number;
+    pointerId: number;
+    mode: 'pending' | 'select' | 'pan';
+    startedAt: number;
+    additive: boolean;
+    end: Point;
+  } | null = null;
   private dragging = false;
   private hover: Selection | null = null;
   private reducedMotion = false;
@@ -188,12 +204,14 @@ export class Renderer {
     this.recalculate();
   }
   public resetView() {
+    this.pointerCancel();
     this.zoom = 1;
     this.panX = 0;
     this.panY = 0;
     this.recalculate();
   }
   public pan(dx: number, dy: number) {
+    if (this.down?.mode === 'select') this.pointerCancel();
     this.panX = Math.max(-this.width, Math.min(this.width, this.panX + dx));
     this.panY = Math.max(-this.height, Math.min(this.height, this.panY + dy));
     this.recalculate();
@@ -232,20 +250,39 @@ export class Renderer {
     return lot ? { type: 'lot', id: lot.id } : null;
   }
   private pointerDown = (e: PointerEvent) => {
-    if (e.button !== 0) return;
+    if (this.down || (e.button !== 0 && e.button !== 1)) return;
+    e.preventDefault();
     const p = this.point(e);
     this.canvas.focus({ preventScroll: true });
-    this.down = { ...p, panX: this.panX, panY: this.panY };
+    this.down = {
+      ...p,
+      panX: this.panX,
+      panY: this.panY,
+      pointerId: e.pointerId,
+      mode:
+        e.button === 1 || e.altKey || e.pointerType === 'touch'
+          ? 'pan'
+          : 'pending',
+      startedAt: performance.now(),
+      additive: e.shiftKey,
+      end: p,
+    };
     this.dragging = false;
     this.canvas.setPointerCapture(e.pointerId);
   };
   private pointerMove = (e: PointerEvent) => {
     const p = this.point(e);
     if (this.down) {
+      if (e.pointerId !== this.down.pointerId) return;
+      this.down.end = p;
       const dx = p.x - this.down.x,
         dy = p.y - this.down.y;
-      if (Math.hypot(dx, dy) > 5) this.dragging = true;
-      if (this.dragging) {
+      if (Math.hypot(dx, dy) > 5) {
+        if (this.down.mode === 'pending')
+          this.down.mode = dragIntent(performance.now() - this.down.startedAt);
+        this.dragging = true;
+      }
+      if (this.dragging && this.down.mode === 'pan') {
         this.panX = this.down.panX + dx;
         this.panY = this.down.panY + dy;
         this.recalculate();
@@ -256,11 +293,27 @@ export class Renderer {
     this.updateCursor();
   };
   private pointerUp = (e: PointerEvent) => {
-    if (!this.down) return;
+    if (!this.down || e.pointerId !== this.down.pointerId) return;
+    this.pointerMove(e);
     const p = this.point(e);
-    if (!this.dragging) {
+    if (this.dragging && this.down.mode === 'select') {
+      const ids = unitsInRectangle(
+        this.getState().units,
+        this.toWorld(this.down),
+        this.toWorld(p),
+      );
+      this.onSelect(
+        this.down.additive
+          ? extendUnitSelection(this.selection, ids)
+          : unitSelection(ids),
+      );
+    } else if (!this.dragging && e.button === 0) {
       const hit = this.hit(p);
-      if (hit) this.onSelect(hit);
+      if (this.down.additive && hit?.type === 'unit')
+        this.onSelect(extendUnitSelection(this.selection, [hit.id], true));
+      else if (this.down.additive && !hit) {
+        /* Preserve selection on Shift + empty click. */
+      } else if (hit) this.onSelect(hit);
       else this.onSelect({ type: 'none' });
     }
     this.down = null;
@@ -271,32 +324,42 @@ export class Renderer {
       this.canvas.releasePointerCapture(e.pointerId);
   };
   private pointerCancel = () => {
+    if (this.down && this.canvas.hasPointerCapture(this.down.pointerId))
+      this.canvas.releasePointerCapture(this.down.pointerId);
     this.down = null;
     this.dragging = false;
     this.updateCursor();
   };
+  public cancelGesture() {
+    this.pointerCancel();
+  }
   private updateCursor() {
     const forbidden =
       this.buildKind !== null &&
       (this.hover?.type !== 'lot' ||
         !!buildReason(this.getState(), this.hover.id, this.buildKind));
-    const cursor = this.dragging
-      ? 'hand'
-      : forbidden
-        ? 'forbidden'
-        : this.hover
-          ? 'hand'
-          : 'arrow';
+    const cursor =
+      this.dragging && this.down?.mode === 'pan'
+        ? 'hand'
+        : this.dragging
+          ? 'arrow'
+          : forbidden
+            ? 'forbidden'
+            : this.hover
+              ? 'hand'
+              : 'arrow';
     if (this.canvas.dataset.cursor !== cursor)
       this.canvas.dataset.cursor = cursor;
   }
   private contextMenu = (e: MouseEvent) => {
     e.preventDefault();
+    if (this.down) this.pointerCancel();
     const point = this.point(e);
     this.onCommand(this.toWorld(point), this.hit(point));
   };
   private wheel = (e: WheelEvent) => {
     e.preventDefault();
+    if (this.down) return;
     this.zoomBy(e.deltaY > 0 ? 0.9 : 1.1);
   };
 
@@ -923,8 +986,7 @@ export class Renderer {
           const x = u.x * CELL,
             y = u.y * CELL,
             def = CREATURES[u.kind],
-            selected =
-              this.selection.type === 'unit' && this.selection.id === u.id;
+            selected = selectedUnitIds(this.selection).includes(u.id);
           const action: Animation = u.fighting
             ? 'attack'
             : u.path.length && u.moving !== false
@@ -1107,8 +1169,8 @@ export class Renderer {
           '#ffcf83',
         );
     }
-    if (this.selection.type === 'unit') {
-      const u = s.units.find((u) => u.id === this.selection.id);
+    for (const id of selectedUnitIds(this.selection)) {
+      const u = s.units.find((u) => u.id === id);
       if (u?.path.length) {
         ctx.strokeStyle = '#ffefb5';
         ctx.lineWidth = 2 / this.scale;
@@ -1186,6 +1248,21 @@ export class Renderer {
         size,
         size,
       );
+      ctx.restore();
+    }
+    if (this.dragging && this.down?.mode === 'select') {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const x = Math.min(this.down.x, this.down.end.x),
+        y = Math.min(this.down.y, this.down.end.y);
+      const width = Math.abs(this.down.end.x - this.down.x),
+        height = Math.abs(this.down.end.y - this.down.y);
+      ctx.fillStyle = '#b9e99a22';
+      ctx.strokeStyle = '#d0f3ac';
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(x, y, width, height);
+      ctx.strokeRect(x, y, width, height);
       ctx.restore();
     }
     this.frame = requestAnimationFrame(this.render);
