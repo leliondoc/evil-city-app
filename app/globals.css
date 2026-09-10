@@ -598,6 +598,14 @@ svg {
 .build-tabs [data-slot='tabs-trigger']::after {
   display: none;
 }
+/* Keep the map viewport stable across tabs and recruitment progress updates. */
+.game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {
+  flex: 0 0 144px;
+  height: 144px;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+}
 .card-row {
   display: flex;
   gap: 10px;
