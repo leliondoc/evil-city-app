@@ -1,16 +1,11 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 /// <reference types="vite/client" />
 // Local fixture for the side-facing combat sprites; excluded from production.
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Game from '../app/game/Game';
 import '../app/globals.css';
-import {
-  createGame,
-  recruit,
-  tick,
-  commandUnit,
-  type Enemy,
-} from '../app/game/engine';
+import { recruit, tick, commandUnit, type Enemy } from '../app/game/engine';
 const s = createGame();
 s.resources = { gold: 10000, wood: 10000, food: 10000, mana: 10000 };
 s.lots[7].kind = 'crypt';

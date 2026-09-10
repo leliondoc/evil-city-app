@@ -1,7 +1,7 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createGame,
   tick,
   upgrade,
   entrance,

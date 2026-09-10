@@ -1,12 +1,7 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  createGame,
-  entrance,
-  assign,
-  commandUnits,
-  tick,
-} from '../app/game/engine.ts';
+import { entrance, assign, commandUnits, tick } from '../app/game/engine.ts';
 import {
   research,
   hitEnemy,
@@ -111,7 +106,10 @@ test('Alchemist solvent doubles only fire; burning deaths propagate once to near
 });
 test('The first level keeps only the bridge tower, reachable and capturable with one garrison', () => {
   const towers = prepared().strategy.towers;
-  assert.deepEqual(towers.map((t) => t.name), ['Tour du pont']);
+  assert.deepEqual(
+    towers.map((t) => t.name),
+    ['Tour du pont'],
+  );
   for (const tIndex of towers.map((t) => t.id)) {
     const s = prepared(),
       u = s.units[0],

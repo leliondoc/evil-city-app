@@ -1,8 +1,8 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { research } from '../app/game/strategy.ts';
 import {
-  createGame,
   tick,
   territory,
   humanLevel,
@@ -195,11 +195,12 @@ test('Defenders intercept nearby patrols, win combat and obey a retreat order', 
 
 test('A funded domain supports a victory after repelling a raid', () => {
   const s = createGame();
+  s.economy.workerReadyAt = Infinity; // Fixed economy for the siege/recovery scenario.
   // Isolate siege/retreat behavior from the separately tested zero-resource opening.
   s.lots[7].kind = 'canteen';
   s.lots[5].owned = true;
   s.lots[5].kind = 'crypt';
-  armyFixture(s, 6);
+  armyFixture(s, 7);
   // The guild now fields four real fighters; equip this funded siege army.
   assert.equal(research(s, 'embers'), '');
   assert.equal(research(s, 'chain'), '');

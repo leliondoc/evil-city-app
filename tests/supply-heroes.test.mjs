@@ -1,7 +1,7 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createGame,
   tick,
   recruit,
   raidSupply,
@@ -47,6 +47,7 @@ function fighters(s) {
 }
 test('Human stocks increase only after workers harvest and physically deliver cargo', () => {
   const s = createGame();
+  s.economy.workerReadyAt = Infinity; // Isolate deliveries from recruitment spending.
   const initial = { ...s.economy.stocks };
   tick(s, 1);
   assert.deepEqual(s.economy.stocks, initial);

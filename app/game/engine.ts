@@ -671,14 +671,27 @@ function advanceEconomy(s: State, dt: number) {
         `${SUPPLIES[site.kind].name} réparée : la production humaine reprend.`,
       );
     }
-    if (
-      supplyActive(s, site) &&
-      !s.workers.some((w) => w.site === site.id && w.hp > 0) &&
-      s.elapsed >= site.recruitAt &&
-      suppliesAvailable(s, { gold: 8, food: 5 })
-    ) {
+  }
+  const living = s.workers.filter((w) => w.hp > 0);
+  if (
+    living.length < HUMAN_WORKER_CAP &&
+    s.elapsed >= s.economy.workerReadyAt &&
+    suppliesAvailable(s, { gold: 8, food: 5 })
+  ) {
+    const count = (site: ResourceSite) =>
+      living.filter((w) => w.site === site.id).length;
+    const site = s.sites
+      .filter(
+        (site) =>
+          supplyActive(s, site) &&
+          s.elapsed >= site.recruitAt &&
+          count(site) < 2,
+      )
+      .sort((a, b) => count(a) - count(b) || a.id - b.id)[0];
+    if (site) {
       spendSupplies(s, { gold: 8, food: 5 });
       spawnWorker(s, site);
+      s.economy.workerReadyAt = s.elapsed + HUMAN_WORKER_SECONDS;
     }
   }
   for (const w of s.workers) {
@@ -764,6 +777,7 @@ export interface State {
     delivered: Record<Supply, number>;
     level: number;
     nextUpgradeAt: number;
+    workerReadyAt: number;
   };
   workers: HumanWorker[];
   sites: ResourceSite[];
@@ -791,6 +805,8 @@ export interface State {
   recruited: number;
 }
 
+export const HUMAN_WORKER_CAP = 6;
+export const HUMAN_WORKER_SECONDS = 20;
 export function createGame(): State {
   const kinds: BuildingKind[] = [
     'guild',
@@ -807,12 +823,13 @@ export function createGame(): State {
     domain: createDomain(),
     strategy: createStrategy(),
     resourceGains: [],
-    resources: { gold: 0, wood: 0, food: 0, mana: 0 },
+    resources: { gold: 35, wood: 0, food: 24, mana: 0 },
     economy: {
       stocks: { gold: 45, wood: 25, food: 35 },
       delivered: { gold: 0, wood: 0, food: 0 },
       level: 1,
       nextUpgradeAt: PRESSURE.firstUpgradeAt,
+      workerReadyAt: HUMAN_WORKER_SECONDS,
     },
     workers: [],
     sites: SUPPLY_LOCATIONS.map((site, id) => ({
@@ -858,7 +875,9 @@ export function createGame(): State {
     recruits: [],
     notice: '',
     noticeUntil: 0,
-    journal: ['Trois gobelins, un manoir… le quartier ne se doute de rien.'],
+    journal: [
+      'Un manoir, aucun ouvrier. Recrutez votre premier gobelin pour lancer le domaine.',
+    ],
     won: false,
     lost: false,
     enemies: [],
@@ -884,8 +903,6 @@ export function createGame(): State {
     captures: 0,
     recruited: 0,
   };
-  for (let i = 0; i < 3; i++) spawnUnit(state, 'goblin');
-  for (const site of state.sites) spawnWorker(state, site);
   return state;
 }
 export function entrance(lot: Lot): Point {

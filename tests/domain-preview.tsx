@@ -1,10 +1,11 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 /// <reference types="vite/client" />
 // Manual browser fixture: uses the real interface and renderer, without adding cheats to the game.
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Game from '../app/game/Game';
 import '../app/globals.css';
-import { createGame, entrance, recruit, tick } from '../app/game/engine';
+import { entrance, recruit, tick } from '../app/game/engine';
 import { haunt, leaveCorpse } from '../app/game/domain';
 
 const state = createGame();

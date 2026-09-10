@@ -411,6 +411,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const food = foodBalance(s);
   const owned = s.lots.filter((l) => l.owned).length;
   const milestones = [
+    s.recruited > 0,
     hasBuilding(s, 'canteen'),
     hasBuilding(s, 'crypt'),
     army(s).length >= 2,
@@ -419,6 +420,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     s.won,
   ];
   const milestoneLabels = [
+    'Recruter un premier gobelin',
     'Ouvrir une cantine',
     'Construire une crypte',
     'Rassembler 2 combattants',
@@ -656,6 +658,20 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <p className="intro-copy">
               Soumettez le quartier. Protégez votre manoir.
             </p>
+            {s.recruited === 0 && (
+              <Button
+                className="primary-btn"
+                disabled={
+                  !!recruitReason(s, 'goblin') ||
+                  s.recruits.some((r) => r.kind === 'goblin')
+                }
+                onClick={() => run((state) => recruit(state, 'goblin'))}
+              >
+                {s.recruits.some((r) => r.kind === 'goblin')
+                  ? 'Premier gobelin en préparation…'
+                  : 'Recruter mon premier gobelin'}
+              </Button>
+            )}
             <details className="objectives-disclosure" open>
               <summary>
                 Objectifs{' '}
@@ -1794,8 +1810,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <>
               <DialogTitle>On recommence les méfaits ?</DialogTitle>
               <DialogDescription>
-                Vous retrouverez le quartier intact, vos trois gobelins et vos
-                ressources de départ. La partie en cours sera remplacée.
+                Vous retrouverez le quartier intact, sans gobelin ni paysan,
+                avec vos ressources de départ. La partie en cours sera
+                remplacée.
               </DialogDescription>
               <Button className="primary-btn" onClick={reset}>
                 Recommencer la partie

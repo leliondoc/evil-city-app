@@ -10,6 +10,7 @@ import {
   UPGRADE_SUPPLIES,
   suppliesAvailable,
   PRESSURE,
+  HUMAN_WORKER_CAP,
 } from './engine';
 import { workerArt, type AssetKey } from './art';
 import { isHaunted } from './domain';
@@ -28,7 +29,7 @@ export function SupplyPanel({
     <div className="supply-panel">
       <div className="supply-summary">
         <span>
-          {s.workers.length} paysans ·{' '}
+          {s.workers.length}/{HUMAN_WORKER_CAP} paysans ·{' '}
           {s.sites.filter((site) => supplyActive(s, site)).length}/3 sites
         </span>
         <strong>
@@ -41,8 +42,10 @@ export function SupplyPanel({
       </div>
       <div className="supply-content">
         <p>
-          Les livraisons financent leurs troupes. Une amélioration coûte 25 or,
-          20 bois et 15 vivres ; les raids puisent dans les mêmes stocks.
+          Les humains recrutent un paysan toutes les 20 secondes, si leurs
+          stocks permettent de payer 8 or et 5 vivres, jusqu’à 6 paysans (2 par
+          site). Les livraisons financent leurs troupes. Une amélioration coûte
+          25 or, 20 bois et 15 vivres ; les raids puisent dans les mêmes stocks.
         </p>
         <div className="supply-sites">
           {s.sites.map((site) => (

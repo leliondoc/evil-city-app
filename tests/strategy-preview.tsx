@@ -1,16 +1,11 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 /// <reference types="vite/client" />
 // Local visual fixture; excluded from the production build.
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Game from '../app/game/Game';
 import '../app/globals.css';
-import {
-  createGame,
-  recruit,
-  tick,
-  entrance,
-  announce,
-} from '../app/game/engine';
+import { recruit, tick, entrance, announce } from '../app/game/engine';
 import { research, towerOrder } from '../app/game/strategy';
 const state = createGame();
 state.resources = { gold: 1000, wood: 500, food: 500, mana: 500 };

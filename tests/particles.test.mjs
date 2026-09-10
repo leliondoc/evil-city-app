@@ -1,6 +1,6 @@
+import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame } from '../app/game/engine.ts';
 import { ParticleFeedback } from '../app/game/particles.ts';
 
 test('Particle feedback follows real damage, respects pause and cooldown, and never changes the game', () => {
