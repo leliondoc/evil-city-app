@@ -914,6 +914,7 @@ export class Renderer {
       y: number;
       ratio: number;
       enemy: boolean;
+      name?: string;
     }[] = [];
     for (const tower of s.strategy.towers) {
       drawables.push({
@@ -1133,7 +1134,13 @@ export class Renderer {
                 : { type: 'lot', id: l.id };
               this.hits.push(hit);
               if (role && selected)
-                this.label(heroX, gy + 24, HEROES[role].short);
+                combatBars.push({
+                  x: heroX,
+                  y: gy - 74,
+                  ratio: 1,
+                  enemy: true,
+                  name: HEROES[role].short,
+                });
             },
           });
       drawables.push({
@@ -1231,12 +1238,17 @@ export class Renderer {
               this.selection.id === worker.id) ||
             worker.hp < worker.maxHp
           )
-            this.bar(
-              worker.x * CELL,
-              worker.y * CELL - 52,
-              worker.hp / worker.maxHp,
-              40,
-            );
+            combatBars.push({
+              x: worker.x * CELL,
+              y: worker.y * CELL - 52,
+              ratio: worker.hp / worker.maxHp,
+              enemy: false,
+              name:
+                this.selection.type === 'worker' &&
+                this.selection.id === worker.id
+                  ? SUPPLIES[s.sites[worker.site].kind].worker
+                  : undefined,
+            });
         },
       });
     for (const u of s.units)
@@ -1308,8 +1320,15 @@ export class Renderer {
           hit.selection = { type: 'unit', id: u.id };
           this.hits.push(hit);
           const bubble = thought(s, u);
+          const barY =
+            y - (u.kind === 'troll' || u.kind === 'minotaur' ? 84 : 58);
           if (bubble && u.task !== 'duel')
-            this.label(x, y - 102, bubble, '#d3efdd');
+            this.label(
+              x,
+              selected ? Math.min(y - 102, barY - 38 / this.scale) : y - 102,
+              bubble,
+              '#d3efdd',
+            );
           if (u.task === 'bribe') this.sprite('ui-gold', x + 22, y - 22, 0.5);
           if (u.task === 'deliver-loot')
             this.sprite('ui-gold', x + 22, y - 22, 0.5);
@@ -1360,9 +1379,10 @@ export class Renderer {
           if (selected || u.hp < def.hp || (action === 'attack' && !harvesting))
             combatBars.push({
               x,
-              y: y - (u.kind === 'troll' || u.kind === 'minotaur' ? 84 : 58),
+              y: barY,
               ratio: u.hp / def.hp,
               enemy: false,
+              name: selected ? def.name : undefined,
             });
         },
       });
@@ -1419,6 +1439,9 @@ export class Renderer {
             y: y - (e.kind === 'hero' ? 74 : 56),
             ratio: e.hp / e.maxHp,
             enemy: true,
+            name: selected
+              ? `${e.kind === 'hero' ? HEROES[e.role].short : ENEMIES[e.kind].name} · ${e.level}`
+              : undefined,
           });
           if (e.healTarget !== null) {
             const ally = s.enemies.find((ally) => ally.id === e.healTarget);
@@ -1432,13 +1455,6 @@ export class Renderer {
                 0.8,
               );
           }
-          if (e.kind === 'hero' || selected)
-            this.label(
-              x,
-              y + 32,
-              `${e.kind === 'hero' ? HEROES[e.role].short : ENEMIES[e.kind].name} · ${e.level}`,
-              '#ffcf83',
-            );
           if ((e.burningUntil ?? 0) > s.elapsed && !this.reducedMotion)
             this.sprite(
               'fx-fire',
@@ -1448,9 +1464,19 @@ export class Renderer {
               Math.floor(t * 10) % ASSETS['fx-fire'].frames,
             );
           if ((e.solventUntil ?? 0) > s.elapsed)
-            this.label(x, y - 86, 'Vulnérable au feu', '#e6d2a6');
+            this.label(
+              x,
+              y - 86 - (selected ? 28 / this.scale : 0),
+              'Vulnérable au feu',
+              '#e6d2a6',
+            );
           if ((e.comboAt ?? -10) + 0.8 > s.elapsed)
-            this.label(x, y - 105, 'COMBO ×2', '#ffb875');
+            this.label(
+              x,
+              y - 105 - (selected ? 28 / this.scale : 0),
+              'COMBO ×2',
+              '#ffb875',
+            );
           if ((e.resurrectionProgress ?? 0) > 0) {
             this.sprite(
               'hero-heal',
@@ -1461,7 +1487,7 @@ export class Renderer {
             );
             this.label(
               x,
-              y - 95,
+              y - 95 - (selected ? 28 / this.scale : 0),
               `Résurrection · ${Math.ceil(10 - e.resurrectionProgress!)} s`,
             );
           }
@@ -1557,14 +1583,22 @@ export class Renderer {
     for (const e of s.enemies.filter((e) => e.exorcising !== undefined))
       this.label(
         e.x * CELL,
-        e.y * CELL - 95,
+        e.y * CELL -
+          95 -
+          (this.selection.type === 'enemy' && this.selection.id === e.id
+            ? 28 / this.scale
+            : 0),
         e.fighting ? 'Duel' : 'Chasse au spectre',
         '#fff0bb',
       );
     for (const w of s.workers.filter((w) => w.recovery))
       this.label(
         w.x * CELL,
-        w.y * CELL - 72,
+        w.y * CELL -
+          72 -
+          (this.selection.type === 'worker' && this.selection.id === w.id
+            ? 28 / this.scale
+            : 0),
         w.recovery?.returning ? 'Sépulture' : 'Secours',
         '#d2e4f5',
       );
@@ -1647,6 +1681,13 @@ export class Renderer {
         barWidth * Math.max(0, Math.min(1, bar.ratio)),
         barHeight,
       );
+      if (bar.name)
+        this.label(
+          bar.x,
+          bar.y - border - 12 / this.scale,
+          bar.name,
+          bar.enemy ? '#ffcf83' : '#eee4ce',
+        );
     }
     // Resource deliveries float above their contributor and the combat overlays.
     for (const gain of s.resourceGains) {
