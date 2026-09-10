@@ -787,7 +787,7 @@ export class Renderer {
             key,
             site.x * CELL,
             site.y * CELL,
-            site.kind === 'wood' ? 0.5 : site.kind === 'gold' ? 0.75 : 0.8,
+            site.kind === 'wood' ? 0.65 : site.kind === 'gold' ? 0.75 : 0.8,
             active ? Math.floor(t * 10) % ASSETS[key].frames : 0,
             active ? 1 : 0.4,
           );
@@ -826,7 +826,9 @@ export class Renderer {
             worker.x * CELL,
             worker.y * CELL,
             0.72,
-            Math.floor(t * 10) % ASSETS[key].frames,
+            Math.floor(
+              (worker.phase === 'harvest' ? worker.progress : t) * 10,
+            ) % ASSETS[key].frames,
             1,
             worker.facing < 0,
           );

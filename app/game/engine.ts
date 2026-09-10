@@ -387,7 +387,7 @@ export const SUPPLIES = {
     label: 'Bois',
     tool: 'Axe',
     cargo: 'Wood',
-    art: 'tree-2',
+    art: 'tree-3',
   },
   food: {
     name: 'Bergerie',
@@ -422,6 +422,12 @@ export interface HumanWorker extends Point {
 export function supplyActive(s: State, site: ResourceSite) {
   return !s.lots[site.home].owned && site.hp > 0;
 }
+/** A worker stands beside the resource, never inside its drawing. */
+export function resourceApproach(site: ResourceSite): Point {
+  return site.kind === 'wood'
+    ? { x: site.x + 0.75, y: site.y + 0.25 }
+    : { x: site.x, y: site.y };
+}
 export function suppliesAvailable(
   s: State,
   cost: Partial<Record<Supply, number>>,
@@ -442,7 +448,7 @@ function spawnWorker(s: State, site: ResourceSite) {
     site: site.id,
     hp: 35,
     maxHp: 35,
-    path: findPath(home, site),
+    path: findPath(home, resourceApproach(site)),
     facing: 1,
     phase: 'outbound',
     cargo: 0,
@@ -467,7 +473,7 @@ export function raidSupply(s: State, target: Selection) {
   if (error) return error;
   const point =
     target.type === 'resource'
-      ? s.sites.find((site) => site.id === target.id)!
+      ? resourceApproach(s.sites.find((site) => site.id === target.id)!)
       : s.workers.find((w) => w.id === target.id)!;
   for (const u of army(s))
     assign(
@@ -517,6 +523,7 @@ function advanceEconomy(s: State, dt: number) {
       w.progress = 0;
     }
     if (w.phase === 'harvest') {
+      w.facing = site.x >= w.x ? 1 : -1;
       w.progress += dt;
       if (w.progress >= 6) {
         w.cargo = 10;
@@ -528,7 +535,7 @@ function advanceEconomy(s: State, dt: number) {
       s.economy.delivered[site.kind] += w.cargo;
       w.cargo = 0;
       w.phase = 'outbound';
-      w.path = findPath(w, site);
+      w.path = findPath(w, resourceApproach(site));
     }
   }
   if (
@@ -634,8 +641,8 @@ export function createGame(): State {
         id: 2,
         kind: 'wood',
         home: 8,
-        x: 29,
-        y: 26.5,
+        x: 28.75,
+        y: 26.25,
         hp: 120,
         maxHp: 120,
         repairAt: 0,
@@ -1392,11 +1399,17 @@ function tickStep(s: State, dt: number) {
                 w.hp > 0 &&
                 supplyActive(s, s.sites[w.site]),
             );
+      const approach =
+        target && 'repairAt' in target ? resourceApproach(target) : target;
       if (!target) {
         u.task = 'idle';
         u.target = null;
         u.path = [];
-      } else if (distanceBetween(u, target) <= 1.5 && clearShot(u, target)) {
+      } else if (
+        approach &&
+        distanceBetween(u, approach) <= 1.5 &&
+        clearShot(u, approach)
+      ) {
         u.fighting = true;
         u.facing = target.x >= u.x ? 1 : -1;
         target.hp = Math.max(0, target.hp - armyDamage(s, u) * dt);
@@ -1409,7 +1422,7 @@ function tickStep(s: State, dt: number) {
             `${SUPPLIES[target.kind].name} sabotée ! +15 ${SUPPLIES[target.kind].label.toLowerCase()}. Production coupée pendant au moins 90 s.`,
           );
         }
-      } else u.path = findPath(u, target);
+      } else if (approach) u.path = findPath(u, approach);
     }
     if (!u.fighting) walk(u, CREATURES[u.kind].speed * dt);
     if (!u.path.length) {

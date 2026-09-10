@@ -44,7 +44,8 @@ for i in range(1, 5):
     copy(f'bush-{i}', f'Terrain/Decorations/Bushes/Bushe{i}.png', 128)
     copy(f'rock-{i}', f'Terrain/Decorations/Rocks/Rock{i}.png')
     copy(f'water-rock-{i}', f'Terrain/Decorations/Rocks in the Water/Water Rocks_0{i}.png', 64)
-    copy(f'tree-{i}', f'Terrain/Resources/Wood/Trees/Tree{i}.png', 192, anchor=.8)
+    # Foot of the trunk in the original frame, below the foliage.
+    copy(f'tree-{i}', f'Terrain/Resources/Wood/Trees/Tree{i}.png', 192, anchor=240/256 if i < 3 else 164/192)
 copy('sheep', 'Terrain/Resources/Meat/Sheep/Sheep_Grass.png', 128)
 copy('gold-rock', 'Terrain/Resources/Gold/Gold Stones/Gold Stone 1.png')
 copy('gold-deposit', 'Terrain/Resources/Gold/Gold Stones/Gold Stone 5.png')

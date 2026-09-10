@@ -1181,7 +1181,7 @@
     "height": 256,
     "frameWidth": 192,
     "frames": 8,
-    "anchor": 0.8
+    "anchor": 0.9375
   },
   "cloud-2": {
     "src": "/tiny-swords/cloud-2.png",
@@ -1221,7 +1221,7 @@
     "height": 256,
     "frameWidth": 192,
     "frames": 8,
-    "anchor": 0.8
+    "anchor": 0.9375
   },
   "cloud-3": {
     "src": "/tiny-swords/cloud-3.png",
@@ -1261,7 +1261,7 @@
     "height": 192,
     "frameWidth": 192,
     "frames": 8,
-    "anchor": 0.8
+    "anchor": 0.8541666666666666
   },
   "cloud-4": {
     "src": "/tiny-swords/cloud-4.png",
@@ -1301,7 +1301,7 @@
     "height": 192,
     "frameWidth": 192,
     "frames": 8,
-    "anchor": 0.8
+    "anchor": 0.8541666666666666
   },
   "sheep": {
     "src": "/tiny-swords/sheep.png",

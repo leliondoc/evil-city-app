@@ -9,6 +9,7 @@ import {
   upgrade,
   findPath,
   entrance,
+  resourceApproach,
 } from '../app/game/engine.ts';
 import {
   BRIDGE,
@@ -56,12 +57,41 @@ test('Each supply site occupies its delivery building’s garden and remains rea
     assert.ok(site.x > home.x && site.x < home.x + 8);
     assert.ok(site.y > home.y && site.y < home.y + 8);
     assert.equal(isStreet(site.x * 32, site.y * 32), false);
-    const path = findPath(entrance(home), site);
+    const destination = resourceApproach(site);
+    const path = findPath(entrance(home), destination);
     assert.ok(path.length);
     assert.ok(
-      Math.hypot(path.at(-1).x - site.x, path.at(-1).y - site.y) <= 0.75,
+      Math.hypot(
+        path.at(-1).x - destination.x,
+        path.at(-1).y - destination.y,
+      ) <= 0.75,
     );
   }
+});
+test('The lumberjack reaches the side of the trunk, faces it and completes repeated deliveries', () => {
+  const s = createGame();
+  const site = s.sites.find((site) => site.kind === 'wood');
+  const destination = resourceApproach(site);
+  let arrivals = 0;
+  let previousPhase = 'outbound';
+  for (let i = 0; i < 1200; i++) {
+    tick(s, 0.05);
+    const worker = s.workers.find((worker) => worker.site === site.id);
+    if (worker.phase === 'harvest') {
+      if (previousPhase !== 'harvest') arrivals++;
+      assert.equal(worker.x, destination.x);
+      assert.equal(worker.y, destination.y);
+      assert.equal(worker.path.length, 0);
+      assert.equal(worker.facing, -1);
+      assert.ok(worker.x > site.x && worker.y > site.y);
+      assert.equal(isStreet(worker.x * 32, worker.y * 32), false);
+    }
+    previousPhase = worker.phase;
+  }
+  assert.ok(arrivals >= 3);
+  assert.ok(s.economy.delivered.wood >= 20);
+  // Entire visible crown (including sway) has a margin before the eastern road.
+  assert.ok(site.x * 32 + 32 < 30 * 32);
 });
 test('A canteen can be built with zero food, feeds the player and scales with upgrades', () => {
   const s = createGame();
