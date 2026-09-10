@@ -78,20 +78,13 @@ export function makeScenery(lots: Lot[]): Decoration[] {
   const decorations: Decoration[] = [];
   for (const lot of lots) {
     const n = lot.id;
-    decorations.push(
-      {
-        x: (lot.x + 1.2) * 32,
-        y: (lot.y + 3) * 32,
-        key: `tree-${(n % 4) + 1}` as AssetKey,
-        scale: n === 0 ? 0.45 : 0.58,
-      },
-      {
-        x: (lot.x + 1.1) * 32,
-        y: (lot.y + 6) * 32,
-        key: `rock-${(n % 4) + 1}` as AssetKey,
-        scale: 0.75,
-      },
-    );
+    // The left fence occupies x + 1: do not put rocks on its wooden posts.
+    decorations.push({
+      x: (lot.x + 1.2) * 32,
+      y: (lot.y + 3) * 32,
+      key: `tree-${(n % 4) + 1}` as AssetKey,
+      scale: n === 0 ? 0.45 : 0.58,
+    });
     // Only the food supply remains inside its delivery building's garden.
     if (n !== 1)
       decorations.push({
