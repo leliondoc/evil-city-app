@@ -377,18 +377,6 @@ svg {
 .healthbar [data-slot='progress-indicator'] {
   background: #a4b77c;
 }
-.chronicle {
-  margin-top: auto;
-  padding-top: 5px;
-}
-.chronicle p {
-  font-size: 13px;
-  color: #b6bca5;
-  line-height: 1.55;
-  border-left: 1px solid #71805a;
-  padding-left: 10px;
-  margin-top: 9px;
-}
 .world-wrap {
   flex: 1;
   min-width: 0;
@@ -903,9 +891,6 @@ svg {
   }
   .selection-art img {
     height: 110px;
-  }
-  .chronicle {
-    display: none;
   }
 }
 @media (max-width: 800px) {
@@ -1480,8 +1465,7 @@ svg {
 }
 /* Flex shrinking a long card separated the scroll from its content. */
 .sidebar > section,
-.sidebar > .side-rule,
-.sidebar > .chronicle {
+.sidebar > .side-rule {
   flex-shrink: 0;
 }
 .selection-panel {
@@ -2367,9 +2351,6 @@ svg {
   margin: 0;
   padding: 8px 0;
 }
-.game-shell[data-compact='true'] .sidebar .chronicle {
-  display: none;
-}
 .game-shell[data-compact='true'] .sidebar button {
   min-height: 44px;
 }
@@ -3181,13 +3162,6 @@ svg {
   pointer-events: auto;
 }
 .game-shell[data-compact='false'] .mission-sidebar > * { pointer-events: auto; }
-.game-shell[data-compact='false'] .mission-sidebar .chronicle {
-  background: #182a30e6;
-  border: 1px solid #9b956555;
-  border-radius: 6px;
-  margin-top: 12px;
-  padding: 12px;
-}
 .game-shell[data-compact='false'] .sidebar {
   align-self: flex-start;
   margin-top: 12px;

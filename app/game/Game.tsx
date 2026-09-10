@@ -699,12 +699,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         {!compact && (
           <aside className="mission-sidebar" aria-label="Mission et objectifs">
             {missionCard}
-            <div className="chronicle">
-              <p className="eyebrow">Échos du quartier</p>
-              {s.journal.slice(0, 2).map((entry, i) => (
-                <p key={`${i}-${entry}`}>{entry}</p>
-              ))}
-            </div>
           </aside>
         )}
         <aside
