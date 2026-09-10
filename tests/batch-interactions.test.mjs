@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   goblinWorkforce,
   harvestRates,
+  gather,
   tick,
   recruit,
   commandUnit,
@@ -153,9 +154,13 @@ test('Harvest feedback reports actual deliveries once and expires without duplic
 
 test('Goblin workforce counts living gatherers, builders and other duties consistently with estimated delivery rates', () => {
   const s = createGame();
+  for (const u of s.units)
+    gather(s, u.id, s.sites.find((v) => v.kind === 'wood').id);
   assert.deepEqual(goblinWorkforce(s), {
     total: 3,
     wood: 3,
+    gold: 0,
+    food: 0,
     building: 0,
     other: 0,
     queued: 0,
@@ -167,6 +172,8 @@ test('Goblin workforce counts living gatherers, builders and other duties consis
   assert.deepEqual(goblinWorkforce(s), {
     total: 3,
     wood: 1,
+    gold: 0,
+    food: 0,
     building: 1,
     other: 1,
     queued: 1,
@@ -176,6 +183,8 @@ test('Goblin workforce counts living gatherers, builders and other duties consis
   assert.deepEqual(goblinWorkforce(s), {
     total: 2,
     wood: 0,
+    gold: 0,
+    food: 0,
     building: 1,
     other: 1,
     queued: 1,

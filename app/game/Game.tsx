@@ -407,6 +407,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const harvest = harvestRates(s);
   income.wood += harvest.wood;
   income.gold += harvest.gold;
+  income.food += harvest.food;
   const workforce = goblinWorkforce(s);
   const food = foodBalance(s);
   const owned = s.lots.filter((l) => l.owned).length;
@@ -430,6 +431,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   ];
   const currentMilestone = milestones.findIndex((done) => !done);
   const message = feedback || (s.noticeUntil > s.elapsed ? s.notice : '');
+  const sheetNotice =
+    compact && message ? (
+      <output className="touch-sheet-notice" aria-live="polite">
+        <PanelSkin kind="paper" />
+        <span>{message}</span>
+      </output>
+    ) : null;
   const chooseTouchMode = (mode: 'inspect' | 'select' | 'command') => {
     setTouchMode(mode);
     setPendingBuild(null);
@@ -459,28 +467,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       setFeedback('');
     }
   };
-  const showFoodProduction = () => {
-    const source = s.lots.find(
-      (l) =>
-        l.owned && (l.kind === 'canteen' || l.construction?.kind === 'canteen'),
+  const showResourceProduction = (kind: 'gold' | 'wood' | 'food' | 'mana') => {
+    setPendingBuild(null);
+    const site = s.sites.find((source) => source.kind === kind);
+    setSelection(
+      site ? { type: 'resource', id: site.id } : { type: 'lot', id: 6 },
     );
-    if (source) {
-      setPendingBuild(null);
-      setSelection({ type: 'lot', id: source.id });
-    } else {
-      chooseBuild('canteen');
-      const space =
-        s.lots.find((l) => l.owned && !l.construction && l.kind === 'empty') ??
-        s.lots.find(
-          (l) =>
-            l.owned && !l.construction && ['house', 'tavern'].includes(l.kind),
-        );
-      if (space) setSelection({ type: 'lot', id: space.id });
-      else
-        notify(
-          'Revendiquez une friche ou transformez une maison conquise pour installer une cantine.',
-        );
-    }
     setMobilePanel('details');
     requestAnimationFrame(() =>
       sidebarRef.current
@@ -514,23 +506,19 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               { key: 'mana', label: 'Essence', className: 'mana' },
             ] as const
           ).map(({ key, label, className }) => {
-            const ResourceTag = key === 'food' ? 'button' : 'div';
+            const ResourceTag = 'button';
             const rate = Math.round(income[key] * 60);
             return (
               <ResourceTag
-                className={`resource ${className}${key === 'food' ? ' food-action' : ''}${s.resources[key] >= RESOURCE_CAP ? ' resource-full' : ''}`}
+                className={`resource ${className} food-action${s.resources[key] >= RESOURCE_CAP ? ' resource-full' : ''}`}
                 key={key}
                 title={`Stockage : ${RESOURCE_CAP.toLocaleString('fr-FR')} maximum. L’excédent de production et de butin est perdu. ${
                   key === 'food'
-                    ? `Cantines : +${food.production}/min · Créatures : −${food.consumption}/min. Voir la production de vivres.`
+                    ? `Récoltes estimées : +${food.production}/min · Créatures : −${food.consumption}/min. Voir la production de vivres.`
                     : `${label} : ${rate >= 0 ? '+' : ''}${rate} par minute`
                 }`}
-                aria-label={
-                  key === 'food'
-                    ? `Vivres : ${Math.floor(s.resources.food)}. Production ${food.production}, consommation ${food.consumption} par minute. Voir la cantine.`
-                    : undefined
-                }
-                onClick={key === 'food' ? showFoodProduction : undefined}
+                aria-label={`${label} : ${Math.floor(s.resources[key])}. Voir la source de production.`}
+                onClick={() => showResourceProduction(key)}
               >
                 {key === 'mana' ? (
                   <Sparkles strokeWidth={1.6} />
@@ -554,7 +542,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     >
                       {s.resources[key] >= RESOURCE_CAP && rate >= 0
                         ? ' · Plein'
-                        : ` · ${key === 'wood' || (key === 'gold' && harvest.gold > 0) ? '≈ ' : ''}${rate >= 0 ? '+' : ''}${rate}/min`}
+                        : ` · ${key !== 'mana' ? '≈ ' : ''}${rate >= 0 ? '+' : ''}${rate}/min`}
                     </span>
                   </span>
                 </div>
@@ -565,8 +553,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         <button
           className="goblin-counter"
           disabled={workforce.total === 0}
-          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois (+${Math.round(income.wood * 60)}/min), ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Maximum ${GOBLIN_CAP}, recrutements inclus. Bois et or récoltés : environ 13/min par gobelin, crédités uniquement à la livraison au manoir. Les bâtiments apportent aussi leurs revenus. Cliquer pour sélectionner tous les gobelins.`}
-          aria-label={`Gobelins : ${workforce.total} sur ${GOBLIN_CAP}, ${workforce.queued} en recrutement, dont ${workforce.wood} au bois et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
+          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres, ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Maximum ${GOBLIN_CAP}, recrutements inclus. Les gobelins libres se répartissent entre or, bois et vivres selon les stocks. Chargements de 30, crédités uniquement au manoir. Les débits affichés sont estimatifs. Cliquer pour sélectionner tous les gobelins.`}
+          aria-label={`Gobelins : ${workforce.total} sur ${GOBLIN_CAP}, ${workforce.queued} en recrutement, dont ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
           onClick={() => {
             select(
               unitSelection(
@@ -585,7 +573,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               {workforce.total}/{GOBLIN_CAP} <span>Gobelins</span>
             </strong>
             <small>
-              Bois {workforce.wood} · Or {Math.round(harvest.gold / 0.22)}
+              Bois {workforce.wood} · Or {workforce.gold} · Vivres{' '}
+              {workforce.food}
               <span> · Chantiers {workforce.building}</span>
             </small>
           </div>
@@ -641,13 +630,14 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           aria-label="Objectifs et sélection"
         >
           {compact && (
-            <button
-              className="mobile-sheet-close"
+            <Button
+              className="mobile-sheet-close touch-pack"
               onClick={() => setMobilePanel(null)}
             >
-              Fermer les détails ×
-            </button>
+              Fermer les détails <PackIcon asset="ui-close" />
+            </Button>
           )}
+          {sheetNotice}
           <section className="mission-card" aria-label="Mission et objectifs">
             <PanelSkin kind="notice" />
             <p className="eyebrow">Chapitre I · Premiers méfaits</p>
@@ -921,23 +911,27 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     <div className="food-production">
                       <strong>
                         {selectedLot.kind === 'canteen' && selectedLot.owned
-                          ? 'Production'
+                          ? 'Économie de vivres'
                           : 'Après construction'}{' '}
-                        : +
-                        {45 *
-                          (selectedLot.kind === 'canteen'
-                            ? selectedLot.level
-                            : 1)}{' '}
-                        vivres/min
+                        : −
+                        {Math.min(
+                          60,
+                          20 *
+                            (selectedLot.kind === 'canteen'
+                              ? selectedLot.level
+                              : 1),
+                        )}{' '}
+                        % de consommation
                       </strong>
                       <p>
                         Votre armée consomme {food.consumption}/min. Bilan
-                        actuel de vos réserves : {food.net >= 0 ? '+' : ''}
+                        estimé de vos réserves : {food.net >= 0 ? '+' : ''}
                         {food.net}/min.
                       </p>
                       <p>
-                        Les vivres de la cantine vont dans vos réserves. La
-                        bergerie ravitaille les humains.
+                        Les gobelins récoltent les vivres à la bergerie et les
+                        livrent au manoir. La cantine améliore les repas, sans
+                        créer de ressources.
                       </p>
                     </div>
                   )}
@@ -1204,7 +1198,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           {compact && (
             <>
               <div className="touch-toolbar" aria-label="Commandes tactiles">
-                <button
+                <Button
+                  className="touch-pack"
                   aria-pressed={touchMode === 'inspect'}
                   onPointerDown={(e) => {
                     if (e.pointerType === 'touch') {
@@ -1215,8 +1210,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   onClick={() => chooseTouchMode('inspect')}
                 >
                   Explorer
-                </button>
-                <button
+                </Button>
+                <Button
+                  className="touch-pack"
                   aria-pressed={touchMode === 'select'}
                   onPointerDown={(e) => {
                     if (e.pointerType === 'touch') {
@@ -1227,8 +1223,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   onClick={() => chooseTouchMode('select')}
                 >
                   Groupe
-                </button>
-                <button
+                </Button>
+                <Button
+                  className="touch-pack"
                   aria-pressed={touchMode === 'command'}
                   disabled={!group.length || s.won || s.lost}
                   onPointerDown={(e) => {
@@ -1243,10 +1240,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   onClick={() => chooseTouchMode('command')}
                 >
                   Ordre
-                </button>
+                </Button>
               </div>
-              <button
-                className="touch-selection"
+              <Button
+                className="touch-selection touch-pack"
                 onClick={() => setMobilePanel('details')}
                 aria-label="Voir les détails de la sélection"
               >
@@ -1259,7 +1256,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       : selectedEnemy
                         ? enemyDef?.name
                         : 'Sélectionner un élément'}
-              </button>
+              </Button>
               {(touchMode !== 'inspect' || pendingBuild) && (
                 <div className="touch-hint" role="status">
                   {pendingBuild
@@ -1326,13 +1323,14 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
 
       <footer className="bottom-bar">
         {compact && (
-          <button
-            className="mobile-sheet-close"
+          <Button
+            className="mobile-sheet-close touch-pack"
             onClick={() => setMobilePanel(null)}
           >
-            Retour à la carte ×
-          </button>
+            Retour à la carte <PackIcon asset="ui-close" />
+          </Button>
         )}
+        {sheetNotice}
         <section className="army-overview" aria-label="Votre population">
           <div className="army-title">
             <span
@@ -1386,9 +1384,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             ) : s.resources.food < 20 ? (
               <button
                 className="army-food-shortcut"
-                onClick={showFoodProduction}
+                onClick={() => showResourceProduction('food')}
               >
-                Viande insuffisante ? Voir la cantine →
+                Vivres insuffisants ? Voir la ferme →
               </button>
             ) : (
               'Une armée commence par un bon repas.'
@@ -1429,6 +1427,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     title={reason || b.short}
                     aria-label={`${b.name}${reason ? `. ${reason}` : ''}`}
                   >
+                    {compact && <PanelSkin kind="paper" />}
                     <Sprite asset={buildingArt(kind)} />
                     <div>
                       <strong>{b.name}</strong>
@@ -1479,6 +1478,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       title={reason || `Recruter : ${c.name}`}
                       aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
                     >
+                      {compact && <PanelSkin kind="paper" />}
                       <CreaturePortrait kind={kind} />
                       <div>
                         <strong>{c.name}</strong>
@@ -1524,7 +1524,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
 
       {compact && (
         <nav className="mobile-nav" aria-label="Navigation du jeu">
-          <button
+          <Button
+            className="touch-pack"
             aria-pressed={mobilePanel === null}
             onClick={() => {
               setMobilePanel(null);
@@ -1534,8 +1535,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           >
             <Crosshair size={19} />
             Carte
-          </button>
-          <button
+          </Button>
+          <Button
+            className="touch-pack"
             aria-pressed={mobilePanel === 'details'}
             onClick={() =>
               setMobilePanel(mobilePanel === 'details' ? null : 'details')
@@ -1543,8 +1545,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           >
             <Flag size={19} />
             Détails
-          </button>
-          <button
+          </Button>
+          <Button
+            className="touch-pack"
             aria-pressed={mobilePanel === 'build'}
             onClick={() => {
               setMobilePanel(mobilePanel === 'build' ? null : 'build');
@@ -1553,17 +1556,18 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           >
             <Hammer size={19} />
             Bâtir
-          </button>
-          <button
+          </Button>
+          <Button
+            className="touch-pack"
             aria-pressed={mobilePanel === 'recruit'}
             onClick={() => {
               setMobilePanel(mobilePanel === 'recruit' ? null : 'recruit');
               setTab('recruit');
             }}
           >
-            <Swords size={19} />
+            <PackIcon asset="ui-sword" />
             Recruter
-          </button>
+          </Button>
         </nav>
       )}
 
@@ -1647,11 +1651,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   <div>
                     <strong>Installez la cantine</strong>
                     <p>
-                      Vous commencez sans ressources. Le manoir produit l’or et
-                      l’essence, les gobelins récupèrent le bois. Dès que vous
-                      avez 80 or et 25 bois, choisissez « Cantine des hordes »,
-                      puis cliquez sur votre terrain libre, à côté du manoir.
-                      Les gobelins construisent automatiquement.
+                      Recrutez votre premier gobelin avec les 35 or de départ.
+                      Vos gobelins récoltent l’or, le bois et les vivres, puis
+                      les déposent au manoir. Seule l’essence est produite par
+                      les bâtiments. Dès que vous avez 80 or et 25 bois,
+                      choisissez « Cantine des hordes », puis cliquez sur votre
+                      terrain libre, à côté du manoir. Les gobelins construisent
+                      automatiquement.
                     </p>
                   </div>
                 </div>
@@ -1663,8 +1669,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       Sélectionnez la friche au centre et revendiquez-la pour 40
                       or et 18 essence. Une fois la cantine terminée,
                       construisez-y une crypte. Elle produit de l’essence et
-                      débloque les squelettes. Améliorer le manoir accélère
-                      aussi vos revenus.
+                      débloque les squelettes. Améliorer le manoir augmente sa
+                      production d’essence.
                     </p>
                   </div>
                 </div>

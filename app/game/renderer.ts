@@ -1331,7 +1331,11 @@ export class Renderer {
           }
           if ((u.gathering?.cargo ?? 0) > 0)
             this.sprite(
-              u.gathering!.kind === 'wood' ? 'wood' : 'ui-gold',
+              u.gathering!.kind === 'wood'
+                ? 'wood'
+                : u.gathering!.kind === 'gold'
+                  ? 'ui-gold'
+                  : 'ui-food',
               x + 20,
               y - 4,
               0.45,

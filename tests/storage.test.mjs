@@ -1,35 +1,27 @@
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  tick,
-  upgrade,
-  entrance,
-  RESOURCE_CAP,
-  recruit,
-} from '../app/game/engine.ts';
+import { tick, upgrade, entrance, RESOURCE_CAP } from '../app/game/engine.ts';
 import { strategyUnit } from '../app/game/strategy.ts';
 
-test('Passive stocks cap immediately; wood resumes only after a delivery following spending', () => {
+test('Without workers only essence grows; buildings never fill material stocks', () => {
   const s = createGame();
+  s.units = [];
   s.lots[4].kind = 'canteen';
   s.lots[4].owned = true;
-  s.resources = { gold: 999.9, wood: 1000, food: 999.9, mana: 999.9 };
+  s.resources = { gold: 999.9, wood: 999.9, food: 999.9, mana: 999.9 };
   tick(s, 10);
-  for (const value of Object.values(s.resources))
-    assert.equal(value, RESOURCE_CAP);
+  assert.deepEqual(s.resources, {
+    gold: 999.9,
+    wood: 999.9,
+    food: 999.9,
+    mana: RESOURCE_CAP,
+  });
   assert.equal(s.resourceGains.length, 0);
   assert.equal(upgrade(s, 3), '');
-  const wood = s.resources.wood;
-  assert.ok(wood < RESOURCE_CAP);
-  // Spending on an upgrade leaves the gatherers at their current duties.
-  tick(s, 60);
-  assert.ok(s.resources.wood > wood);
-  assert.ok(s.resources.wood <= RESOURCE_CAP);
-  assert.equal(recruit(s, 'goblin'), '');
-  const gold = s.resources.gold;
-  tick(s, 0.1);
-  assert.ok(s.resources.gold > gold && s.resources.gold < RESOURCE_CAP);
+  const materials = { ...s.resources };
+  tick(s, 10);
+  assert.deepEqual(s.resources, materials);
 });
 test('Tower loot fills only remaining storage and cannot be credited twice', () => {
   const s = createGame(),

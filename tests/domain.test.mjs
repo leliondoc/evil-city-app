@@ -273,7 +273,8 @@ test('Meals and sleep use their buildings and yield immediately to explicit move
   tick(s, 0.1);
   assert.equal(u.task, 'eat');
   assert.equal(thought(s, u), 'Repas');
-  const expectedFood = s.resources.food + (foodBalance(s).net / 60) * 4;
+  const expectedFood =
+    s.resources.food + (-foodBalance(s).consumption / 60) * 4;
   tick(s, 4);
   assert.ok(Math.abs(s.resources.food - expectedFood) < 0.001);
   assert.ok(u.nextMealAt > s.elapsed);

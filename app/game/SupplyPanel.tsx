@@ -112,7 +112,9 @@ export function SupplySelection({
   const reason = raidSupplyReason(s, selection);
   return (
     <section className="selection-panel" aria-label="Détails du ravitaillement">
-      <p className="eyebrow">Économie humaine</p>
+      <p className="eyebrow">
+        {worker ? 'Économie humaine' : 'Site de récolte'}
+      </p>
       <h3 className="selection-name">{worker ? def.worker : def.name}</h3>
       <div className="selection-art">
         <Sprite
@@ -125,7 +127,7 @@ export function SupplySelection({
           ? `Récolte 10 ${def.label.toLowerCase()}, puis les livre. L’éliminer fait perdre sa cargaison et interrompt sa route pendant au moins 40 s.`
           : `Alimente les humains en ${def.label.toLowerCase()}. Saboter ce site rapporte 15 ressources et coupe la production pendant au moins 90 s. Prendre son bâtiment arrête la production tant que vous le contrôlez.`}
       </p>
-      {!worker && site.kind !== 'food' && (
+      {!worker && (
         <>
           <GameButton
             className="primary-btn"
@@ -135,7 +137,7 @@ export function SupplySelection({
             <ResourceIcon kind={site.kind} /> Envoyer un gobelin récolter
           </GameButton>
           <p className="reason">
-            Chargements de 10, livrés au manoir. Vous pouvez aussi sélectionner
+            Chargements de 30, livrés au manoir. Vous pouvez aussi sélectionner
             un gobelin puis donner un ordre sur ce site.
           </p>
         </>

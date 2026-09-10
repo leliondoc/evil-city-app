@@ -174,24 +174,18 @@ test('The lumberjack reaches the side of the trunk, faces it and completes repea
   // Entire visible crown (including sway) has a margin before the eastern road.
   assert.ok(site.x * 32 + 32 < 30 * 32);
 });
-test('A canteen can be built with zero food, feeds the player and scales with upgrades', () => {
+test('A canteen consumes harvested food more efficiently without generating any stock', () => {
   const s = createGame();
   s.resources = { gold: 300, wood: 125, food: 0, mana: 0 };
-  const humanFood = s.economy.stocks.food;
-  assert.deepEqual(foodBalance(s), { production: 0, consumption: 9, net: -9 });
+  assert.equal(foodBalance(s).consumption, 9);
   assert.equal(build(s, 7, 'canteen'), '');
-  tick(s, 1);
-  assert.equal(foodBalance(s).production, 0);
   for (let i = 0; i < 600 && s.lots[7].construction; i++) tick(s, 0.1);
   assert.equal(s.lots[7].kind, 'canteen');
-  assert.deepEqual(foodBalance(s), { production: 45, consumption: 9, net: 36 });
-  assert.equal(rates(s).food, 0.6);
-  const before = s.resources.food;
-  tick(s, 30);
-  assert.ok(Math.abs(s.resources.food - before - 18) < 0.001);
-  assert.ok(s.economy.stocks.food >= humanFood); // Independent human deliveries.
+  assert.equal(s.resources.food, 0);
+  assert.equal(foodBalance(s).consumption, 8);
+  assert.equal(rates(s).food, -8 / 60);
   assert.equal(upgrade(s, 7), '');
-  assert.deepEqual(foodBalance(s), { production: 90, consumption: 9, net: 81 });
+  assert.equal(foodBalance(s).consumption, 6);
   s.lots[7].owned = false;
-  assert.equal(foodBalance(s).production, 0);
+  assert.equal(foodBalance(s).consumption, 9);
 });

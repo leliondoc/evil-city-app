@@ -140,7 +140,7 @@ test('Capturing a source cancels queued reinforcements but never deletes enemies
   );
 });
 
-test('Guards reclaim property, cancel its workers and remove its housing/income', () => {
+test('Guards reclaim property, cancel its workers and remove its housing', () => {
   const s = createGame();
   fifthParcel(s);
   advance(s, 27);
@@ -154,7 +154,7 @@ test('Guards reclaim property, cancel its workers and remove its housing/income'
   assert.equal(lot.owned, false);
   assert.equal(lot.kind, 'house');
   assert.ok(capacity(s) < before);
-  assert.ok(rates(s).gold < income);
+  assert.equal(rates(s).gold, income); // Buildings no longer produce gold.
   const site = s.lots[8];
   for (const u of s.units) {
     u.x = 0;

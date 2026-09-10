@@ -135,13 +135,13 @@ test('An attacked hero remembers the first living aggressor and can track a new 
   assert.equal(e.pursuitTarget, undefined);
 });
 
-test('The guild launches an offensive expedition at six minutes without player expansion', () => {
+test('The guild launches an offensive expedition at eight minutes without player expansion', () => {
   const s = createGame();
-  s.elapsed = 360;
+  s.elapsed = 480;
   s.economy.nextUpgradeAt = 10000;
   s.economy.stocks = { gold: 100, wood: 100, food: 100 };
   tick(s, 0.1);
-  assert.equal(PRESSURE.hero.time, 360);
+  assert.equal(PRESSURE.hero.time, 480);
   assert.equal(s.mobilization.hero.active, true);
   tick(s, PRESSURE.hero.warning + 1);
   assert.ok(

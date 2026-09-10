@@ -86,8 +86,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   hq: {
     name: 'Manoir du mal',
     description:
-      'Le cœur de votre domaine. Le tribut finance vos ambitions, et ses caves distillent la magie.',
-    short: 'Or et essence',
+      'Le cœur de votre domaine. Les gobelins y déposent leurs récoltes ; ses caves distillent l’essence.',
+    short: 'Dépôt et essence',
     art: 0,
     cost: {},
     duration: 0,
@@ -95,8 +95,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   den: {
     name: 'Tanière gobeline',
     description:
-      'Des lits de fortune, une odeur douteuse. Accueille 6 créatures de plus et collecte un petit tribut.',
-    short: '+6 places · +15 or/min',
+      'Des lits de fortune, une odeur douteuse. Accueille 6 créatures de plus et leur permet de se reposer.',
+    short: '+6 places · repos',
     art: 1,
     cost: { gold: 70, wood: 25 },
     duration: 18,
@@ -104,8 +104,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   canteen: {
     name: 'Cantine des hordes',
     description:
-      'La cantine prépare la viande qui remplit votre réserve de vivres. Cette même réserve nourrit vos créatures et paie leur recrutement.',
-    short: '+45 vivres/min',
+      'La cantine sert les vivres rapportés par vos gobelins. Elle réduit la consommation de 20 % par niveau, jusqu’à 60 %, et permet de manger sur place.',
+    short: '−20 % de consommation',
     art: 2,
     cost: { gold: 80, wood: 25 },
     duration: 18,
@@ -149,8 +149,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   house: {
     name: 'Maison des Tilleuls',
     description:
-      'Une maison bien tranquille. Une fois conquise, elle verse un tribut et peut être transformée.',
-    short: '+21 or/min',
+      'Une maison bien tranquille. Une fois conquise, elle peut être transformée.',
+    short: 'Parcelle à transformer',
     art: 6,
     cost: {},
     duration: 0,
@@ -158,8 +158,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   tavern: {
     name: 'Auberge du Merle',
     description:
-      'Le rendez-vous du quartier. Sous votre influence, son aubergiste vous versera un généreux tribut.',
-    short: '+42 or/min',
+      'Le rendez-vous du quartier. Sa conquête coupe les livraisons humaines et permet de transformer le bâtiment.',
+    short: 'Coupe une route humaine',
     art: 7,
     cost: {},
     duration: 0,
@@ -335,11 +335,11 @@ export interface Unit extends Point {
   moving?: boolean;
   gathering?: {
     site: number;
-    kind: 'wood' | 'gold';
+    kind: Supply;
+    automatic?: boolean;
     phase: 'outbound' | 'harvest' | 'return';
     cargo: number;
     progress: number;
-    workSeconds?: number;
   };
   id: number;
   kind: CreatureKind;
@@ -497,14 +497,14 @@ export interface Mobilization {
 export const PRESSURE = {
   guard: {
     territory: 5 / 9,
-    time: 420,
+    time: 540,
     warning: 25,
     interval: 100,
     source: 'hall',
   },
   hero: {
     territory: 6 / 9,
-    time: 360,
+    time: 480,
     warning: 35,
     interval: 140,
     source: 'guild',
@@ -1411,11 +1411,14 @@ export function upgrade(s: State, id: number) {
   return '';
 }
 export function foodBalance(s: State) {
-  const production = s.lots.reduce(
-    (total, l) => total + (l.owned && l.kind === 'canteen' ? 45 * l.level : 0),
+  const production = Math.round(harvestRates(s).food * 60);
+  const kitchen = Math.max(
     0,
+    ...s.lots
+      .filter((l) => l.owned && l.kind === 'canteen' && !l.construction)
+      .map((l) => l.level),
   );
-  const consumption = s.units.reduce(
+  const rawConsumption = s.units.reduce(
     (total, u) =>
       total +
       (u.kind === 'skeleton' || u.kind === 'specter'
@@ -1425,33 +1428,44 @@ export function foodBalance(s: State) {
           : 3),
     0,
   );
+  const consumption = Math.ceil(
+    rawConsumption * (1 - Math.min(0.6, kitchen * 0.2)),
+  );
   return { production, consumption, net: production - consumption };
 }
 export const GOBLIN_CAP = 6;
-const GOBLIN_WOOD_PER_SECOND = 0.22;
-function gathersWood(unit: Unit) {
+export const GOBLIN_LOAD = 30;
+const GOBLIN_HARVEST_PER_SECOND = 0.6;
+function gathers(unit: Unit, kind: Supply) {
   return (
     unit.hp > 0 &&
     unit.kind === 'goblin' &&
     (unit.task === 'idle' || unit.task === 'forage') &&
-    unit.gathering?.kind !== 'gold'
+    unit.gathering?.kind === kind
   );
 }
 function gatheringApproach(site: ResourceSite, u: Unit): Point {
   const p = resourceApproach(site);
   return site.kind === 'wood'
     ? { x: p.x, y: p.y + (u.id % 3) * 1.1 }
-    : { x: p.x - (u.id % 2) * 0.7, y: p.y };
+    : site.kind === 'gold'
+      ? { x: p.x - (u.id % 2) * 0.7, y: p.y }
+      : p;
 }
 /** Orders and automatic gathering use the same visible resource sites. */
-export function gather(s: State, unitId: number, siteId: number): string {
+export function gather(
+  s: State,
+  unitId: number,
+  siteId: number,
+  automatic = false,
+): string {
   if (s.won || s.lost) return 'La partie est terminée.';
   const u = s.units.find(
     (v) => v.id === unitId && v.hp > 0 && v.kind === 'goblin',
   );
   const site = s.sites.find((v) => v.id === siteId);
-  if (!u || !site || site.kind === 'food')
-    return 'Choisissez un gobelin et une source de bois ou d’or.';
+  if (!u || !site)
+    return 'Choisissez un gobelin et une source de bois, d’or ou de vivres.';
   if (site.hp <= 0) return 'Ce site est détruit : attendez sa réparation.';
   const point = gatheringApproach(site, u);
   if (!findPath(u, point).length && distanceBetween(u, point) >= 1)
@@ -1468,6 +1482,7 @@ export function gather(s: State, unitId: number, siteId: number): string {
           cargo: 0,
           progress: 0,
         };
+  u.gathering.automatic = automatic;
   const returning = u.gathering.cargo > 0;
   u.gathering.phase = returning ? 'return' : 'outbound';
   u.gathering.progress = 0;
@@ -1477,15 +1492,15 @@ export function gather(s: State, unitId: number, siteId: number): string {
 export function gatheringText(u: Unit) {
   const g = u.gathering;
   if (!g || u.task !== 'forage') return 'Disponible';
-  const name = g.kind === 'wood' ? 'bois' : 'or';
+  const name = g.kind === 'wood' ? 'bois' : g.kind === 'gold' ? 'or' : 'vivres';
   return g.phase === 'return'
     ? `Rapporte ${g.cargo} ${name}`
     : g.phase === 'harvest'
-      ? `Récolte du ${name}`
+      ? `Récolte ${g.kind === 'gold' ? 'de l’or' : g.kind === 'food' ? 'des vivres' : 'du bois'}`
       : `Rejoint la source de ${name}`;
 }
-export function harvestRates(s: State): Pick<Resources, 'wood' | 'gold'> {
-  const result = { wood: 0, gold: 0 };
+export function harvestRates(s: State): Record<Supply, number> {
+  const result = { wood: 0, gold: 0, food: 0 };
   for (const u of s.units) {
     if (
       u.hp <= 0 ||
@@ -1493,22 +1508,51 @@ export function harvestRates(s: State): Pick<Resources, 'wood' | 'gold'> {
       !['idle', 'forage'].includes(u.task)
     )
       continue;
-    result[u.gathering?.kind ?? 'wood'] += GOBLIN_WOOD_PER_SECOND;
+    const kind = u.gathering?.kind ?? automaticSite(s, u)?.kind;
+    if (kind) result[kind] += GOBLIN_HARVEST_PER_SECOND;
   }
   return result;
+}
+function automaticSite(s: State, u: Unit) {
+  const targets: Record<Supply, number> = { gold: 80, wood: 25, food: 24 };
+  const score = (site: ResourceSite) => {
+    const incoming = s.units
+      .filter(
+        (v) =>
+          v.id !== u.id &&
+          v.hp > 0 &&
+          ['idle', 'forage'].includes(v.task) &&
+          v.gathering?.kind === site.kind,
+      )
+      .reduce((sum, v) => sum + (v.gathering!.cargo || GOBLIN_LOAD), 0);
+    return (
+      (targets[site.kind] - s.resources[site.kind] - incoming) /
+      targets[site.kind]
+    );
+  };
+  return s.sites
+    .filter((site) => site.hp > 0 && s.resources[site.kind] < RESOURCE_CAP)
+    .sort(
+      (a, b) =>
+        score(b) - score(a) ||
+        ['gold', 'wood', 'food'].indexOf(a.kind) -
+          ['gold', 'wood', 'food'].indexOf(b.kind),
+    )[0];
 }
 function advanceGathering(s: State, u: Unit, dt: number): boolean {
   if (u.kind !== 'goblin') return false;
   if (u.task === 'idle') {
     const site =
-      s.sites.find((v) => v.id === u.gathering?.site) ??
-      s.sites.find((v) => v.kind === 'wood' && v.hp > 0);
+      u.gathering && (!u.gathering.automatic || u.gathering.cargo > 0)
+        ? s.sites.find((v) => v.id === u.gathering?.site)
+        : automaticSite(s, u);
     if (!site) return false;
     // Deliver a retained load after an interrupted trip, even if its source was destroyed.
     if (u.gathering && u.gathering.cargo > 0) {
       u.gathering.phase = 'return';
       assign(u, entrance(s.lots[6]), 'forage', site.id);
-    } else if (gather(s, u.id, site.id)) return false;
+    } else if (gather(s, u.id, site.id, u.gathering?.automatic ?? true))
+      return false;
   }
   if (u.task !== 'forage' || !u.gathering) return false;
   const g = u.gathering;
@@ -1536,19 +1580,12 @@ function advanceGathering(s: State, u: Unit, dt: number): boolean {
     u.target = null;
     return true;
   }
-  if (g.phase === 'outbound') {
-    const route = findPath(entrance(s.lots[6]), resourceApproach(site));
-    g.workSeconds = Math.max(
-      8,
-      10 / GOBLIN_WOOD_PER_SECOND - (2 * route.length) / CREATURES.goblin.speed,
-    );
-  }
   g.phase = 'harvest';
   u.facing = site.x >= u.x ? 1 : -1;
   g.progress += dt;
-  // Ten resources per trip; allow for travel to keep production close to 13/min.
-  if (g.progress >= (g.workSeconds ?? 8)) {
-    g.cargo = 10;
+  // Material resources enter storage only after a complete physical round trip.
+  if (g.progress >= 8) {
+    g.cargo = GOBLIN_LOAD;
     g.phase = 'return';
     g.progress = 0;
     assign(u, entrance(s.lots[6]), 'forage', site.id);
@@ -1557,13 +1594,17 @@ function advanceGathering(s: State, u: Unit, dt: number): boolean {
 }
 export function goblinWorkforce(s: State) {
   const goblins = s.units.filter((u) => u.kind === 'goblin' && u.hp > 0);
-  const wood = goblins.filter(gathersWood).length;
+  const wood = goblins.filter((u) => gathers(u, 'wood')).length;
+  const gold = goblins.filter((u) => gathers(u, 'gold')).length;
+  const food = goblins.filter((u) => gathers(u, 'food')).length;
   const building = goblins.filter((u) => u.task === 'build').length;
   return {
     total: goblins.length,
     wood,
+    gold,
+    food,
     building,
-    other: goblins.length - wood - building,
+    other: goblins.length - wood - gold - food - building,
     queued: s.recruits.filter((r) => r.kind === 'goblin').length,
   };
 }
@@ -1572,20 +1613,15 @@ export function rates(s: State): Resources {
   for (const l of s.lots.filter((l) => l.owned)) {
     const n = l.level;
     if (l.kind === 'hq') {
-      rate.gold += 0.85 * n;
       rate.mana += 0.18 * n;
     }
-    if (l.kind === 'den') rate.gold += 0.25 * n;
     if (l.kind === 'crypt') rate.mana += 0.4 * n;
-    if (l.kind === 'house') rate.gold += 0.35 * n;
-    if (l.kind === 'tavern') rate.gold += 0.7 * n;
     if (l.kind === 'hall') {
-      rate.gold += 1;
       rate.mana += 0.5;
     }
     if (l.kind === 'guild') rate.mana += 0.3 * n;
   }
-  rate.food = foodBalance(s).net / 60;
+  rate.food = -foodBalance(s).consumption / 60;
   return rate;
 }
 const distanceBetween = (a: Point, b: Point) =>

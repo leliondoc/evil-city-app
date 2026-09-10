@@ -10,7 +10,7 @@ import {
   HUMAN_WORKER_SECONDS,
 } from '../app/game/engine.ts';
 
-function until(s, predicate, limit = 240) {
+function until(s, predicate, limit = 360) {
   for (let i = 0; i < limit * 10 && !predicate(); i++) tick(s, 0.1);
   assert.ok(predicate(), 'Opening is not blocked');
 }

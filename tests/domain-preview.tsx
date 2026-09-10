@@ -8,7 +8,7 @@ import '../app/globals.css';
 import { entrance, recruit, tick } from '../app/game/engine';
 import { haunt, leaveCorpse } from '../app/game/domain';
 
-const state = createGame();
+export const state = createGame();
 state.resources = { gold: 500, wood: 250, food: 200, mana: 200 };
 state.lots[7].kind = 'crypt';
 state.lots[4].kind = 'canteen';

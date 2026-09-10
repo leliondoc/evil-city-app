@@ -68,8 +68,10 @@ test('Starting at zero reaches every construction tier, funds trolls and repels 
     until(s, () => s.lots[id].kind === kind);
   };
   construct(7, 'canteen');
-  until(s, () => !upgradeReason(s, 6));
-  assert.equal(upgrade(s, 6), ''); // Reinvest earned tribute into the manor's economy.
+  for (let i = 0; i < 3; i++) {
+    until(s, () => !recruitReason(s, 'goblin'));
+    recruit(s, 'goblin');
+  }
   until(s, () => !claimReason(s, 4));
   assert.equal(claim(s, 4), '');
   construct(4, 'crypt');
@@ -190,9 +192,9 @@ test('Upgrades change production and cannot exceed level three', () => {
   const s = createGame();
   s.resources.gold = 999;
   s.resources.wood = 999;
-  const before = rates(s).gold;
+  const before = rates(s).mana;
   assert.equal(upgrade(s, 6), '');
-  assert.ok(rates(s).gold > before);
+  assert.ok(rates(s).mana > before);
   assert.equal(upgrade(s, 6), '');
   assert.ok(upgrade(s, 6));
   assert.equal(s.lots[6].level, 3);

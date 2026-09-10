@@ -62,7 +62,8 @@ export function GameButton({
   ...props
 }: ComponentProps<typeof BaseButton> & { tone?: 'blue' | 'red' }) {
   const skin =
-    typeof className === 'string' && className.includes('primary-btn');
+    typeof className === 'string' &&
+    (className.includes('primary-btn') || className.includes('touch-pack'));
   return (
     <BaseButton
       {...props}

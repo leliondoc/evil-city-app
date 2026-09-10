@@ -2250,7 +2250,7 @@ svg {
 .game-shell[data-compact='true'] .topbar {
   display: grid;
   grid-template-columns: 32px 1fr;
-  grid-template-rows: 42px 44px;
+  grid-template-rows: 44px 44px;
   height: auto;
   flex: 0 0 auto;
   gap: 0 8px;
@@ -2442,6 +2442,80 @@ svg {
   color: #c2d2ca;
   font-size: 12px;
 }
+/* Original pack buttons keep the same recognizable controls on touch screens. */
+.touch-pack.pack-action {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: #fff4d8;
+  text-shadow: 0 1px 1px #20313b;
+  box-shadow: none;
+  font-weight: 700;
+}
+.touch-pack.pack-action[aria-pressed='true'] .pack-button-rest {
+  display: none;
+}
+.touch-pack.pack-action[aria-pressed='true'] .pack-button-down {
+  display: block;
+}
+.touch-pack.pack-action[aria-pressed='true'] {
+  color: #ffe29a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.mobile-nav { gap: 3px; }
+.mobile-nav .pack-icon { width: 22px; height: 22px; }
+.mobile-sheet-close.touch-pack {
+  position: sticky;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  margin: 4px 0 8px;
+}
+.mobile-sheet-close .pack-icon { width: 24px; height: 24px; }
+.touch-sheet-notice {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  color: #382f25;
+}
+.game-shell[data-compact='true']:not([data-panel='map']) .game-notifications {
+  display: none;
+}
+.touch-selection.touch-pack { position: absolute; display: block; }
+.game-shell[data-compact='true'] .build-card {
+  font-size: 14px;
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border: 0;
+  color: #382f25;
+  opacity: 1;
+  padding: 18px 16px;
+}
+.game-shell[data-compact='true'] .build-card strong {
+  color: #382f25;
+}
+.game-shell[data-compact='true'] .build-card small {
+  color: #4c5140;
+}
+.game-shell[data-compact='true'] .build-card .recruit-blocker {
+  color: #81362b;
+}
+.game-shell[data-compact='true'] .build-card .card-cost { color: #453622; }
+.game-shell[data-compact='true'] .build-card .cost-missing { color: #8e2926; }
+.game-shell[data-compact='true'] .build-card:focus-visible {
+  outline: 3px solid #ffdc83;
+  outline-offset: -3px;
+}
 .mobile-nav button[aria-pressed='true'],
 .touch-toolbar button[aria-pressed='true'] {
   background: #3a504e;
@@ -2556,6 +2630,20 @@ svg {
   .game-shell[data-compact='true'] .sidebar {
     max-height: 100%;
   }
+  .game-shell[data-compact='true'] .bottom-bar {
+    max-height: calc(100% - 44px - var(--mobile-nav-height));
+  }
+  .game-shell[data-compact='true'][data-panel='recruit'] .army-overview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+  }
+  .game-shell[data-compact='true'] .army-title {
+    flex: 0 0 165px;
+    margin: 0;
+  }
+  .game-shell[data-compact='true'] .army-faces { flex: 1; }
   .game-shell[data-compact='true'] .touch-toolbar {
     right: auto;
     width: 260px;
@@ -2569,7 +2657,11 @@ svg {
     bottom: 60px;
   }
 }
+@media (max-width: 380px) {
+  .game-shell[data-compact='true'] .goblin-counter small { display: none; }
+}
 @media (max-width: 800px), (pointer: coarse) {
+  .ui-modal button { min-height: 44px; }
   .district-popover[data-slot='popover-content'] {
     max-height: calc(100dvh - 100px);
     overflow-y: auto;
@@ -2709,8 +2801,7 @@ svg {
   display: none;
 }
 .game-shell[data-compact='true'] .goblin-counter small {
-  font-size: 9px;
-  white-space: nowrap;
+  display: none;
 }
 @media (max-height: 500px) {
   .game-shell[data-compact='true'] .topbar {
