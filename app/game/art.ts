@@ -71,7 +71,7 @@ export function animationFrame(sequence: AssetKey[], seconds: number) {
   }
   return { key: sequence[0], frame: 0 };
 }
-export const portrait = (kind: Exclude<CreatureKind, 'specter'>) =>
+export const portrait = (kind: CreatureKind) =>
   ASSETS[`${kind}-avatar`].src;
 
 export function workerArt(worker: HumanWorker, site: ResourceSite): AssetKey {

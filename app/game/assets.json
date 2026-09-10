@@ -1680,6 +1680,14 @@
     "frames": 3,
     "anchor": 0.5
   },
+  "specter-avatar": {
+    "src": "/tiny-swords/specter-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
   "specter-idle": {
     "src": "/tiny-swords/bestiary-thief-idle.png",
     "width": 1152,

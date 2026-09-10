@@ -24,7 +24,7 @@ La licence indiquée sur la page officielle autorise l’usage personnel et comm
 | Colosse     | Minotaur            | Idle, Walk, Attack                   |
 | Saboteur    | Thief (incarne le spectre) | Idle, Run, Attack |
 
-Le spectre utilise les trois sprites PNG du voleur (Thief) déjà présents dans le pack, sans retouche. Les entrées `specter-idle`, `specter-walk` et `specter-attack` du manifeste pointent vers ces mêmes fichiers. Son portrait est une frame animée du sprite. Les feux follets de hantise utilisent `Hex Shaman/Hex Shaman_Projectile.png` du même pack, copié sans retouche dans `haunt-wisp.png` (trois frames de 128 × 128).
+Le spectre utilise les trois sprites PNG du voleur (Thief) déjà présents dans le pack, sans retouche. Les entrées `specter-idle`, `specter-walk` et `specter-attack` du manifeste pointent vers ces mêmes fichiers. Son portrait utilise l’illustration originale `Thief/Thief_Avatar.png`, copiée sans retouche dans `specter-avatar.png`, pour les cartes de recrutement, de sélection et de groupe. Les feux follets de hantise utilisent `Hex Shaman/Hex Shaman_Projectile.png` du même pack, copié sans retouche dans `haunt-wisp.png` (trois frames de 128 × 128).
 
 Les morts utilisent la planche originale `Factions/Knights/Troops/Dead/Dead.png` de Tiny Swords (Update 010), copiée sans retouche dans `unit-death.png` par `scripts/import-death-pack.py`. Ses 14 frames de 128 × 128 sont lues sur deux rangées. Les dépouilles récupérables restent sur la frame posée au sol avant la disparition ; les morts-vivants jouent le cycle complet et ne laissent aucun reste. Le transport utilise aussi ce sprite. Les textes d’activité sont dessinés par le moteur Canvas.
 

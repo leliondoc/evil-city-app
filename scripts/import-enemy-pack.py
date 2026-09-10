@@ -68,6 +68,11 @@ def main():
                             group='creatures', recruitable=recruitable, actions=actions))
     for action in ('idle', 'walk', 'attack'):
         manifest[f'specter-{action}'] = dict(manifest[f'bestiary-thief-{action}'])
+    data = archive.read('Tiny Swords (Enemy Pack)/Enemy Pack/Thief/Thief_Avatar.png')
+    png_width, png_height = struct.unpack_from('>II', data, 16)
+    (ROOT / 'public/tiny-swords/specter-avatar.png').write_bytes(data)
+    manifest['specter-avatar'] = dict(src='/tiny-swords/specter-avatar.png', width=png_width, height=png_height,
+                                     frameWidth=png_width, frames=1, anchor=.67)
     # Original looping magic projectile, used as wisps around haunted buildings.
     data = archive.read('Tiny Swords (Enemy Pack)/Enemy Pack/Hex Shaman/Hex Shaman_Projectile.png')
     png_width, png_height = struct.unpack_from('>II', data, 16)

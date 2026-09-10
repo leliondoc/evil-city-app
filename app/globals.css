@@ -2213,19 +2213,6 @@ svg {
   width: 48px;
   height: 48px;
 }
-.creature-portrait {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 auto;
-}
-.build-card .creature-portrait {
-  width: 56px;
-  height: 56px;
-}
-.selected-group .creature-portrait {
-  width: 48px;
-  height: 48px;
-}
 .selected-group small {
   color: #bfcdca;
 }
