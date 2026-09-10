@@ -156,6 +156,21 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [tab, setTab] = useState('build');
+  const [compact, setCompact] = useState(
+    () => window.matchMedia('(max-width: 800px), (pointer: coarse)').matches,
+  );
+  const [mobilePanel, setMobilePanel] = useState<
+    'details' | 'build' | 'recruit' | null
+  >(null);
+  const [touchMode, setTouchMode] = useState<'inspect' | 'select' | 'command'>(
+    'inspect',
+  );
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 800px), (pointer: coarse)');
+    const update = () => setCompact(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
   const [bestiaryAction, setBestiaryAction] = useState<Animation>('idle');
   const [modal, setModal] = useState<
     'guide' | 'bestiary' | 'settings' | 'restart' | 'victory' | 'defeat' | null
@@ -214,12 +229,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           run((state) =>
             commandUnits(state, selectedUnitIds(selected), target, point),
           )
-        )
+        ) {
           setFeedback('');
+          setTouchMode('inspect');
+        }
       } else
-        notify(
-          'Sélectionnez une de vos créatures pour lui donner un ordre au clic droit.',
-        );
+        notify('Sélectionnez une de vos créatures pour lui donner un ordre.');
     },
     [notify, run],
   );
@@ -267,6 +282,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     }
   }, [selection, pendingBuild]);
   useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.cancelGesture();
+      rendererRef.current.interactionMode = compact ? touchMode : 'inspect';
+    }
+  }, [compact, touchMode]);
+  useEffect(() => {
     if (
       selection.type === 'guildHero' ||
       (selection.type === 'lot' && selection.id === 0)
@@ -285,6 +306,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         return;
       }
       setPendingBuild(kind);
+      setTouchMode('inspect');
+      setMobilePanel(null);
       setTab('build');
       notify('Choisissez une parcelle à vous pour lancer le chantier.');
     },
@@ -389,6 +412,11 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   ];
   const currentMilestone = milestones.findIndex((done) => !done);
   const message = feedback || (s.noticeUntil > s.elapsed ? s.notice : '');
+  const chooseTouchMode = (mode: 'inspect' | 'select' | 'command') => {
+    setTouchMode(mode);
+    setPendingBuild(null);
+    if (mode === 'command') setMobilePanel(null);
+  };
   const count = (kind: CreatureKind) =>
     s.units.filter((u) => u.kind === kind).length;
   const cycleLot = (direction: number) => {
@@ -406,6 +434,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     setSpeed(1);
     setFeedback('');
     setModal(null);
+    setMobilePanel(null);
+    setTouchMode('inspect');
     victoryShown.current = false;
     rendererRef.current?.resetView();
     refresh((n) => n + 1);
@@ -442,6 +472,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           'Revendiquez une friche ou transformez une maison conquise pour installer une cantine.',
         );
     }
+    setMobilePanel('details');
     requestAnimationFrame(() =>
       sidebarRef.current
         ?.querySelector('.selection-panel')
@@ -450,7 +481,11 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   };
 
   return (
-    <main className="game-shell">
+    <main
+      className="game-shell"
+      data-compact={compact}
+      data-panel={mobilePanel ?? 'map'}
+    >
       <header className="topbar">
         <div className="brand">
           <img
@@ -564,6 +599,14 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           className="sidebar"
           aria-label="Objectifs et sélection"
         >
+          {compact && (
+            <button
+              className="mobile-sheet-close"
+              onClick={() => setMobilePanel(null)}
+            >
+              Fermer les détails ×
+            </button>
+          )}
           <section>
             <p className="eyebrow">Chapitre I · Premiers méfaits</p>
             <div className="chapter">
@@ -622,13 +665,15 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 ))}
               </div>
               <p className="reason">
-                Clic droit : déplacer le groupe ou attaquer une cible. Les
-                gobelins ne combattent pas.
+                {compact
+                  ? 'Fermez les détails, puis Ordre et touchez la destination ou la cible.'
+                  : 'Clic droit : déplacer le groupe ou attaquer une cible.'}{' '}
+                Les gobelins ne combattent pas.
               </p>
               <p className="reason">
-                Shift + clic : ajouter ou retirer une unité. Shift + rectangle :
-                compléter la sélection. Échap ou clic dans le vide :
-                désélectionner.
+                {compact
+                  ? 'Groupe : touchez les créatures pour les ajouter ou les retirer, ou tracez un rectangle. Explorer revient au déplacement de la carte.'
+                  : 'Shift + clic : ajouter ou retirer une unité. Shift + rectangle : compléter la sélection. Échap ou clic dans le vide : désélectionner.'}
               </p>
             </section>
           ) : selection.type === 'none' ? (
@@ -636,13 +681,14 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               <p className="eyebrow">Le quartier vous attend</p>
               <h3 className="selection-name">Aucune sélection</h3>
               <p className="selection-text">
-                Cliquez sur une créature ou une parcelle pour afficher ses
-                actions. Maintenez Shift et glissez avec le bouton gauche pour
-                sélectionner plusieurs unités par rectangle.
+                {compact
+                  ? 'Touchez une créature ou une parcelle, puis ouvrez Détails. Groupe permet de sélectionner plusieurs créatures avec un rectangle.'
+                  : 'Cliquez sur une créature ou une parcelle pour afficher ses actions. Maintenez Shift et glissez avec le bouton gauche pour sélectionner plusieurs unités par rectangle.'}
               </p>
               <p className="reason">
-                Clic dans le vide ou Échap : désélectionner. Clic droit :
-                déplacer la créature sélectionnée ou attaquer une cible ennemie.
+                {compact
+                  ? 'Dans Explorer, touchez le vide pour désélectionner. Sélectionnez une créature, puis Ordre pour la déplacer ou attaquer.'
+                  : 'Clic dans le vide ou Échap : désélectionner. Clic droit : déplacer la créature sélectionnée ou attaquer une cible ennemie.'}
               </p>
             </section>
           ) : selection.type === 'worker' || selection.type === 'resource' ? (
@@ -808,8 +854,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     Rentrer au manoir
                   </Button>
                   <p className="reason">
-                    Clic droit au sol : déplacer cette créature. Sur un ennemi
-                    ou un bâtiment ennemi : attaquer avec cette créature.
+                    {compact
+                      ? 'Fermez les détails, puis Ordre : touchez le sol pour déplacer cette créature, ou une cible ennemie pour attaquer.'
+                      : 'Clic droit au sol : déplacer cette créature. Sur un ennemi ou un bâtiment ennemi : attaquer avec cette créature.'}
                   </p>
                 </>
               )}
@@ -1067,7 +1114,11 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             className="world-canvas"
             ref={canvasRef}
             tabIndex={0}
-            aria-label="Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette ou flèches : déplacer la carte. Les boutons du panneau permettent aussi de parcourir les parcelles."
+            aria-label={
+              compact
+                ? 'Carte tactile. Touchez pour sélectionner, glissez pour explorer, pincez pour zoomer. Groupe permet une sélection par rectangle ; Ordre permet de toucher une destination ou un ennemi.'
+                : 'Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette ou flèches : déplacer la carte. Les boutons du panneau permettent aussi de parcourir les parcelles.'
+            }
           />
           <div className="map-caption">
             <RibbonSkin />
@@ -1097,9 +1148,80 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             onSelect={(next) => {
               setPendingBuild(null);
               setSelection(next);
+              setMobilePanel('details');
             }}
             onDefend={() => run((state) => defend(state))}
           />
+          {compact && (
+            <>
+              <div className="touch-toolbar" aria-label="Commandes tactiles">
+                <button
+                  aria-pressed={touchMode === 'inspect'}
+                  onPointerDown={(e) => {
+                    if (e.pointerType === 'touch') {
+                      e.preventDefault();
+                      chooseTouchMode('inspect');
+                    }
+                  }}
+                  onClick={() => chooseTouchMode('inspect')}
+                >
+                  Explorer
+                </button>
+                <button
+                  aria-pressed={touchMode === 'select'}
+                  onPointerDown={(e) => {
+                    if (e.pointerType === 'touch') {
+                      e.preventDefault();
+                      chooseTouchMode('select');
+                    }
+                  }}
+                  onClick={() => chooseTouchMode('select')}
+                >
+                  Groupe
+                </button>
+                <button
+                  aria-pressed={touchMode === 'command'}
+                  disabled={!group.length || s.won || s.lost}
+                  onPointerDown={(e) => {
+                    if (
+                      e.pointerType === 'touch' &&
+                      !e.currentTarget.disabled
+                    ) {
+                      e.preventDefault();
+                      chooseTouchMode('command');
+                    }
+                  }}
+                  onClick={() => chooseTouchMode('command')}
+                >
+                  Ordre
+                </button>
+              </div>
+              <button
+                className="touch-selection"
+                onClick={() => setMobilePanel('details')}
+                aria-label="Voir les détails de la sélection"
+              >
+                {selectedUnit
+                  ? CREATURES[selectedUnit.kind].name
+                  : group.length
+                    ? `${group.length} créatures`
+                    : selectedLot
+                      ? BUILDINGS[selectedLot.kind].name
+                      : selectedEnemy
+                        ? enemyDef?.name
+                        : 'Sélectionner un élément'}
+              </button>
+              {(touchMode !== 'inspect' || pendingBuild) && (
+                <div className="touch-hint" role="status">
+                  {pendingBuild
+                    ? 'Touchez une parcelle pour construire'
+                    : touchMode === 'command'
+                      ? 'Touchez une destination ou une cible'
+                      : 'Tracez un rectangle ou touchez les créatures'}
+                </div>
+              )}
+            </>
+          )}
           <div className="map-controls">
             <Button
               className="icon-btn"
@@ -1146,6 +1268,14 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       </div>
 
       <footer className="bottom-bar">
+        {compact && (
+          <button
+            className="mobile-sheet-close"
+            onClick={() => setMobilePanel(null)}
+          >
+            Retour à la carte ×
+          </button>
+        )}
         <section className="army-overview" aria-label="Votre population">
           <div className="army-title">
             <span
@@ -1269,6 +1399,51 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           </TabsContent>
         </Tabs>
       </footer>
+
+      {compact && (
+        <nav className="mobile-nav" aria-label="Navigation du jeu">
+          <button
+            aria-pressed={mobilePanel === null}
+            onClick={() => {
+              setMobilePanel(null);
+              setTouchMode('inspect');
+              setPendingBuild(null);
+            }}
+          >
+            <Crosshair size={19} />
+            Carte
+          </button>
+          <button
+            aria-pressed={mobilePanel === 'details'}
+            onClick={() =>
+              setMobilePanel(mobilePanel === 'details' ? null : 'details')
+            }
+          >
+            <Flag size={19} />
+            Détails
+          </button>
+          <button
+            aria-pressed={mobilePanel === 'build'}
+            onClick={() => {
+              setMobilePanel(mobilePanel === 'build' ? null : 'build');
+              setTab('build');
+            }}
+          >
+            <Hammer size={19} />
+            Bâtir
+          </button>
+          <button
+            aria-pressed={mobilePanel === 'recruit'}
+            onClick={() => {
+              setMobilePanel(mobilePanel === 'recruit' ? null : 'recruit');
+              setTab('recruit');
+            }}
+          >
+            <Swords size={19} />
+            Recruter
+          </button>
+        </nav>
+      )}
 
       <Dialog
         open={modal !== null}
@@ -1443,6 +1618,16 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 </div>
               </div>
               <p className="controls-guide">
+                {compact && (
+                  <>
+                    Sur téléphone : glissez un doigt pour explorer et pincez à
+                    deux doigts pour zoomer. Groupe active le rectangle de
+                    sélection ; Ordre permet de toucher une destination ou une
+                    cible. Carte ferme les volets. Détails, Bâtir et Recruter
+                    ouvrent les commandes du bas.
+                    <br />
+                  </>
+                )}
                 Spectre : recrutez-le à la crypte, puis clic droit sur un
                 bâtiment humain pour le hanter. Le moine le provoque en duel
                 dans la rue. Ordonnez un repli pour sauver votre spectre. Crypte

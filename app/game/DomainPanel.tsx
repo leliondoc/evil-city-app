@@ -35,7 +35,7 @@ export function DomainPanel({
           <strong>{thought(s, unit) || 'Prêt à recevoir vos ordres'}</strong>
           {unit.kind === 'specter' ? (
             <p>
-              Clic droit sur un bâtiment humain : hanter. Récupération :{' '}
+              Envoyez ce spectre sur un bâtiment humain pour le hanter. Récupération :{' '}
               {Math.ceil(Math.max(0, (unit.hauntReadyAt ?? 0) - s.elapsed))} s.
             </p>
           ) : (

@@ -55,6 +55,12 @@ Voir ASSETS.md pour la provenance et les réglages.
 
 ## Développement et validation
 
+### Téléphones et tablettes
+
+L’interface tactile affiche la carte sur toute la largeur, en portrait comme en paysage. La barre du bas ouvre les volets Détails, Bâtir et Recruter ; Carte les referme. Les quatre ressources restent visibles. Glisser un doigt déplace la carte, pincer à deux doigts zoome autour du geste. Groupe active la sélection par rectangle et les ajouts/retraits au toucher. Après sélection, Ordre permet de toucher une destination ou une cible, puis revient à Explorer quand l’ordre est accepté. Les boutons de zoom restent disponibles. Les zones de sécurité autour des encoches sont prises en compte. Les contrôles souris et Shift restent disponibles sur ordinateur.
+
+La vérification navigateur `node scripts/check-mobile.mjs` utilise Playwright et Chrome : installer Playwright pour le développement, ou indiquer son package existant avec `PLAYWRIGHT_PACKAGE`. Elle vérifie 390 × 844, 320 × 568, 844 × 390 et le bureau 1280 × 800, et écrit ses captures dans un dossier temporaire. Lancer le serveur local avant ce contrôle.
+
 Node.js 24 et npm. Installation : `npm install`. La version jouable est vérifiée directement sur GitHub Pages après publication. Production : `npm run build`. Types : `npx tsc --noEmit`. Tests : `node --test tests/*.test.mjs`.
 
 Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, puis ouvrir `/tests/domain-preview.html`. Cette partie préparée utilise l’interface réelle avec une crypte, des dépouilles, un spectre et un moine ; elle n’est pas incluse dans le site de production. Les scénarios automatisés correspondants se trouvent dans `tests/domain.test.mjs`.

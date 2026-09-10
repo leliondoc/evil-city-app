@@ -100,6 +100,9 @@ export class Renderer {
     end: Point;
   } | null = null;
   private dragging = false;
+  public interactionMode: 'inspect' | 'select' | 'command' = 'inspect';
+  private touches = new Map<number, Point>();
+  private pinch: { distance: number; zoom: number; world: Point } | null = null;
   private hover: Selection | null = null;
   private reducedMotion = false;
   public selection: Selection = { type: 'lot', id: 7 };
@@ -254,6 +257,23 @@ export class Renderer {
     return lot ? { type: 'lot', id: lot.id } : null;
   }
   private pointerDown = (e: PointerEvent) => {
+    if (e.pointerType === 'touch') {
+      e.preventDefault();
+      this.touches.set(e.pointerId, this.point(e));
+      this.canvas.setPointerCapture(e.pointerId);
+      if (this.touches.size === 2) {
+        const [a, b] = [...this.touches.values()];
+        this.down = null;
+        this.dragging = false;
+        this.pinch = {
+          distance: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)),
+          zoom: this.zoom,
+          world: this.toWorld({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }),
+        };
+        return;
+      }
+      if (this.pinch) return;
+    }
     if (this.down || (e.button !== 0 && e.button !== 1)) return;
     e.preventDefault();
     const p = this.point(e);
@@ -264,10 +284,12 @@ export class Renderer {
       panY: this.panY,
       pointerId: e.pointerId,
       mode:
-        e.button === 1 || e.altKey || e.pointerType === 'touch'
-          ? 'pan'
-          : dragIntent(e.shiftKey),
-      additive: e.shiftKey,
+        this.interactionMode === 'select'
+          ? 'select'
+          : e.button === 1 || e.altKey || e.pointerType === 'touch'
+            ? 'pan'
+            : dragIntent(e.shiftKey),
+      additive: e.shiftKey || this.interactionMode === 'select',
       end: p,
     };
     this.dragging = false;
@@ -275,6 +297,28 @@ export class Renderer {
   };
   private pointerMove = (e: PointerEvent) => {
     const p = this.point(e);
+    if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, p);
+    if (this.pinch) {
+      if (this.touches.size === 2) {
+        const [a, b] = [...this.touches.values()];
+        const midpoint = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        this.zoom = Math.max(
+          0.75,
+          Math.min(
+            3.6,
+            (this.pinch.zoom * Math.hypot(b.x - a.x, b.y - a.y)) /
+              this.pinch.distance,
+          ),
+        );
+        this.recalculate();
+        this.panX +=
+          midpoint.x - (this.origin.x + this.pinch.world.x * CELL * this.scale);
+        this.panY +=
+          midpoint.y - (this.origin.y + this.pinch.world.y * CELL * this.scale);
+        this.recalculate();
+      }
+      return;
+    }
     if (this.down) {
       if (e.pointerId !== this.down.pointerId) return;
       this.down.end = p;
@@ -294,6 +338,13 @@ export class Renderer {
     this.updateCursor();
   };
   private pointerUp = (e: PointerEvent) => {
+    this.touches.delete(e.pointerId);
+    if (this.pinch) {
+      if (this.canvas.hasPointerCapture(e.pointerId))
+        this.canvas.releasePointerCapture(e.pointerId);
+      if (!this.touches.size) this.pinch = null;
+      return;
+    }
     if (!this.down || e.pointerId !== this.down.pointerId) return;
     this.pointerMove(e);
     const p = this.point(e);
@@ -309,10 +360,42 @@ export class Renderer {
           : unitSelection(ids),
       );
     } else if (!this.dragging && e.button === 0) {
-      const hit = this.hit(p);
-      if (this.down.additive && hit?.type === 'unit')
+      let hit = this.hit(p);
+      if (
+        e.pointerType === 'touch' &&
+        hit?.type !== 'unit' &&
+        hit?.type !== 'enemy'
+      ) {
+        // Small characters remain tappable when the whole district fits on a phone.
+        const state = this.getState();
+        const nearby = [
+          ...state.units
+            .filter((u) => u.hp > 0)
+            .map((u) => ({ actor: u, type: 'unit' as const })),
+          ...state.enemies
+            .filter((u) => u.hp > 0)
+            .map((u) => ({ actor: u, type: 'enemy' as const })),
+        ]
+          .map(({ actor, type }) => ({
+            id: actor.id,
+            type,
+            distance: Math.hypot(
+              p.x - (this.origin.x + actor.x * CELL * this.scale),
+              p.y - (this.origin.y + (actor.y * CELL - 20) * this.scale),
+            ),
+          }))
+          .filter((u) => u.distance <= 16)
+          .sort((a, b) => a.distance - b.distance)[0];
+        if (nearby) hit = { type: nearby.type, id: nearby.id };
+      }
+      if (this.interactionMode === 'command') {
+        this.onCommand(this.toWorld(p), hit);
+      } else if (this.down.additive && hit?.type === 'unit')
         this.onSelect(extendUnitSelection(this.selection, [hit.id], true));
-      else if (this.down.additive && !hit) {
+      else if (
+        this.down.additive &&
+        (!hit || this.interactionMode === 'select')
+      ) {
         /* Preserve selection on Shift + empty click. */
       } else if (hit) this.onSelect(hit);
       else this.onSelect({ type: 'none' });
@@ -325,6 +408,11 @@ export class Renderer {
       this.canvas.releasePointerCapture(e.pointerId);
   };
   private pointerCancel = () => {
+    for (const id of this.touches.keys())
+      if (this.canvas.hasPointerCapture(id))
+        this.canvas.releasePointerCapture(id);
+    this.touches.clear();
+    this.pinch = null;
     if (this.down && this.canvas.hasPointerCapture(this.down.pointerId))
       this.canvas.releasePointerCapture(this.down.pointerId);
     this.down = null;
