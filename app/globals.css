@@ -3119,10 +3119,19 @@ svg {
   padding: 16px 10px;
   overflow-y: auto;
   scrollbar-width: thin;
+  scrollbar-color: #af9768 transparent;
   background: #2c404a;
   border-right: 1px solid #71847d;
   zoom: var(--game-ui-scale);
 }
+.mission-sidebar::-webkit-scrollbar { width: 6px; }
+.mission-sidebar::-webkit-scrollbar-track { background: transparent; }
+.mission-sidebar::-webkit-scrollbar-thumb {
+  background: #af9768;
+  border-radius: 6px;
+}
+.mission-sidebar::-webkit-scrollbar-thumb:hover { background: #dec48c; }
+.mission-sidebar::-webkit-scrollbar-button { display: none; }
 .mission-sidebar .mission-card { padding: 22px 16px; }
 .mission-sidebar .chapter h2 { font-size: 21px; }
 .game-shell[data-compact='false'] .sidebar {
@@ -3170,7 +3179,7 @@ svg {
   z-index: 3;
   background: transparent;
   border: 0;
-  pointer-events: none;
+  pointer-events: auto;
 }
 .game-shell[data-compact='false'] .mission-sidebar > * { pointer-events: auto; }
 .game-shell[data-compact='false'] .mission-sidebar .chronicle {
