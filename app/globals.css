@@ -1107,8 +1107,8 @@ svg {
 }
 .selection-art {
   background: #20323b;
-  border: 1px solid #546e77;
-  border-radius: 3px;
+  border: 0;
+  border-radius: 0;
   height: 145px;
 }
 .sprite-preview {
@@ -1258,7 +1258,7 @@ svg {
 }
 .bestiary-creature {
   background: #20363e;
-  border-color: #57736e;
+  border: 0;
   border-radius: 3px;
   text-align: center;
 }
@@ -1529,7 +1529,7 @@ svg {
   margin-top: 12px;
 }
 
-/* Original Tiny Swords UI: nine-slice paper, wooden controls and blue buttons. */
+/* Original Tiny Swords paper and blue buttons. */
 .pack-skin {
   position: absolute;
   inset: 0;
@@ -1573,6 +1573,56 @@ svg {
 .selection-panel .selection-art .sprite-preview {
   height: 120px;
 }
+.guild-roster {
+  margin-top: 18px;
+}
+.guild-roster h4 {
+  color: #303e43;
+  font-size: 17px;
+}
+.guild-members {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: 8px 0;
+}
+.guild-members button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 4px 8px;
+  color: #34474a;
+  cursor: pointer;
+}
+.guild-members .sprite-preview {
+  width: 100%;
+  height: 80px;
+}
+.guild-actions {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 12px;
+}
+.guild-actions button {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 13px;
+  color: #34474a;
+  cursor: pointer;
+}
+.guild-members button:hover,
+.guild-actions button:hover {
+  background: #6d784326;
+}
+.guild-actions button[aria-pressed='true'] {
+  color: #fff4d8;
+  background: #3c6064;
+}
+.guild-members button:focus-visible,
+.guild-actions button:focus-visible {
+  outline: 2px solid #3c6064;
+  outline-offset: 2px;
+}
 .selection-panel .subtle-btn {
   color: #364d53 !important;
   background: #78674913 !important;
@@ -1615,7 +1665,7 @@ svg {
 .bottom-bar {
   position: relative;
   isolation: isolate;
-  background: #283d45;
+  background: #23333d;
   border-top: 0;
   padding-bottom: 16px;
 }
@@ -1625,7 +1675,7 @@ svg {
   color: #fff0cc;
 }
 .bottom-bar .army-note {
-  text-shadow: 0 1px #51352b;
+  text-shadow: none;
 }
 .map-caption {
   background: none;

@@ -19,7 +19,7 @@ export type Resources = {
 };
 export type Cost = Partial<Resources>;
 export type Selection = {
-  type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource';
+  type: 'lot' | 'unit' | 'enemy' | 'worker' | 'resource' | 'guildHero';
   id: number;
 };
 export type BuildingDef = {
@@ -237,9 +237,16 @@ export interface Unit extends Point {
 }
 export type EnemyKind = 'guard' | 'hero';
 export type HeroRole = 'warrior' | 'lancer' | 'archer' | 'monk';
+export const GUILD_ROLES: readonly HeroRole[] = [
+  'warrior',
+  'lancer',
+  'archer',
+  'monk',
+];
 export const HEROES = {
   warrior: {
     name: 'Chevalier de l’Aube',
+    short: 'Chevalier',
     hp: 140,
     damage: 12,
     speed: 1.5,
@@ -249,6 +256,7 @@ export const HEROES = {
   },
   lancer: {
     name: 'Lancier de l’Aube',
+    short: 'Lancier',
     hp: 175,
     damage: 10,
     speed: 1.25,
@@ -258,6 +266,7 @@ export const HEROES = {
   },
   archer: {
     name: 'Archère de l’Aube',
+    short: 'Archère',
     hp: 70,
     damage: 9,
     speed: 1.6,
@@ -267,6 +276,7 @@ export const HEROES = {
   },
   monk: {
     name: 'Moine de l’Aube',
+    short: 'Moine',
     hp: 85,
     damage: 0,
     speed: 1.35,
@@ -275,6 +285,13 @@ export const HEROES = {
       'Il soigne les membres blessés de son expédition à proximité. Il ne peut pas endommager vos bâtiments.',
   },
 } as const;
+/** Shared by the expedition preview and actual raid mobilization. */
+export function heroParty(level: number): HeroRole[] {
+  if (level === 1) return ['warrior'];
+  if (level === 2) return ['warrior', 'archer'];
+  if (level === 3) return ['warrior', 'archer', 'monk'];
+  return level === 4 ? [...GUILD_ROLES] : [...GUILD_ROLES, 'warrior'];
+}
 export const ENEMIES = {
   guard: {
     name: 'Garde du quartier',
@@ -1092,16 +1109,7 @@ function mobilize(s: State) {
     if (s.enemies.length >= 16) continue;
     const level = humanLevel(s),
       point = entrance(source);
-    const party: HeroRole[] =
-      level === 1
-        ? ['warrior']
-        : level === 2
-          ? ['warrior', 'archer']
-          : level === 3
-            ? ['warrior', 'archer', 'monk']
-            : level === 4
-              ? ['warrior', 'lancer', 'archer', 'monk']
-              : ['warrior', 'lancer', 'archer', 'monk', 'warrior'];
+    const party = heroParty(level);
     const count =
       kind === 'guard' ? 2 + Math.floor((level - 1) / 2) : party.length;
     const cost = {

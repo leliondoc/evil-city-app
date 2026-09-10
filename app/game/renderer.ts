@@ -2,6 +2,8 @@ import {
   BUILDINGS,
   CREATURES,
   ENEMIES,
+  GUILD_ROLES,
+  HEROES,
   SUPPLIES,
   supplyActive,
   entrance,
@@ -756,7 +758,8 @@ export class Renderer {
       if (!l.owned && l.kind !== 'empty')
         for (
           let i = 0;
-          i < (l.kind === 'hall' || l.kind === 'guild' ? 2 : 1);
+          i <
+          (l.kind === 'guild' ? GUILD_ROLES.length : l.kind === 'hall' ? 2 : 1);
           i++
         )
           drawables.push({
@@ -766,16 +769,34 @@ export class Renderer {
                   (u) =>
                     u.target === l.id && u.task === 'attack' && !u.path.length,
                 ),
-                key = fighting ? 'guard-attack' : 'guard-idle';
-              this.sprite(
+                role = l.kind === 'guild' ? GUILD_ROLES[i] : undefined,
+                key = role
+                  ? enemyAnimationSequence(
+                      { kind: 'hero', role },
+                      fighting && role !== 'monk' ? 'attack' : 'idle',
+                    )[0]
+                  : fighting
+                    ? 'guard-attack'
+                    : 'guard-idle',
+                heroX = gx - 72 + i * 48,
+                selected =
+                  role &&
+                  this.selection.type === 'guildHero' &&
+                  this.selection.id === i;
+              const hit = this.sprite(
                 key,
-                gx + 22 + i * 32,
+                role ? heroX : gx + 22 + i * 32,
                 gy,
-                0.65,
+                role === 'lancer' ? 0.58 : role ? 0.78 : 0.65,
                 Math.floor(t * 10 + i) % ASSETS[key].frames,
                 1,
                 true,
               );
+              if (role) {
+                hit.selection = { type: 'guildHero', id: i };
+                this.hits.push(hit);
+                if (selected) this.label(heroX, gy + 24, HEROES[role].short);
+              }
             },
           });
       drawables.push({
@@ -1002,7 +1023,7 @@ export class Renderer {
             this.label(
               x,
               y + 32,
-              `${e.kind === 'hero' ? '★ Héros' : ENEMIES[e.kind].name} · ${e.level}`,
+              `${e.kind === 'hero' ? HEROES[e.role].short : ENEMIES[e.kind].name} · ${e.level}`,
               '#ffcf83',
             );
         },

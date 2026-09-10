@@ -48,6 +48,7 @@ import { Progress } from '@/components/ui/progress';
 import { Renderer } from './renderer';
 import { Sprite } from './Sprite';
 import { ThreatPanel } from './ThreatPanel';
+import { GuildRoster, GuildHeroSelection } from './GuildPanel';
 import { Bestiary } from './Bestiary';
 import {
   buildingArt,
@@ -506,7 +507,6 @@ export default function Game() {
               </div>
             </details>
           </section>
-          <div className="side-rule" />
           {selection.type === 'worker' || selection.type === 'resource' ? (
             <SupplySelection
               state={s}
@@ -514,6 +514,8 @@ export default function Game() {
               onSelect={select}
               onRaid={() => run((state) => raidSupply(state, selection))}
             />
+          ) : selection.type === 'guildHero' ? (
+            <GuildHeroSelection state={s} id={selection.id} onSelect={select} />
           ) : (
             <section
               className="selection-panel"
@@ -859,6 +861,9 @@ export default function Game() {
                       <Shield size={14} /> Rassembler l’armée ici
                     </Button>
                   )}
+                  {selectedLot.kind === 'guild' && (
+                    <GuildRoster state={s} onSelect={select} />
+                  )}
                 </>
               )}
             </section>
@@ -947,7 +952,6 @@ export default function Game() {
       </div>
 
       <footer className="bottom-bar">
-        <PanelSkin kind="wood" />
         <section className="army-overview" aria-label="Votre population">
           <div className="army-title">
             <span

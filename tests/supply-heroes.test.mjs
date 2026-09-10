@@ -9,6 +9,7 @@ import {
   humanLevel,
   UPGRADE_SUPPLIES,
   HEROES,
+  heroParty,
   entrance,
 } from '../app/game/engine.ts';
 import { ASSETS, enemyAnimationSequence, workerArt } from '../app/game/art.ts';
@@ -184,6 +185,25 @@ test('Monks heal wounded living allies without exceeding maximum HP and cannot d
   const hp = s.lots[6].hp;
   tick(s, 3);
   assert.equal(s.lots[6].hp, hp);
+});
+test('The expedition preview matches the funded raid at every human level', () => {
+  for (let level = 1; level <= 6; level++) {
+    const s = createGame();
+    s.economy.level = level;
+    s.economy.nextUpgradeAt = 1000;
+    s.economy.stocks = { gold: 1000, wood: 1000, food: 1000 };
+    for (const id of [4, 5, 8]) s.lots[id].owned = true;
+    const preview = heroParty(level);
+    tick(s, 36);
+    assert.deepEqual(
+      s.enemies.filter((e) => e.kind === 'hero').map((e) => e.role),
+      preview,
+    );
+    assert.ok(
+      preview.every((role) => HEROES[role]),
+      `Only human heroes at level ${level}`,
+    );
+  }
 });
 test('The guild fields four human roles with complete animations; monsters stay in their own catalogue', () => {
   const s = createGame();
