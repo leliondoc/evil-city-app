@@ -818,6 +818,12 @@ svg {
   }
 }
 @media (max-width: 1100px) {
+  .resource .food-source {
+    display: none;
+  }
+  .resource.food-action > div > span:first-of-type {
+    text-decoration: underline dotted;
+  }
   .topbar {
     gap: 12px;
     padding: 0 16px;
