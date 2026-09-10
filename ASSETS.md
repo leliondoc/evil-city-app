@@ -2,6 +2,8 @@
 
 Auteur : Pixel Frog. [Source officielle](https://pixelfrog-assets.itch.io/tiny-swords).
 
+Les libellés de la carte et les gains de ressources utilisent **Pixel Operator Regular**, de Jayvee Enaguas (HarvettFox96), sous CC0 : [source et licence](https://fontlibrary.org/en/font/pixel-operator). La police originale est intégrée dans `public/fonts/`, chargée avant le premier rendu, et affichée à 16 px avec une ombre décalée de 1 px. Les coordonnées des libellés sont alignées sur les pixels de l’écran et leur taille reste stable au zoom.
+
 ## Provenance et licence
 
 Le dossier Tiny Swords (Free Pack) a été fourni par l’utilisateur dans Downloads le 10 septembre 2026. Tiny Swords (Enemy Pack).zip a été acheté et fourni par l’utilisateur le même jour.

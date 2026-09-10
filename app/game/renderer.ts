@@ -131,6 +131,7 @@ export class Renderer {
   }
   private async load() {
     try {
+      await document.fonts.load('16px "Pixel Operator"');
       await Promise.all(
         (Object.keys(ASSETS) as AssetKey[])
           .filter(
@@ -688,15 +689,17 @@ export class Renderer {
   private label(x: number, y: number, text: string, color = '#eee4ce') {
     const ctx = this.ctx;
     ctx.save();
-    const size = 11 / this.scale;
-    ctx.font = `500 ${size}px "Trebuchet MS",sans-serif`;
-    ctx.fillStyle = color;
+    const size = 16 / this.scale;
+    ctx.font = `400 ${size}px "Pixel Operator",monospace`;
+    x =
+      (Math.round(this.origin.x + x * this.scale) - this.origin.x) / this.scale;
+    y =
+      (Math.round(this.origin.y + y * this.scale) - this.origin.y) / this.scale;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.strokeStyle = '#203235cc';
-    ctx.lineWidth = 2.5 / this.scale;
-    ctx.lineJoin = 'round';
-    ctx.strokeText(text, x, y);
+    ctx.fillStyle = '#203235';
+    ctx.fillText(text, x + 1 / this.scale, y + 1 / this.scale);
+    ctx.fillStyle = color;
     ctx.fillText(text, x, y);
     ctx.restore();
   }
@@ -1281,20 +1284,18 @@ export class Renderer {
           : gain.kind === 'wood'
             ? 'ui-wood-icon'
             : 'ui-food';
-      const size = Math.max(18, 13 / this.scale);
+      const size = 16 / this.scale;
       const x = gain.x * CELL;
       const y = gain.y * CELL - 84 - (this.reducedMotion ? 0 : progress * 32);
       ctx.save();
       ctx.globalAlpha = Math.min(1, (1 - progress) * 3);
-      ctx.font = `bold ${size}px "Trebuchet MS", sans-serif`;
+      ctx.font = `400 ${size}px "Pixel Operator", monospace`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       const text = `+${gain.amount}`;
       const width = ctx.measureText(text).width + size + 4;
-      ctx.strokeStyle = '#15212b';
-      ctx.lineWidth = Math.max(3, 2 / this.scale);
-      ctx.lineJoin = 'round';
-      ctx.strokeText(text, x - width / 2, y);
+      ctx.fillStyle = '#15212b';
+      ctx.fillText(text, x - width / 2 + 1 / this.scale, y + 1 / this.scale);
       ctx.fillStyle =
         gain.kind === 'gold'
           ? '#ffe59b'
