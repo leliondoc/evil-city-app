@@ -591,12 +591,17 @@ svg {
 .build-tabs [data-slot='tabs-trigger'] .pack-icon { width: 32px; height: 32px; flex-shrink: 0; }
 .build-tabs [data-slot='tabs-trigger']:hover { filter: brightness(1.12); }
 .build-tabs [data-slot='tabs-trigger']:focus-visible { outline: 3px solid #ffe4a1; outline-offset: 3px; }
-.build-tabs [data-slot='tabs-trigger'][data-active] {
-  outline: 2px solid #ffe4a1;
-  outline-offset: 2px;
-}
 .build-tabs [data-slot='tabs-trigger']::after {
   display: none;
+}
+.build-tabs [data-slot='tabs-trigger'][data-active]::after {
+  display: block;
+  inset: 6px 2px 3px 3px;
+  height: auto;
+  border: 2px solid #ffe4a1;
+  border-radius: 2px;
+  background: transparent;
+  pointer-events: none;
 }
 /* Keep the map viewport stable across tabs and recruitment progress updates. */
 .game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {
