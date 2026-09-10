@@ -272,10 +272,10 @@
   {
     "id": "thief",
     "original": "Thief",
-    "name": "Voleur",
-    "description": "Une silhouette encapuchonnée armée de deux lames.",
+    "name": "Spectre",
+    "description": "Le voleur du pack incarne le spectre : il hante les bâtiments humains et suspend leurs livraisons et renforts. Les moines peuvent le chasser.",
     "group": "creatures",
-    "recruitable": false,
+    "recruitable": true,
     "actions": {
       "idle": [
         "bestiary-thief-idle"
@@ -482,7 +482,7 @@
     "id": "hero-monk",
     "original": "Monk",
     "name": "Moine de l’Aube",
-    "description": "Il soigne les membres blessés de son expédition. Éliminez-le pour empêcher les héros de se rétablir.",
+    "description": "Il soigne ses alliés, riposte aux assaillants et chasse les spectres. Ses dégâts sont doublés contre les squelettes et spectres.",
     "group": "humans",
     "recruitable": false,
     "actions": {

@@ -2206,6 +2206,47 @@ svg {
   width: 48px;
   height: 48px;
 }
+.creature-portrait {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+}
+.build-card .creature-portrait {
+  width: 56px;
+  height: 56px;
+}
+.selected-group .creature-portrait {
+  width: 48px;
+  height: 48px;
+}
 .selected-group small {
   color: #bfcdca;
+}
+/* Small contextual controls for the district's darker activities. */
+.domain-card {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #8f80a34a;
+  border-radius: 8px;
+  background: #51426020;
+}
+.domain-card strong {
+  color: #e7d2f2;
+  font-size: 14px;
+}
+.domain-card p {
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 8px 0;
+}
+.domain-card button {
+  width: 100%;
+  white-space: normal;
+}
+.domain-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 12px;
 }

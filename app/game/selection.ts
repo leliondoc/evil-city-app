@@ -1,8 +1,7 @@
 import type { Point, Selection, Unit } from './engine';
 
-export const SELECTION_HOLD_MS = 250;
-export function dragIntent(elapsedMs: number): 'select' | 'pan' {
-  return elapsedMs >= SELECTION_HOLD_MS ? 'select' : 'pan';
+export function dragIntent(shiftKey: boolean): 'select' | 'pan' {
+  return shiftKey ? 'select' : 'pan';
 }
 
 export function selectedUnitIds(selection: Selection): number[] {

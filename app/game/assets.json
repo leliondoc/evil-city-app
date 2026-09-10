@@ -1662,5 +1662,46 @@
     "frameWidth": 128,
     "frames": 1,
     "anchor": 0.67
+  },
+  "unit-death": {
+    "src": "/tiny-swords/unit-death.png",
+    "width": 896,
+    "height": 256,
+    "frameWidth": 128,
+    "frameHeight": 128,
+    "frames": 14,
+    "anchor": 0.67
+  },
+  "haunt-wisp": {
+    "src": "/tiny-swords/haunt-wisp.png",
+    "width": 384,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 3,
+    "anchor": 0.5
+  },
+  "specter-idle": {
+    "src": "/tiny-swords/bestiary-thief-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "specter-walk": {
+    "src": "/tiny-swords/bestiary-thief-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "specter-attack": {
+    "src": "/tiny-swords/bestiary-thief-attack.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
   }
 }

@@ -21,7 +21,7 @@ NAMES = {
     'Gnome': ('gnome', 'Gnome', 'Un petit combattant qui manie sa lame avec énergie.', False),
     'Giant Bat': ('giant-bat', 'Chauve-souris géante', 'Une silhouette ailée taillée pour les nuits du quartier.', False),
     'Bomb Fish': ('bomb-fish', 'Poisson artificier', 'Un curieux artilleur qui lance des bombes.', False),
-    'Thief': ('thief', 'Voleur', 'Une silhouette encapuchonnée armée de deux lames.', False),
+    'Thief': ('thief', 'Spectre', 'Le voleur du pack incarne le spectre : il hante les bâtiments humains et suspend leurs livraisons et renforts. Les moines peuvent le chasser.', True),
     'Hex Shaman': ('hex-shaman', 'Chaman des maléfices', 'Un sorcier masqué qui canalise une magie inquiétante.', False),
     'Lizard': ('lizard', 'Lézard guerrier', 'Un reptile agile, toujours prêt à dégainer.', False),
     'Gnoll': ('gnoll', 'Gnoll', 'Un combattant sauvage qui projette son arme.', False),
@@ -66,6 +66,15 @@ def main():
             actions[action] = keys
         catalog.append(dict(id=identifier, original=original, name=name, description=description,
                             group='creatures', recruitable=recruitable, actions=actions))
+    for action in ('idle', 'walk', 'attack'):
+        manifest[f'specter-{action}'] = dict(manifest[f'bestiary-thief-{action}'])
+    # Original looping magic projectile, used as wisps around haunted buildings.
+    data = archive.read('Tiny Swords (Enemy Pack)/Enemy Pack/Hex Shaman/Hex Shaman_Projectile.png')
+    png_width, png_height = struct.unpack_from('>II', data, 16)
+    assert png_width % png_height == 0
+    (ROOT / 'public/tiny-swords/haunt-wisp.png').write_bytes(data)
+    manifest['haunt-wisp'] = dict(src='/tiny-swords/haunt-wisp.png', width=png_width, height=png_height,
+                                 frameWidth=png_height, frames=png_width // png_height, anchor=.5)
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
     (ROOT / 'app/game/bestiary.json').write_text(json.dumps(catalog, indent=2, ensure_ascii=False) + '\n')
     print(f'Imported {len(catalog)} species with original idle, movement and attack strips.')

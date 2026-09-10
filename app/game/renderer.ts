@@ -18,6 +18,8 @@ import {
 } from './engine';
 import {
   ASSETS,
+  spriteFrame,
+  FRAME_SECONDS,
   animationFrame,
   animationSequence,
   enemyAnimationSequence,
@@ -36,6 +38,7 @@ import {
   type Decoration,
 } from './scenery';
 import { ISLAND_PATHS } from './islandRoutes';
+import { isHaunted, thought } from './domain';
 import {
   selectedUnitIds,
   unitSelection,
@@ -92,8 +95,7 @@ export class Renderer {
     panX: number;
     panY: number;
     pointerId: number;
-    mode: 'pending' | 'select' | 'pan';
-    startedAt: number;
+    mode: 'select' | 'pan';
     additive: boolean;
     end: Point;
   } | null = null;
@@ -233,12 +235,13 @@ export class Renderer {
       const h = this.hits[i];
       if (x < h.x || x >= h.x + h.w || y < h.y || y >= h.y + h.h) continue;
       const a = ASSETS[h.key];
+      const source = spriteFrame(h.key, h.frame);
       let ix = Math.floor(((x - h.x) / h.w) * a.frameWidth);
       if (h.flip) ix = a.frameWidth - 1 - ix;
-      const iy = Math.floor(((y - h.y) / h.h) * a.height);
+      const iy = Math.floor(((y - h.y) / h.h) * source.height);
       if (
         this.pixels.get(h.key)![
-          (iy * a.width + h.frame * a.frameWidth + ix) * 4 + 3
+          ((source.y + iy) * a.width + source.x + ix) * 4 + 3
         ] > 55
       )
         return h.selection;
@@ -262,8 +265,7 @@ export class Renderer {
       mode:
         e.button === 1 || e.altKey || e.pointerType === 'touch'
           ? 'pan'
-          : 'pending',
-      startedAt: performance.now(),
+          : dragIntent(e.shiftKey),
       additive: e.shiftKey,
       end: p,
     };
@@ -278,8 +280,6 @@ export class Renderer {
       const dx = p.x - this.down.x,
         dy = p.y - this.down.y;
       if (Math.hypot(dx, dy) > 5) {
-        if (this.down.mode === 'pending')
-          this.down.mode = dragIntent(performance.now() - this.down.startedAt);
         this.dragging = true;
       }
       if (this.dragging && this.down.mode === 'pan') {
@@ -524,9 +524,10 @@ export class Renderer {
     flip = false,
   ): Hit {
     const a = ASSETS[key],
+      source = spriteFrame(key, frame),
       im = this.images.get(key)!,
       w = a.frameWidth * scale,
-      h = a.height * scale,
+      h = source.height * scale,
       left = Math.round(x - w / 2),
       top = Math.round(y - h * a.anchor);
     const ctx = this.ctx;
@@ -537,10 +538,10 @@ export class Renderer {
       ctx.scale(-1, 1);
       ctx.drawImage(
         im,
-        frame * a.frameWidth,
-        0,
-        a.frameWidth,
-        a.height,
+        source.x,
+        source.y,
+        source.width,
+        source.height,
         0,
         0,
         w,
@@ -549,10 +550,10 @@ export class Renderer {
     } else
       ctx.drawImage(
         im,
-        frame * a.frameWidth,
-        0,
-        a.frameWidth,
-        a.height,
+        source.x,
+        source.y,
+        source.width,
+        source.height,
         left,
         top,
         w,
@@ -684,18 +685,18 @@ export class Renderer {
       }
     }
   }
-  private label(x: number, y: number, text: string, color = '#fff0c6') {
+  private label(x: number, y: number, text: string, color = '#eee4ce') {
     const ctx = this.ctx;
     ctx.save();
-    const size = 14 / this.scale;
-    ctx.font = `600 ${size}px "Trebuchet MS",sans-serif`;
-    const w = ctx.measureText(text).width + 16 / this.scale,
-      h = 25 / this.scale;
-    ctx.fillStyle = '#293a3aef';
-    ctx.fillRect(x - w / 2, y - h / 2, w, h);
+    const size = 11 / this.scale;
+    ctx.font = `500 ${size}px "Trebuchet MS",sans-serif`;
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#203235cc';
+    ctx.lineWidth = 2.5 / this.scale;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(text, x, y);
     ctx.fillText(text, x, y);
     ctx.restore();
   }
@@ -1025,6 +1026,13 @@ export class Renderer {
           );
           hit.selection = { type: 'unit', id: u.id };
           this.hits.push(hit);
+          const bubble = thought(s, u);
+          if (bubble && u.task !== 'duel')
+            this.label(x, y - 102, bubble, '#d3efdd');
+          if (u.task === 'bribe') this.sprite('ui-gold', x + 22, y - 22, 0.5);
+          if (u.task === 'deliver') {
+            this.sprite('unit-death', x + 20, y - 8, 0.55, 10);
+          }
           if (u.task === 'forage') this.sprite('wood', x + 20, y - 4, 0.45);
           if (
             u.task === 'build' &&
@@ -1138,6 +1146,59 @@ export class Renderer {
       });
     drawables.sort((a, b) => a.depth - b.depth);
     for (const d of drawables) d.draw();
+    for (const corpse of s.domain.corpses.filter((c) => !c.carrier)) {
+      const x = corpse.x * CELL,
+        y = corpse.y * CELL;
+      const frame = this.reducedMotion
+        ? 10
+        : Math.min(10, Math.floor((s.elapsed - corpse.at) / FRAME_SECONDS));
+      this.sprite('unit-death', x, y, 0.8, frame);
+    }
+    for (const death of s.domain.deaths) {
+      if (this.reducedMotion) continue;
+      const frame = Math.min(
+        ASSETS['unit-death'].frames - 1,
+        Math.floor((s.elapsed - death.at) / FRAME_SECONDS),
+      );
+      this.sprite('unit-death', death.x * CELL, death.y * CELL, 0.8, frame);
+    }
+    for (const lot of s.lots.filter((l) => isHaunted(s, l))) {
+      const x = (lot.x + 4) * CELL,
+        y = (lot.y + 4) * CELL;
+      for (const side of [-1, 1]) {
+        const sample = animationFrame(
+          ['haunt-wisp'],
+          t * 0.6 + (side + 1) * 0.1,
+        );
+        this.sprite(
+          sample.key,
+          x + side * 42,
+          y + 12 + Math.sin(t * 2 + side) * 3,
+          0.8,
+          sample.frame,
+        );
+      }
+      this.label(
+        x,
+        y - 92,
+        `Hanté · ${Math.ceil((lot.hauntedUntil ?? 0) - s.elapsed)} s`,
+        '#d9bcff',
+      );
+    }
+    for (const e of s.enemies.filter((e) => e.exorcising !== undefined))
+      this.label(
+        e.x * CELL,
+        e.y * CELL - 95,
+        e.fighting ? 'Duel' : 'Chasse au spectre',
+        '#fff0bb',
+      );
+    for (const w of s.workers.filter((w) => w.recovery))
+      this.label(
+        w.x * CELL,
+        w.y * CELL - 72,
+        w.recovery?.returning ? 'Sépulture' : 'Secours',
+        '#d2e4f5',
+      );
     // Site labels stay in front of scenery, like parcel labels.
     for (const site of s.sites)
       this.label(

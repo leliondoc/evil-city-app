@@ -29,8 +29,8 @@ test('The bridge reaches dry land at both ends across an actual channel', () => 
     assert.ok(isDryGround(BRIDGE.right, y));
   }
   assert.equal(isDryGround(-96, (BRIDGE.top + BRIDGE.bottom) / 2), false);
-  assert.equal(BRIDGE.top, 20 * 32);
-  assert.equal(BRIDGE.bottom, 22 * 32);
+  assert.equal(BRIDGE.top, 19.5 * 32);
+  assert.equal(BRIDGE.bottom, 21.5 * 32);
 });
 test('Scenery rejects roots in water, foam on grass, cliff faces and streets', () => {
   const tree = { key: 'tree-1', x: 500, y: -120, scale: 0.65 };

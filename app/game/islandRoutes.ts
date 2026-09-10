@@ -16,8 +16,8 @@ export const ISLAND_PATHS = [
   ],
 ];
 export const ISLAND_BRIDGES = [
-  { left: -176, right: 16, top: 640, bottom: 704 },
-  { left: -256, right: -192, top: 736, bottom: 864 },
+  { left: -176, right: 16, top: 624, bottom: 688 },
+  { left: -272, right: -208, top: 736, bottom: 864 },
 ];
 export function isIslandPathCell(x: number, y: number) {
   if (x >= 0) return false;

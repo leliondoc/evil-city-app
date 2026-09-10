@@ -12,6 +12,7 @@ import {
   PRESSURE,
 } from './engine';
 import { workerArt, type AssetKey } from './art';
+import { isHaunted } from './domain';
 
 export function SupplyPanel({
   state: s,
@@ -55,11 +56,13 @@ export function SupplyPanel({
                 <small>
                   {s.lots[site.home].owned
                     ? 'Sous votre contrôle'
-                    : site.hp <= 0
-                      ? `Sabotée · réparation dans ≥ ${Math.ceil(Math.max(0, site.repairAt - s.elapsed))} s`
-                      : s.workers.some((w) => w.site === site.id)
-                        ? 'Production active'
-                        : 'Paysan manquant'}
+                    : isHaunted(s, s.lots[site.home])
+                      ? 'Livraisons suspendues : bâtiment hanté'
+                      : site.hp <= 0
+                        ? `Sabotée · réparation dans ≥ ${Math.ceil(Math.max(0, site.repairAt - s.elapsed))} s`
+                        : s.workers.some((w) => w.site === site.id)
+                          ? 'Production active'
+                          : 'Paysan manquant'}
                 </small>
               </span>
               <b>

@@ -23,7 +23,7 @@ for role, original, name, description in [
     ('warrior', 'Warrior', 'Chevalier de l’Aube', 'Le combattant de première ligne de la guilde. Il vise le manoir et affronte vos créatures au corps à corps.'),
     ('lancer', 'Lancer', 'Lancier de l’Aube', 'Un combattant robuste. Sa longue lance lui permet de frapper avant le contact.'),
     ('archer', 'Archer', 'Archère de l’Aube', 'Elle tire de vraies flèches à distance. Les bâtiments bloquent ses lignes de tir.'),
-    ('monk', 'Monk', 'Moine de l’Aube', 'Il soigne les membres blessés de son expédition. Éliminez-le pour empêcher les héros de se rétablir.'),
+    ('monk', 'Monk', 'Moine de l’Aube', 'Il soigne ses alliés, riposte aux assaillants et chasse les spectres. Ses dégâts sont doublés contre les squelettes et spectres.'),
 ]:
     actions = {}
     for action, suffix in [('idle', 'Idle'), ('walk', 'Run'), ('attack', 'Attack1' if role == 'warrior' else 'Right_Attack' if role == 'lancer' else 'Shoot' if role == 'archer' else 'Heal')]:

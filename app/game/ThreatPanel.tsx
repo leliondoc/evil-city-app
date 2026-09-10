@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { ASSETS, type AssetKey } from './art';
 import { SupplyPanel } from './SupplyPanel';
+import { isHaunted } from './domain';
 import {
   humanLevel,
   PRESSURE,
@@ -55,11 +56,15 @@ export function ThreatPanel({
     const alive = s.enemies.filter((e) => e.kind === kind).length;
     const status = stopped
       ? 'Renforts coupés'
-      : m.starved
-        ? 'Attend du ravitaillement'
-        : m.active && m.nextRaidAt !== null
-          ? `Départ dans ${clock(m.nextRaidAt - s.elapsed)}`
-          : `${Math.round(PRESSURE[kind].territory * 100)} % d’emprise ou ${clock(PRESSURE[kind].time)}`;
+      : source && isHaunted(s, source)
+        ? `Bâtiment hanté · ${clock((source.hauntedUntil ?? 0) - s.elapsed)}`
+        : kind === 'guard' && s.domain.bribedUntil > s.elapsed
+          ? `Mairie achetée · ${clock(s.domain.bribedUntil - s.elapsed)}`
+          : m.starved
+            ? 'Attend du ravitaillement'
+            : m.active && m.nextRaidAt !== null
+              ? `Départ dans ${clock(m.nextRaidAt - s.elapsed)}`
+              : `${Math.round(PRESSURE[kind].territory * 100)} % d’emprise ou ${clock(PRESSURE[kind].time)}`;
     return {
       id: kind,
       label: kind === 'guard' ? 'Garde' : 'Guilde des héros',
@@ -74,6 +79,28 @@ export function ThreatPanel({
             <strong>{humanLevel(s)}</strong>
           </div>
           <p className="district-highlight">{status}</p>
+          {kind === 'guard' && (
+            <>
+              <div className="district-stat">
+                <span>Suspicion</span>
+                <strong>{Math.ceil(s.domain.suspicion)} / 100</strong>
+              </div>
+              <progress
+                className="district-meter"
+                aria-label="Suspicion de la garde"
+                max={100}
+                value={s.domain.suspicion}
+              />
+              <p className="district-note">
+                À 60, vos méfaits mobilisent la garde, même sans expansion. Les
+                hantises, conquêtes, sabotages et morts l’augmentent ; le calme
+                et les pots-de-vin la réduisent.
+              </p>
+              {s.domain.bribe && (
+                <p>Un gobelin transporte une bourse vers la mairie.</p>
+              )}
+            </>
+          )}
           <p>
             {alive
               ? `${alive} ${kind === 'guard' ? 'garde' : 'héros'}${kind === 'guard' && alive > 1 ? 's' : ''} dans les rues.`

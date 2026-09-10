@@ -41,15 +41,12 @@ import { Progress } from '@/components/ui/progress';
 import { Renderer } from './renderer';
 import { selectedUnitIds, unitSelection } from './selection';
 import { Sprite } from './Sprite';
+import { CreaturePortrait } from './CreaturePortrait';
 import { ThreatPanel } from './ThreatPanel';
 import { GuildRoster, GuildHeroSelection } from './GuildPanel';
 import { Bestiary } from './Bestiary';
-import {
-  buildingArt,
-  enemyAnimationSequence,
-  portrait,
-  type Animation,
-} from './art';
+import { DomainPanel } from './DomainPanel';
+import { buildingArt, enemyAnimationSequence, type Animation } from './art';
 import {
   BUILDINGS,
   CREATURES,
@@ -101,6 +98,14 @@ const unitsText = {
   defend: 'Intercepte un ennemi',
   sabotage: 'Sabote la production',
   hunt: 'Attaque un paysan',
+  haunt: 'Prépare une hantise',
+  duel: 'Affronte un moine',
+  collect: 'Récupère une dépouille',
+  deliver: 'Rapporte une dépouille',
+  bribe: 'Livre un pot-de-vin',
+  eat: 'Va manger à la cantine',
+  rest: 'Se repose à la tanière',
+  restore: 'Se reconstitue à la crypte',
 };
 function Costs({ cost, available }: { cost: Cost; available?: Cost }) {
   return (
@@ -136,8 +141,8 @@ function clock(seconds: number) {
     .padStart(2, '0')}`;
 }
 
-export default function Game() {
-  const stateRef = useRef<State>(createGame());
+export default function Game({ initialState }: { initialState?: State } = {}) {
+  const stateRef = useRef<State>(initialState ?? createGame());
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
@@ -307,11 +312,11 @@ export default function Game() {
       }
       if (event.key.toLowerCase() === 'h') setModal('guide');
       if (event.key.toLowerCase() === 'r') run((s) => retreat(s));
-      if (['1', '2', '3', '4'].includes(event.key)) {
+      if (['1', '2', '3', '4', '5'].includes(event.key)) {
         const i = Number(event.key) - 1;
-        tab === 'build'
-          ? chooseBuild(BUILD_OPTIONS[i])
-          : chooseRecruit(RECRUIT_OPTIONS[i]);
+        if (tab === 'build' && BUILD_OPTIONS[i]) chooseBuild(BUILD_OPTIONS[i]);
+        else if (tab === 'recruit' && RECRUIT_OPTIONS[i])
+          chooseRecruit(RECRUIT_OPTIONS[i]);
       }
       if (target === canvasRef.current) {
         const movement: Record<string, [number, number]> = {
@@ -608,12 +613,7 @@ export default function Game() {
                     onClick={() => select({ type: 'unit', id: unit.id })}
                     aria-label={`Sélectionner ${CREATURES[unit.kind].name}, ${Math.ceil(unit.hp)} PV`}
                   >
-                    <img
-                      src={portrait(unit.kind)}
-                      alt=""
-                      width={48}
-                      height={48}
-                    />
+                    <CreaturePortrait kind={unit.kind} />
                     <span>{CREATURES[unit.kind].name}</span>
                     <small>
                       {Math.ceil(unit.hp)} / {CREATURES[unit.kind].hp} PV
@@ -626,7 +626,7 @@ export default function Game() {
                 gobelins ne combattent pas.
               </p>
               <p className="reason">
-                Maj + clic : ajouter ou retirer une unité. Maj + rectangle :
+                Shift + clic : ajouter ou retirer une unité. Shift + rectangle :
                 compléter la sélection. Échap ou clic dans le vide :
                 désélectionner.
               </p>
@@ -637,8 +637,8 @@ export default function Game() {
               <h3 className="selection-name">Aucune sélection</h3>
               <p className="selection-text">
                 Cliquez sur une créature ou une parcelle pour afficher ses
-                actions. Maintenez le clic gauche un quart de seconde, puis
-                tracez un rectangle pour sélectionner plusieurs unités.
+                actions. Maintenez Shift et glissez avec le bouton gauche pour
+                sélectionner plusieurs unités par rectangle.
               </p>
               <p className="reason">
                 Clic dans le vide ou Échap : désélectionner. Clic droit :
@@ -813,6 +813,12 @@ export default function Game() {
                   </p>
                 </>
               )}
+              <DomainPanel
+                state={s}
+                lot={selectedLot}
+                unit={selectedUnit}
+                onAction={run}
+              />
               {selectedLot && (
                 <>
                   {chosenKind === 'canteen' && (
@@ -1061,7 +1067,7 @@ export default function Game() {
             className="world-canvas"
             ref={canvasRef}
             tabIndex={0}
-            aria-label="Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Maintenez le clic gauche un quart de seconde puis glissez pour sélectionner un groupe. Maj complète la sélection. Glisser immédiatement, clic molette ou flèches : déplacer la carte. Les boutons du panneau permettent aussi de parcourir les parcelles."
+            aria-label="Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette ou flèches : déplacer la carte. Les boutons du panneau permettent aussi de parcourir les parcelles."
           />
           <div className="map-caption">
             <RibbonSkin />
@@ -1078,7 +1084,7 @@ export default function Game() {
           <div className="canvas-help">
             <span>
               <PackIcon asset="ui-cursor" />
-              Clic long + rectangle : groupe
+              Shift + glisser gauche : groupe
             </span>
             <span>
               <PackIcon asset="ui-cursor-hand" />
@@ -1166,7 +1172,7 @@ export default function Game() {
                 title={`${CREATURES[kind].name} : ${count(kind)}`}
                 onClick={() => setModal('bestiary')}
               >
-                <img src={portrait(kind)} alt="" />
+                <CreaturePortrait kind={kind} />
                 <b>{count(kind)}</b>
               </button>
             ))}
@@ -1247,7 +1253,7 @@ export default function Game() {
                     title={reason || `Recruter : ${c.name}`}
                     aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
                   >
-                    <img src={portrait(kind)} alt="" />
+                    <CreaturePortrait kind={kind} />
                     <div>
                       <strong>{c.name}</strong>
                       <small className={reason ? 'recruit-blocker' : undefined}>
@@ -1384,9 +1390,11 @@ export default function Game() {
                   <div>
                     <strong>Prenez soin de votre horde</strong>
                     <p>
-                      Les blessés se soignent près du manoir. Une crypte
-                      débloque les squelettes ; avec une forge, elle permet
-                      d’invoquer le Minotaure.
+                      Au calme, les créatures vivantes vont manger à la cantine
+                      et se reposent à la tanière. Les morts-vivants se
+                      reconstituent à la crypte. Vos ordres et les combats
+                      passent avant ces pauses. Les blessés se soignent aussi
+                      près du manoir.
                     </p>
                   </div>
                 </div>
@@ -1396,10 +1404,10 @@ export default function Game() {
                     <strong>Le quartier riposte</strong>
                     <p>
                       La garde se mobilise à 5 parcelles sur 9 (56 %) ou après 7
-                      minutes, avec 25 secondes de préavis. La guilde s’éveille
-                      à 6 sur 9 (67 %) ou après 10 minutes, avec 35 secondes de
-                      préavis. Une fois mobilisées, elles continuent jusqu’à la
-                      prise de leur bâtiment.
+                      minutes, ou à 60 de suspicion, avec 25 secondes de
+                      préavis. La guilde s’éveille à 6 sur 9 (67 %) ou après 10
+                      minutes, avec 35 secondes de préavis. Une fois mobilisées,
+                      elles continuent jusqu’à la prise de leur bâtiment.
                     </p>
                   </div>
                 </div>
@@ -1435,9 +1443,16 @@ export default function Game() {
                 </div>
               </div>
               <p className="controls-guide">
-                Clic gauche maintenu ¼ s puis rectangle : sélectionner un groupe
-                · Maj : compléter la sélection · Glisser immédiatement :
-                déplacer la carte · Molette : zoom · Espace : pause · 1-4 :
+                Spectre : recrutez-le à la crypte, puis clic droit sur un
+                bâtiment humain pour le hanter. Le moine le provoque en duel
+                dans la rue. Ordonnez un repli pour sauver votre spectre. Crypte
+                : les gobelins libres rapportent les dépouilles ; 2 dépouilles
+                et 12 essence permettent de relever un squelette. Mairie : une
+                bourse de 100 or livrée par un gobelin retarde la garde de 45 s.
+                <br />
+                Shift + glisser gauche : sélectionner ou compléter un groupe ·
+                Shift + clic : ajouter ou retirer une unité · Glisser gauche :
+                déplacer la carte · Molette : zoom · Espace : pause · 1-5 :
                 bâtiment ou créature · R : repli · Échap : désélectionner ou
                 annuler un chantier avant sa pose.
                 <br />

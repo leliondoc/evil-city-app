@@ -11,6 +11,7 @@ import {
   findPath,
 } from '../app/game/engine.ts';
 import { BRIDGES, isDryGround } from '../app/game/scenery.ts';
+import { ISLAND_PATHS } from '../app/game/islandRoutes.ts';
 
 function fighters() {
   const s = createGame();
@@ -26,6 +27,23 @@ test('Every island route stays on land or a bridge, with dry bridge landings', (
   for (const b of BRIDGES) {
     const horizontal = b.right - b.left > b.bottom - b.top;
     const center = { x: (b.left + b.right) / 2, y: (b.top + b.bottom) / 2 };
+    assert.ok(
+      ISLAND_PATHS.some((path) =>
+        path.slice(1).some((end, i) => {
+          const start = path[i];
+          return horizontal
+            ? start.y * 32 === center.y &&
+                end.y * 32 === center.y &&
+                Math.min(start.x, end.x) * 32 <= b.left &&
+                Math.max(start.x, end.x) * 32 >= b.right
+            : start.x * 32 === center.x &&
+                end.x * 32 === center.x &&
+                Math.min(start.y, end.y) * 32 <= b.top &&
+                Math.max(start.y, end.y) * 32 >= b.bottom;
+        }),
+      ),
+      'Bridge is centered on its connecting path',
+    );
     assert.ok(!isDryGround(center.x, center.y), 'Bridge crosses water');
     for (const p of horizontal
       ? [

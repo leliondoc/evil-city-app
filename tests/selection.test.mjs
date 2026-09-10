@@ -137,10 +137,7 @@ test('Invalid group attacks and orders after defeat change neither units nor res
   assert.deepEqual(s.units, current);
 });
 
-test('Immediate drags pan the map; holding before a drag enables the selection rectangle', () => {
-  assert.equal(dragIntent(0), 'pan');
-  assert.equal(dragIntent(180), 'pan');
-  assert.equal(dragIntent(249), 'pan');
-  assert.equal(dragIntent(250), 'select');
-  assert.equal(dragIntent(900), 'select');
+test('Left drags pan the map; Shift enables the selection rectangle without a hold delay', () => {
+  assert.equal(dragIntent(false), 'pan');
+  assert.equal(dragIntent(true), 'select');
 });

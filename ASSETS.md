@@ -20,12 +20,17 @@ La licence indiquée sur la page officielle autorise l’usage personnel et comm
 | Combattant  | Troll               | Idle, Walk, Windup, Attack, Recovery |
 | Mort-vivant | Skull               | Idle, Run, Attack                    |
 | Colosse     | Minotaur            | Idle, Walk, Attack                   |
+| Saboteur    | Thief (incarne le spectre) | Idle, Run, Attack |
+
+Le spectre utilise les trois sprites PNG du voleur (Thief) déjà présents dans le pack, sans retouche. Les entrées `specter-idle`, `specter-walk` et `specter-attack` du manifeste pointent vers ces mêmes fichiers. Son portrait est une frame animée du sprite. Les feux follets de hantise utilisent `Hex Shaman/Hex Shaman_Projectile.png` du même pack, copié sans retouche dans `haunt-wisp.png` (trois frames de 128 × 128).
+
+Les morts utilisent la planche originale `Factions/Knights/Troops/Dead/Dead.png` de Tiny Swords (Update 010), copiée sans retouche dans `unit-death.png` par `scripts/import-death-pack.py`. Ses 14 frames de 128 × 128 sont lues sur deux rangées. Les dépouilles récupérables restent sur la frame posée au sol avant la disparition ; les morts-vivants jouent le cycle complet et ne laissent aucun reste. Le transport utilise aussi ce sprite. Les textes d’activité sont dessinés par le moteur Canvas.
 
 Les dimensions sont décrites dans `app/game/assets.json`. Les tags des sources Aseprite ont été vérifiés. Les images sont lues dans leur ordre d’origine à 100 ms par frame. Le maintien de 5 secondes sur la dernière frame Wind-up du fichier Aseprite du troll est ramené à 100 ms pour le cycle de combat du prototype ; les cinq images de préparation sont conservées.
 
 Les arbres, les buissons et la fumée de la tanière utilisent également les animations originales. La mairie utilise le château bleu, le manoir le château violet, la forge la caserne violette et la crypte le monastère violet. Les rues pavées sont une géométrie de terrain simple dessinée par le moteur.
 
-Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les quatre recrutables ne possèdent pas encore de comportements jouables.
+Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les cinq recrutables ne possèdent pas encore de comportements jouables.
 
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.
 

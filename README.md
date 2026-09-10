@@ -24,7 +24,16 @@ La guilde réunit quatre classes humaines : chevalier, lancier, archère et moin
 
 Les gobelins construisent et récupèrent du bois. Les créatures ont des besoins alimentaires et des coûts de logement. Le retour au manoir soigne les blessés. Les bâtiments peuvent atteindre trois niveaux.
 
-Glisser : déplacer la carte. Molette : zoom. Clic : sélectionner. Clic droit : déplacer une créature. Espace : pause. 1 à 4 : option de l’onglet actif. R : repli. H : aide. Le bestiaire présente les animations de repos, marche et attaque.
+Glisser : déplacer la carte. Shift + glisser gauche : sélection par rectangle. Molette : zoom. Clic : sélectionner. Clic droit : déplacer, attaquer ou hanter selon la créature. Espace : pause. 1 à 5 : option de l’onglet actif. R : repli. H : aide. Le bestiaire présente les animations de repos, marche et attaque.
+
+## Hantises, dépouilles et vie du domaine
+
+- **Spectre** : la crypte permet son recrutement (60 or, 30 essence, 1 place). Un clic droit sur un bâtiment humain l’y envoie ; après 3 s à l’entrée, les livraisons et départs de renforts s’arrêtent pendant 30 s. La hantise ajoute 18 de suspicion et le spectre doit attendre 60 s à compter de son déclenchement avant d’en préparer une autre. Le rappel, la mort du spectre ou la conquête du bâtiment met fin au maléfice. La guilde envoie un moine, s’il n’y en a pas déjà un. À son arrivée devant le portail, il interrompt la hantise et provoque le spectre dans la rue : chacun rejoint le duel à pied puis attaque avec son animation du pack. Le moine riposte avant de soigner : 6 dégâts/s contre les vivants, doublés contre les squelettes et spectres (+10 % par niveau supplémentaire). Dans le duel, il inflige donc 12 dégâts/s au niveau 1 et le spectre riposte à 12 dégâts/s ; le combat finit à la mort d’un adversaire, ou sur un ordre de fuite. Le moine poursuit le fuyard jusqu’à perdre sa trace à 8 cases. L’exorcisme relance les 60 s de récupération. Le spectre ne combat que son exorciste, ne conquiert pas et ne mange pas.
+- **Dépouilles** : les gobelins disponibles récupèrent automatiquement les corps hors du danger et les transportent à la crypte. Les chantiers restent prioritaires sur les gobelins encore libres ; la collecte peut être désactivée dans la crypte. Les paysans sans cargaison récupèrent les morts humains proches et les ramènent chez eux. Un corps au sol disparaît après 100 s ; un transport interrompu le laisse au sol pour 60 s. Réserve maximale : 6. Deux dépouilles et 12 essence lancent un rituel de 12 s pour un squelette, avec une place réservée et 45 s entre les rituels. Les squelettes et spectres ne fournissent aucune dépouille. Si la crypte du rituel est perdue, le squelette arrive au manoir.
+- **Pot-de-vin** : sélectionnez la mairie humaine et envoyez une bourse de 100 or avec un gobelin libre. Seule la livraison retarde la prochaine patrouille de 45 s et réduit la suspicion de 15 ; les gardes déjà dehors et la guilde restent actifs. Le courrier dispose de 120 s. Sa mort, son rappel ou la conquête de la mairie fait perdre la bourse. Une expédition toutes les 120 s au maximum.
+- **Vie quotidienne** : au calme, les créatures vivantes rejoignent la cantine pour manger et la tanière pour se reposer. Les morts-vivants se reconstituent à la crypte. Les pauses durent 4 s ; le repos soigne de 4 PV/s. La consommation alimentaire reste celle du bilan de vivres, sans deuxième prélèvement au repas. Les bulles indiquent faim, repas, sommeil, régénération et missions. Les ordres explicites et les combats interrompent les pauses ; un chantier ou un assaut n’est pas abandonné pour manger.
+
+La suspicion monte avec les hantises (+18), les sabotages de sites (+10), les conquêtes par combat (+8) et les morts (+2). Elle baisse lentement au calme. À 60, elle déclenche la garde avec le préavis habituel, même avant le seuil de territoire ou de temps.
 
 ## Graphismes
 
@@ -37,7 +46,7 @@ Voir ASSETS.md pour la provenance et les réglages.
 ## Limites
 
 - Quartier fictif de neuf parcelles, sans import de carte réelle.
-- Quatre créatures recrutables : gobelin, troll, squelette et minotaure. Le catalogue animé présente les 22 créatures du pack Enemy et les 4 héros humains. Les 18 autres créatures ne sont pas encore recrutables ni dotées de comportements en jeu.
+- Cinq créatures recrutables : gobelin, troll, squelette, minotaure et spectre (sprite du voleur). Le catalogue animé présente les 22 créatures du pack Enemy et les 4 héros humains. Les 17 autres créatures du pack ne sont pas encore recrutables ni dotées de comportements en jeu.
 - Combat continu avec défenseurs fixes. Les dégâts ne sont pas encore synchronisés sur l’image précise de chaque frappe.
 - Les gobelins utilisent leur cycle de repos pendant le chantier ; le pack ne fournit pas de cycle de construction pour ce personnage.
 - Mobilisation adverse par paliers de temps et d’expansion, financée par une économie humaine simplifiée. Pas de sous-sol ni de relief influant sur le déplacement.
@@ -48,6 +57,8 @@ Voir ASSETS.md pour la provenance et les réglages.
 
 Node.js 24 et npm. Installation : `npm install`. La version jouable est vérifiée directement sur GitHub Pages après publication. Production : `npm run build`. Types : `npx tsc --noEmit`. Tests : `node --test tests/*.test.mjs`.
 
+Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, puis ouvrir `/tests/domain-preview.html`. Cette partie préparée utilise l’interface réelle avec une crypte, des dépouilles, un spectre et un moine ; elle n’est pas incluse dans le site de production. Les scénarios automatisés correspondants se trouvent dans `tests/domain.test.mjs`.
+
 - `app/game/engine.ts` : simulation indépendante du rendu.
 - `app/game/renderer.ts` : terrain, caméra, profondeur, animation et sélection sur l’alpha de la frame affichée.
 - `app/game/art.ts` et `assets.json` : correspondance des sprites et séquences.
@@ -55,6 +66,6 @@ Node.js 24 et npm. Installation : `npm install`. La version jouable est vérifi�
 - `app/game/Game.tsx` : interface et commandes.
 - `public/tiny-swords/` : ressources graphiques intégrées au jeu.
 
-Deux parcours testés gagnent avec l’économie normale : une conquête rapide en environ **203 secondes**, et une approche défensive en environ **290 secondes** après une patrouille repoussée. Sans intervention, le manoir tombe vers **300 secondes**. Les 27 tests couvrent les livraisons, pénuries, sabotages, réparations, soins, projectiles, catalogue et aussi les seuils, préavis, renforts, reconquêtes, interceptions, états de fin et l’invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
+Les 72 tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
 
-Sélection : un clic sélectionne une unité ; glisser immédiatement déplace la carte. Maintenez le clic gauche 250 ms avant de glisser pour tracer un rectangle. Maj + clic ajoute ou retire une unité ; Maj + rectangle ajoute au groupe. Le clic droit commande les unités sélectionnées. Les gobelins d’un groupe mixte ne participent pas aux attaques.
+Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Le clic droit commande les unités sélectionnées. Les gobelins d’un groupe mixte ne participent pas aux attaques.

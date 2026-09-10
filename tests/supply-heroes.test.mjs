@@ -170,6 +170,40 @@ test('Archers fire travelling projectiles and buildings block their line of fire
   assert.equal(blocked.projectiles.length, 0);
   assert.equal(archer.fighting, true);
 });
+test('Monks retaliate before healing and deal double damage to skeletons and specters', () => {
+  const losses = {};
+  for (const kind of ['troll', 'skeleton', 'specter']) {
+    const s = createGame();
+    const u = s.units[0];
+    s.units = [u];
+    const monk = hero(s, 'monk', 12, 10.5);
+    const ally = hero(s, 'warrior', 12, 11.5);
+    ally.hp = 50;
+    ally.damage = 0; // Measure the monk's damage independently of its wounded ally.
+    Object.assign(u, {
+      kind,
+      x: 10.5,
+      y: 10.5,
+      hp: 50,
+      task: kind === 'specter' ? 'duel' : 'defend',
+      target: monk.id,
+      path: [],
+    });
+    if (kind === 'specter') {
+      monk.exorcising = u.id;
+      monk.exorcismStreet = { x: u.x, y: u.y };
+    }
+    tick(s, 0.1);
+    assert.equal(monk.fighting, true);
+    assert.equal(monk.healTarget, null);
+    assert.equal(ally.hp, 50);
+    assert.ok(monk.hp < monk.maxHp);
+    losses[kind] = 50 - u.hp;
+  }
+  assert.ok(Math.abs(losses.troll - 0.6) < 0.0001);
+  assert.ok(Math.abs(losses.skeleton - losses.troll * 2) < 0.0001);
+  assert.ok(Math.abs(losses.specter - losses.troll * 2) < 0.0001);
+});
 test('Monks heal wounded living allies without exceeding maximum HP and cannot damage the manor', () => {
   const s = createGame();
   s.units = [];

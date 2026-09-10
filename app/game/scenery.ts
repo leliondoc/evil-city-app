@@ -14,7 +14,7 @@ export const GROUND_PATCHES: GroundPatch[] = [
   { key: 'terrain-4', x: -64, y: -64, w: 18, h: 18 },
   { key: 'terrain-4', x: -192, y: -128, w: 7, h: 7 },
   { key: 'terrain-4', x: 896, y: 320, w: 7, h: 12 },
-  // This island reaches the western end of the bridge at y = 640.
+  // This island reaches the western end of the bridge at y = 656.
   { key: 'terrain-5', x: -448, y: 192, w: 5, h: 9 },
   { key: 'terrain-2', x: -384, y: 832, w: 5, h: 5 },
 ];
