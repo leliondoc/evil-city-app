@@ -4,6 +4,8 @@ import {
   createGame,
   tick,
   recruit,
+  recruitReason,
+  gather,
   build,
   buildReason,
   HUMAN_WORKER_CAP,
@@ -13,6 +15,46 @@ import {
 function until(s, predicate, limit = 360) {
   for (let i = 0; i < limit * 10 && !predicate(); i++) tick(s, 0.1);
   assert.ok(predicate(), 'Opening is not blocked');
+}
+
+test('The opening funds two manual workers and reaches six within 90 seconds through real deliveries', () => {
+  const s = createGame();
+  assert.equal(recruit(s, 'goblin'), '');
+  assert.equal(recruit(s, 'goblin'), '');
+  assert.equal(s.units.length, 0);
+  assert.equal(s.recruits.length, 2);
+  assert.deepEqual(s.resources, { gold: 5, wood: 0, food: 16, mana: 0 });
+  for (let step = 0; step < 900 && s.units.length < 6; step++) {
+    tick(s, 0.1);
+    if (s.units.length + s.recruits.length < 6 && !recruitReason(s, 'goblin'))
+      assert.equal(recruit(s, 'goblin'), '');
+  }
+  assert.equal(s.units.length, 6);
+  assert.equal(s.lost, false);
+  assert.equal(s.recruits.length, 0);
+  assert.match(recruitReason(s, 'goblin'), /Limite/);
+});
+
+for (const kind of ['gold', 'wood', 'food']) {
+  test(`An opening worker delivers ${kind} within 40 seconds without credit during harvesting`, () => {
+    const s = createGame();
+    recruit(s, 'goblin');
+    until(s, () => s.units.length === 1, 7);
+    const u = s.units[0];
+    const before = s.resources[kind];
+    assert.equal(
+      gather(s, u.id, s.sites.find((site) => site.kind === kind).id),
+      '',
+    );
+    until(s, () => u.gathering.cargo > 0, 25);
+    assert.ok(s.resources[kind] <= before);
+    until(s, () => u.gathering.cargo === 0, 15);
+    assert.ok(s.elapsed < 40, `${kind} delivered at ${s.elapsed}`);
+    assert.ok(s.resources[kind] > before + 25);
+    assert.ok(
+      s.resourceGains.some((gain) => gain.kind === kind && gain.amount === 30),
+    );
+  });
 }
 test('Both camps start without workers; the first goblin is affordable and always manually recruited', () => {
   const s = createGame();

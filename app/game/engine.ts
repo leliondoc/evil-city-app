@@ -219,9 +219,9 @@ export const CREATURES: Record<
     name: 'Gobelin',
     job: 'Bâtisseur',
     description:
-      'Construit vos bâtiments et récupère du bois entre deux chantiers. Petit, efficace, peu porté sur les combats.',
+      'Construit vos bâtiments et récolte or, bois et vivres entre deux chantiers. Petit, efficace, peu porté sur les combats.',
     art: 0,
-    cost: { gold: 35, food: 8 },
+    cost: { gold: 15, food: 4 },
     hp: 45,
     damage: 0,
     speed: 2.1,
@@ -1435,7 +1435,9 @@ export function foodBalance(s: State) {
 }
 export const GOBLIN_CAP = 6;
 export const GOBLIN_LOAD = 30;
-const GOBLIN_HARVEST_PER_SECOND = 0.6;
+const GOBLIN_HARVEST_PER_SECOND = 0.9;
+const GOBLIN_HARVEST_SECONDS = 4;
+const GOBLIN_HAUL_SPEED = 1.5;
 function gathers(unit: Unit, kind: Supply) {
   return (
     unit.hp > 0 &&
@@ -1568,7 +1570,7 @@ function advanceGathering(s: State, u: Unit, dt: number): boolean {
     g.phase === 'return' ? entrance(s.lots[6]) : gatheringApproach(site, u);
   if (!u.path.length && distanceBetween(u, destination) >= 1)
     u.path = findPath(u, destination);
-  walk(s, u, CREATURES.goblin.speed * dt);
+  walk(s, u, CREATURES.goblin.speed * GOBLIN_HAUL_SPEED * dt);
   if (u.path.length || distanceBetween(u, destination) >= 1) return true;
   if (g.phase === 'return') {
     const amount = creditResource(s, g.kind, g.cargo);
@@ -1584,7 +1586,7 @@ function advanceGathering(s: State, u: Unit, dt: number): boolean {
   u.facing = site.x >= u.x ? 1 : -1;
   g.progress += dt;
   // Material resources enter storage only after a complete physical round trip.
-  if (g.progress >= 8) {
+  if (g.progress >= GOBLIN_HARVEST_SECONDS) {
     g.cargo = GOBLIN_LOAD;
     g.phase = 'return';
     g.progress = 0;

@@ -1207,6 +1207,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           </div>
           <ThreatPanel
             state={s}
+            compact={compact}
             onSelect={(next) => {
               setPendingBuild(null);
               setSelection(next);

@@ -8,7 +8,14 @@ import {
 import { ASSETS, type AssetKey } from './art';
 import { SupplyPanel } from './SupplyPanel';
 import { isHaunted } from './domain';
+import { GameButton, PanelSkin, ResourceIcon } from './PackUI';
+import { unitSelection } from './selection';
 import {
+  army,
+  capacity,
+  population,
+  goblinWorkforce,
+  GOBLIN_CAP,
   humanLevel,
   PRESSURE,
   sourceBuilding,
@@ -35,14 +42,20 @@ type MenuEntry = {
 
 export function ThreatPanel({
   state: s,
+  compact,
   onSelect,
   onDefend,
 }: {
   state: State;
+  compact: boolean;
   onSelect: (selection: Selection) => void;
   onDefend: () => void;
 }) {
   const [active, setActive] = useState<string | null>(null);
+  const [camp, setCamp] = useState<'human' | 'evil'>('evil');
+  const workers = goblinWorkforce(s);
+  const fighters = army(s);
+  const goblins = s.units.filter((u) => u.kind === 'goblin' && u.hp > 0);
   const home = s.lots[6];
   const percent = Math.round(territory(s) * 100);
   const select = (selection: Selection) => {
@@ -129,7 +142,7 @@ export function ThreatPanel({
     {
       id: 'territory',
       label: 'Emprise',
-      icon: 'ui-banner',
+      icon: 'specter-avatar',
       summary: `${percent} % du quartier sous votre contrôle.`,
       badge: `${percent}%`,
       content: (
@@ -216,60 +229,200 @@ export function ThreatPanel({
       content: <SupplyPanel state={s} onSelect={select} />,
     },
   ];
+  const playerEntries: MenuEntry[] = [
+    entries.find((e) => e.id === 'home')!,
+    {
+      id: 'army',
+      label: 'Votre horde',
+      icon: 'minotaur-avatar',
+      badge: String(fighters.length),
+      summary: `${fighters.length} combattants. Population ${population(s)} sur ${capacity(s)}.`,
+      content: (
+        <>
+          <div className="district-stat">
+            <span>Combattants</span>
+            <strong>{fighters.length}</strong>
+          </div>
+          <div className="district-stat">
+            <span>Population</span>
+            <strong>
+              {population(s)} / {capacity(s)}
+            </strong>
+          </div>
+          <p className="district-note">
+            {s.recruits.length} recrutement{s.recruits.length > 1 ? 's' : ''} en
+            cours. Les gobelins occupent aussi des places dans votre domaine.
+          </p>
+          <GameButton
+            className="primary-btn"
+            tone="red"
+            disabled={!fighters.length}
+            onClick={() => select(unitSelection(fighters.map((u) => u.id)))}
+          >
+            Sélectionner les combattants
+          </GameButton>
+        </>
+      ),
+    },
+    {
+      id: 'goblins',
+      label: 'Vos gobelins',
+      icon: 'goblin-avatar',
+      badge: `${workers.total}/${GOBLIN_CAP}`,
+      summary: `${workers.total} gobelins, ${workers.queued} en recrutement.`,
+      content: (
+        <>
+          <div className="district-stat">
+            <span>Gobelins vivants</span>
+            <strong>
+              {workers.total} / {GOBLIN_CAP}
+            </strong>
+          </div>
+          <p>
+            {workers.queued} en recrutement · {workers.building} au chantier ·{' '}
+            {workers.other} en mission ou au repos.
+          </p>
+          <div className="evil-harvest-list">
+            {(['gold', 'wood', 'food'] as const).map((kind) => (
+              <button
+                key={kind}
+                className="district-action"
+                onClick={() => {
+                  const site = s.sites.find((site) => site.kind === kind);
+                  if (site) select({ type: 'resource', id: site.id });
+                }}
+              >
+                <ResourceIcon kind={kind} />
+                <span>
+                  {kind === 'gold' ? 'Or' : kind === 'wood' ? 'Bois' : 'Vivres'}
+                </span>
+                <strong>{workers[kind]}</strong>
+              </button>
+            ))}
+          </div>
+          <p className="district-note">
+            Les stocks augmentent à la livraison au manoir. Choisissez une
+            ressource pour ouvrir son site de récolte.
+          </p>
+          <GameButton
+            className="primary-btn"
+            tone="red"
+            disabled={!goblins.length}
+            onClick={() => select(unitSelection(goblins.map((u) => u.id)))}
+          >
+            Sélectionner les gobelins
+          </GameButton>
+        </>
+      ),
+    },
+    entries.find((e) => e.id === 'territory')!,
+  ];
+  const groups = [
+    {
+      id: 'human' as const,
+      label: 'Humains',
+      entries: entries.filter((e) =>
+        ['guard', 'hero', 'supply'].includes(e.id),
+      ),
+    },
+    { id: 'evil' as const, label: 'Mon domaine', entries: playerEntries },
+  ];
   return (
     <aside className="district-menu" aria-label="Menu du quartier">
-      {entries.map((entry) => (
-        <Popover
-          key={entry.id}
-          open={active === entry.id}
-          onOpenChange={(open) =>
-            setActive((current) =>
-              open ? entry.id : current === entry.id ? null : current,
-            )
-          }
-        >
-          <PopoverTrigger
-            className={`district-shortcut ${entry.alert || ''}`}
-            aria-label={`${entry.label}. ${entry.summary} Ouvrir les détails.`}
-            title={`${entry.label} · ${entry.summary}`}
+      {compact && (
+        <div className="district-camp-tabs" aria-label="Choisir un camp">
+          {groups.map((group) => (
+            <GameButton
+              key={group.id}
+              className="primary-btn"
+              tone={group.id === 'evil' ? 'red' : 'blue'}
+              aria-pressed={camp === group.id}
+              onClick={() => {
+                setCamp(group.id);
+                setActive(null);
+              }}
+            >
+              {group.label}
+            </GameButton>
+          ))}
+        </div>
+      )}
+      {groups
+        .filter((group) => !compact || camp === group.id)
+        .map((group) => (
+          <section
+            className="district-group"
+            data-camp={group.id}
+            aria-label={group.label}
+            key={group.id}
           >
-            <img
-              className="district-button-skin"
-              src={ASSETS['ui-menu-button'].src}
-              alt=""
-            />
-            <img
-              className="district-icon"
-              src={ASSETS[entry.icon].src}
-              alt=""
-            />
-            {entry.badge && (
-              <span className="district-badge" aria-hidden="true">
-                {entry.badge}
-              </span>
-            )}
-          </PopoverTrigger>
-          <PopoverContent
-            className="district-popover"
-            side="left"
-            align="start"
-            sideOffset={10}
-          >
-            <div className="district-heading">
-              <img src={ASSETS[entry.icon].src} alt="" />
-              <PopoverTitle>{entry.label}</PopoverTitle>
-              <button
-                className="district-close"
-                aria-label="Fermer les détails du quartier"
-                onClick={() => setActive(null)}
+            <h3>{group.label}</h3>
+            {group.entries.map((entry) => (
+              <Popover
+                key={entry.id}
+                open={active === entry.id}
+                onOpenChange={(open) =>
+                  setActive((current) =>
+                    open ? entry.id : current === entry.id ? null : current,
+                  )
+                }
               >
-                <img src={ASSETS['ui-close'].src} alt="" />
-              </button>
-            </div>
-            {entry.content}
-          </PopoverContent>
-        </Popover>
-      ))}
+                <PopoverTrigger
+                  className={`district-shortcut ${entry.alert || ''}`}
+                  aria-label={`${entry.label}. ${entry.summary} Ouvrir les détails.`}
+                  title={`${entry.label} · ${entry.summary}`}
+                >
+                  {group.id === 'evil' ? (
+                    <PanelSkin
+                      kind="button"
+                      asset={
+                        active === entry.id
+                          ? 'ui-button-red-pressed'
+                          : 'ui-button-red'
+                      }
+                    />
+                  ) : (
+                    <img
+                      className="district-button-skin"
+                      src={ASSETS['ui-menu-button'].src}
+                      alt=""
+                    />
+                  )}
+                  <img
+                    className="district-icon"
+                    src={ASSETS[entry.icon].src}
+                    alt=""
+                  />
+                  {entry.badge && (
+                    <span className="district-badge" aria-hidden="true">
+                      {entry.badge}
+                    </span>
+                  )}
+                </PopoverTrigger>
+                <PopoverContent
+                  className="district-popover"
+                  data-camp={group.id}
+                  side={compact ? 'bottom' : 'right'}
+                  align="start"
+                  sideOffset={10}
+                >
+                  <div className="district-heading">
+                    <img src={ASSETS[entry.icon].src} alt="" />
+                    <PopoverTitle>{entry.label}</PopoverTitle>
+                    <button
+                      className="district-close"
+                      aria-label="Fermer les détails du quartier"
+                      onClick={() => setActive(null)}
+                    >
+                      <img src={ASSETS['ui-close'].src} alt="" />
+                    </button>
+                  </div>
+                  {entry.content}
+                </PopoverContent>
+              </Popover>
+            ))}
+          </section>
+        ))}
     </aside>
   );
 }
