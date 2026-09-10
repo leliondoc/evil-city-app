@@ -2,6 +2,10 @@
 
 Prototype 0.2 de gestion et de conquête en 2D, en vue du dessus.
 
+[Jouer dans le navigateur](https://leliondoc.github.io/evil-city-app/)
+
+Application autonome React et Vite, publiée automatiquement avec GitHub Pages à chaque modification de la branche `main`. Le jeu fonctionne entièrement dans le navigateur et ne demande ni compte ni service serveur.
+
 ## Jouer
 
 Construisez une cantine, revendiquez la friche centrale et bâtissez une forge. Recrutez trois trolls, prenez l’auberge puis la mairie. Les maisons conquises produisent un tribut et peuvent être transformées. Une crypte débloque les squelettes ; une forge et une crypte permettent de recruter le minotaure.
