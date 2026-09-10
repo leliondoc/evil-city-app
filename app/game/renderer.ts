@@ -1243,6 +1243,23 @@ export class Renderer {
       drawables.push({
         depth: u.y * CELL + 1,
         draw: () => {
+          if (u.kind === 'goblin' && !u.path.length && !u.fighting) {
+            const lot = u.target === null ? undefined : s.lots[u.target];
+            const insideHome =
+              (u.task === 'eat' || u.task === 'rest') &&
+              lot?.owned &&
+              !lot.construction &&
+              lot.kind === (u.task === 'eat' ? 'canteen' : 'den') &&
+              Math.hypot(u.x - entrance(lot).x, u.y - entrance(lot).y) < 1;
+            const insideTower =
+              u.task === 'tower' &&
+              s.strategy.towers.some(
+                (tower) => tower.owned && towerOccupant(s, tower)?.id === u.id,
+              );
+            // Hide the whole actor indoors, including selection, health and cargo.
+            // A new order or finished activity immediately makes it visible again.
+            if (insideHome || insideTower) return;
+          }
           const x = u.x * CELL,
             y = u.y * CELL,
             def = CREATURES[u.kind],
