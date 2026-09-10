@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Sparkles,
   Users,
-  Swords,
   Pause,
   BookOpen,
   Plus,
@@ -1421,14 +1420,24 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             setPendingBuild(null);
           }}
         >
-          <TabsList variant="line">
+          <TabsList variant="line" aria-label="Construction et recrutement">
             <TabsTrigger value="build">
-              <Hammer size={14} />
-              Bâtiments
+              <PanelSkin
+                kind="button"
+                asset={tab === 'build' ? 'ui-button-pressed' : 'ui-button'}
+              />
+              <PackIcon asset="hq-purple" />
+              <span>Construire des bâtiments</span>
             </TabsTrigger>
             <TabsTrigger value="recruit">
-              <Swords size={14} />
-              Créatures
+              <PanelSkin
+                kind="button"
+                asset={
+                  tab === 'recruit' ? 'ui-button-red-pressed' : 'ui-button-red'
+                }
+              />
+              <PackIcon asset="goblin-avatar" />
+              <span>Recruter des créatures</span>
             </TabsTrigger>
           </TabsList>
           <TabsContent value="build">
@@ -1699,12 +1708,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   <div>
                     <strong>Faites connaissance avec les voisins</strong>
                     <p>
-                      Dans « Créatures », recrutez des squelettes. Sélectionnez
-                      l’auberge voisine, puis « Envoyer l’armée ». Après la
-                      conquête, la crypte vous permet de construire une forge
-                      sur le terrain gagné : 180 or et 75 bois. Vous pouvez
-                      alors recruter des trolls pour 90 or et 30 vivres, avant
-                      de viser la mairie et la guilde.
+                      Dans « Recruter des créatures », recrutez des squelettes.
+                      Sélectionnez l’auberge voisine, puis « Envoyer l’armée ».
+                      Après la conquête, la crypte vous permet de construire une
+                      forge sur le terrain gagné : 180 or et 75 bois. Vous
+                      pouvez alors recruter des trolls pour 90 or et 30 vivres,
+                      avant de viser la mairie et la guilde.
                     </p>
                   </div>
                 </div>
