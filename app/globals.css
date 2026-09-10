@@ -3110,7 +3110,6 @@ svg {
   text-transform: uppercase;
   margin: 0 0 -14px;
 }
-.selection-divider::after { content: ''; height: 1px; flex: 1; background: #6c868166; }
 
 /* Objectives and the current selection scroll independently on desktop. */
 .mission-sidebar {
@@ -3191,7 +3190,8 @@ svg {
 }
 .game-shell[data-compact='false'] .sidebar {
   align-self: flex-start;
-  max-height: 100%;
+  margin-top: 12px;
+  max-height: calc(100% - 12px);
   background: #192b31e0;
   border: 1px solid #a1956855;
   border-radius: 6px;
