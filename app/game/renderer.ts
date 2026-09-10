@@ -1024,9 +1024,9 @@ export class Renderer {
     // Site labels stay in front of scenery, like parcel labels.
     for (const site of s.sites)
       this.label(
-        site.x * CELL,
+        site.x * CELL + (site.kind === 'gold' ? 80 : 0),
         site.y * CELL + 36,
-        `${supplyActive(s, site) ? '' : '× '}${SUPPLIES[site.kind].name}`,
+        `${supplyActive(s, site) ? '' : '× '}${SUPPLIES[site.kind].label}`,
         supplyActive(s, site) ? '#ffe0a3' : '#c5c5b5',
       );
     for (const l of s.lots) {
