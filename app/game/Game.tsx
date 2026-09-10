@@ -387,6 +387,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       ? s.enemies.find((e) => e.id === selection.id)
       : undefined;
   const enemyDef = selectedEnemy ? enemyDefinition(selectedEnemy) : undefined;
+  const pursuedUnit = selectedEnemy
+    ? s.units.find((u) => u.id === selectedEnemy.pursuitTarget && u.hp > 0)
+    : undefined;
   const chosenKind =
     selectedLot &&
     (selectedLot.kind === 'empty' ||
@@ -853,12 +856,15 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     aria-label="Santé de l’ennemi"
                   />
                   <p className="reason">
-                    Objectif :{' '}
-                    {BUILDINGS[s.lots[selectedEnemy.target].kind].name}
+                    {pursuedUnit
+                      ? `Poursuite à mort : ${CREATURES[pursuedUnit.kind].name}`
+                      : `Objectif : ${BUILDINGS[s.lots[selectedEnemy.target].kind].name}`}
                   </p>
                   <p className="reason">
                     {selectedEnemy.role === 'monk'
-                      ? 'Soins aux alliés proches'
+                      ? pursuedUnit
+                        ? 'Exorcisme offensif · bonus contre les morts-vivants'
+                        : 'Soins aux alliés proches'
                       : `${Math.round(selectedEnemy.damage)} dégâts/s · portée ${enemyDef?.range} cases`}
                   </p>
                   <Button
@@ -1704,9 +1710,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     <p>
                       La garde se mobilise à 5 parcelles sur 9 (56 %) ou après 7
                       minutes, ou à 60 de suspicion, avec 25 secondes de
-                      préavis. La guilde s’éveille à 6 sur 9 (67 %) ou après 10
+                      préavis. La guilde s’éveille à 6 sur 9 (67 %) ou après 6
                       minutes, avec 35 secondes de préavis. Une fois mobilisées,
                       elles continuent jusqu’à la prise de leur bâtiment.
+                      Attaquer la guilde fait sortir ses quatre défenseurs : ils
+                      traquent les assaillants jusqu’à la mort. Un héros blessé
+                      poursuit aussi son agresseur, même s’il fuit.
                     </p>
                   </div>
                 </div>

@@ -132,7 +132,7 @@ test('A specter can defeat an injured exorcist and leaves its duel when the monk
   assert.equal(u.target, null);
   assert.equal(isHaunted(s, s.lots[1]), false);
 });
-test('A move order lets the specter flee while the monk pursues, then loses its trail', () => {
+test('A move order lets the specter flee but the injured monk keeps pursuing', () => {
   const { s, u, monk } = streetDuel();
   const start = { x: monk.x, y: monk.y };
   assert.equal(commandUnit(s, u.id, null, entrance(s.lots[6])), '');
@@ -141,7 +141,8 @@ test('A move order lets the specter flee while the monk pursues, then loses its 
   assert.equal(u.fighting, false);
   assert.equal(monk.exorcising, u.id);
   assert.ok(Math.hypot(monk.x - start.x, monk.y - start.y) > 0);
-  until(s, () => monk.exorcising === undefined, 20);
+  tick(s, 20);
+  assert.equal(monk.pursuitTarget, u.id);
   assert.ok(u.hp > 0);
   assert.notEqual(u.task, 'duel');
 });

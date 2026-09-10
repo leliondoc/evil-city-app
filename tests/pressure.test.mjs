@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { research } from '../app/game/strategy.ts';
 import {
   createGame,
   tick,
@@ -68,12 +69,14 @@ test('Expansion triggers a visible warning, then a moving guard patrol; falling 
 
 test('Time mobilizes humans even with no expansion; future raids grow stronger', () => {
   const early = createGame();
+  early.lots[0].owned = true; // Isolate the guard timer from earlier hero raids.
   advance(early, PRESSURE.guard.time - 1);
   assert.equal(early.mobilization.guard.active, false);
   advance(early, 2);
   assert.equal(early.mobilization.guard.active, true);
   until(early, () => early.enemies.length > 0);
   const later = createGame();
+  later.lots[0].owned = true;
   later.elapsed = 480;
   later.economy.level = 5; // A developed, funded human settlement.
   later.economy.nextUpgradeAt = 600;
@@ -197,6 +200,9 @@ test('A funded domain supports a victory after repelling a raid', () => {
   s.lots[5].owned = true;
   s.lots[5].kind = 'crypt';
   armyFixture(s, 5);
+  // The guild now fields four real fighters; equip this funded siege army.
+  assert.equal(research(s, 'embers'), '');
+  assert.equal(research(s, 'chain'), '');
   // Keep this siege/recovery scenario independent of scheduled meal/rest trips.
   // Different combat positions can move the retreat across their 65 s threshold.
   for (const u of s.units) {

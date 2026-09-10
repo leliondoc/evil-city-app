@@ -1088,7 +1088,11 @@ export class Renderer {
         gx = gate.x * CELL,
         // Put the feet on the street in front of the gate, clear of walls and fencing.
         gy = (l.y + 8.25) * CELL;
-      if (!l.owned && l.kind !== 'empty')
+      if (
+        !l.owned &&
+        l.kind !== 'empty' &&
+        !(l.kind === 'guild' && l.garrisonReleased)
+      )
         for (
           let i = 0;
           i <

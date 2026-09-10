@@ -7,6 +7,7 @@ import {
   entrance,
   findPath,
   population,
+  rememberAggressor,
   walk,
   type Enemy,
   type Lot,
@@ -529,6 +530,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
       u.fighting = true;
       u.facing = monk.x >= u.x ? 1 : -1;
       monk.hp = Math.max(0, monk.hp - 12 * dt);
+      rememberAggressor(s, monk, u);
     }
     return true;
   }

@@ -311,6 +311,8 @@ export const RECRUIT_OPTIONS: CreatureKind[] = [
 export const BOARD = 32;
 export const STARTS = [2, 12, 22];
 export interface Lot {
+  /** The visible guild defenders have left their posts; never duplicate them. */
+  garrisonReleased?: boolean;
   hauntedUntil?: number;
   hauntedBy?: number;
   id: number;
@@ -437,6 +439,9 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  /** A living aggressor is pursued without a distance or timeout leash. */
+  pursuitTarget?: number;
+  aggressors?: number[];
   revived?: boolean;
   resurrecting?: number;
   resurrectionProgress?: number;
@@ -492,7 +497,7 @@ export const PRESSURE = {
   },
   hero: {
     territory: 6 / 9,
-    time: 600,
+    time: 360,
     warning: 35,
     interval: 140,
     source: 'guild',
@@ -1600,6 +1605,57 @@ function raidTarget(s: State, e: Pick<Enemy, 'kind' | 'x' | 'y'>): Lot {
     )[0] ?? s.lots[6]
   );
 }
+export function rememberAggressor(s: State, enemy: Enemy, attacker: Unit) {
+  if (enemy.kind !== 'hero' || attacker.hp <= 0) return;
+  enemy.aggressors ??= [];
+  if (!enemy.aggressors.includes(attacker.id))
+    enemy.aggressors.push(attacker.id);
+  if (!s.units.some((u) => u.id === enemy.pursuitTarget && u.hp > 0)) {
+    enemy.pursuitTarget = attacker.id;
+    enemy.path = [];
+  }
+}
+function releaseGuildDefenders(s: State, lot: Lot, attackers: Unit[]) {
+  if (lot.garrisonReleased) return;
+  lot.garrisonReleased = true;
+  const level = humanLevel(s);
+  const point = entrance(lot);
+  for (const [i, role] of GUILD_ROLES.entries()) {
+    const def = HEROES[role];
+    const hp = Math.round(def.hp * (1 + (level - 1) * 0.15));
+    s.enemies.push({
+      id: s.nextId++,
+      kind: 'hero',
+      role,
+      ...point,
+      x: point.x - 0.9 + i * 0.6,
+      hp,
+      maxHp: hp,
+      damage: def.damage * (1 + (level - 1) * 0.12),
+      level,
+      path: [],
+      target: 6,
+      facing: -1,
+      fighting: false,
+      healTarget: null,
+      attackCooldown: 0.6,
+      pursuitTarget: attackers[i % attackers.length].id,
+      aggressors: attackers.map(
+        (_, index) => attackers[(i + index) % attackers.length].id,
+      ),
+    });
+  }
+  const pressure = s.mobilization.hero;
+  if (!pressure.active) {
+    pressure.active = true;
+    pressure.reason = 'Votre armée a attaqué la guilde';
+    pressure.nextRaidAt = s.elapsed + PRESSURE.hero.warning;
+  }
+  announce(
+    s,
+    'Les quatre héros quittent la guilde ! Ils poursuivront ses assaillants jusqu’à la mort.',
+  );
+}
 function mobilize(s: State) {
   for (const kind of ['guard', 'hero'] as const) {
     const settings = PRESSURE[kind],
@@ -1783,6 +1839,42 @@ function advanceEnemies(s: State, dt: number) {
     e.healTarget = null;
     e.attackCooldown -= dt;
     const def = enemyDefinition(e);
+    e.aggressors = e.aggressors?.filter((id) =>
+      s.units.some((u) => u.id === id && u.hp > 0),
+    );
+    if (
+      !s.units.some((u) => u.id === e.pursuitTarget && u.hp > 0) &&
+      e.aggressors?.length
+    ) {
+      e.pursuitTarget = e.aggressors[0];
+      e.path = [];
+    }
+    const aggressor = s.units.find((u) => u.id === e.pursuitTarget && u.hp > 0);
+    if (e.pursuitTarget !== undefined && !aggressor) {
+      e.pursuitTarget = undefined;
+      e.path = [];
+    }
+    if (aggressor) {
+      e.resurrectionProgress = 0;
+      const range = e.role === 'monk' ? 2.2 : def.range;
+      if (distanceBetween(e, aggressor) <= range && clearShot(e, aggressor)) {
+        e.path = [];
+        e.fighting = true;
+        e.facing = aggressor.x >= e.x ? 1 : -1;
+        if (e.role === 'archer')
+          shoot(s, e, { type: 'unit', id: aggressor.id }, aggressor);
+        else
+          aggressor.hp = Math.max(
+            0,
+            aggressor.hp -
+              (e.role === 'monk' ? monkDamage(e, aggressor) : e.damage) * dt,
+          );
+      } else {
+        pursue(e, aggressor);
+        walk(s, e, def.speed * dt);
+      }
+      continue;
+    }
     if (e.role === 'monk') {
       const attacker = nearest(
         e,
@@ -2237,11 +2329,13 @@ function tickStep(s: State, dt: number) {
       if (attackers.length) {
         const damage = attackers.reduce((n, u) => n + armyDamage(s, u), 0);
         lot.hp = Math.max(0, lot.hp - damage * dt);
+        if (lot.kind === 'guild' && damage > 0)
+          releaseGuildDefenders(s, lot, attackers);
         const retaliation =
           (lot.kind === 'hall'
             ? 18
             : lot.kind === 'guild'
-              ? 14
+              ? 0
               : lot.kind === 'tavern'
                 ? 11
                 : 7) *

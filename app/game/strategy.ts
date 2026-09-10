@@ -6,6 +6,7 @@ import {
   CREATURES,
   entrance,
   findPath,
+  rememberAggressor,
   walk,
   type State,
   type Point,
@@ -125,6 +126,12 @@ export function hitEnemy(
   damage: number,
   dt: number,
 ) {
+  if (
+    damage > 0 ||
+    (u.kind === 'alchemist' && hasResearch(s, 'solvent')) ||
+    hasResearch(s, 'embers')
+  )
+    rememberAggressor(s, enemy, u);
   enemy.hp -= damage * dt;
   if (u.kind === 'alchemist') {
     if (hasResearch(s, 'solvent')) enemy.solventUntil = s.elapsed + 8;
