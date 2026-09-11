@@ -3364,14 +3364,15 @@ svg {
 .game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {
   min-width: 0;
   overflow: hidden;
-  flex-basis: 162px;
-  height: 162px;
+  margin-top: auto;
+  flex-basis: 136px;
+  height: 136px;
 }
 .game-shell[data-compact='false'] .card-row {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 12px;
+  padding-bottom: 0;
   overscroll-behavior-x: contain;
   scrollbar-color: #bda978 #20323b;
 }
@@ -3379,3 +3380,66 @@ svg {
   outline: 2px solid #e2c48e;
   outline-offset: -2px;
 }
+
+.research-progress { display: grid; gap: 6px; margin: 10px 0; font-size: 12px; color: #e3ddc7; }
+.research-progress progress { width: 100%; height: 9px; accent-color: #d9b65f; }
+
+.recruit-tutorial-marker {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border: 1px solid #d9b65f;
+  border-radius: 4px;
+  background: #20323bf2;
+  color: #ffe3a1;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 4;
+}
+.recruit-tutorial-marker::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: #d9b65f;
+}
+
+.creation-cards { position: relative; min-width: 0; }
+.creation-scroll-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  color: #ffe3a1;
+  font-size: 12px;
+  pointer-events: auto;
+}
+.creation-scroll-controls button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  border: 1px solid #b4aa83;
+  border-radius: 4px;
+  background: #20323bf2;
+  color: #ffe3a1;
+  cursor: pointer;
+}
+.creation-scroll-controls button:disabled { opacity: 0.4; cursor: default; }
+.creation-scroll-controls button:hover:not(:disabled) { background: #405963; }
+.creation-scroll-controls button:focus-visible { outline: 2px solid #ffe3a1; outline-offset: 2px; }
+.game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] { overflow: visible; }
+.game-shell[data-compact='false'] .creation-cards { height: 100%; }
+.game-shell[data-compact='false'] .creation-scroll-controls { position: absolute; right: 0; bottom: 100%; }
+.game-shell[data-compact='true'] .creation-scroll-controls button { width: 44px; height: 44px; }
+
+.creation-scroll-controls .pack-icon { width: 26px; height: 26px; object-fit: contain; image-rendering: pixelated; }
+.creation-scroll-controls .creation-arrow-right { transform: scaleX(-1); }

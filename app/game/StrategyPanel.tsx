@@ -17,6 +17,10 @@ import {
 import { ASSETS } from './art';
 import { GameButton as Button } from './PackUI';
 import { AbilityCard, AbilityCosts } from './AbilityCard';
+const researchTime = (seconds: number) => {
+  const remaining = Math.max(0, Math.ceil(seconds));
+  return `${Math.floor(remaining / 60)} min ${String(remaining % 60).padStart(2, '0')} s`;
+};
 type Action = (action: (s: State) => string | void) => unknown;
 export function ResearchPanel({
   state: s,
@@ -45,13 +49,22 @@ export function ResearchPanel({
         .map((key) => {
           const r = RESEARCH[key],
             error = researchReason(s, key),
-            acquired = s.strategy.research.includes(key);
+            acquired = s.strategy.research.includes(key),
+            pending = s.strategy.pendingResearch?.find((job) => job.key === key),
+            activeRoom = s.lots.some((room) => room.owned && room.hp > 0 && !room.construction && room.kind === r.room);
           return (
             <div className="research-choice" key={key}>
               <h5>{r.name}</h5>
               <p>{r.text}</p>
-              {!acquired && (
+              {!acquired && !pending && (
                 <AbilityCosts cost={r.cost} available={s.resources} />
+              )}
+              {!acquired && <p className="ability-meta">Durée de recherche : {researchTime(r.duration)} · temps de jeu</p>}
+              {pending && (
+                <div className="research-progress">
+                  <progress aria-label={`Recherche ${r.name}`} max={r.duration} value={pending.elapsed} />
+                  <span>{researchTime(r.duration - pending.elapsed)} restantes{!activeRoom && ' · Suspendue : reconstruisez le bâtiment requis.'}</span>
+                </div>
               )}
               <Button
                 className="primary-btn"
@@ -59,7 +72,7 @@ export function ResearchPanel({
                 title={error || r.text}
                 onClick={() => onAction((s) => research(s, key))}
               >
-                {acquired ? 'Recherche acquise' : 'Rechercher'}
+                {acquired ? 'Recherche acquise' : pending ? 'Recherche en cours…' : 'Rechercher'}
               </Button>
               {!acquired && (
                 <p className="ability-status" data-blocked={!!error}>

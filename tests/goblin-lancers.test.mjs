@@ -17,6 +17,7 @@ import {
 } from '../app/game/engine.ts';
 import {
   research,
+  advanceResearch,
   researchReason,
   RESEARCH,
   hasResearch,
@@ -83,6 +84,8 @@ test('Pig riding pays once and upgrades current and future lanciers without chan
   assert.equal(research(s, 'pig-riding'), '');
   for (const [key, value] of Object.entries(RESEARCH['pig-riding'].cost))
     assert.equal(s.resources[key], before[key] - value);
+  assert.equal(unitIsMounted(s, spear), false);
+  advanceResearch(s, RESEARCH['pig-riding'].duration);
   assert.equal(unitSpeed(s, spear), 3);
   assert.equal(unitSpeed(s, { kind: 'goblin' }), CREATURES.goblin.speed);
   assert.ok(unitIsMounted(s, spear));
@@ -118,6 +121,7 @@ test('The mounted speed bonus applies to actual movement orders', () => {
   moveUnit(s, u.id, { x: 18, y: 21 });
   const mounted = structuredClone(s);
   research(mounted, 'pig-riding');
+  advanceResearch(mounted, RESEARCH['pig-riding'].duration);
   tick(s, 1);
   tick(mounted, 1);
   assert.ok(

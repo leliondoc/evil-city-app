@@ -22,29 +22,33 @@ import {
 export type Research = 'embers' | 'solvent' | 'chain' | 'pig-riding';
 export const RESEARCH: Record<
   Research,
-  { name: string; text: string; cost: Cost; room: 'forge' | 'crypt' | 'den' }
+  { name: string; text: string; cost: Cost; duration: number; room: 'forge' | 'crypt' | 'den' }
 > = {
   'pig-riding': {
     name: 'Chevaucheurs de cochons',
     text: 'Tous vos gobelins lanciers, actuels et futurs, montent un cochon : vitesse +50 %. Conserve les bonus des armes enflammées.',
+    duration: 180,
     cost: { gold: 150, wood: 40, food: 50 },
     room: 'den',
   },
   embers: {
     name: 'Armes enflammées',
     text: 'Arme aussi les gobelins. Les coups ajoutent 3 dégâts de feu/s et embrasent la cible.',
+    duration: 240,
     cost: { gold: 120, wood: 50, mana: 20 },
     room: 'forge',
   },
   solvent: {
     name: 'Solvant alchimique',
     text: 'L’alchimiste marque ses cibles pendant 8 s : elles subissent deux fois les dégâts de feu.',
+    duration: 120,
     cost: { gold: 90, mana: 35 },
     room: 'crypt',
   },
   chain: {
     name: 'Braises contagieuses',
     text: 'Un ennemi qui meurt en brûlant embrase les voisins proches. Se combine avec le solvant.',
+    duration: 360,
     cost: { gold: 150, wood: 40, mana: 60 },
     room: 'forge',
   },
@@ -65,6 +69,7 @@ export type Tower = Point & {
 };
 export type StrategyState = {
   research: Research[];
+  pendingResearch: { key: Research; elapsed: number }[];
   towers: Tower[];
   comboHits: number;
 };
@@ -91,6 +96,7 @@ export function towerInfluence(s: State, tower: Tower) {
 export function createStrategy(): StrategyState {
   return {
     research: [],
+    pendingResearch: [],
     comboHits: 0,
     towers: [
       { id: 0, name: 'Tour du pont', x: -0.5, y: 20.5, artX: -0.5, artY: 18.5 },
@@ -113,8 +119,10 @@ export const hasResearch = (s: State, key: Research) =>
 export function researchReason(s: State, key: Research) {
   if (s.won || s.lost) return 'La partie est terminée.';
   if (hasResearch(s, key)) return 'Amélioration acquise.';
+  if (s.strategy.pendingResearch?.some((r) => r.key === key))
+    return 'Recherche en cours.';
   const def = RESEARCH[key];
-  if (!s.lots.some((l) => l.owned && !l.construction && l.kind === def.room))
+  if (!s.lots.some((l) => l.owned && l.hp > 0 && !l.construction && l.kind === def.room))
     return `Construisez ${def.room === 'forge' ? 'la hutte des trolls' : def.room === 'den' ? 'une grotte gobeline' : 'une crypte'}.`;
   if (key === 'pig-riding' && spearUnlockReason(s)) return spearUnlockReason(s);
   if (key === 'chain' && !hasResearch(s, 'embers'))
@@ -133,13 +141,30 @@ export function research(s: State, key: Research) {
   if (error) return error;
   for (const [resource, amount] of Object.entries(RESEARCH[key].cost))
     s.resources[resource as keyof Resources] -= amount;
-  s.strategy.research.push(key);
+  (s.strategy.pendingResearch ??= []).push({ key, elapsed: 0 });
   announce(
     s,
-    `${RESEARCH[key].name} : amélioration acquise pour toute votre armée.`,
+    `${RESEARCH[key].name} : recherche lancée (${RESEARCH[key].duration} s).`,
   );
   return '';
 }
+/** Research uses simulation time, just like recruitment and construction. */
+export function advanceResearch(s: State, dt: number) {
+  if (s.won || s.lost || dt <= 0) return;
+  s.strategy.pendingResearch = (s.strategy.pendingResearch ?? []).filter((job) => {
+    const def = RESEARCH[job.key];
+    if (!s.lots.some((lot) => lot.owned && lot.hp > 0 && !lot.construction && lot.kind === def.room))
+      return true;
+    job.elapsed = Math.min(def.duration, job.elapsed + dt);
+    if (job.elapsed + 1e-8 < def.duration) return true;
+    if (!hasResearch(s, job.key)) {
+      s.strategy.research.push(job.key);
+      announce(s, `${def.name} : recherche terminée, amélioration active pour toute votre armée.`);
+    }
+    return false;
+  });
+}
+
 export function hitEnemy(
   s: State,
   u: Unit,
@@ -363,6 +388,7 @@ export function spreadBraises(s: State) {
     }
 }
 export function advanceStrategy(s: State, dt: number) {
+  advanceResearch(s, dt);
   for (const e of s.enemies)
     if (e.hp > 0 && (e.burningUntil ?? 0) > s.elapsed) {
       e.hp -= 2 * ((e.solventUntil ?? 0) > s.elapsed ? 2 : 1) * dt;

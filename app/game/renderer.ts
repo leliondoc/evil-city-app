@@ -33,7 +33,7 @@ import {
   type Animation,
 } from './art';
 
-import { makeScenery, type Decoration } from './scenery';
+import { makeScenery, factionPennantPosition, type Decoration } from './scenery';
 import { PixiScene } from './pixiScene';
 import { drawTerrain } from './terrainRenderer';
 import { mission } from './mission';
@@ -1036,13 +1036,14 @@ export class Renderer {
         gx = gate.x * CELL,
         // Put the feet on the street in front of the gate, clear of walls and fencing.
         gy = (l.y + 8.25) * CELL;
+      const pennant = factionPennantPosition(l);
       if (kind !== 'empty')
         drawables.push({
-          depth: (l.y + 7.8) * CELL,
+          depth: pennant.y,
           draw: () =>
             this.factionPennant(
-              (l.x + 5.1) * CELL,
-              (l.y + 7.8) * CELL,
+              pennant.x,
+              pennant.y,
               l.owned,
             ),
         });
@@ -1631,13 +1632,28 @@ export class Renderer {
         '#d2e4f5',
       );
     // Site labels stay in front of scenery, like parcel labels.
-    for (const site of s.sites)
+    for (const site of s.sites) {
+      let labelY = site.y * CELL + 36;
+      if (site.kind === 'food') {
+        // The pig stands below the sheep: keep the name below both animals.
+        for (const hit of this.hits) {
+          if (hit.selection.type !== 'resource' || hit.selection.id !== site.id)
+            continue;
+          const bounds = this.visibleBounds(hit);
+          if (!bounds) continue;
+          labelY = Math.max(
+            labelY,
+            bounds.y + bounds.height + (20 * this.uiScale) / this.scale,
+          );
+        }
+      }
       this.label(
         site.x * CELL,
-        site.y * CELL + 36,
+        labelY,
         `${supplyActive(s, site) ? '' : '× '}${SUPPLIES[site.kind].label}`,
         supplyActive(s, site) ? '#ffe0a3' : '#c5c5b5',
       );
+    }
     for (const l of s.lots) {
       const x = (l.x + 4) * CELL;
       const bar = buildingBars.get(l.id);
@@ -1671,13 +1687,9 @@ export class Renderer {
           '#ffcf83',
         );
       else if (hovered && guidance?.lotId !== l.id)
-        this.label(
-          x,
-          labelY,
-          `${BUILDINGS[l.kind].name}${l.owned ? '' : ' · Humains'}`,
-        );
+        this.label(x, labelY, BUILDINGS[l.kind].name);
     }
-    if (guidance) {
+    if (guidance && guidance.kind !== 'recruit') {
       const lot = s.lots[guidance.lotId];
       const bar = buildingBars.get(lot.id);
       const ui = this.uiScale / this.scale;

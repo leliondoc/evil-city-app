@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client';
 import Game from '../app/game/Game';
 import '../app/globals.css';
 import { recruit, tick, entrance, announce } from '../app/game/engine';
-import { research, towerOrder } from '../app/game/strategy';
+import { research, advanceResearch, RESEARCH, towerOrder } from '../app/game/strategy';
 const state = createGame();
 state.resources = { gold: 1000, wood: 500, food: 500, mana: 500 };
 state.lots[7].kind = 'crypt';
@@ -16,7 +16,10 @@ state.lots[4].owned = true;
 for (const kind of ['specter', 'alchemist', 'skeleton'] as const)
   recruit(state, kind);
 tick(state, 6.1);
-for (const key of ['embers', 'solvent', 'chain'] as const) research(state, key);
+for (const key of ['embers', 'solvent', 'chain'] as const) {
+  research(state, key);
+  advanceResearch(state, RESEARCH[key].duration);
+}
 const tower = state.strategy.towers[0];
 tower.owned = true;
 const ghost = state.units.find((u) => u.kind === 'specter')!;

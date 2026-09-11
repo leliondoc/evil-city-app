@@ -52,6 +52,7 @@ import { GameAudio, readAudioSettings, type AudioStatus } from './audio';
 import { selectedUnitIds, unitSelection } from './selection';
 import { Sprite } from './Sprite';
 import { CreaturePortrait } from './CreaturePortrait';
+import { CreationCards } from './CreationCards';
 import { ThreatPanel } from './ThreatPanel';
 import { GuildRoster, GuildHeroSelection } from './GuildPanel';
 import { Bestiary } from './Bestiary';
@@ -1570,12 +1571,17 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               value="recruit"
               className="creation-tab creation-tab-recruit"
             >
+              {!compact && hint.marker?.kind === 'recruit' && (
+                <span className="recruit-tutorial-marker" aria-hidden="true">
+                  Recruter
+                </span>
+              )}
               <PackIcon asset="goblin-avatar" />
               <span>Recruter des créatures</span>
             </TabsTrigger>
           </TabsList>
           <TabsContent value="build">
-            <div className="card-row" aria-label="Options disponibles, défilement horizontal">
+            <CreationCards>
               {BUILD_OPTIONS.map((kind, i) => {
                 const b = BUILDINGS[kind];
                 const locked = buildUnlockReason(s, kind);
@@ -1605,10 +1611,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   </button>
                 );
               })}
-            </div>
+            </CreationCards>
           </TabsContent>
           <TabsContent value="recruit">
-            <div className="card-row" aria-label="Options disponibles, défilement horizontal">
+            <CreationCards>
               {RECRUIT_OPTIONS.map((kind, i) => {
                 const c = CREATURES[kind],
                   reason = recruitReason(s, kind);
@@ -1680,7 +1686,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   </div>
                 );
               })}
-            </div>
+            </CreationCards>
           </TabsContent>
         </Tabs>
       </footer>
@@ -1728,6 +1734,11 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               setTab('recruit');
             }}
           >
+            {hint.marker?.kind === 'recruit' && (
+              <span className="recruit-tutorial-marker" aria-hidden="true">
+                Recruter
+              </span>
+            )}
             <PackIcon asset="ui-sword" />
             Recruter
           </Button>

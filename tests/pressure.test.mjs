@@ -1,7 +1,7 @@
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { research } from '../app/game/strategy.ts';
+import { research, advanceResearch, RESEARCH } from '../app/game/strategy.ts';
 import {
   tick,
   territory,
@@ -203,7 +203,9 @@ test('A funded domain supports a victory after repelling a raid', () => {
   armyFixture(s, 7);
   // The guild now fields four real fighters; equip this funded siege army.
   assert.equal(research(s, 'embers'), '');
+  advanceResearch(s, RESEARCH.embers.duration);
   assert.equal(research(s, 'chain'), '');
+  advanceResearch(s, RESEARCH.chain.duration);
   // Keep this siege/recovery scenario independent of scheduled meal/rest trips.
   // Different combat positions can move the retreat across their 65 s threshold.
   for (const u of s.units) {

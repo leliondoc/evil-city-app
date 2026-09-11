@@ -10,6 +10,7 @@ import {
 } from '../app/game/engine.ts';
 import {
   research,
+  advanceResearch,
   hitEnemy,
   advanceStrategy,
   strategyUnit,
@@ -84,6 +85,7 @@ test('Research pays once, requires rooms and embers before chain, and reports sh
   assert.equal(s.resources.mana, 980);
   assert.ok(research(s, 'embers'));
   assert.equal(s.resources.gold, 880);
+  advanceResearch(s, 240);
   s.resources.mana = 0;
   assert.match(research(s, 'chain'), /60/);
   s.resources.mana = 100;

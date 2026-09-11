@@ -1,4 +1,4 @@
-import type { AssetKey } from './art';
+import { ASSETS, type AssetKey } from './art.ts';
 import type { Lot } from './engine';
 import { ISLAND_BRIDGES, inIslandClearing } from './islandRoutes.ts';
 import { HIGHLANDS, onPatch, onGround, onCliff } from './terrainLayout.ts';
@@ -74,17 +74,33 @@ export function sceneryFits(d: Decoration) {
     }
   return true;
 }
+/** The lower-left lawn stays clear around the faction pennant. */
+export function factionPennantPosition(lot: Pick<Lot, 'x' | 'y'>) {
+  return { x: (lot.x + 1.9) * 32, y: (lot.y + 6.5) * 32 };
+}
+
+export function sceneryClearsLots(d: Decoration, lots: Lot[]) {
+  const art = ASSETS[d.key];
+  const left = d.x - art.frameWidth * d.scale / 2;
+  const right = d.x + art.frameWidth * d.scale / 2;
+  const top = d.y - art.height * art.anchor * d.scale;
+  const bottom = top + art.height * d.scale;
+  const overlaps = (x: number, y: number, width: number, height: number) =>
+    left < x + width && right > x && top < y + height && bottom > y;
+  return lots.every((lot) => {
+    const pennant = factionPennantPosition(lot);
+    if (overlaps(pennant.x - 14, pennant.y - 63, 56, 75)) return false;
+    if (!d.key.startsWith('tree-')) return true;
+    // Reserve the whole fenced yard, including the canopy and a small margin.
+    // This also protects future fences on currently empty parcels.
+    return !overlaps(lot.x * 32 - 8, lot.y * 32 - 8, 272, 272);
+  });
+}
+
 export function makeScenery(lots: Lot[]): Decoration[] {
   const decorations: Decoration[] = [];
   for (const lot of lots) {
     const n = lot.id;
-    // The left fence occupies x + 1: do not put rocks on its wooden posts.
-    decorations.push({
-      x: (lot.x + 1.2) * 32,
-      y: (lot.y + 3) * 32,
-      key: `tree-${(n % 4) + 1}` as AssetKey,
-      scale: n === 0 ? 0.45 : 0.58,
-    });
     decorations.push({
       x: (lot.x + 7) * 32,
       y: (lot.y + 2) * 32,
@@ -158,6 +174,6 @@ export function makeScenery(lots: Lot[]): Decoration[] {
     { x: -265, y: -48, key: 'rock-4', scale: 1.2 },
   );
   return decorations.filter(
-    (d) => sceneryFits(d) && !inIslandClearing(d.x, d.y),
+    (d) => sceneryFits(d) && sceneryClearsLots(d, lots) && !inIslandClearing(d.x, d.y),
   );
 }
