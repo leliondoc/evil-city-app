@@ -3274,21 +3274,28 @@ svg {
 .game-shell[data-compact='false'] .army-face { width: 100%; min-width: 0; height: 52px; }
 .game-shell[data-compact='false'] .army-face img { width: 100%; height: 36px; }
 .game-shell[data-compact='false'] .army-face b { right: 0; bottom: 0; }
-.game-shell[data-compact='false'] .build-tabs { gap: 8px !important; }
+.game-shell[data-compact='false'] .build-tabs {
+  --creation-card-width: max(175px, calc((100% - 24px) / 4));
+  gap: 8px !important;
+}
 .game-shell[data-compact='false'] .build-tabs > [role='tablist'] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: min(100%, 560px);
-  height: 48px;
-  flex: 0 0 48px;
+  width: min(100%, calc(2 * var(--creation-card-width) + 8px));
+  align-self: center;
+  height: 74px;
+  flex: 0 0 74px;
   gap: 8px;
 }
 .game-shell[data-compact='false'] .build-tabs [role='tab'] {
   border: 2px solid #383b3b;
   width: 100%;
-  height: 48px;
+  height: 74px;
   min-width: 0;
   padding: 5px 12px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
 }
 .game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] { flex-basis: 128px; height: 128px; }
 .game-shell[data-compact='false'] .card-row { height: 100%; gap: 8px; padding-bottom: 0; }

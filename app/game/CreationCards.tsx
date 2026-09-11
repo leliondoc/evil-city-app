@@ -33,7 +33,6 @@ export function CreationCards({ children }: { children: ReactNode }) {
     <div className="creation-cards">
       {(edges.left || edges.right) && (
         <div className="creation-scroll-controls" aria-label="Faire défiler les cartes">
-          <span>Faire défiler</span>
           <button type="button" disabled={!edges.left} onClick={() => scroll(-1)} aria-label="Voir les cartes à gauche" title="Cartes précédentes">
             <PackIcon asset="ui-back" />
           </button>
