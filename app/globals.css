@@ -3282,7 +3282,7 @@ svg {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: min(100%, calc(2 * var(--creation-card-width) + 8px));
-  align-self: center;
+  align-self: flex-start;
   height: 74px;
   flex: 0 0 74px;
   gap: 8px;
@@ -3298,6 +3298,11 @@ svg {
   line-height: 1.25;
 }
 .game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] { flex-basis: 128px; height: 128px; }
+.game-shell[data-compact='false'] .build-tabs [role='tab'] > .pack-icon {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
 .game-shell[data-compact='false'] .card-row { height: 100%; gap: 8px; padding-bottom: 0; }
 .game-shell[data-compact='false'] .card-row > .build-card { max-width: none; }
 .game-shell[data-compact='false'] .recruit-option {
