@@ -131,17 +131,16 @@ try {
   await page
     .getByRole('button', { name: 'Ouvrir le bestiaire', exact: true })
     .click();
-  assert.equal(await page.locator('.bestiary-creature').count(), 15);
+  assert.equal(await page.locator('.bestiary-creature').count(), 16);
   assert.equal(
     await page.locator('.bestiary-creature .combat-details').count(),
-    12,
+    13,
   );
   const spear = page
     .locator('.bestiary-creature')
     .filter({
-      has: page.locator('strong').filter({ hasText: /^Gobelin lancier$/ }),
+      has: page.locator('strong').filter({ hasText: /^Chevaucheur de cochon$/ }),
     });
-  await spear.getByRole('button').click();
   assert.match(
     await spear.locator('.combat-details').innerText(),
     /Vitesse \+50 %/,

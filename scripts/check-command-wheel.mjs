@@ -89,7 +89,7 @@ try {
       await wheel.getByRole('button', { name: label, exact: true }).click();
       await page.getByRole('dialog').waitFor();
       if (label === 'Ouvrir le bestiaire')
-        assert.equal(await page.locator('.bestiary-creature').count(), 15);
+        assert.equal(await page.locator('.bestiary-creature').count(), 16);
       await page.getByRole('button', { name: 'Fermer', exact: true }).click();
       assert.ok(
         await wheel

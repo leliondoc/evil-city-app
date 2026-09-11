@@ -9,7 +9,6 @@ import type { HeroRole } from './engine';
 
 export function Bestiary({ action }: { action: Animation }) {
   const [search, setSearch] = useState('');
-  const [mounted, setMounted] = useState(false);
   const query = search.trim().toLocaleLowerCase('fr');
   const creatures = BESTIARY_CREATURES.filter((entry) =>
     `${entry.name} ${entry.description}`
@@ -48,26 +47,17 @@ export function Bestiary({ action }: { action: Animation }) {
               <article className="bestiary-creature" key={entry.id}>
                 <Sprite
                   sequence={animationSequence(
-                    entry.id,
+                    entry.kind,
                     action,
-                    entry.id === 'spear-goblin' && mounted,
+                    entry.mounted,
                   )}
                   figure
                   label={entry.name}
                 />
                 <strong>{entry.name}</strong>
-                <span className="bestiary-badge available">Recrutable</span>
+                <span className="bestiary-badge available">{entry.mounted ? 'Évolution par recherche' : 'Recrutable'}</span>
                 <p>{entry.description}</p>
-                <CombatDetails profile={creatureCombatProfile(entry.id, entry.id === 'spear-goblin' && mounted)} />
-                {entry.id === 'spear-goblin' && (
-                  <button
-                    className="bestiary-mount"
-                    aria-pressed={mounted}
-                    onClick={() => setMounted((value) => !value)}
-                  >
-                    {mounted ? 'Voir à pied' : 'Voir le chevaucheur de cochon'}
-                  </button>
-                )}
+                <CombatDetails profile={creatureCombatProfile(entry.kind, entry.mounted)} />
               </article>
             ))}
           </div>

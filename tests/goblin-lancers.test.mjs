@@ -152,7 +152,11 @@ test('Player food harvesting reaches the pigs without triggering the human sheep
 });
 
 test('The catalog contains all playable creatures and every human role; production art uses the cave and Troll House', () => {
-  assert.equal(BESTIARY_CREATURES.length, 7);
+  assert.equal(BESTIARY_CREATURES.length, 8);
+  assert.equal(BESTIARY_CREATURES.find((e) => e.id === 'spear-goblin').mounted, false);
+  const rider = BESTIARY_CREATURES.find((e) => e.id === 'pig-rider');
+  assert.equal(rider.kind, 'spear-goblin');
+  assert.equal(rider.mounted, true);
   assert.equal(BESTIARY_HUMANS.length, 8);
   assert.ok(BESTIARY_CREATURES.some((e) => e.id === 'alchemist'));
   assert.ok(!BESTIARY_CREATURES.some((e) => e.id === 'imp'));

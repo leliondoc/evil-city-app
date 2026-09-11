@@ -2076,7 +2076,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <>
               <DialogTitle>Des voisins peu fréquentables</DialogTitle>
               <DialogDescription>
-                Vos 7 créatures recrutables et les 8 unités humaines : gardes,
+                Vos 7 créatures recrutables, le chevaucheur de cochon et les 8 unités humaines : gardes,
                 héros et travailleurs.
               </DialogDescription>
               <Tabs

@@ -131,7 +131,7 @@ try {
   await page
     .getByRole('button', { name: 'Ouvrir le bestiaire', exact: true })
     .click();
-  assert.equal(await page.locator('.bestiary-creature').count(), 15);
+  assert.equal(await page.locator('.bestiary-creature').count(), 16);
   assert.equal(
     await page
       .getByRole('region', { name: 'Votre horde', exact: true })
@@ -181,7 +181,7 @@ try {
   await page.screenshot({ path: join(output, 'pig-pasture.png') });
   assert.deepEqual(errors, []);
   console.log(
-    'Cave, rally, mounted research, hammer cursor, 15 bestiary actors and pasture: OK; no browser errors.',
+    'Cave, rally, mounted research, hammer cursor, 16 bestiary entries and pasture: OK; no browser errors.',
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/tests/pack-preview.html`);
