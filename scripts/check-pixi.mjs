@@ -207,11 +207,7 @@ try {
       true,
       'Arrow points at the visible target center',
     );
-    assert.equal(
-      placement.down,
-      true,
-      'The rendered tip points downward for units and buildings',
-    );
+    assert.equal(placement.down, true, 'The building arrow points downward');
     assert.equal(
       placement.onTarget,
       true,
@@ -227,7 +223,38 @@ try {
       });
       await frame();
     }
-    await checkArrowPlacement(enemy);
+    const placement = await page.evaluate(() => {
+      const r = pixiTest.renderer;
+      const arrow = r.scene.actors.container.children.find(
+        (n) =>
+          n.visible && n.texture?.source === r.scene.textures.get('ui-back'),
+      );
+      const target = pixiTest.state.enemies[0];
+      return {
+        centered: Math.abs(arrow.x - target.x * 32) < 0.01,
+        down: Math.abs(arrow.rotation + Math.PI / 2) < 0.01,
+        gap: ((target.y * 32 - arrow.y) * r.scale) / r.uiScale,
+        size: (arrow.width * r.scale) / r.uiScale,
+      };
+    });
+    assert.equal(
+      placement.centered,
+      true,
+      'Attack arrow stays centered as its target moves',
+    );
+    assert.equal(
+      placement.down,
+      true,
+      'Attack arrow points down toward the target',
+    );
+    assert.ok(
+      placement.gap > 0 && placement.gap < 55,
+      'Arrow remains close to the unit',
+    );
+    assert.ok(
+      placement.size <= 28.1,
+      'Arrow remains compact at every zoom level',
+    );
   }
   await page.screenshot({ path: join(output, 'individual-attack.png') });
   await page.evaluate(() =>
