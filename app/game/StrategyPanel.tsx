@@ -58,7 +58,7 @@ export function ResearchPanel({
             <div className="research-choice" key={key}>
               <h5>{r.name}</h5>
               <p>{r.text}</p>
-              <p className="reason">Prérequis : manoir niveau {r.manor}.</p>
+              <p className="ability-prerequisite">Prérequis : manoir niveau {r.manor}.</p>
               {!acquired && !pending && (
                 <AbilityCosts cost={r.cost} available={s.resources} />
               )}

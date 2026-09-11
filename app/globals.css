@@ -3045,6 +3045,8 @@ svg {
 }
 .ability-card p { margin: 10px 0; font-size: 13px; line-height: 1.5; color: inherit; }
 .ability-card .ability-meta { font-size: 11px; color: #625440; }
+.ability-card .ability-prerequisite { color: #433326; font-weight: 600; }
+.ability-card .research-progress { color: #433326; }
 .ability-card .research-choice { margin: 14px 0; padding-top: 12px; border-color: #a8916266; }
 .ability-card h5 { margin: 0; font: 700 14px/1.35 'Trebuchet MS', sans-serif; color: #433326; }
 .ability-costs {
