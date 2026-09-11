@@ -195,7 +195,6 @@ export class Renderer {
                     return;
                   }
                   try {
-                    this.scene.textures.add(key, im);
                     // Read sprite alpha once for precise picking; map drawing uses WebGL.
                     const c = document.createElement('canvas');
                     c.width = im.width;
@@ -203,7 +202,11 @@ export class Renderer {
                     const ctx = c.getContext('2d', {
                       willReadFrequently: true,
                     })!;
+                    // Match the army menu's recoloring once, when loading the marker.
+                    if (key === 'ui-sword')
+                      ctx.filter = 'sepia(0.85) saturate(1.8) hue-rotate(315deg)';
                     ctx.drawImage(im, 0, 0);
+                    this.scene.textures.add(key, key === 'ui-sword' ? c : im);
                     this.pixels.set(
                       key,
                       ctx.getImageData(0, 0, c.width, c.height).data,

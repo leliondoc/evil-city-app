@@ -17,7 +17,7 @@ import type { Point } from './engine';
 export class GameTextures {
   private sources = new Map<AssetKey, ImageSource>();
 
-  add(key: AssetKey, image: HTMLImageElement) {
+  add(key: AssetKey, image: HTMLImageElement | HTMLCanvasElement) {
     this.sources.set(
       key,
       new ImageSource({ resource: image, scaleMode: 'nearest' }),
