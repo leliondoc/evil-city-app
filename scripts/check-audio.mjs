@@ -4,7 +4,10 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)(
   process.env.PLAYWRIGHT_PACKAGE || 'playwright',
 );
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await chromium.launch({
+  channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
+  headless: true,
+});
 const url = process.env.GAME_URL || 'http://127.0.0.1:3000';
 try {
   for (const [width, height, touch] of [
@@ -25,7 +28,11 @@ try {
     });
     await page.addInitScript(() => {
       window.audioStarts = [];
-      const original = AudioBufferSourceNode.prototype.start;
+      // Keep the descriptor's method so the spy can forward the original receiver.
+      const original = Object.getOwnPropertyDescriptor(
+        AudioBufferSourceNode.prototype,
+        'start',
+      ).value;
       AudioBufferSourceNode.prototype.start = function (...args) {
         window.audioStarts.push({
           duration: this.buffer?.duration,
@@ -56,7 +63,7 @@ try {
     );
     assert.equal(new Set(requests).size, 11);
     await preview.click();
-    let starts = await page.evaluate(() => window.audioStarts);
+    const starts = await page.evaluate(() => window.audioStarts);
     assert.ok(
       starts.length > 0 &&
         starts.every((s) => s.duration > 0 && s.state === 'running'),

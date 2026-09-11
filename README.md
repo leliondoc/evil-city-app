@@ -6,6 +6,12 @@ Prototype 0.4 de gestion, de conquête et de défense en 2D, en vue du dessus.
 
 Application solo React et Vite, en TypeScript 7.0.2, avec un rendu PixiJS 8.20.1 sur WebGL. Elle est publiée automatiquement avec GitHub Pages à chaque modification de la branche `main`. Le jeu fonctionne entièrement dans le navigateur et ne demande ni compte ni service serveur.
 
+L’interface montre une prochaine étape à la fois ; la liste complète reste accessible dans « Objectifs ». Le parcours précise la revendication de la friche et la conquête d’une propriété avant la forge. Un repère contextuel désigne la cible sur la carte ; « Voir la cible » la sélectionne et la recentre. La marche de l’armée, la conquête et les travaux affichent leur progression. « Préparer la forge » ouvre son emplacement sans dépenser de ressources : le bouton « Construire ici » lance le chantier.
+
+Les terrains du domaine partagent l’herbe du manoir, dès leur capture ; une reprise humaine restaure leur herbe d’origine. Des fanions à crâne ou à bouclier identifient les bâtiments, et les créatures portent un repère au sol différent selon leur camp. Les détails des commandes se déplient au clic. Les bulles de vie quotidienne s’affichent à la sélection ou au survol ; la faim et les missions spéciales restent signalées. Les barres de vie des ennemis apparaissent pendant le combat, en cas de blessure, à la sélection ou au survol.
+
+La scène locale `/tests/mission-preview.html` permet d’essayer directement la première conquête. `scripts/check-mission.mjs` vérifie le parcours jusqu’à la forge, le redémarrage et les commandes tactiles ; `tests/mission.test.mjs` vérifie la progression dans la simulation et le changement d’herbe. Lancer les tests avec `npm test`. Les contrôles navigateur acceptent `PLAYWRIGHT_PACKAGE` et `PLAYWRIGHT_CHANNEL=chromium`.
+
 ## Jouer
 
 Vous commencez sans ouvrier, avec 35 or et 24 vivres, sans bois ni essence. Recrutez votre premier gobelin : les gobelins alimentent ensuite les réserves par leurs livraisons. La progression est Tanière → Cantine → Crypte → Forge : la tanière initiale débloque la cantine, puis chaque bâtiment terminé permet le suivant. Construisez une cantine, revendiquez la friche centrale et bâtissez une crypte pour recruter les premiers squelettes. Conquérez une maison pour y installer la forge (180 or, 75 bois), puis recrutez des trolls (90 or, 30 vivres). Améliorer le manoir accélère la production d’essence. Pour gagner, contrôlez la mairie et la guilde et éliminez les ennemis encore dans les rues. La destruction du manoir entraîne la défaite.
@@ -61,7 +67,7 @@ L’interface tactile affiche la carte sur toute la largeur, en portrait comme e
 
 La vérification navigateur `node scripts/check-mobile.mjs` utilise Playwright et Chrome : installer Playwright pour le développement, ou indiquer son package existant avec `PLAYWRIGHT_PACKAGE`. Elle vérifie 390 × 844, 320 × 568, 844 × 390 et le bureau 1280 × 800, et écrit ses captures dans un dossier temporaire. Lancer le serveur local avant ce contrôle.
 
-Node.js 24 et npm. Installation : `npm install`. La version jouable est vérifiée directement sur GitHub Pages après publication. Production : `npm run build`. Types : `npx tsc --noEmit`. Tests : `node --test tests/*.test.mjs`.
+Node.js 24 et npm (Node 22.13 ou supérieur reste compatible). Installation : `npm install`. La version jouable est vérifiée directement sur GitHub Pages après publication. Production et types : `npm run build`. Tests : `npm test`. Lint : `npm run lint`. Ces trois contrôles doivent réussir avant le déploiement GitHub Pages.
 
 Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, puis ouvrir `/tests/domain-preview.html`. Cette partie préparée utilise l’interface réelle avec une crypte, des dépouilles, un spectre et un moine ; elle n’est pas incluse dans le site de production. Les scénarios automatisés correspondants se trouvent dans `tests/domain.test.mjs`.
 
@@ -72,9 +78,10 @@ Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, 
 - `app/game/art.ts` et `assets.json` : correspondance des sprites et séquences.
 - `app/game/Sprite.tsx` : aperçu animé dans les panneaux et le bestiaire.
 - `app/game/Game.tsx` : interface et commandes.
+- `app/game/gameStore.ts` : simulation mutable pour la carte et instantanés stables pour React, synchronisés après les commandes et chaque pas de simulation.
 - `public/tiny-swords/` : ressources graphiques intégrées au jeu.
 
-Les 110 tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
+Les tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
 
 Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Avec des combattants sélectionnés, un clic sur une unité ou un bâtiment ennemi leur donne l’ordre d’attaquer ; Shift + clic permet d’inspecter la cible. Le clic droit commande aussi les unités sélectionnées. Les gobelins d’un groupe mixte ne participent aux attaques qu’après la recherche Armes enflammées.
 

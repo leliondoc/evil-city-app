@@ -2355,6 +2355,7 @@ svg {
 .game-shell[data-compact='true'] .sidebar .selection-panel {
   margin: 0;
   padding: 8px 0;
+  scroll-margin-top: 60px;
 }
 .game-shell[data-compact='true'] .sidebar button {
   min-height: 44px;
@@ -3160,6 +3161,24 @@ svg {
 .mission-card .quest > svg { color: #8b754d; }
 .mission-card .quest.active { color: #773f1e; font-weight: 700; }
 .mission-card .quest.done, .mission-card .quest.done > svg { color: #4e6a3d; }
+.current-objective { margin: 12px 0 16px; }
+.objective-kicker { color: #765b38; font-size: 11px; font-weight: 700; margin-bottom: 5px; }
+.current-objective h2 { color: #49301f; font: 700 20px/1.15 'Pixel Operator', monospace; text-wrap: balance; }
+.objective-detail { color: #534532; font-size: 12px; line-height: 1.5; margin: 10px 0; }
+.objective-action { width: 100%; white-space: normal; line-height: 1.3; }
+.objective-reason { font-size: 11px; line-height: 1.4; color: #793f2a; margin-top: 6px; }
+.objective-progress, .capture-status { display: grid; gap: 6px; margin: 12px 0; }
+.objective-progress span { color: #604a31; font-size: 12px; }
+.objective-progress progress, .capture-status progress { appearance: none; width: 100%; height: 7px; border: 0; border-radius: 2px; overflow: hidden; background: #4b493a40; }
+.objective-progress progress::-webkit-progress-bar, .capture-status progress::-webkit-progress-bar { background: #4b493a40; }
+.objective-progress progress::-webkit-progress-value, .capture-status progress::-webkit-progress-value { background: #8556a0; }
+.objective-progress progress::-moz-progress-bar, .capture-status progress::-moz-progress-bar { background: #8556a0; }
+.capture-status { color: #e3cded; font-size: 13px; padding: 10px; background: #69468433; border-left: 2px solid #ba92d3; }
+.capture-status small { color: #cbd3c6; font-size: 11px; line-height: 1.4; }
+.canvas-help > summary { cursor: pointer; list-style: none; padding: 6px 10px; border-radius: 3px; background: #192b31e0; color: #e3ddc7; }
+.canvas-help > summary:focus-visible { outline: 2px solid #e2c48e; outline-offset: 3px; }
+.canvas-help-keys { display: grid; gap: 8px; margin-top: 5px; padding: 12px; background: #192b31f2; border: 1px solid #a1956855; border-radius: 4px; }
+.canvas-help-keys > span { display: flex; gap: 8px; align-items: center; }
 /* Objectives and the current selection scroll independently on desktop. */
 .mission-sidebar {
   flex: 0 0 220px;
@@ -3238,6 +3257,7 @@ svg {
   top: 12px;
 }
 .game-shell[data-compact='false'] .canvas-help {
+  display: block;
   left: auto;
   right: 17px;
   bottom: 64px;
@@ -3263,7 +3283,7 @@ svg {
   z-index: 3;
   background: transparent;
   border: 0;
-  pointer-events: auto;
+  pointer-events: none;
 }
 .game-shell[data-compact='false'] .mission-sidebar > * { pointer-events: auto; }
 .game-shell[data-compact='false'] .sidebar {

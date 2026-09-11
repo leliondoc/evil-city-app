@@ -3,7 +3,10 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)(
   process.env.PLAYWRIGHT_PACKAGE || 'playwright',
 );
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await chromium.launch({
+  channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
+  headless: true,
+});
 try {
   const page = await browser.newPage();
   const errors = [];

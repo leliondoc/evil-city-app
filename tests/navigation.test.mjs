@@ -174,12 +174,14 @@ function duelPositions(from, to) {
   u.target = enemy.id;
   return { s, u, enemy };
 }
-for (const [name, from, to] of [
+/** @type {[string, {x: number, y: number}, {x: number, y: number}][]} */
+const duelScenarios = [
   ['horizontal road', { x: 16, y: 20.1 }, { x: 16, y: 21.6 }],
   ['narrow vertical road', { x: 10.5, y: 15 }, { x: 10.5, y: 16.5 }],
   ['building gate', { x: 16, y: 19.5 }, { x: 16, y: 20.8 }],
   ['overlapping spawn', { x: 16, y: 20.5 }, { x: 16, y: 20.5 }],
-]) {
+];
+for (const [name, from, to] of duelScenarios) {
   test(`Melee fighters form a face-to-face lane on a ${name}, without crossing fences`, () => {
     const { s, u, enemy } = duelPositions(from, to);
     for (let i = 0; i < 40; i++) {

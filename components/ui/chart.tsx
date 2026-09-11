@@ -12,6 +12,18 @@ const THEMES = { light: '', dark: '.dark' } as const;
 const INITIAL_DIMENSION = { width: 320, height: 200 } as const;
 type TooltipNameType = number | string;
 
+// Recharts also accepts accessor functions as data keys; those are not config names.
+function configKey(...candidates: unknown[]) {
+  const key = candidates.find(
+    (value) => typeof value === 'string' || typeof value === 'number',
+  );
+  return typeof key === 'string'
+    ? key
+    : typeof key === 'number'
+      ? String(key)
+      : 'value';
+}
+
 export type ChartConfig = Record<
   string,
   {
@@ -152,7 +164,7 @@ function ChartTooltipContent({
     }
 
     const [item] = payload;
-    const key = `${labelKey ?? item?.dataKey ?? item?.name ?? 'value'}`;
+    const key = configKey(labelKey, item?.dataKey, item?.name);
     const itemConfig = getPayloadConfigFromPayload(config, item, key);
     const value =
       !labelKey && typeof label === 'string'
@@ -200,7 +212,7 @@ function ChartTooltipContent({
         {payload
           .filter((item) => item.type !== 'none')
           .map((item, index) => {
-            const key = `${nameKey ?? item.name ?? item.dataKey ?? 'value'}`;
+            const key = configKey(nameKey, item.name, item.dataKey);
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor = color ?? item.payload?.fill ?? item.color;
 
@@ -299,7 +311,7 @@ function ChartLegendContent({
       {payload
         .filter((item) => item.type !== 'none')
         .map((item, index) => {
-          const key = `${nameKey ?? item.dataKey ?? 'value'}`;
+          const key = configKey(nameKey, item.dataKey);
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
           return (

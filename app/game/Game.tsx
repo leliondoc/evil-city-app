@@ -2,7 +2,14 @@
 
 import { restReason, restUnit, restUnits } from './domain';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   Sparkles,
   Users,
@@ -50,6 +57,8 @@ import { GuildRoster, GuildHeroSelection } from './GuildPanel';
 import { Bestiary } from './Bestiary';
 import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
+import { mission } from './mission';
+import { createGameStore } from './gameStore';
 import { buildingArt, enemyAnimationSequence, type Animation } from './art';
 import {
   BUILDINGS,
@@ -58,7 +67,6 @@ import {
   enemyDefinition,
   BUILD_OPTIONS,
   RECRUIT_OPTIONS,
-  createGame,
   tick,
   population,
   capacity,
@@ -70,7 +78,6 @@ import {
   GOBLIN_CAP,
   RESOURCE_CAP,
   foodBalance,
-  hasBuilding,
   army,
   build,
   buildReason,
@@ -158,20 +165,24 @@ function clock(seconds: number) {
 }
 
 export default function Game({ initialState }: { initialState?: State } = {}) {
-  const stateRef = useRef<State>(initialState ?? createGame());
+  const [gameStore] = useState(() => createGameStore(initialState));
+  const s = useSyncExternalStore(gameStore.subscribe, gameStore.getSnapshot);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const audioRef = useRef<GameAudio | null>(null);
   const [audioSettings, setAudioSettings] = useState(readAudioSettings);
   const [audioStatus, setAudioStatus] = useState<AudioStatus>('idle');
-  const [, refresh] = useState(0);
   const [selection, setSelection] = useState<Selection>({ type: 'lot', id: 7 });
   const selectionRef = useRef(selection);
-  selectionRef.current = selection;
+  useLayoutEffect(() => {
+    selectionRef.current = selection;
+  }, [selection]);
   const [pendingBuild, setPendingBuild] = useState<BuildingKind | null>(null);
   const pendingRef = useRef(pendingBuild);
-  pendingRef.current = pendingBuild;
+  useLayoutEffect(() => {
+    pendingRef.current = pendingBuild;
+  }, [pendingBuild]);
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [tab, setTab] = useState('build');
@@ -219,7 +230,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const victoryShown = useRef(false);
   const controls = useRef({ paused: false, speed: 1, ready: false });
-  controls.current = { paused: paused || modal !== null, speed, ready };
+  useLayoutEffect(() => {
+    controls.current = { paused: paused || modal !== null, speed, ready };
+  }, [paused, modal, speed, ready]);
 
   useEffect(() => {
     const audio = new GameAudio(
@@ -228,7 +241,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       setAudioStatus,
     );
     audioRef.current = audio;
-    audio.update(stateRef.current);
+    audio.update(gameStore.getState());
     const unlock = () => audio.unlock();
     const visibility = () =>
       audio.setPaused(document.hidden || controls.current.paused);
@@ -243,7 +256,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       audio.dispose();
       audioRef.current = null;
     };
-  }, []);
+  }, [gameStore]);
   useEffect(() => {
     audioRef.current?.configure(audioSettings);
   }, [audioSettings]);
@@ -258,14 +271,14 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   }, []);
   const run = useCallback(
     (action: (s: State) => string | void) => {
-      const error = action(stateRef.current);
+      const error = action(gameStore.getState());
       if (error) notify(error);
       else {
-        refresh((n) => n + 1);
+        gameStore.publish();
       }
       return !error;
     },
-    [notify],
+    [notify, gameStore],
   );
   const select = useCallback(
     (next: Selection) => {
@@ -277,16 +290,16 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         setFeedback('');
       }
       if (pendingRef.current && next.type === 'lot') {
-        const error = build(stateRef.current, next.id, pendingRef.current);
+        const error = build(gameStore.getState(), next.id, pendingRef.current);
         if (error) notify(error);
         else {
           setPendingBuild(null);
           setFeedback('');
+          gameStore.publish();
         }
       }
-      refresh((n) => n + 1);
     },
-    [notify],
+    [notify, gameStore],
   );
   const command = useCallback(
     (point: Point, target: Selection | null) => {
@@ -314,7 +327,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   useEffect(() => {
     const renderer = new Renderer(
       canvasRef.current!,
-      () => stateRef.current,
+      () => gameStore.getState(),
       select,
       command,
       (error) => {
@@ -330,15 +343,15 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       last = now;
       const c = controls.current;
       if (c.ready && !c.paused && !document.hidden) {
-        tick(stateRef.current, dt * c.speed);
-        audioRef.current?.update(stateRef.current);
-        refresh((n) => n + 1);
+        tick(gameStore.getState(), dt * c.speed);
+        audioRef.current?.update(gameStore.getState());
+        gameStore.publish();
         if (
-          (stateRef.current.won || stateRef.current.lost) &&
+          (gameStore.getState().won || gameStore.getState().lost) &&
           !victoryShown.current
         ) {
           victoryShown.current = true;
-          setModal(stateRef.current.lost ? 'defeat' : 'victory');
+          setModal(gameStore.getState().lost ? 'defeat' : 'victory');
         }
       }
     }, 100);
@@ -347,7 +360,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       clearInterval(interval);
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
     };
-  }, [select, command]);
+  }, [select, command, gameStore]);
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.selection = selection;
@@ -375,7 +388,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
 
   const chooseBuild = useCallback(
     (kind: BuildingKind) => {
-      const locked = buildUnlockReason(stateRef.current, kind);
+      const locked = buildUnlockReason(gameStore.getState(), kind);
       if (locked) {
         notify(locked);
         return;
@@ -386,7 +399,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       setTab('build');
       notify('Choisissez une parcelle à vous pour lancer le chantier.');
     },
-    [notify],
+    [notify, gameStore],
   );
   const chooseRecruit = useCallback(
     (kind: CreatureKind) => {
@@ -449,17 +462,20 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     return () => window.removeEventListener('keydown', keydown);
   }, [modal, tab, chooseBuild, chooseRecruit, run]);
 
-  const s = stateRef.current;
   const group = s.units.filter(
     (u) => u.hp > 0 && selectedUnitIds(selection).includes(u.id),
   );
-  useEffect(() => {
-    const ids = selectedUnitIds(selection);
-    const living = ids.filter((id) =>
-      s.units.some((u) => u.id === id && u.hp > 0),
-    );
-    if (living.length !== ids.length) select(unitSelection(living));
-  }, [selection, s.units, select]);
+  useEffect(
+    () =>
+      gameStore.subscribe(() => {
+        const ids = selectedUnitIds(selectionRef.current);
+        const living = ids.filter((id) =>
+          gameStore.getState().units.some((u) => u.id === id && u.hp > 0),
+        );
+        if (living.length !== ids.length) select(unitSelection(living));
+      }),
+    [gameStore, select],
+  );
   const selectedLot =
     selection.type === 'lot' ? s.lots[selection.id] : undefined;
   const selectedUnit =
@@ -493,25 +509,28 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const workforce = goblinWorkforce(s);
   const food = foodBalance(s);
   const owned = s.lots.filter((l) => l.owned).length;
-  const milestones = [
-    s.recruited > 0,
-    hasBuilding(s, 'canteen'),
-    hasBuilding(s, 'crypt'),
-    army(s).length >= 2,
-    hasBuilding(s, 'forge'),
-    hasBuilding(s, 'guild'),
-    s.won,
-  ];
-  const milestoneLabels = [
-    'Recruter un premier gobelin',
-    'Ouvrir une cantine',
-    'Construire une crypte',
-    'Rassembler 2 combattants',
-    'Construire une forge',
-    'Neutraliser la guilde',
-    'Prendre la mairie et sécuriser les rues',
-  ];
-  const currentMilestone = milestones.findIndex((done) => !done);
+  const { objectives, current: currentObjective, hint } = mission(s);
+  const followObjective = () => {
+    const action = hint.action;
+    if (!action) return;
+    if (action.type === 'recruit') {
+      run((state) => recruit(state, action.kind));
+      return;
+    }
+    // Inspect first: choosing the objective never spends construction resources.
+    setPendingBuild(action.buildKind ?? null);
+    setSelection({ type: 'lot', id: action.lotId });
+    setTouchMode('inspect');
+    setMobilePanel('details');
+    if (action.buildKind) setTab('build');
+    rendererRef.current?.focusLot(action.lotId);
+    if (compact)
+      requestAnimationFrame(() =>
+        sidebarRef.current
+          ?.querySelector('.selection-panel')
+          ?.scrollIntoView({ block: 'start' }),
+      );
+  };
   const message = feedback || (s.noticeUntil > s.elapsed ? s.notice : '');
   const sheetNotice =
     compact && message ? (
@@ -526,7 +545,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     if (mode === 'command') setMobilePanel(null);
   };
   const reset = () => {
-    stateRef.current = createGame();
+    gameStore.reset();
     setSelection({ type: 'lot', id: 7 });
     setPendingBuild(null);
     setPaused(false);
@@ -537,7 +556,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     setTouchMode('inspect');
     victoryShown.current = false;
     rendererRef.current?.resetView();
-    refresh((n) => n + 1);
   };
   const buildSelected = () => {
     if (
@@ -573,46 +591,63 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       <section className="mission-card" aria-label="Mission et objectifs">
         <PanelSkin kind="notice" />
         <p className="eyebrow">Chapitre I · Premiers méfaits</p>
-        <div className="chapter">
-          <PackIcon asset="ui-info" />
-          <h2>Un si joli quartier.</h2>
+        <div
+          className="current-objective"
+          data-objective={currentObjective?.id ?? 'ended'}
+        >
+          <p className="objective-kicker">
+            {s.won ? 'Victoire' : s.lost ? 'Défaite' : 'Prochaine étape'}
+          </p>
+          <h2 aria-live="polite">
+            {currentObjective?.label ??
+              (s.won ? 'Le quartier est à vous.' : 'Votre manoir est tombé.')}
+          </h2>
+          <p className="objective-detail">{hint.detail}</p>
+          {hint.progress !== undefined && (
+            <div className="objective-progress">
+              <progress
+                max={1}
+                value={hint.progress}
+                aria-label={hint.status}
+              />
+              <span>{hint.status}</span>
+            </div>
+          )}
+          {hint.action && (
+            <Button
+              className="primary-btn objective-action"
+              disabled={!!hint.reason}
+              onClick={followObjective}
+            >
+              {hint.button}
+            </Button>
+          )}
+          {hint.reason && hint.progress === undefined && (
+            <p className="objective-reason">{hint.reason}</p>
+          )}
         </div>
-        <p className="intro-copy">
-          Soumettez le quartier. Protégez votre manoir.
-        </p>
-        {s.recruited === 0 && (
-          <Button
-            className="primary-btn"
-            disabled={
-              !!recruitReason(s, 'goblin') ||
-              s.recruits.some((r) => r.kind === 'goblin')
-            }
-            onClick={() => run((state) => recruit(state, 'goblin'))}
-          >
-            {s.recruits.some((r) => r.kind === 'goblin')
-              ? 'Premier gobelin en préparation…'
-              : 'Recruter mon premier gobelin'}
-          </Button>
-        )}
-        <details className="objectives-disclosure" open>
+        <details className="objectives-disclosure">
           <summary>
             Objectifs{' '}
             <span>
-              {milestones.filter(Boolean).length}/{milestones.length}
+              {objectives.filter((o) => o.done).length}/{objectives.length}
             </span>
           </summary>
           <div className="quest-list">
-            {milestoneLabels.map((label, i) => (
+            {objectives.map((objective) => (
               <div
-                className={`quest ${milestones[i] ? 'done' : i === currentMilestone ? 'active' : ''}`}
-                key={label}
+                className={`quest ${objective.done ? 'done' : objective.id === currentObjective?.id ? 'active' : ''}`}
+                key={objective.id}
+                aria-current={
+                  objective.id === currentObjective?.id ? 'step' : undefined
+                }
               >
-                {milestones[i] ? (
+                {objective.done ? (
                   <CheckCircle2 size={17} />
                 ) : (
                   <Circle size={17} />
                 )}
-                <span>{label}</span>
+                <span>{objective.label}</span>
               </div>
             ))}
           </div>
@@ -1053,12 +1088,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     </p>
                   </>
                 )}
-                <DomainPanel
-                  state={s}
-                  lot={selectedLot}
-                  unit={selectedUnit}
-                  onAction={run}
-                />
                 {selectedLot && (
                   <>
                     {canSetRally(selectedLot) && (
@@ -1125,9 +1154,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         ) : selectedLot.kind === 'empty' ? (
                           'Parcelle libre'
                         ) : selectedLot.owned ? (
-                          'Sous influence'
+                          'Votre domaine'
                         ) : (
-                          'À conquérir'
+                          'Camp humain · À conquérir'
                         )}
                       </span>
                     </div>
@@ -1264,8 +1293,39 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                           {attackReason(s, selectedLot.id) ||
                             (selectedLot.kind === 'hall'
                               ? '4 trolls en bonne santé sont conseillés. Surveillez les raids pendant le siège.'
-                              : `${army(s).length} combattant${army(s).length > 1 ? 's' : ''} prêt${army(s).length > 1 ? 's' : ''} à marcher.`)}
+                              : selectedLot.kind === 'house' ||
+                                  selectedLot.kind === 'tavern'
+                                ? 'Réduisez sa résistance à zéro pour la conquérir. Vous pourrez ensuite y construire votre forge.'
+                                : `${army(s).length} combattant${army(s).length > 1 ? 's' : ''} prêt${army(s).length > 1 ? 's' : ''} à marcher.`)}
                         </p>
+                        {army(s).some(
+                          (u) =>
+                            u.task === 'attack' && u.target === selectedLot.id,
+                        ) && (
+                          <output className="capture-status">
+                            <span>
+                              {army(s).some(
+                                (u) =>
+                                  u.task === 'attack' &&
+                                  u.target === selectedLot.id &&
+                                  u.path.length === 0,
+                              )
+                                ? 'Conquête en cours'
+                                : 'Armée en route'}
+                            </span>
+                            <progress
+                              max={selectedLot.maxHp}
+                              value={selectedLot.maxHp - selectedLot.hp}
+                              aria-label="Progression de la conquête"
+                            />
+                            <small>
+                              {Math.floor(
+                                (1 - selectedLot.hp / selectedLot.maxHp) * 100,
+                              )}{' '}
+                              % · La propriété rejoindra votre domaine.
+                            </small>
+                          </output>
+                        )}
                         {army(s).some((u) => u.task === 'attack') && (
                           <Button
                             className="subtle-btn"
@@ -1295,6 +1355,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     )}
                   </>
                 )}
+                <DomainPanel
+                  state={s}
+                  lot={selectedLot}
+                  unit={selectedUnit}
+                  onAction={run}
+                />
               </section>
             )}
           </aside>
@@ -1312,17 +1378,22 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 : 'Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette, ZQSD ou flèches : déplacer la carte.'
             }
           />
-          <div className="canvas-help">
-            <span>
-              <PackIcon asset="ui-cursor" />
-              Shift + glisser gauche : groupe
-            </span>
-            <span>
-              <PackIcon asset="ui-cursor-hand" />
-              Glisser / ZQSD : explorer
-            </span>
-            <span>Molette : zoom</span>
-          </div>
+          <details className="canvas-help">
+            <summary>Commandes</summary>
+            <div className="canvas-help-keys">
+              <span>
+                <PackIcon asset="ui-cursor" />
+                Shift + glisser gauche : groupe
+              </span>
+              <span>
+                <PackIcon asset="ui-cursor-hand" />
+                Glisser / ZQSD : explorer
+              </span>
+              <span>Molette : zoom</span>
+              <span>Violet · Votre domaine · Emblème à crâne</span>
+              <span>Bleu / or · Humains · Emblème à bouclier</span>
+            </div>
+          </details>
           <ThreatPanel
             state={s}
             compact={compact}
@@ -1396,13 +1467,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         : 'Sélectionner un élément'}
               </Button>
               {(touchMode !== 'inspect' || pendingBuild) && (
-                <div className="touch-hint" role="status">
+                <output className="touch-hint">
                   {pendingBuild
                     ? 'Touchez une parcelle pour construire'
                     : touchMode === 'command'
                       ? 'Touchez une destination ou une cible'
                       : 'Tracez un rectangle ou touchez les créatures'}
-                </div>
+                </output>
               )}
             </>
           )}
@@ -1804,9 +1875,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   </output>
                 </section>
                 <p id="game-speed-label">Vitesse de jeu</p>
-                <div
+                <fieldset
                   className="settings-speeds"
-                  role="group"
                   aria-labelledby="game-speed-label"
                 >
                   {[1, 2, 3].map((value) => (
@@ -1819,7 +1889,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       ×{value}
                     </Button>
                   ))}
-                </div>
+                </fieldset>
                 <Button
                   className="subtle-btn"
                   aria-pressed={paused}
@@ -1891,11 +1961,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     <strong>Faites connaissance avec les voisins</strong>
                     <p>
                       Dans « Recruter des créatures », recrutez des squelettes.
-                      Sélectionnez l’auberge voisine, puis « Envoyer l’armée ».
-                      Après la conquête, la crypte vous permet de construire une
-                      forge sur le terrain gagné : 180 or et 75 bois. Vous
-                      pouvez alors recruter des trolls pour 90 or et 30 vivres,
-                      avant de viser la mairie et la guilde.
+                      Sélectionnez la maison indiquée sur la carte, puis «
+                      Envoyer l’armée ». Réduisez sa résistance à zéro pour la
+                      conquérir. Son herbe et son fanion prennent les couleurs
+                      de votre domaine. Après la conquête, la crypte vous permet
+                      de construire une forge sur le terrain gagné : 180 or et
+                      75 bois. Vous pouvez alors recruter des trolls pour 90 or
+                      et 30 vivres, avant de viser la mairie et la guilde.
                     </p>
                   </div>
                 </div>

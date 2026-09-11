@@ -2,8 +2,8 @@ import { STREET_STARTS, STREET_WIDTH } from './streets.ts';
 import type { State } from './engine';
 import type { AssetKey } from './art';
 import type { DrawLayer } from './pixiScene';
-import { BRIDGES, HIGHLANDS } from './scenery';
-import { ISLAND_PATHS } from './islandRoutes';
+import { BRIDGES, HIGHLANDS } from './scenery.ts';
+import { ISLAND_PATHS } from './islandRoutes.ts';
 import {
   groundTiles,
   patchTiles,
@@ -11,7 +11,7 @@ import {
   onPatch,
   type GroundPatch,
   type GroundTile,
-} from './terrainLayout';
+} from './terrainLayout.ts';
 const CELL = 32,
   SIZE = CELL * 32;
 const noise = (x: number, y: number) => {
@@ -130,14 +130,13 @@ export function drawTerrain(draw: DrawLayer, state: State): GroundTile[] {
       }
     }
   for (const lot of state.lots) {
-    const key: AssetKey =
-      lot.id === 6 || lot.id === 3
-        ? 'terrain-5'
-        : lot.id === 0
-          ? 'terrain-2'
-          : lot.id === 8
-            ? 'terrain-3'
-            : 'terrain-1';
+    const key: AssetKey = lot.owned
+      ? 'terrain-5'
+      : lot.id === 0
+        ? 'terrain-2'
+        : lot.id === 8
+          ? 'terrain-3'
+          : 'terrain-1';
     grassPatch(draw, key, lot.x * CELL, lot.y * CELL, 4, 4);
     if (lot.id === 0 && !lot.owned) {
       terrace(

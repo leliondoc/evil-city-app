@@ -35,6 +35,7 @@ import {
 import { makeScenery, type Decoration } from './scenery';
 import { PixiScene } from './pixiScene';
 import { drawTerrain } from './terrainRenderer';
+import { mission } from './mission';
 import type { GroundTile } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
@@ -171,6 +172,10 @@ export class Renderer {
                   'ui-wood-icon',
                   'ui-food',
                   'ui-back',
+                  'ui-sword',
+                  'ui-shield',
+                  'ui-info',
+                  'ui-building-frame',
                 ].includes(k)),
           )
           .map(
@@ -271,6 +276,21 @@ export class Renderer {
     this.zoom = 1;
     this.panX = 0;
     this.panY = 0;
+    this.recalculate();
+  }
+  public focusLot(id: number) {
+    const lot = this.getState().lots[id];
+    if (!lot) return;
+    this.pointerCancel();
+    const view = this.viewport;
+    this.panX +=
+      view.x +
+      view.width / 2 -
+      (this.origin.x + (lot.x + 4) * CELL * this.scale);
+    this.panY +=
+      view.y +
+      view.height * 0.38 -
+      (this.origin.y + (lot.y + 4) * CELL * this.scale);
     this.recalculate();
   }
   public pan(dx: number, dy: number) {
@@ -800,11 +820,52 @@ export class Renderer {
       resolution: Math.min(window.devicePixelRatio || 1, 2) * this.scale,
     });
   }
+  private factionPennant(x: number, y: number, owned: boolean) {
+    // Physical signs at the gate: shape and emblem identify the camp as well as color.
+    this.draw.rect(x - 2, y - 49, 4, 49, '#51453e');
+    this.draw.rect(x + 2, y - 46, 24, 24, owned ? '#694684' : '#3f6d96');
+    this.draw.rect(x + 2, y - 46, 24, 3, owned ? '#c6a0de' : '#b4d7ec');
+    if (owned) {
+      this.draw.rect(x + 2, y - 22, 7, 5, '#694684');
+      this.draw.rect(x + 19, y - 22, 7, 5, '#694684');
+      this.draw.image('skull-spike', 16, 32, 32, 48, x + 6, y - 46, 16, 24);
+    } else {
+      this.draw.rect(x + 6, y - 22, 16, 3, '#3f6d96');
+      this.draw.rect(x + 10, y - 19, 8, 3, '#3f6d96');
+      this.draw.whole('ui-shield', x + 3, y - 46, 22, 24);
+    }
+  }
+  private factionFootprint(x: number, y: number, owned: boolean) {
+    const color = owned ? '#ba92d3' : '#b5dded';
+    // Small diamonds for the horde, a shield point for humans. Selection keeps its yellow ring.
+    const points = owned
+      ? [
+          { x: x - 16, y },
+          { x, y: y - 6 },
+          { x: x + 16, y },
+          { x, y: y + 6 },
+          { x: x - 16, y },
+        ]
+      : [
+          { x: x - 15, y: y - 4 },
+          { x: x + 15, y: y - 4 },
+          { x: x + 15, y },
+          { x, y: y + 8 },
+          { x: x - 15, y },
+          { x: x - 15, y: y - 4 },
+        ];
+    this.draw.line(points, '#293333', 3 / this.scale);
+    this.draw.line(points, color, 1.5 / this.scale);
+  }
   private render = () => {
     if (this.disposed) return;
     this.updateCursor();
     const s = this.getState(),
       t = this.reducedMotion ? 0 : s.elapsed;
+    const guidance =
+      this.buildKind || this.interactionMode === 'command'
+        ? undefined
+        : mission(s).hint.marker;
     if (this.ownership !== s.lots.map((l) => Number(l.owned)).join(''))
       this.makeTerrain();
     this.scene.begin(this.origin, this.scale, this.width, this.height);
@@ -992,6 +1053,16 @@ export class Renderer {
         gx = gate.x * CELL,
         // Put the feet on the street in front of the gate, clear of walls and fencing.
         gy = (l.y + 8.25) * CELL;
+      if (kind !== 'empty')
+        drawables.push({
+          depth: (l.y + 7.8) * CELL,
+          draw: () =>
+            this.factionPennant(
+              (l.x + 5.1) * CELL,
+              (l.y + 7.8) * CELL,
+              l.owned,
+            ),
+        });
       if (
         !l.owned &&
         l.kind !== 'empty' &&
@@ -1132,6 +1203,7 @@ export class Renderer {
         depth: worker.y * CELL + 1,
         draw: () => {
           const key = workerArt(worker, s.sites[worker.site]);
+          this.factionFootprint(worker.x * CELL, worker.y * CELL, false);
           if (
             this.selection.type === 'worker' &&
             this.selection.id === worker.id
@@ -1235,6 +1307,7 @@ export class Renderer {
             ),
             scale =
               u.kind === 'troll' ? 0.52 : u.kind === 'minotaur' ? 0.62 : 0.72;
+          if (!selected) this.factionFootprint(x, y, true);
           if (selected)
             this.draw.ellipse(x, y, 25, 12, '#fff1af', 2 / this.scale);
           const hit = this.sprite(
@@ -1251,7 +1324,13 @@ export class Renderer {
           const bubble = thought(s, u);
           const barY =
             y - (u.kind === 'troll' || u.kind === 'minotaur' ? 84 : 58);
-          if (bubble && u.task !== 'duel')
+          if (
+            bubble &&
+            u.task !== 'duel' &&
+            (selected ||
+              (this.hover?.type === 'unit' && this.hover.id === u.id) ||
+              ['Faim', 'Bourse', 'Maléfice', 'Hantise'].includes(bubble))
+          )
             this.label(
               x,
               selected
@@ -1344,14 +1423,16 @@ export class Renderer {
             motion = { action, since: t };
             this.motions.set(e.id, motion);
           }
-          this.draw.ellipse(
-            x,
-            y,
-            e.kind === 'hero' ? 28 : 21,
-            11,
-            selected ? '#ff5b5b' : e.kind === 'hero' ? '#ffc85c' : '#ed886f',
-            (selected ? 2.5 : 2) / this.scale,
-          );
+          this.factionFootprint(x, y, false);
+          if (selected)
+            this.draw.ellipse(
+              x,
+              y,
+              e.kind === 'hero' ? 28 : 21,
+              11,
+              selected ? '#ff5b5b' : e.kind === 'hero' ? '#ffc85c' : '#ed886f',
+              (selected ? 2.5 : 2) / this.scale,
+            );
           const sample = animationFrame(sequence, t - motion.since);
           const hit = this.sprite(
             sample.key,
@@ -1364,15 +1445,21 @@ export class Renderer {
           );
           hit.selection = { type: 'enemy', id: e.id };
           this.hits.push(hit);
-          combatBars.push({
-            x,
-            y: y - (e.kind === 'hero' ? 74 : 56),
-            ratio: e.hp / e.maxHp,
-            enemy: true,
-            name: selected
-              ? `${e.kind === 'hero' ? HEROES[e.role].short : ENEMIES[e.kind].name} · ${e.level}`
-              : undefined,
-          });
+          if (
+            selected ||
+            e.hp < e.maxHp ||
+            e.fighting ||
+            (this.hover?.type === 'enemy' && this.hover.id === e.id)
+          )
+            combatBars.push({
+              x,
+              y: y - (e.kind === 'hero' ? 74 : 56),
+              ratio: e.hp / e.maxHp,
+              enemy: true,
+              name: selected
+                ? `${e.kind === 'hero' ? HEROES[e.role].short : ENEMIES[e.kind].name} · ${e.level}`
+                : undefined,
+            });
           if (e.healTarget !== null) {
             const ally = s.enemies.find((ally) => ally.id === e.healTarget);
             if (ally)
@@ -1560,6 +1647,7 @@ export class Renderer {
         if (l.construction)
           this.bar(bar.x, bar.y - stackedBar, l.construction.progress, 90);
       }
+      const hovered = this.hover?.type === 'lot' && this.hover.id === l.id;
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
           x,
@@ -1577,6 +1665,30 @@ export class Renderer {
           l.owned ? 'Guilde neutralisée' : '★ Guilde des héros',
           '#ffcf83',
         );
+      else if (hovered && guidance?.lotId !== l.id)
+        this.label(
+          x,
+          labelY,
+          `${BUILDINGS[l.kind].name} · ${l.owned ? 'Votre domaine' : 'Humains'}`,
+        );
+    }
+    if (guidance) {
+      const lot = s.lots[guidance.lotId];
+      const bar = buildingBars.get(lot.id);
+      const ui = this.uiScale / this.scale;
+      const x = (lot.x + 4) * CELL;
+      // Float above the roof and selected name; only one teaching marker is shown at a time.
+      const y = (bar?.y ?? (lot.y + 3.5) * CELL) - 48 * ui;
+      const icon: AssetKey =
+        guidance.kind === 'attack'
+          ? 'ui-sword'
+          : guidance.kind === 'build'
+            ? 'ui-building-frame'
+            : 'ui-info';
+      const marker = this.sprite(icon, x, y, 0.55 * ui);
+      marker.selection = { type: 'lot', id: lot.id };
+      this.hits.push(marker);
+      this.label(x, y + 18 * ui, guidance.label, '#ffe3a1');
     }
     for (const id of selectedUnitIds(this.selection)) {
       const u = s.units.find((u) => u.id === id);

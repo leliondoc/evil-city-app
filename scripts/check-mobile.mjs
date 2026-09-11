@@ -8,7 +8,10 @@ const { chromium } = createRequire(import.meta.url)(
   process.env.PLAYWRIGHT_PACKAGE || 'playwright',
 );
 const output = await mkdtemp(join(tmpdir(), 'evil-city-mobile-'));
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await chromium.launch({
+  channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
+  headless: true,
+});
 try {
   for (const viewport of [
     { width: 390, height: 844 },

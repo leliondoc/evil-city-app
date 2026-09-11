@@ -19,7 +19,6 @@ import {
   defend,
   army,
   recruitReason,
-  upgradeReason,
   buildReason,
   claimReason,
 } from '../app/game/engine.ts';
