@@ -1,0 +1,112 @@
+import { PackIcon, PanelSkin } from './PackUI';
+import type { AssetKey } from './art';
+
+type Props = {
+  level: number;
+  paused: boolean;
+  objective: string;
+  onManor: () => void;
+  onObjective: () => void;
+  onBestiary: () => void;
+  onGuide: () => void;
+  onSettings: () => void;
+  onPause: () => void;
+};
+
+export function CommandWheel(props: Props) {
+  const actions: {
+    key: string;
+    label: string;
+    tooltip: string;
+    icon?: AssetKey;
+    onClick: () => void;
+  }[] = [
+    {
+      key: 'objective',
+      label: 'Voir les objectifs',
+      tooltip: props.objective,
+      icon: 'ui-shield',
+      onClick: props.onObjective,
+    },
+    {
+      key: 'bestiary',
+      label: 'Ouvrir le bestiaire',
+      tooltip: 'Bestiaire',
+      icon: 'skeleton-avatar',
+      onClick: props.onBestiary,
+    },
+    {
+      key: 'guide',
+      label: 'Comment jouer',
+      tooltip: 'Guide du mauvais voisin · H',
+      icon: 'ui-info',
+      onClick: props.onGuide,
+    },
+    {
+      key: 'pause',
+      label: props.paused ? 'Reprendre' : 'Mettre en pause',
+      tooltip: props.paused ? 'Reprendre · Espace' : 'Pause · Espace',
+      icon: props.paused ? 'ui-play' : undefined,
+      onClick: props.onPause,
+    },
+    {
+      key: 'settings',
+      label: 'Ouvrir les paramètres',
+      tooltip: 'Paramètres de partie',
+      icon: 'ui-settings',
+      onClick: props.onSettings,
+    },
+  ];
+  return (
+    <nav className="command-wheel" aria-label="Commandes du domaine">
+      <div className="command-wheel-orbit" aria-hidden="true" />
+      <button
+        type="button"
+        className="command-wheel-manor"
+        onClick={props.onManor}
+        aria-label={`Voir le manoir, niveau ${props.level}`}
+        title={`Manoir niveau ${props.level} · progression du domaine`}
+      >
+        <span className="command-wheel-medallion">
+          <PanelSkin kind="paper" />
+        </span>
+        <PackIcon asset="hq-purple" className="command-wheel-castle" />
+        <span className="command-wheel-name">Manoir</span>
+        <span className="command-wheel-level">
+          <PackIcon asset="ui-shield" />
+          {props.level}
+        </span>
+        <span className="command-wheel-tiers" aria-hidden="true">
+          {[1, 2, 3].map((level) => (
+            <i key={level} data-unlocked={props.level >= level} />
+          ))}
+        </span>
+      </button>
+      {actions.map((action) => (
+        <button
+          type="button"
+          key={action.key}
+          className={`command-wheel-action wheel-${action.key}`}
+          aria-label={action.label}
+          aria-pressed={action.key === 'pause' ? props.paused : undefined}
+          onClick={action.onClick}
+        >
+          <span className="command-wheel-plate">
+            <PanelSkin kind="button" />
+          </span>
+          {action.icon ? (
+            <PackIcon asset={action.icon} />
+          ) : (
+            <span className="command-wheel-pause" aria-hidden="true">
+              <i />
+              <i />
+            </span>
+          )}
+          <span className="command-wheel-tooltip" aria-hidden="true">
+            {action.tooltip}
+          </span>
+        </button>
+      ))}
+    </nav>
+  );
+}

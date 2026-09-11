@@ -7,6 +7,7 @@ import {
   claim,
   attack,
   tick,
+  upgrade,
 } from '../app/game/engine.ts';
 import { mission } from '../app/game/mission.ts';
 import { drawTerrain } from '../app/game/terrainRenderer.ts';
@@ -36,13 +37,11 @@ function readyForConquest() {
   assert.equal(build(s, mission(s).hint.action.lotId, 'canteen'), '');
   assert.ok(mission(s).hint.progress !== undefined);
   assert.equal(mission(s).hint.marker, undefined);
-  advanceUntil(s, () => mission(s).current.id === 'claim');
-  assert.equal(claim(s, mission(s).hint.action.lotId), '');
-  assert.equal(mission(s).current.id, 'crypt');
-  assert.equal(build(s, mission(s).hint.action.lotId, 'crypt'), '');
   advanceUntil(s, () => mission(s).current.id === 'army');
-  assert.equal(recruit(s, 'skeleton'), '');
-  assert.equal(recruit(s, 'skeleton'), '');
+  assert.equal(mission(s).hint.action.kind, 'spear-goblin');
+  assert.equal(s.lots[6].level, 1);
+  assert.equal(recruit(s, 'spear-goblin'), '');
+  assert.equal(recruit(s, 'spear-goblin'), '');
   assert.ok(mission(s).hint.reason);
   advanceUntil(s, () => mission(s).current.id === 'capture');
   return s;
@@ -59,6 +58,15 @@ test('The opening guides a real conquest before building the forge, then keeps c
   advanceUntil(s, () => s.lots[target].hp < s.lots[target].maxHp);
   assert.ok(mission(s).hint.progress > 0);
   advanceUntil(s, () => s.lots[target].owned);
+  assert.equal(mission(s).current.id, 'manor2');
+  assert.deepEqual(mission(s).hint.action, { type: 'inspect', lotId: 6 });
+  assert.equal(upgrade(s, 6), '');
+  assert.equal(mission(s).current.id, 'claim');
+  assert.equal(claim(s, mission(s).hint.action.lotId), '');
+  assert.equal(mission(s).current.id, 'crypt');
+  assert.equal(build(s, mission(s).hint.action.lotId, 'crypt'), '');
+  advanceUntil(s, () => mission(s).current.id === 'manor3');
+  assert.equal(upgrade(s, 6), '');
   assert.equal(mission(s).current.id, 'forge');
   assert.deepEqual(mission(s).hint.action, {
     type: 'inspect',

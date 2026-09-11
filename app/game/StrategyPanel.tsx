@@ -17,6 +17,7 @@ import {
 import { ASSETS } from './art';
 import { GameButton as Button } from './PackUI';
 import { AbilityCard, AbilityCosts } from './AbilityCard';
+import { manorRequirement } from './progression';
 const researchTime = (seconds: number) => {
   const remaining = Math.max(0, Math.ceil(seconds));
   return `${Math.floor(remaining / 60)} min ${String(remaining % 60).padStart(2, '0')} s`;
@@ -51,11 +52,13 @@ export function ResearchPanel({
             error = researchReason(s, key),
             acquired = s.strategy.research.includes(key),
             pending = s.strategy.pendingResearch?.find((job) => job.key === key),
-            activeRoom = s.lots.some((room) => room.owned && room.hp > 0 && !room.construction && room.kind === r.room);
+            activeRoom = s.lots.some((room) => room.owned && room.hp > 0 && !room.construction && room.kind === r.room),
+            tierError = manorRequirement(s, r.manor);
           return (
             <div className="research-choice" key={key}>
               <h5>{r.name}</h5>
               <p>{r.text}</p>
+              <p className="reason">Prérequis : manoir niveau {r.manor}.</p>
               {!acquired && !pending && (
                 <AbilityCosts cost={r.cost} available={s.resources} />
               )}
@@ -63,7 +66,7 @@ export function ResearchPanel({
               {pending && (
                 <div className="research-progress">
                   <progress aria-label={`Recherche ${r.name}`} max={r.duration} value={pending.elapsed} />
-                  <span>{researchTime(r.duration - pending.elapsed)} restantes{!activeRoom && ' · Suspendue : reconstruisez le bâtiment requis.'}</span>
+                  <span>{researchTime(r.duration - pending.elapsed)} restantes{!activeRoom ? ' · Suspendue : reconstruisez le bâtiment requis.' : tierError ? ` · Suspendue : ${tierError}` : ''}</span>
                 </div>
               )}
               <Button
@@ -85,8 +88,8 @@ export function ResearchPanel({
       <details className="ability-details">
         <summary>Combiner les effets</summary>
         <p>
-          Feu + solvant : dégâts de feu doublés. Les braises propagent
-          l’incendie.
+          Feu + solvant : dégâts de feu ×2,5 contre les chevaliers et lanciers,
+          ×2 contre les autres ennemis. Les braises propagent l’incendie.
         </p>
       </details>
       <p className="ability-footer">{s.strategy.comboHits} impacts combinés</p>
@@ -166,7 +169,7 @@ export function TowerPanel({
           )}
           {candidates.map((u) => (
             <option key={u.id} value={u.id}>
-              {CREATURES[u.kind].name} #{u.id} · {Math.ceil(u.hp)} PV
+              {CREATURES[u.kind].name} · {Math.ceil(u.hp)} PV
             </option>
           ))}
         </select>

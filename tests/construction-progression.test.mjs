@@ -12,6 +12,7 @@ import {
   CREATURES,
   recruit,
   recruitReason,
+  upgrade,
 } from '../app/game/engine.ts';
 
 test('Construction menu and placement report the same exact resource shortfall, including fractional income', () => {
@@ -45,6 +46,8 @@ test('Completed buildings unlock the next tier; money alone cannot bypass progre
   assert.ok(buildUnlockReason(s, 'crypt'));
   for (let i = 0; i < 600 && s.lots[7].construction; i++) tick(s, 0.1);
   assert.equal(s.lots[7].kind, 'canteen');
+  assert.match(buildUnlockReason(s, 'crypt'), /manoir au niveau 2/);
+  assert.equal(upgrade(s, 6), '');
   assert.equal(buildUnlockReason(s, 'crypt'), '');
   assert.ok(buildUnlockReason(s, 'forge'));
   assert.equal(claim(s, 4), '');
@@ -52,6 +55,8 @@ test('Completed buildings unlock the next tier; money alone cannot bypass progre
   assert.ok(buildUnlockReason(s, 'forge'));
   for (let i = 0; i < 600 && s.lots[4].construction; i++) tick(s, 0.1);
   assert.equal(s.lots[4].kind, 'crypt');
+  assert.match(buildUnlockReason(s, 'forge'), /manoir au niveau 3/);
+  assert.equal(upgrade(s, 6), '');
   assert.equal(buildUnlockReason(s, 'forge'), '');
   assert.equal(recruitReason(s, 'skeleton'), '');
   assert.match(recruitReason(s, 'troll'), /hutte/);

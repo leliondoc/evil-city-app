@@ -188,6 +188,7 @@ test('A canteen consumes harvested food more efficiently without generating any 
   assert.equal(s.resources.food, 0);
   assert.equal(foodBalance(s).consumption, 8);
   assert.equal(rates(s).food, -8 / 60);
+  assert.equal(upgrade(s, 6), '');
   assert.equal(upgrade(s, 7), '');
   assert.equal(foodBalance(s).consumption, 6);
   s.lots[7].owned = false;

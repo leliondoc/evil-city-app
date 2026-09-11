@@ -28,6 +28,7 @@ import {
 } from '../app/game/domain.ts';
 function prepared() {
   const s = createGame();
+  s.lots[6].level = 3;
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
   s.lots[7].kind = 'crypt';
   s.lots[7].owned = true;
@@ -92,7 +93,7 @@ test('Research pays once, requires rooms and embers before chain, and reports sh
   s.lots[7].owned = false;
   assert.ok(research(s, 'solvent'));
 });
-test('Alchemist solvent doubles only fire; burning deaths propagate once to nearby enemies', () => {
+test('Alchemist solvent amplifies only fire, with a stronger effect on the frontline; burning deaths propagate once', () => {
   const s = prepared();
   s.strategy.research = ['embers', 'solvent', 'chain'];
   const point = entrance(s.lots[6]),
@@ -104,10 +105,10 @@ test('Alchemist solvent doubles only fire; burning deaths propagate once to near
   assert.equal(e.hp, 97);
   assert.equal(e.burningUntil, undefined);
   hitEnemy(s, unit(s, 'goblin', point), e, 4, 1);
-  assert.equal(e.hp, 87);
+  assert.equal(e.hp, 85.5);
   assert.equal(s.strategy.comboHits, 1);
   advanceStrategy(s, 1);
-  assert.equal(e.hp, 83);
+  assert.equal(e.hp, 80.5);
   e.hp = 0;
   advanceStrategy(s, 0);
   assert.equal(nearby.burningUntil, s.elapsed + 4);

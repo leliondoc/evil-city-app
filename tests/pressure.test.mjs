@@ -195,6 +195,7 @@ test('Defenders intercept nearby patrols, win combat and obey a retreat order', 
 
 test('A funded domain supports a victory after repelling a raid', () => {
   const s = createGame();
+  s.lots[6].level = 3;
   s.economy.workerReadyAt = Infinity; // Fixed economy for the siege/recovery scenario.
   // Isolate siege/retreat behavior from the separately tested zero-resource opening.
   s.lots[7].kind = 'canteen';

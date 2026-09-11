@@ -18,6 +18,7 @@ test('Without workers only essence grows; buildings never fill material stocks',
     mana: RESOURCE_CAP,
   });
   assert.equal(s.resourceGains.length, 0);
+  assert.equal(upgrade(s, 6), '');
   assert.equal(upgrade(s, 3), '');
   const materials = { ...s.resources };
   tick(s, 10);

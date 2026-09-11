@@ -7,7 +7,7 @@ import { RESEARCH, research, researchReason, hasResearch, advanceResearch } from
 function setup() {
   const s = establishedGame();
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
-  s.skeletonsAwakened = 1;
+  s.lots[6].level = 3;
   for (const [id, kind] of [[3, 'den'], [4, 'forge'], [7, 'crypt']])
     Object.assign(s.lots[id], { owned: true, kind, construction: null, hp: 100 });
   s.enemies = [];

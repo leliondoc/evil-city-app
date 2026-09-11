@@ -39,6 +39,7 @@ test('Restart replaces both the live simulation and snapshot and keeps subscribe
   assert.equal(live, initial);
   recruit(live, 'goblin');
   tick(live, 6.1);
+  live.nextId = 137; // Units, projectiles and corpses share this session counter.
   store.publish();
   const previous = store.getSnapshot();
   let observed;
@@ -50,8 +51,13 @@ test('Restart replaces both the live simulation and snapshot and keeps subscribe
   assert.equal(observed, store.getSnapshot());
   assert.equal(observed.units.length, 0);
   assert.equal(observed.resources.gold, 35);
+  assert.equal(store.getState().nextId, 1);
+  assert.equal(observed.nextId, 1);
+  assert.deepEqual(observed, createGame());
   assert.equal(previous.units.length, 1);
   recruit(store.getState(), 'goblin');
   store.publish();
   assert.equal(observed.recruits.length, 1);
+  tick(store.getState(), 6.1);
+  assert.equal(store.getState().units[0].id, 1);
 });

@@ -11,6 +11,7 @@ declare global {
   }
 }
 const s = createGame();
+s.lots[6].level = 3;
 s.resources = { gold: 900, food: 900, wood: 900, mana: 900 };
 s.economy.workerReadyAt = Infinity;
 Object.assign(s.lots[5], { owned: true, kind: 'house', construction: null });

@@ -2733,6 +2733,8 @@ svg {
   flex-shrink: 0;
   padding: 4px;
   color: #f4e6c7;
+  background: #17252b;
+  box-shadow: inset 0 0 0 1px #a1956855;
   border-radius: 4px;
 }
 .session-status {
@@ -2775,13 +2777,13 @@ svg {
 .goblin-counter small {
   display: block;
   font-size: 10px;
-  color: #c6d4cb;
+  color: #e3ede5;
 }
 .goblin-counter:focus-visible {
   outline: 2px solid #ffe1a0;
 }
 .goblin-counter:disabled {
-  opacity: 0.5;
+  opacity: 1;
 }
 .game-shell[data-compact='true'] .topbar {
   grid-template-columns: 60px 1fr;
@@ -3455,3 +3457,168 @@ svg {
 
 .creation-scroll-controls .pack-icon { width: 26px; height: 26px; object-fit: contain; image-rendering: pixelated; }
 .creation-scroll-controls .creation-arrow-right { transform: scaleX(-1); }
+
+/* Reserve a right-hand command wheel; creation cards stay centered between the two HUD wings. */
+.game-shell[data-compact='false'] .bottom-bar {
+  --command-wheel-width: 240px;
+  gap: 14px;
+}
+.game-shell[data-compact='false'] .bottom-bar .build-tabs {
+  flex: 1 1 0;
+  max-width: 1000px;
+  margin-inline: auto;
+  --creation-card-width: max(180px, calc((100% - 24px) / 4));
+}
+.game-shell[data-compact='false'] .build-tabs > [role='tablist'] {
+  align-self: center;
+  width: min(100%, 590px);
+}
+.game-shell[data-compact='false'] .creation-scroll-controls {
+  bottom: calc(100% + 82px);
+}
+.game-shell[data-compact='false'] .card-row {
+  justify-content: safe center;
+}
+.game-shell[data-compact='false'] .bottom-bar .recruit-option {
+  flex: 0 0 var(--creation-card-width);
+  min-width: 180px;
+}
+.command-wheel {
+  position: relative;
+  flex: 0 0 var(--command-wheel-width);
+  width: var(--command-wheel-width);
+  height: 218px;
+  align-self: flex-end;
+  isolation: isolate;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 4px #06151b99);
+}
+.command-wheel-orbit {
+  position: absolute;
+  width: 184px;
+  height: 184px;
+  left: calc(50% - 92px);
+  top: 30px;
+  border: 2px solid #d8b46b;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px #16283099, 0 0 0 2px #16283099;
+  background: radial-gradient(circle, #263e4655 55%, #1b313466 72%, transparent 73%);
+}
+.command-wheel button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  isolation: isolate;
+  color: #fff0c5;
+  -webkit-tap-highlight-color: transparent;
+}
+.command-wheel button:focus-visible {
+  outline: 3px solid #fff0b6;
+  outline-offset: 4px;
+}
+.command-wheel-manor {
+  left: calc(50% - 65px);
+  top: 62px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 5px solid #d7b66a;
+  background: #314450;
+  box-shadow: 0 0 0 2px #52462d, inset 0 0 0 3px #fff0bd, inset 0 0 0 6px #62727e;
+}
+.command-wheel-medallion {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: -1;
+  background: #e0ce9d;
+}
+.command-wheel-medallion .pack-skin { opacity: 0.95; }
+.command-wheel-castle.pack-icon {
+  position: absolute;
+  width: 100px;
+  height: 88px;
+  top: -2px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px #443328aa);
+}
+.command-wheel-name {
+  position: absolute;
+  bottom: 24px;
+  font: bold 17px Georgia, serif;
+  color: #443328;
+  text-shadow: 0 1px #f8e9bc;
+}
+.command-wheel-level {
+  position: absolute;
+  bottom: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  height: 29px;
+  gap: 4px;
+  padding: 1px 12px;
+  border: 2px solid #c6a15e;
+  border-radius: 5px 5px 12px 12px;
+  background: #f0dfad;
+  box-shadow: 0 2px 0 #453c30;
+  color: #43372a;
+  font: bold 22px Georgia, serif;
+}
+.command-wheel-level .pack-icon { width: 24px; height: 24px; }
+.command-wheel-tiers { position: absolute; bottom: -25px; display: flex; gap: 6px; }
+.command-wheel-tiers i { width: 6px; height: 6px; transform: rotate(45deg); background: #3d4650; border: 1px solid #cfb574; }
+.command-wheel-tiers i[data-unlocked='true'] { background: #ffe09b; }
+.command-wheel-action {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 3px solid #c5ced0;
+  background: #435660;
+  box-shadow: 0 0 0 2px #253039, inset 0 0 0 2px #596777, 0 3px 0 1px #17232a;
+}
+.command-wheel-plate { position: absolute; inset: 3px; overflow: hidden; border-radius: 50%; z-index: -1; }
+.command-wheel-action > .pack-icon { width: 38px; height: 38px; object-fit: contain; }
+.command-wheel-action:hover, .command-wheel-manor:hover { filter: brightness(1.15); }
+.command-wheel-action:active, .command-wheel-manor:active { translate: 0 2px; }
+.command-wheel-action[aria-pressed='true'] { border-color: #f1d18a; }
+.wheel-objective { left: 17px; top: 35px; }
+.wheel-bestiary { left: calc(50% - 26px); top: 0; }
+.wheel-guide { right: 17px; top: 35px; }
+.wheel-pause { left: 3px; top: 153px; }
+.wheel-settings { right: 3px; top: 153px; }
+.command-wheel-pause { display: flex; gap: 5px; }
+.command-wheel-pause i { width: 7px; height: 21px; background: #ffe3a3; border: 1px solid #795c3b; box-shadow: 1px 1px #23323c; }
+.command-wheel-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  width: max-content;
+  max-width: 200px;
+  border: 1px solid #c3aa75;
+  border-radius: 4px;
+  padding: 7px 10px;
+  background: #20313bf5;
+  color: #fff0cf;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.command-wheel-action:is(:hover, :focus-visible) .command-wheel-tooltip { opacity: 1; visibility: visible; }
+.command-wheel-action:is(:hover, :focus-visible) { z-index: 3; }
+@media (max-width: 1100px) {
+  .game-shell[data-compact='false'] .bottom-bar { --command-wheel-width: 212px; gap: 10px; }
+  .game-shell[data-compact='false'] .bottom-bar .army-overview { flex-basis: 200px; width: 200px; }
+  .wheel-objective { left: 3px; }
+  .wheel-guide { right: 3px; }
+  .wheel-pause { left: 0; }
+  .wheel-settings { right: 0; }
+}

@@ -6,7 +6,8 @@ import {
   clearShot,
   CREATURES,
   unitSpeed,
-  spearUnlockReason,
+  unitIsMounted,
+  armyDamage,
   entrance,
   findPath,
   rememberAggressor,
@@ -18,20 +19,24 @@ import {
   type Cost,
   type Resources,
 } from './engine.ts';
+import { COMBAT, creatureMultiplier, fireMultiplier } from './combat.ts';
+import { manorRequirement } from './progression.ts';
 
 export type Research = 'embers' | 'solvent' | 'chain' | 'pig-riding';
 export const RESEARCH: Record<
   Research,
-  { name: string; text: string; cost: Cost; duration: number; room: 'forge' | 'crypt' | 'den' }
+  { name: string; text: string; cost: Cost; duration: number; manor: number; room: 'forge' | 'crypt' | 'den' }
 > = {
   'pig-riding': {
+    manor: 2,
     name: 'Chevaucheurs de cochons',
-    text: 'Tous vos gobelins lanciers, actuels et futurs, montent un cochon : vitesse +50 %. Conserve les bonus des armes enflammées.',
+    text: 'Tous vos gobelins lanciers montent un cochon : vitesse +50 %, dégâts +50 % contre archères et moines. Les lanciers humains leur infligent +50 % de dégâts. Conserve les armes enflammées.',
     duration: 180,
     cost: { gold: 150, wood: 40, food: 50 },
     room: 'den',
   },
   embers: {
+    manor: 3,
     name: 'Armes enflammées',
     text: 'Arme aussi les gobelins. Les coups ajoutent 3 dégâts de feu/s et embrasent la cible.',
     duration: 240,
@@ -39,13 +44,15 @@ export const RESEARCH: Record<
     room: 'forge',
   },
   solvent: {
+    manor: 2,
     name: 'Solvant alchimique',
-    text: 'L’alchimiste marque ses cibles pendant 8 s : elles subissent deux fois les dégâts de feu.',
+    text: 'L’alchimiste marque ses cibles pendant 8 s : feu ×2,5 contre chevaliers et lanciers, ×2 contre les autres ennemis.',
     duration: 120,
     cost: { gold: 90, mana: 35 },
     room: 'crypt',
   },
   chain: {
+    manor: 3,
     name: 'Braises contagieuses',
     text: 'Un ennemi qui meurt en brûlant embrase les voisins proches. Se combine avec le solvant.',
     duration: 360,
@@ -122,9 +129,10 @@ export function researchReason(s: State, key: Research) {
   if (s.strategy.pendingResearch?.some((r) => r.key === key))
     return 'Recherche en cours.';
   const def = RESEARCH[key];
+  const tierError = manorRequirement(s, def.manor);
+  if (tierError) return tierError;
   if (!s.lots.some((l) => l.owned && l.hp > 0 && !l.construction && l.kind === def.room))
     return `Construisez ${def.room === 'forge' ? 'la hutte des trolls' : def.room === 'den' ? 'une grotte gobeline' : 'une crypte'}.`;
-  if (key === 'pig-riding' && spearUnlockReason(s)) return spearUnlockReason(s);
   if (key === 'chain' && !hasResearch(s, 'embers'))
     return 'Recherchez les armes enflammées.';
   const labels = { gold: 'or', wood: 'bois', food: 'viande', mana: 'essence' };
@@ -153,6 +161,7 @@ export function advanceResearch(s: State, dt: number) {
   if (s.won || s.lost || dt <= 0) return;
   s.strategy.pendingResearch = (s.strategy.pendingResearch ?? []).filter((job) => {
     const def = RESEARCH[job.key];
+    if (manorRequirement(s, def.manor)) return true;
     if (!s.lots.some((lot) => lot.owned && lot.hp > 0 && !lot.construction && lot.kind === def.room))
       return true;
     job.elapsed = Math.min(def.duration, job.elapsed + dt);
@@ -178,14 +187,29 @@ export function hitEnemy(
     hasResearch(s, 'embers')
   )
     rememberAggressor(s, enemy, u);
-  enemy.hp -= damage * dt;
+  const directDamage = damage * creatureMultiplier(u.kind, unitIsMounted(s, u), enemy);
+  enemy.hp = Math.max(0, enemy.hp - directDamage * dt);
+  // Only nearby militia receive the sweep: heroes are not collateral targets.
+  // Do not recurse through hitEnemy, which would multiply sweeps and fire procs.
+  if (u.kind === 'minotaur' && damage > 0) {
+    const guards = s.enemies.filter((other) =>
+      other.id !== enemy.id && other.hp > 0 && other.kind === 'guard' &&
+      distance(enemy, other) <= COMBAT.sweepRadius &&
+      distance(u, other) <= COMBAT.sweepReach && clearShot(u, other),
+    ).sort((a, b) => distance(enemy, a) - distance(enemy, b) || a.id - b.id)
+      .slice(0, COMBAT.sweepTargets);
+    for (const guard of guards) {
+      rememberAggressor(s, guard, u);
+      guard.hp = Math.max(0, guard.hp - directDamage * COMBAT.sweepFraction * dt);
+    }
+  }
   if (u.kind === 'alchemist') {
     if (hasResearch(s, 'solvent')) enemy.solventUntil = s.elapsed + 8;
     return;
   }
   if (hasResearch(s, 'embers')) {
     const combo = (enemy.solventUntil ?? 0) > s.elapsed;
-    enemy.hp -= 3 * (combo ? 2 : 1) * dt;
+    enemy.hp = Math.max(0, enemy.hp - 3 * fireMultiplier(enemy, s.elapsed) * dt);
     enemy.burningUntil = s.elapsed + 3;
     if (combo && (enemy.comboAt ?? -10) + 1 <= s.elapsed) {
       enemy.comboAt = s.elapsed;
@@ -345,7 +369,7 @@ export function strategyUnit(s: State, u: Unit, dt: number) {
   ) {
     u.fighting = true;
     u.facing = threat.x >= u.x ? 1 : -1;
-    hitEnemy(s, u, threat, CREATURES[u.kind].damage, dt);
+    hitEnemy(s, u, threat, armyDamage(s, u), dt);
   }
   if (!t.owned) {
     if (s.enemies.some((e) => e.hp > 0 && distance(e, t) < TOWER_RANGE.threat))
@@ -391,7 +415,7 @@ export function advanceStrategy(s: State, dt: number) {
   advanceResearch(s, dt);
   for (const e of s.enemies)
     if (e.hp > 0 && (e.burningUntil ?? 0) > s.elapsed) {
-      e.hp -= 2 * ((e.solventUntil ?? 0) > s.elapsed ? 2 : 1) * dt;
+      e.hp = Math.max(0, e.hp - 2 * fireMultiplier(e, s.elapsed) * dt);
     }
   spreadBraises(s);
   for (const t of s.strategy.towers) {

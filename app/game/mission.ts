@@ -9,6 +9,7 @@ import {
   type Lot,
   type State,
 } from './engine.ts';
+import { manorLevel, upgradeBenefit } from './progression.ts';
 
 export type MissionAction =
   | { type: 'recruit'; kind: CreatureKind }
@@ -51,12 +52,6 @@ export function mission(s: State) {
       done: hasBuilding(s, 'canteen') || crypt || forge,
     },
     {
-      id: 'claim',
-      label: 'Revendiquer la friche centrale',
-      done: s.lots[4].owned || crypt || forge,
-    },
-    { id: 'crypt', label: 'Construire une crypte', done: crypt || forge },
-    {
       id: 'army',
       label: 'Rassembler 2 combattants',
       done:
@@ -70,6 +65,14 @@ export function mission(s: State) {
       label: 'Conquérir une propriété avec l’armée',
       done: conquered || forge,
     },
+    { id: 'manor2', label: 'Améliorer le manoir au niveau 2', done: manorLevel(s) >= 2 },
+    {
+      id: 'claim',
+      label: 'Revendiquer la friche centrale',
+      done: s.lots[4].owned || crypt || forge,
+    },
+    { id: 'crypt', label: 'Construire une crypte', done: crypt || forge },
+    { id: 'manor3', label: 'Améliorer le manoir au niveau 3', done: manorLevel(s) >= 3 },
     {
       id: 'forge',
       label: 'Construire une hutte des trolls sur le terrain gagné',
@@ -95,7 +98,7 @@ export function mission(s: State) {
     detail: s.lost ? 'Votre manoir est tombé.' : 'Le quartier est à vous.',
   };
 
-  const recruitHint = (kind: 'goblin' | 'skeleton'): MissionHint => {
+  const recruitHint = (kind: 'goblin' | 'spear-goblin'): MissionHint => {
     const queued = s.recruits.filter((r) => r.kind === kind);
     const next = queued.reduce<State['recruits'][number] | undefined>(
       (a, b) => (!a || b.remaining < a.remaining ? b : a),
@@ -109,14 +112,14 @@ export function mission(s: State) {
       detail:
         kind === 'goblin'
           ? 'Les gobelins récoltent et construisent. Recrutez le premier au manoir.'
-          : 'La crypte débloque les squelettes. Deux combattants suffisent pour votre première maison.',
+          : 'Les gobelins lanciers à pied sont disponibles dès le début à la grotte. Rassemblez-en deux pour conquérir votre première maison.',
       button: enoughQueued
         ? kind === 'goblin'
           ? 'Premier gobelin en préparation…'
           : 'Recrutement en cours…'
         : kind === 'goblin'
           ? 'Recruter mon premier gobelin'
-          : 'Recruter un squelette',
+          : 'Recruter un lancier',
       action: { type: 'recruit', kind },
       reason: enoughQueued
         ? 'Vos créatures rejoignent le domaine.'
@@ -129,7 +132,7 @@ export function mission(s: State) {
       status: next ? `Arrivée dans ${Math.ceil(next.remaining)} s` : undefined,
       marker: enoughQueued
         ? undefined
-        : { lotId: 6, kind: 'recruit', label: 'Recruter' },
+        : { lotId: kind === 'goblin' ? 6 : 3, kind: 'recruit', label: 'Recruter' },
     };
   };
   const constructionHint = (
@@ -159,7 +162,7 @@ export function mission(s: State) {
         : kind === 'forge'
           ? 'Le terrain gagné peut maintenant accueillir la hutte des trolls. Préparez-la, puis lancez le chantier ici.'
           : kind === 'crypt'
-            ? 'Sur la friche revendiquée, la crypte permettra de recruter vos premiers combattants.'
+            ? 'Le manoir niveau 2 et la cantine débloquent la crypte : squelettes, spectres et alchimistes.'
             : 'Installez la cantine sur votre terrain libre, près du manoir.',
       button: work ? 'Voir le chantier' : `Préparer ${name}`,
       action: {
@@ -177,7 +180,16 @@ export function mission(s: State) {
     };
   };
   if (current?.id === 'goblin') hint = recruitHint('goblin');
-  else if (current?.id === 'army') hint = recruitHint('skeleton');
+  else if (current?.id === 'army') hint = recruitHint('spear-goblin');
+  else if (current?.id === 'manor2' || current?.id === 'manor3') {
+    const manor = s.lots.find((lot) => lot.owned && lot.kind === 'hq');
+    if (manor) hint = {
+      detail: upgradeBenefit(manor),
+      button: `Voir le manoir · niveau ${manor.level + 1}`,
+      action: { type: 'inspect', lotId: manor.id },
+      marker: { lotId: manor.id, kind: 'build', label: 'Améliorer le manoir' },
+    };
+  }
   else if (
     current?.id === 'canteen' ||
     current?.id === 'crypt' ||

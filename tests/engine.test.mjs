@@ -21,6 +21,7 @@ import {
   recruitReason,
   buildReason,
   claimReason,
+  upgradeReason,
 } from '../app/game/engine.ts';
 
 function advance(s, seconds) {
@@ -73,6 +74,8 @@ test('Starting at zero reaches every construction tier, funds trolls and repels 
   }
   until(s, () => !claimReason(s, 4));
   assert.equal(claim(s, 4), '');
+  until(s, () => !upgradeReason(s, 6));
+  assert.equal(upgrade(s, 6), '');
   construct(4, 'crypt');
   for (let i = 0; i < 3; i++) {
     until(s, () => !recruitReason(s, 'skeleton'));
@@ -84,6 +87,8 @@ test('Starting at zero reaches every construction tier, funds trolls and repels 
   until(s, () => s.lots[8].owned);
   assault = null;
   assert.equal(defend(s, 4), '');
+  until(s, () => !upgradeReason(s, 6));
+  assert.equal(upgrade(s, 6), '');
   construct(8, 'forge');
   until(s, () => !recruitReason(s, 'troll'));
   assert.equal(recruit(s, 'troll'), '');
@@ -205,8 +210,10 @@ test('Skeleton and minotaur progression is reachable from a developed domain', (
   s.lots[5].owned = true;
   s.lots[5].kind = 'canteen';
   assert.equal(claim(s, 4), '');
+  assert.equal(upgrade(s, 6), '');
   assert.equal(build(s, 4, 'crypt'), '');
   until(s, () => s.lots[4].kind === 'crypt');
+  assert.equal(upgrade(s, 6), '');
   assert.equal(build(s, 7, 'forge'), '');
   until(s, () => s.lots[7].kind === 'forge');
   assert.equal(recruit(s, 'skeleton'), '');

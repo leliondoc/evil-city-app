@@ -1,4 +1,6 @@
 import { streetCenter } from './streets.ts';
+import { COMBAT, humanMultiplier } from './combat.ts';
+import { BUILDING_TIER, canUpgradeKind, manorRequirement } from './progression.ts';
 import {
   ISLAND_SITES,
   isIslandPathCell,
@@ -89,8 +91,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   hq: {
     name: 'Manoir du mal',
     description:
-      'Le cœur de votre domaine. Les gobelins y déposent leurs récoltes ; ses caves distillent l’essence.',
-    short: 'Dépôt et essence',
+      'Dépôt des récoltes et source d’essence. Ses niveaux débloquent de nouveaux bâtiments et limitent les améliorations du domaine.',
+    short: 'Débloque les paliers 2 et 3',
     art: 0,
     cost: {},
     duration: 0,
@@ -98,7 +100,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   den: {
     name: 'Grotte gobeline',
     description:
-      'Recrute les gobelins bâtisseurs, puis les lanciers après votre premier squelette. Accueille 6 créatures de plus et leur permet de se reposer.',
+      'Recrute les gobelins bâtisseurs et lanciers à pied dès le début. Accueille 6 créatures par niveau et leur permet de se reposer. La recherche des cochons exige le manoir niveau 2.',
     short: '+6 places · repos',
     art: 1,
     cost: { gold: 70, wood: 25 },
@@ -116,8 +118,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   forge: {
     name: 'Hutte des Trolls',
     description:
-      'Une hutte nichée dans un arbre mort. Recrute les trolls et les minotaures, et améliore la puissance de toute votre armée.',
-    short: 'Débloque les trolls',
+      'Exige le manoir niveau 3 et une crypte terminée. Recrute les trolls et minotaures, accueille les recherches de feu et renforce les dégâts de l’armée de 15 % par niveau supplémentaire.',
+    short: 'Manoir 3 · trolls et minotaures',
     art: 3,
     cost: { gold: 180, wood: 75 },
     duration: 24,
@@ -125,8 +127,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   crypt: {
     name: 'Crypte des murmures',
     description:
-      'Débloque les squelettes et spectres, produit de l’essence et conserve les dépouilles pour les rituels. Les morts-vivants viennent s’y reconstituer.',
-    short: '+24 essence/min',
+      'Exige le manoir niveau 2 et une cantine terminée. Recrute les squelettes, spectres et alchimistes. Produit 24 essence/min par niveau et conserve les dépouilles pour les rituels.',
+    short: 'Manoir 2 · morts-vivants et alchimistes',
     art: 4,
     cost: { gold: 130, wood: 35, mana: 15 },
     duration: 26,
@@ -196,7 +198,7 @@ export const CREATURES: Record<
     name: 'Alchimiste',
     job: 'Maître des mixtures',
     description:
-      'Le chaman du pack projette ses mixtures à distance. Avec le solvant alchimique, ses cibles deviennent vulnérables aux armes enflammées et aux braises.',
+      'Projette ses mixtures à distance. Son solvant amplifie le feu allié, surtout contre les chevaliers et lanciers. Fragile, il doit rester à couvert des archères.',
     art: 5,
     cost: { gold: 100, mana: 35, food: 15 },
     hp: 60,
@@ -235,7 +237,7 @@ export const CREATURES: Record<
     name: 'Gobelin lancier',
     job: 'Combattant mobile',
     description:
-      'Se recrute à la grotte après votre premier squelette. Sa lance frappe au corps à corps. La recherche Chevaucheurs de cochons le monte sur un cochon et augmente sa vitesse de 50 %.',
+      'Disponible à la grotte dès le début, il combat les gardes et craint les chevaliers. Au manoir niveau 2, la recherche des cochons le rend dangereux pour les archères et moines, mais vulnérable aux lanciers humains.',
     art: 6,
     cost: { gold: 75, food: 20 },
     hp: 80,
@@ -248,10 +250,10 @@ export const CREATURES: Record<
     name: 'Troll',
     job: 'Combattant',
     description:
-      'Le gros bras de votre quartier. Solide au combat, il exige la hutte des trolls et des repas réguliers.',
+      'Le gros bras du quartier brise la première ligne des chevaliers. Les lanciers le tiennent à distance et les archères profitent de sa lenteur. Exige la hutte des trolls et des repas réguliers.',
     art: 1,
     cost: { gold: 90, food: 30 },
-    hp: 100,
+    hp: 120,
     damage: 12,
     speed: 1.7,
     size: 42,
@@ -261,7 +263,7 @@ export const CREATURES: Record<
     name: 'Squelette',
     job: 'Garde infatigable',
     description:
-      'Un soldat peu coûteux, fragile mais qui ne mange jamais. La crypte le rappelle parmi vos voisins.',
+      'Soldat économique qui ne mange jamais. En nombre, il déborde les gardes et les lanciers humains. Les chevaliers le taillent en pièces et les moines le purifient.',
     art: 2,
     cost: { gold: 45, mana: 15 },
     hp: 65,
@@ -274,7 +276,7 @@ export const CREATURES: Record<
     name: 'Minotaure',
     job: 'Colosse de siège',
     description:
-      'Un colosse à cornes qui brise les défenses. Il occupe 3 places et réclame 3 fois plus de nourriture.',
+      'Colosse de siège qui démolit les bâtiments et balaie les gardes regroupés. Les lanciers et les tirs concentrés peuvent l’abattre. Occupe 3 places et réclame 3 fois plus de nourriture.',
     art: 3,
     cost: { gold: 220, mana: 60, food: 35 },
     hp: 350,
@@ -298,8 +300,11 @@ export const BUILD_PREREQUISITES: Partial<Record<BuildingKind, BuildingKind>> =
   };
 export function buildUnlockReason(s: State, kind: BuildingKind): string {
   const required = BUILD_PREREQUISITES[kind];
-  if (!required || hasBuilding(s, required)) return '';
-  return `Terminez ${BUILDINGS[required].name.toLowerCase()} pour débloquer ce bâtiment.`;
+  return [
+    manorRequirement(s, BUILDING_TIER[kind] ?? 1),
+    required && !hasBuilding(s, required)
+      ? `Terminez ${BUILDINGS[required].name.toLowerCase()} pour débloquer ce bâtiment.` : '',
+  ].filter(Boolean).join(' ');
 }
 /** Information available before selecting a parcel, shared with the construction menu. */
 export function buildMenuReason(s: State, kind: BuildingKind): string {
@@ -404,22 +409,22 @@ export const HEROES = {
   warrior: {
     name: 'Chevalier de l’Aube',
     short: 'Chevalier',
-    hp: 140,
+    hp: 180,
     damage: 12,
     speed: 1.5,
     range: 1.9,
     description:
-      'Le combattant de première ligne de la guilde. Il marche sur votre manoir et affronte vos créatures au corps à corps.',
+      'La première ligne résistante de la guilde. Plus endurant que le lancier, il domine les squelettes et gobelins lanciers à pied. Les trolls et le feu amplifié par un alchimiste percent sa défense.',
   },
   lancer: {
     name: 'Lancier de l’Aube',
     short: 'Lancier',
-    hp: 175,
+    hp: 110,
     damage: 10,
     speed: 1.25,
     range: 2.3,
     description:
-      'Un héros robuste dont la lance frappe avant le contact. Il protège l’avancée de son expédition.',
+      'Spécialiste contre les montures, trolls et minotaures. Sa longue lance frappe avant le contact, mais il a moins de vie que le chevalier. Le nombre et le feu alchimique le débordent.',
   },
   archer: {
     name: 'Archère de l’Aube',
@@ -429,7 +434,7 @@ export const HEROES = {
     speed: 1.6,
     range: 5.5,
     description:
-      'Elle tire des flèches à distance. Approchez vos combattants pour la neutraliser ; les bâtiments bloquent ses tirs.',
+      'Tire à longue distance et élimine les alchimistes. Elle use les combattants lents derrière sa première ligne, mais craint les gobelins sur cochon. Les bâtiments bloquent ses tirs.',
   },
   monk: {
     name: 'Moine de l’Aube',
@@ -439,7 +444,7 @@ export const HEROES = {
     speed: 1.35,
     range: 4,
     description:
-      'Il soigne ses alliés, riposte aux assaillants et chasse les spectres. Ses dégâts sont doublés contre les squelettes et spectres. Il ne peut pas endommager vos bâtiments.',
+      'Soigne ses alliés et chasse les spectres. Ses dégâts sont doublés contre les squelettes et spectres. Les gobelins sur cochon peuvent le neutraliser rapidement. Ne blesse pas les bâtiments.',
   },
 } as const;
 /** Shared by the expedition preview and actual raid mobilization. */
@@ -456,7 +461,7 @@ export const ENEMIES = {
     damage: 6,
     speed: 1.35,
     description:
-      'Reprend vos propriétés, puis attaque le manoir. Ses renforts viennent de la mairie.',
+      'Milicien qui reprend vos propriétés et menace les ouvriers isolés. Craint les gobelins lanciers et les squelettes en nombre. Évitez de le regrouper face au minotaure. Ses renforts viennent de la mairie.',
   },
   hero: {
     name: 'Chevalier de l’Aube',
@@ -807,8 +812,6 @@ export function resourceGain(
   });
 }
 export interface State {
-  /** Permanent progression, even if the first skeleton later dies. */
-  skeletonsAwakened?: boolean;
   attackOrder?: {
     sequence: number;
     target: { type: 'lot' | 'enemy' | 'worker' | 'resource'; id: number };
@@ -968,7 +971,7 @@ export function capacity(s: State) {
   );
 }
 export function hasBuilding(s: State, kind: BuildingKind) {
-  return s.lots.some((l) => l.owned && l.kind === kind);
+  return s.lots.some((l) => l.owned && l.kind === kind && l.hp > 0 && !l.construction);
 }
 export const RESOURCE_CAP = 1000;
 /** All player income and loot share the same storage limit. Returns the credited amount. */
@@ -1175,7 +1178,6 @@ export function assign(
   u.activityProgress = 0;
 }
 function spawnUnit(s: State, kind: CreatureKind, source = 6) {
-  if (kind === 'skeleton') s.skeletonsAwakened = true;
   const home = entrance(s.lots[source]),
     id = s.nextId++;
   const unit: Unit = {
@@ -1281,12 +1283,6 @@ export function recruitmentSource(
     rooms.flatMap((room) => available.filter((lot) => lot.kind === room))[0]
   );
 }
-export function spearUnlockReason(s: State): string {
-  return s.skeletonsAwakened ||
-    s.units.some((u) => u.kind === 'skeleton' && u.hp > 0)
-    ? ''
-    : 'Recrutez d’abord votre premier squelette à la crypte.';
-}
 export function unitIsMounted(s: State, u: Pick<Unit, 'kind'>): boolean {
   return u.kind === 'spear-goblin' && hasResearch(s, 'pig-riding');
 }
@@ -1300,8 +1296,6 @@ export function recruitReason(s: State, kind: CreatureKind) {
     if (workforce.total + workforce.queued >= GOBLIN_CAP)
       return `Limite de ${GOBLIN_CAP} gobelins atteinte, recrutements en cours inclus.`;
   }
-  if (kind === 'spear-goblin' && spearUnlockReason(s))
-    return spearUnlockReason(s);
   if (kind === 'spear-goblin' && !hasBuilding(s, 'den'))
     return 'Construisez une grotte gobeline pour recruter les lanciers.';
   if (kind === 'alchemist' && !hasBuilding(s, 'crypt'))
@@ -1320,7 +1314,7 @@ export function recruitReason(s: State, kind: CreatureKind) {
   if (!recruitmentSource(s, kind))
     return 'Aucun bâtiment de recrutement opérationnel.';
   if (population(s) + CREATURES[kind].population > capacity(s))
-    return 'Plus de place. Construisez ou améliorez une tanière.';
+    return 'Plus de place. Construisez ou améliorez une grotte gobeline.';
   if (!canAfford(s, CREATURES[kind].cost)) {
     const missing = Object.entries(CREATURES[kind].cost)
       .filter(([key, amount]) => s.resources[key as keyof Resources] < amount)
@@ -1328,7 +1322,7 @@ export function recruitReason(s: State, kind: CreatureKind) {
         ([key, amount]) =>
           `${Math.ceil(amount - s.resources[key as keyof Resources])} ${RESOURCE_LABELS[key as keyof Resources]}`,
       );
-    return `Il manque : ${missing.join(', ')}.${s.resources.food < (CREATURES[kind].cost.food ?? 0) ? ' La cantine produit la viande.' : ''}`;
+    return `Il manque : ${missing.join(', ')}.${s.resources.food < (CREATURES[kind].cost.food ?? 0) ? ' Envoyez vos gobelins récolter des vivres.' : ''}`;
   }
   return '';
 }
@@ -1518,9 +1512,12 @@ export function upgradeCost(l: Lot): Cost {
 export function upgradeReason(s: State, id: number) {
   if (s.won || s.lost) return 'La partie est terminée.';
   const l = s.lots[id];
-  if (!l?.owned || l.kind === 'empty' || l.construction)
+  if (!l?.owned || l.hp <= 0 || l.kind === 'empty' || l.construction)
     return 'Choisissez un bâtiment terminé.';
+  if (!canUpgradeKind(l.kind)) return 'Ce bâtiment ne possède pas d’amélioration.';
   if (l.level >= 3) return 'Niveau maximal atteint.';
+  if (l.kind !== 'hq' && manorRequirement(s, l.level + 1))
+    return `${manorRequirement(s, l.level + 1)} Le niveau du manoir limite celui des bâtiments.`;
   if (!canAfford(s, upgradeCost(l)))
     return 'Il manque des ressources pour cette amélioration.';
   return '';
@@ -1885,7 +1882,7 @@ export function walk(s: State, u: Walker, distance: number) {
     if (advance < wanted) break;
   }
 }
-function armyDamage(s: State, u: Unit) {
+export function armyDamage(s: State, u: Unit) {
   const forge = Math.max(
     1,
     ...s.lots.filter((l) => l.owned && l.kind === 'forge').map((l) => l.level),
@@ -2153,12 +2150,15 @@ function shoot(s: State, e: Enemy, target: Projectile['target'], point: Point) {
   e.facing = point.x >= e.x ? 1 : -1;
   if (e.attackCooldown > 0) return;
   e.attackCooldown = 0.8;
+  const targetUnit = target.type === 'unit' ? s.units.find((u) => u.id === target.id) : undefined;
   s.projectiles.push({
     id: s.nextId++,
     x: e.x,
     y: e.y,
     target,
-    damage: e.damage * 0.8,
+    damage: e.damage * 0.8 * (targetUnit
+      ? humanMultiplier(e, targetUnit.kind, unitIsMounted(s, targetUnit))
+      : 1),
     angle: Math.atan2(point.y - e.y, point.x - e.x),
     life: 2,
   });
@@ -2229,7 +2229,7 @@ function advanceEnemies(s: State, dt: number) {
           aggressor.hp = Math.max(
             0,
             aggressor.hp -
-              (e.role === 'monk' ? monkDamage(e, aggressor) : e.damage) * dt,
+              (e.role === 'monk' ? monkDamage(e, aggressor) : e.damage * humanMultiplier(e, aggressor.kind, unitIsMounted(s, aggressor))) * dt,
           );
       } else {
         pursue(e, aggressor);
@@ -2288,7 +2288,7 @@ function advanceEnemies(s: State, dt: number) {
         e.facing = victim.x >= e.x ? 1 : -1;
         if (e.role === 'archer')
           shoot(s, e, { type: 'unit', id: victim.id }, victim);
-        else victim.hp -= e.damage * dt;
+        else victim.hp = Math.max(0, victim.hp - e.damage * humanMultiplier(e, victim.kind, unitIsMounted(s, victim)) * dt);
         continue;
       }
       pursue(e, victim);
@@ -2686,7 +2686,7 @@ function tickStep(s: State, dt: number) {
           atEntrance(u, lot),
       );
       if (attackers.length) {
-        const damage = attackers.reduce((n, u) => n + armyDamage(s, u), 0);
+        const damage = attackers.reduce((n, u) => n + armyDamage(s, u) * (u.kind === 'minotaur' ? COMBAT.minotaurVsBuilding : 1), 0);
         lot.hp = Math.max(0, lot.hp - damage * dt);
         if (lot.kind === 'guild' && damage > 0)
           releaseGuildDefenders(s, lot, attackers);

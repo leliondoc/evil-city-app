@@ -56,6 +56,10 @@ import { CreationCards } from './CreationCards';
 import { ThreatPanel } from './ThreatPanel';
 import { GuildRoster, GuildHeroSelection } from './GuildPanel';
 import { Bestiary } from './Bestiary';
+import { CombatDetails } from './CombatDetails';
+import { CommandWheel } from './CommandWheel';
+import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
+import { MANOR_TIERS, manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
 import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
@@ -64,6 +68,8 @@ import { buildingArt, enemyAnimationSequence, type Animation } from './art';
 import {
   BUILDINGS,
   CREATURES,
+  armyDamage,
+  unitSpeed,
   unitIsMounted,
   RESOURCE_LABELS,
   enemyDefinition,
@@ -169,6 +175,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const s = useSyncExternalStore(gameStore.subscribe, gameStore.getSnapshot);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const objectivesRef = useRef<HTMLDetailsElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const audioRef = useRef<GameAudio | null>(null);
   const [audioSettings, setAudioSettings] = useState(readAudioSettings);
@@ -624,7 +631,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <p className="objective-reason">{hint.reason}</p>
           )}
         </div>
-        <details className="objectives-disclosure">
+        <details ref={objectivesRef} className="objectives-disclosure">
           <summary>
             Objectifs{' '}
             <span>
@@ -775,6 +782,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           >
             ×{speed}
           </Button>
+          {compact && <>
           <Button
             className="icon-btn"
             title={paused ? 'Reprendre (Espace)' : 'Pause (Espace)'}
@@ -807,6 +815,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           >
             <PackIcon asset="ui-settings" />
           </Button>
+          </>}
         </div>
       </header>
 
@@ -887,7 +896,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 className="selection-panel"
                 aria-label="Aucune sélection"
               >
-                <p className="eyebrow">Le quartier vous attend</p>
                 <h3 className="selection-name">Aucune sélection</h3>
                 <p className="selection-text">
                   {compact
@@ -990,8 +998,20 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     def?.description ||
                     'Sélectionnez une autre créature ou une parcelle.'}
                 </p>
+                {selectedLot?.kind === 'hq' && (
+                  <details className="manor-progression" aria-label="Paliers du manoir">
+                    <summary>Voir les trois paliers du manoir</summary>
+                    {MANOR_TIERS.map((tier) => (
+                      <p className="reason" key={tier.level}>
+                        <strong>Niveau {tier.level}{manorLevel(s) >= tier.level ? ' · Acquis' : ' · À débloquer'} : </strong>
+                        {tier.description}
+                      </p>
+                    ))}
+                  </details>
+                )}
                 {selectedEnemy && (
                   <>
+                    <CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} />
                     <div className="selection-stats">
                       <Shield size={14} /> {Math.ceil(selectedEnemy.hp)} /{' '}
                       {selectedEnemy.maxHp} · Niv. {selectedEnemy.level}
@@ -1026,6 +1046,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 )}
                 {selectedUnit && creature && (
                   <>
+                    <CombatDetails profile={creatureCombatProfile(selectedUnit.kind, unitIsMounted(s, selectedUnit))} />
                     <div className="selection-stats">
                       <span>
                         <Shield size={14} />
@@ -1045,6 +1066,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       value={(selectedUnit.hp / creature.hp) * 100}
                       aria-label="Santé de la créature"
                     />
+                    <p className="reason">
+                      {Number(armyDamage(s, selectedUnit).toFixed(1))} dégâts/s avant bonus · vitesse {Number(unitSpeed(s, selectedUnit).toFixed(1))}
+                      {unitIsMounted(s, selectedUnit) ? ' · Monté sur cochon' : ''}
+                    </p>
                     <Button
                       className="primary-btn"
                       disabled={!!restReason(s, selectedUnit.id)}
@@ -1197,9 +1222,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                           </Button>
                         ) : (
                           <>
-                            <Button
+                            {canUpgradeKind(selectedLot.kind) && <Button
                               className="primary-btn"
                               disabled={!!upgradeReason(s, selectedLot.id)}
+                              title={upgradeReason(s, selectedLot.id) || upgradeBenefit(selectedLot)}
                               onClick={() =>
                                 run((state) => upgrade(state, selectedLot.id))
                               }
@@ -1207,10 +1233,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                               <ArrowUp size={15} />
                               {selectedLot.level >= 3
                                 ? 'Niveau maximal'
-                                : `Améliorer · ${80 * selectedLot.level} or`}
-                            </Button>
-                            {selectedLot.level < 3 && (
+                                : `Passer au niveau ${selectedLot.level + 1}`}
+                            </Button>}
+                            {canUpgradeKind(selectedLot.kind) && <p className="reason">Actuellement : {buildingLevelEffect(selectedLot.kind, selectedLot.level)}.</p>}
+                            {canUpgradeKind(selectedLot.kind) && selectedLot.level < 3 && (
                               <div style={{ marginTop: 8 }}>
+                                <p className="reason">{upgradeBenefit(selectedLot)}</p>
                                 <Costs cost={upgradeCost(selectedLot)} />
                               </div>
                             )}
@@ -1221,7 +1249,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                                 cette propriété.
                               </p>
                             )}
-                            {upgradeReason(s, selectedLot.id) &&
+                            {canUpgradeKind(selectedLot.kind) && upgradeReason(s, selectedLot.id) &&
                               selectedLot.level < 3 && (
                                 <p className="reason">
                                   {upgradeReason(s, selectedLot.id)}
@@ -1689,6 +1717,36 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </CreationCards>
           </TabsContent>
         </Tabs>
+        {!compact && (
+          <CommandWheel
+            level={manorLevel(s)}
+            paused={paused}
+            objective={currentObjective?.label || (s.won ? 'Le quartier est à vous' : 'Objectifs du quartier')}
+            onManor={() => {
+              const manor = s.lots.find((lot) => lot.kind === 'hq');
+              if (!manor) return;
+              setPendingBuild(null);
+              select({ type: 'lot', id: manor.id });
+              rendererRef.current?.focusLot(manor.id);
+            }}
+            onObjective={() => {
+              if (objectivesRef.current) {
+                objectivesRef.current.open = true;
+                objectivesRef.current.scrollIntoView({ block: 'nearest' });
+              }
+              const lotId = hint.marker?.lotId ?? (hint.action?.type === 'inspect' ? hint.action.lotId : undefined);
+              if (lotId !== undefined) {
+                setPendingBuild(null);
+                select({ type: 'lot', id: lotId });
+                rendererRef.current?.focusLot(lotId);
+              }
+            }}
+            onBestiary={() => setModal('bestiary')}
+            onGuide={() => setModal('guide')}
+            onSettings={() => setModal('settings')}
+            onPause={() => setPaused((value) => !value)}
+          />
+        )}
       </footer>
 
       {compact && (
@@ -1904,30 +1962,29 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 <div className="guide-step">
                   <b>02</b>
                   <div>
-                    <strong>Éveillez les premiers squelettes</strong>
+                    <strong>Levez votre première armée</strong>
                     <p>
-                      Sélectionnez la friche au centre et revendiquez-la pour 40
-                      or et 18 essence. Une fois la cantine terminée,
-                      construisez-y une crypte. Elle produit de l’essence et
-                      débloque les squelettes. Le premier squelette recruté
-                      débloque ensuite les gobelins lanciers à la grotte.
-                      Améliorer le manoir augmente sa production d’essence.
+                      La grotte recrute des gobelins lanciers à pied dès le
+                      manoir niveau 1. Rassemblez deux combattants et conquérez
+                      une première maison. Améliorez ensuite le manoir au
+                      niveau 2 pour débloquer la crypte et la recherche des
+                      chevaucheurs de cochons.
                     </p>
                   </div>
                 </div>
                 <div className="guide-step">
                   <b>03</b>
                   <div>
-                    <strong>Faites connaissance avec les voisins</strong>
+                    <strong>Développez les paliers du manoir</strong>
                     <p>
-                      Dans « Recruter des créatures », recrutez des squelettes.
-                      Sélectionnez la maison indiquée sur la carte, puis «
-                      Envoyer l’armée ». Réduisez sa résistance à zéro pour la
-                      conquérir. Son herbe et son fanion prennent les couleurs
-                      de votre domaine. Après la conquête, la crypte vous permet
-                      de construire une hutte des trolls sur le terrain gagné : 180 or et
-                      75 bois. Vous pouvez alors recruter des trolls pour 90 or
-                      et 30 vivres, avant de viser la mairie et la guilde.
+                      Au niveau 2, revendiquez la friche centrale pour 40 or et
+                      18 essence. Une cantine terminée permet d’y construire
+                      la crypte : squelettes, spectres et alchimistes rejoignent
+                      la horde. Au niveau 3 du manoir, une crypte terminée
+                      débloque la hutte des trolls : trolls, minotaures et
+                      recherches de feu. Les autres bâtiments ne peuvent pas
+                      dépasser le niveau du manoir. Leur fiche indique le gain
+                      exact de chaque amélioration.
                     </p>
                   </div>
                 </div>

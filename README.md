@@ -146,4 +146,20 @@ Un clic droit sur la carte avec un bâtiment de recrutement sélectionné défin
 
 Sélectionner une tour affiche sa portée réelle depuis sa porte : racket du gobelin à 3,5 cases ; détection du squelette à 3 et appel des défenseurs à 8 ; fausse alerte du spectre à 14 (sur activation). Sans garnison, la zone de capture/reprise de 3 cases est affichée.
 
-Les gobelins bâtisseurs et lanciers se recrutent à la grotte. Le premier squelette terminé débloque les lanciers (75 or, 20 vivres) ; ce déblocage reste acquis après sa mort. « Chevaucheurs de porcs », disponible à la grotte ou dans la fiche du lancier, coûte 150 or, 40 bois et 50 vivres et augmente de 50 % la vitesse de tous les lanciers existants et futurs. La forge conserve ses fonctions et utilise désormais la Troll House du pack. Les gobelins récoltent les porcs du pâturage, tandis que les humains gardent les moutons.
+Les gobelins bâtisseurs et lanciers à pied se recrutent à la grotte dès le début. Les lanciers coûtent 75 or et 20 vivres. « Chevaucheurs de cochons », disponible au manoir niveau 2, se recherche à la grotte ou dans la fiche du lancier : 150 or, 40 bois et 50 vivres, 180 secondes. La recherche augmente de 50 % la vitesse des lanciers existants et futurs et leurs dégâts contre les archères et moines. Les gobelins récoltent les porcs du pâturage, tandis que les humains gardent les moutons.
+
+### Paliers du manoir
+
+Le manoir dirige la progression technologique. Ses améliorations coûtent 80 or / 35 bois pour le niveau 2, puis 160 or / 70 bois pour le niveau 3 et sont immédiates.
+
+| Manoir | Déblocages |
+| --- | --- |
+| Niveau 1 | Grotte, cantine, gobelins bâtisseurs et lanciers à pied |
+| Niveau 2 | Crypte (cantine terminée requise) : squelettes, spectres, alchimistes et solvant ; recherche des cochons à la grotte |
+| Niveau 3 | Hutte des Trolls (crypte terminée requise) : trolls, minotaures, armes enflammées et braises contagieuses |
+
+Le niveau des autres bâtiments ne peut pas dépasser celui du manoir. Chaque fiche présente l’effet actuel, le gain du prochain niveau, son coût et les prérequis manquants. Les grottes ajoutent 6 places par niveau ; la meilleure cantine réduit la consommation de 20/40/60 % ; chaque crypte produit 24/48/72 essence par minute ; la meilleure hutte donne +0/+15/+30 % de dégâts à l’armée. Le manoir produit 10,8/21,6/32,4 essence par minute et une guilde conquise 18/36/54. Les maisons, auberges et mairies ne proposent plus d’amélioration sans effet.
+
+Le tutoriel suit une conquête avec deux lanciers au palier 1, puis le manoir 2, la friche centrale et la crypte, avant le manoir 3 et la hutte des trolls. Les stocks de départ et les durées de recherche restent inchangés.
+
+Sur ordinateur, un menu circulaire en bas à droite reprend les textures et icônes du pack UI. Son centre affiche le niveau du manoir et permet de le sélectionner ; les boutons autour ouvrent les objectifs, le bestiaire, le guide, les paramètres et la pause. Les cartes de construction et de recrutement sont centrées entre la horde et ce menu, avec défilement horizontal. Sur mobile, les raccourcis restent dans la barre supérieure pour préserver la place de la carte.

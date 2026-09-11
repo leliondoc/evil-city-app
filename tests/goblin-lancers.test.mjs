@@ -4,6 +4,7 @@ import {
   createGame,
   recruit,
   recruitReason,
+  upgrade,
   tick,
   moveUnit,
   unitSpeed,
@@ -31,23 +32,26 @@ import {
 function prepared() {
   const s = createGame();
   s.resources = { gold: 900, wood: 900, food: 900, mana: 900 };
-  Object.assign(s.lots[4], { owned: true, kind: 'crypt', construction: null });
   s.economy.workerReadyAt = Infinity;
   return s;
 }
 function unlock(s) {
-  assert.equal(recruit(s, 'skeleton'), '');
-  tick(s, 6.1);
-  assert.ok(s.skeletonsAwakened);
+  assert.equal(upgrade(s, 6), '');
 }
 
-test('Lanciers and their research unlock only after a skeleton has actually spawned, and stay unlocked after its death', () => {
+test('Foot lanciers recruit at tier one without a crypt; pig riding requires manor level two', () => {
   const s = prepared();
-  assert.match(recruitReason(s, 'spear-goblin'), /premier squelette/);
-  assert.match(researchReason(s, 'pig-riding'), /premier squelette/);
-  assert.equal(recruit(s, 'skeleton'), '');
-  assert.match(recruitReason(s, 'spear-goblin'), /premier squelette/);
+  assert.equal(recruitReason(s, 'spear-goblin'), '');
+  assert.match(researchReason(s, 'pig-riding'), /manoir au niveau 2/);
+  const before = structuredClone(s.resources);
+  assert.ok(research(s, 'pig-riding'));
+  assert.deepEqual(s.resources, before);
+  assert.equal(recruit(s, 'spear-goblin'), '');
   tick(s, 6.1);
+  assert.equal(s.units[0].kind, 'spear-goblin');
+  assert.equal(unitIsMounted(s, s.units[0]), false);
+  unlock(s);
+  assert.equal(researchReason(s, 'pig-riding'), '');
   assert.equal(recruitReason(s, 'spear-goblin'), '');
   s.units = [];
   assert.equal(recruitReason(s, 'spear-goblin'), '');
@@ -57,7 +61,6 @@ test('Lanciers and their research unlock only after a skeleton has actually spaw
 
 test('Both goblins recruit at the cave, and a lancier waits at its entrance', () => {
   const s = prepared();
-  unlock(s);
   assert.equal(recruit(s, 'spear-goblin', 6), '');
   assert.equal(s.recruits[0].source, 3);
   assert.equal(recruit(s, 'goblin'), '');

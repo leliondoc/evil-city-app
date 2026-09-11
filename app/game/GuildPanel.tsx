@@ -15,6 +15,8 @@ import { GameButton as Button } from './PackUI';
 import { Sprite } from './Sprite';
 import { AbilityCard } from './AbilityCard';
 import { isHaunted } from './domain';
+import { CombatDetails } from './CombatDetails';
+import { HUMAN_COMBAT } from './combat';
 
 type Props = { state: State; onSelect: (selection: Selection) => void };
 
@@ -124,6 +126,7 @@ export function GuildHeroSelection({
         ))}
       </div>
       <p className="selection-text">{hero.description}</p>
+      <CombatDetails profile={HUMAN_COMBAT[role]} />
       <p className="reason">Caractéristiques en expédition · Niveau 1</p>
       <div className="selection-stats">
         <span>

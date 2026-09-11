@@ -3,6 +3,9 @@ import { Search } from 'lucide-react';
 import { Sprite } from './Sprite';
 import { BESTIARY_CREATURES, BESTIARY_HUMANS } from './bestiaryCatalog';
 import { animationSequence, type Animation, type AssetKey } from './art';
+import { CombatDetails } from './CombatDetails';
+import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
+import type { HeroRole } from './engine';
 
 export function Bestiary({ action }: { action: Animation }) {
   const [search, setSearch] = useState('');
@@ -56,6 +59,7 @@ export function Bestiary({ action }: { action: Animation }) {
                 <strong>{entry.name}</strong>
                 <span className="bestiary-badge available">Recrutable</span>
                 <p>{entry.description}</p>
+                <CombatDetails profile={creatureCombatProfile(entry.id, entry.id === 'spear-goblin' && mounted)} />
                 {entry.id === 'spear-goblin' && (
                   <button
                     className="bestiary-mount"
@@ -93,6 +97,9 @@ export function Bestiary({ action }: { action: Animation }) {
                     : 'Ville humaine'}
                 </span>
                 <p>{entry.description}</p>
+                {entry.id === 'guard' || entry.id.startsWith('hero-') ? (
+                  <CombatDetails profile={HUMAN_COMBAT[entry.id === 'guard' ? 'guard' : entry.id.slice(5) as HeroRole]} />
+                ) : null}
               </article>
             ))}
           </div>

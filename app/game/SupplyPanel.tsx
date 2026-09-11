@@ -111,9 +111,7 @@ export function SupplySelection({
   const reason = raidSupplyReason(s, selection);
   return (
     <section className="selection-panel" aria-label="Détails du ravitaillement">
-      <p className="eyebrow">
-        {worker ? 'Économie humaine' : 'Site de récolte'}
-      </p>
+      {worker && <p className="eyebrow">Économie humaine</p>}
       <h3 className="selection-name">{worker ? def.worker : def.name}</h3>
       <div className="selection-art">
         <Sprite

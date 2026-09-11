@@ -8,6 +8,7 @@ import '../app/globals.css';
 import { recruit, tick, entrance, announce } from '../app/game/engine';
 import { research, advanceResearch, RESEARCH, towerOrder } from '../app/game/strategy';
 const state = createGame();
+state.lots[6].level = 3;
 state.resources = { gold: 1000, wood: 500, food: 500, mana: 500 };
 state.lots[7].kind = 'crypt';
 state.lots[7].owned = true;
