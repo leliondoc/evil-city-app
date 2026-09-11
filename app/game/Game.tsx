@@ -2047,34 +2047,15 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   </p>
                 </div>
               </div>
-              <p className="controls-guide">
-                {compact && (
-                  <>
+              {compact && (
+                <p className="controls-guide">
                     Sur téléphone : glissez un doigt pour explorer et pincez à
                     deux doigts pour zoomer. Groupe active le rectangle de
                     sélection ; Ordre permet de toucher une destination ou une
                     cible. Carte ferme les volets. Détails, Bâtir et Recruter
                     ouvrent les commandes du bas.
-                    <br />
-                  </>
-                )}
-                Spectre : recrutez-le à la crypte, puis clic droit sur un
-                bâtiment humain pour le hanter. Le moine le provoque en duel
-                dans la rue. Ordonnez un repli pour sauver votre spectre. Crypte
-                : les gobelins libres rapportent les dépouilles ; 2 dépouilles
-                et 12 essence permettent de relever un squelette. Mairie : une
-                bourse de 100 or livrée par un gobelin retarde la garde de 45 s.
-                <br />
-                Shift + glisser gauche : sélectionner ou compléter un groupe ·
-                Shift + clic : ajouter ou retirer une unité · Glisser gauche :
-                déplacer la carte · ZQSD ou flèches : déplacer la caméra ·
-                Molette : zoom · Espace : pause · 1-5 : bâtiment ou créature · R
-                : repli · Échap : désélectionner ou annuler un chantier avant sa
-                pose.
-                <br />
-                Les parties ne sont pas conservées après fermeture. Le quartier
-                est fictif.
-              </p>
+                </p>
+              )}
               <p className="art-credit">
                 Graphismes et animations :{' '}
                 <a
