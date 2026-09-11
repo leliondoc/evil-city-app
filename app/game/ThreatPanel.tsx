@@ -8,7 +8,7 @@ import {
 import { ASSETS, type AssetKey } from './art';
 import { SupplyPanel } from './SupplyPanel';
 import { isHaunted } from './domain';
-import { GameButton, PanelSkin, ResourceIcon } from './PackUI';
+import { GameButton, ResourceIcon } from './PackUI';
 import { unitSelection } from './selection';
 import {
   army,
@@ -255,7 +255,7 @@ export function ThreatPanel({
           </p>
           <GameButton
             className="primary-btn"
-            tone="red"
+            tone="purple"
             disabled={!fighters.length}
             onClick={() => select(unitSelection(fighters.map((u) => u.id)))}
           >
@@ -306,7 +306,7 @@ export function ThreatPanel({
           </p>
           <GameButton
             className="primary-btn"
-            tone="red"
+            tone="purple"
             disabled={!goblins.length}
             onClick={() => select(unitSelection(goblins.map((u) => u.id)))}
           >
@@ -335,7 +335,7 @@ export function ThreatPanel({
             <GameButton
               key={group.id}
               className="primary-btn"
-              tone={group.id === 'evil' ? 'red' : 'blue'}
+              tone={group.id === 'evil' ? 'purple' : 'blue'}
               aria-pressed={camp === group.id}
               onClick={() => {
                 setCamp(group.id);
@@ -372,21 +372,8 @@ export function ThreatPanel({
                   aria-label={`${entry.label}. ${entry.summary} Ouvrir les détails.`}
                   title={`${entry.label} · ${entry.summary}`}
                 >
-                  {group.id === 'evil' ? (
-                    <PanelSkin
-                      kind="button"
-                      asset={
-                        active === entry.id
-                          ? 'ui-button-red-pressed'
-                          : 'ui-button-red'
-                      }
-                    />
-                  ) : (
-                    <img
-                      className="district-button-skin"
-                      src={ASSETS['ui-menu-button'].src}
-                      alt=""
-                    />
+                  {group.id !== 'evil' && (
+                    <img className="district-button-skin" src={ASSETS['ui-menu-button'].src} alt="" />
                   )}
                   <img
                     className="district-icon"

@@ -67,9 +67,9 @@ export function PanelSkin({
 export function GameButton({
   children,
   className,
-  tone = 'blue',
+  tone = 'purple',
   ...props
-}: ComponentProps<typeof BaseButton> & { tone?: 'blue' | 'red' }) {
+}: ComponentProps<typeof BaseButton> & { tone?: 'blue' | 'red' | 'purple' }) {
   const primary = typeof className === 'string' && className.includes('primary-btn');
   const skin =
     typeof className === 'string' &&

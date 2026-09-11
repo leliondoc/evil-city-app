@@ -601,12 +601,12 @@ svg {
   transform: none;
 }
 .build-tabs .creation-tab-build {
-  --creation-fill: #517e8c;
-  --creation-selected: #3e5e71;
+  --creation-fill: var(--faction-purple);
+  --creation-selected: var(--faction-purple-dark);
 }
 .build-tabs .creation-tab-recruit {
-  --creation-fill: #ed575d;
-  --creation-selected: #b94550;
+  --creation-fill: var(--faction-purple);
+  --creation-selected: var(--faction-purple-dark);
 }
 .build-tabs [data-slot='tabs-trigger'].creation-tab[data-active] {
   background: var(--creation-selected);
@@ -1620,8 +1620,8 @@ svg {
 .primary-btn.pack-action {
   position: relative;
   isolation: isolate;
-  --action-fill: #517e8c;
-  --action-pressed: #3e5e71;
+  --action-fill: var(--faction-purple);
+  --action-pressed: var(--faction-purple-dark);
   background: var(--action-fill) !important;
   border: 2px solid #383b3b !important;
   color: #fff4d8 !important;
@@ -3718,3 +3718,19 @@ svg {
 .combat-matchups .combat-strength-label { padding-left: 44px; padding-right: 33px; color: #473723; }
 .combat-matchups .combat-weakness-label { width: 118px; height: 34px; color: #fff1d2; text-shadow: 0 1px #763337; margin: 5px 0; }
 .combat-matchups dd { padding-left: 7px; }
+
+/* Player-faction palette, matching the cloth and highlight of its map pennants. */
+:root { --faction-purple: #74518d; --faction-purple-dark: #5d4072; --faction-lavender: #b997cf; }
+.primary-btn.pack-action[data-tone='blue'] { --action-fill: #517e8c; --action-pressed: #3e5e71; }
+.primary-btn.pack-action[data-tone='purple'], .build-tabs .creation-tab { box-shadow: inset 0 0 0 1px var(--faction-lavender), inset 0 -4px 0 #0003; }
+.district-group[data-camp='evil'] h3 { background: var(--faction-purple); color: #fff4d8; }
+.district-group[data-camp='evil'] .district-shortcut {
+  background: var(--faction-purple); border: 2px solid #3b2c46; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--faction-lavender), inset 0 -3px 0 #0003;
+}
+.district-group[data-camp='evil'] .district-shortcut[data-popup-open] { background: var(--faction-purple-dark); }
+.district-group[data-camp='evil'] .district-badge { background: var(--faction-purple-dark); color: #fff4d8; }
+.selection-panel .healthbar [data-slot='progress-indicator'] { background: var(--faction-purple); box-shadow: inset 0 1px var(--faction-lavender); }
+.recruit-progress progress, .research-progress progress, .objective-progress progress, .capture-status progress { accent-color: var(--faction-purple); }
+.recruit-progress progress::-webkit-progress-value, .research-progress progress::-webkit-progress-value, .objective-progress progress::-webkit-progress-value, .capture-status progress::-webkit-progress-value { background: var(--faction-purple); box-shadow: inset 0 1px var(--faction-lavender); }
+.recruit-progress progress::-moz-progress-bar, .research-progress progress::-moz-progress-bar, .objective-progress progress::-moz-progress-bar, .capture-status progress::-moz-progress-bar { background: var(--faction-purple); box-shadow: inset 0 1px var(--faction-lavender); }
