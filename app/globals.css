@@ -58,7 +58,7 @@ body {
   margin: 0;
   width: 100%;
   min-height: 100%;
-  background: var(--background);
+  background: #4aa9aa;
   color: var(--foreground);
 }
 body {
@@ -87,6 +87,7 @@ svg {
   flex-shrink: 0;
 }
 .game-shell {
+  background: #4aa9aa url('/tiny-swords/water.png') repeat;
   height: 100dvh;
   min-height: 560px;
   display: flex;
@@ -402,6 +403,10 @@ svg {
 .world-canvas:active {
   cursor: grabbing;
 }
+.world-canvas[data-ready='false'] {
+  visibility: hidden;
+  pointer-events: none;
+}
 .map-caption {
   position: absolute;
   top: 22px;
@@ -588,15 +593,6 @@ svg {
 .build-tabs [data-slot='tabs-trigger']:focus-visible { outline: 3px solid #ffe4a1; outline-offset: 3px; }
 .build-tabs [data-slot='tabs-trigger']::after {
   display: none;
-}
-.build-tabs [data-slot='tabs-trigger'][data-active]::after {
-  display: block;
-  inset: 6px 2px 3px 3px;
-  height: auto;
-  border: 2px solid #ffe4a1;
-  border-radius: 2px;
-  background: transparent;
-  pointer-events: none;
 }
 /* Keep the map viewport stable across tabs and recruitment progress updates. */
 .game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {
@@ -804,24 +800,19 @@ svg {
   font-size: 12px;
   color: #c0c5ab;
 }
-.loading-art {
+.loading-error {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, calc(100% - 32px));
+  padding: 16px 20px;
   text-align: center;
-  gap: 10px;
-  background: #bac2a2;
-  color: #43583e;
-  font:
-    23px Georgia,
-    serif;
+  border-radius: 6px;
+  background: #f5e8c7;
+  color: #493b2b;
+  font: 16px/1.5 'Trebuchet MS', sans-serif;
   z-index: 8;
-}
-.loading-art span {
-  font:
-    14px 'Trebuchet MS',
-    sans-serif;
 }
 @media (min-width: 1500px) {
   .sidebar {
@@ -1204,7 +1195,7 @@ svg {
   color: #c5d0c8;
 }
 .world-wrap {
-  background: #729a73;
+  background: transparent;
 }
 .map-caption {
   padding: 10px 14px;
@@ -1362,10 +1353,6 @@ svg {
 .art-credit a {
   color: #edcd88;
   text-decoration: underline;
-}
-.loading-art {
-  background: #28434a;
-  color: #ffe4a4;
 }
 @media (max-width: 1100px) {
   .selection-art,

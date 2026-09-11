@@ -1237,6 +1237,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         <section className="world-wrap" aria-label="Carte du quartier">
           <canvas
             className="world-canvas"
+            data-ready={ready}
             ref={canvasRef}
             tabIndex={0}
             aria-label={
@@ -1382,11 +1383,11 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </div>
           )}
           {!ready && (
-            <div className="loading-art">
-              {artError
-                ? 'Le quartier attend ses couleurs…'
-                : 'Les gobelins ouvrent les volets…'}
-              <span>{artError || 'Préparation du quartier'}</span>
+            <div
+              className={`loading-art ${artError ? 'loading-error' : 'sr-only'}`}
+              role={artError ? 'alert' : 'status'}
+            >
+              {artError || 'Chargement du quartier…'}
             </div>
           )}
         </section>
@@ -1474,12 +1475,20 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         >
           <TabsList variant="line" aria-label="Construction et recrutement">
             <TabsTrigger value="build">
-              <PanelSkin kind="button" asset="ui-button" />
+              <PanelSkin
+                kind="button"
+                asset={tab === 'build' ? 'ui-button-pressed' : 'ui-button'}
+              />
               <PackIcon asset="hq-purple" />
               <span>Construire des bâtiments</span>
             </TabsTrigger>
             <TabsTrigger value="recruit">
-              <PanelSkin kind="button" asset="ui-button-red" />
+              <PanelSkin
+                kind="button"
+                asset={
+                  tab === 'recruit' ? 'ui-button-red-pressed' : 'ui-button-red'
+                }
+              />
               <PackIcon asset="goblin-avatar" />
               <span>Recruter des créatures</span>
             </TabsTrigger>
