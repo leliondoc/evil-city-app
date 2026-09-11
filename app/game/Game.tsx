@@ -1474,21 +1474,17 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           }}
         >
           <TabsList variant="line" aria-label="Construction et recrutement">
-            <TabsTrigger value="build">
-              <PanelSkin
-                kind="button"
-                asset={tab === 'build' ? 'ui-button-pressed' : 'ui-button'}
-              />
+            <TabsTrigger
+              value="build"
+              className="creation-tab creation-tab-build"
+            >
               <PackIcon asset="hq-purple" />
               <span>Construire des bâtiments</span>
             </TabsTrigger>
-            <TabsTrigger value="recruit">
-              <PanelSkin
-                kind="button"
-                asset={
-                  tab === 'recruit' ? 'ui-button-red-pressed' : 'ui-button-red'
-                }
-              />
+            <TabsTrigger
+              value="recruit"
+              className="creation-tab creation-tab-recruit"
+            >
               <PackIcon asset="goblin-avatar" />
               <span>Recruter des créatures</span>
             </TabsTrigger>

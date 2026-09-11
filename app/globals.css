@@ -594,6 +594,26 @@ svg {
 .build-tabs [data-slot='tabs-trigger']::after {
   display: none;
 }
+/* Both creation tabs share one continuous frame in every interaction state. */
+.build-tabs [data-slot='tabs-trigger'].creation-tab {
+  box-sizing: border-box;
+  border: 2px solid #383b3b;
+  border-radius: 4px;
+  background: var(--creation-fill);
+  box-shadow: inset 0 0 0 1px #c6b79b, inset 0 -4px 0 #0003;
+  transform: none;
+}
+.build-tabs .creation-tab-build {
+  --creation-fill: #517e8c;
+  --creation-selected: #3e5e71;
+}
+.build-tabs .creation-tab-recruit {
+  --creation-fill: #ed575d;
+  --creation-selected: #b94550;
+}
+.build-tabs [data-slot='tabs-trigger'].creation-tab[data-active] {
+  background: var(--creation-selected);
+}
 /* Keep the map viewport stable across tabs and recruitment progress updates. */
 .game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {
   flex: 0 0 144px;
@@ -3307,7 +3327,7 @@ svg {
   gap: 8px;
 }
 .game-shell[data-compact='false'] .build-tabs [role='tab'] {
-  border: 0;
+  border: 2px solid #383b3b;
   width: 100%;
   height: 48px;
   min-width: 0;
