@@ -95,6 +95,8 @@ export class SoundEvents {
                   : 'spawn-soldier',
             point: unit,
           });
+      for (const corpse of s.domain.corpses)
+        if (corpse.at > this.time) cues.push({ kind: 'death', point: corpse });
       for (const death of s.domain.deaths)
         if (death.at > this.time) cues.push({ kind: 'death', point: death });
       if (s.strategy.research.length > this.research)

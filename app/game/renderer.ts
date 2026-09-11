@@ -44,6 +44,7 @@ import { ParticleFeedback } from './particles';
 import { hasResearch, towerOccupant } from './strategy';
 import {
   selectedUnitIds,
+  unitsOfSameType,
   unitSelection,
   unitsInRectangle,
   extendUnitSelection,
@@ -85,6 +86,7 @@ export class Renderer {
   >();
   private ownership = '';
   private pointer: Point | null = null;
+  private lastUnitClick: { id: number; at: number; point: Point } | null = null;
   private decorations: Decoration[] = [];
   private shore: GroundTile[] = [];
   private hits: Hit[] = [];
@@ -98,6 +100,8 @@ export class Renderer {
   private resizeObserver: ResizeObserver;
   private frame = 0;
   private disposed = false;
+  private suspended = false;
+  private initialized = false;
   private width = 0;
   private height = 0;
   private viewport = { x: 0, y: 0, width: 0, height: 0 };
@@ -220,6 +224,7 @@ export class Renderer {
       this.resize();
       this.ready = true;
       this.onReady();
+      this.initialized = true;
       this.render();
     } catch {
       if (!this.disposed) {
@@ -438,6 +443,7 @@ export class Renderer {
     if (!this.down || e.pointerId !== this.down.pointerId) return;
     this.pointerMove(e);
     const p = this.point(e);
+    if (this.dragging) this.lastUnitClick = null;
     if (this.dragging && this.down.mode === 'select') {
       const ids = unitsInRectangle(
         this.getState().units,
@@ -478,7 +484,17 @@ export class Renderer {
           .sort((a, b) => a.distance - b.distance)[0];
         if (nearby) hit = { type: nearby.type, id: nearby.id };
       }
-      if (
+      const now = performance.now();
+      const previous = this.lastUnitClick;
+      const doubleClick = hit?.type === 'unit' && previous?.id === hit.id &&
+        now - previous.at <= 350 && Math.hypot(p.x - previous.point.x, p.y - previous.point.y) <= 12 &&
+        this.interactionMode !== 'command' && !this.buildKind;
+      this.lastUnitClick = hit?.type === 'unit' && !doubleClick && this.interactionMode !== 'command' && !this.buildKind
+        ? { id: hit.id, at: now, point: p } : null;
+      if (doubleClick && hit?.type === 'unit') {
+        const ids = unitsOfSameType(this.getState().units, hit.id);
+        this.onSelect(this.down.additive ? extendUnitSelection(this.selection, ids) : unitSelection(ids));
+      } else if (
         this.interactionMode === 'command' ||
         (this.interactionMode === 'inspect' &&
           !this.down.additive &&
@@ -504,6 +520,7 @@ export class Renderer {
       this.canvas.releasePointerCapture(e.pointerId);
   };
   private pointerCancel = () => {
+    this.lastUnitClick = null;
     for (const id of this.touches.keys())
       if (this.canvas.hasPointerCapture(id))
         this.canvas.releasePointerCapture(id);
@@ -861,8 +878,14 @@ export class Renderer {
       this.draw.whole('ui-shield', x + 5, y - 42, 20, 20);
     }
   }
+  public setSuspended(suspended: boolean) {
+    if (suspended === this.suspended) return;
+    this.suspended = suspended;
+    cancelAnimationFrame(this.frame);
+    if (!suspended && this.initialized && !this.disposed) this.render();
+  }
   private render = () => {
-    if (this.disposed) return;
+    if (this.disposed || this.suspended) return;
     this.updateCursor();
     const s = this.getState(),
       t = this.reducedMotion ? 0 : s.elapsed;
@@ -1678,7 +1701,7 @@ export class Renderer {
       const bar = buildingBars.get(l.id);
       // Anchor names to the visible roof, above both health and construction bars.
       const stackedBar =
-        l.construction && l.hp < l.maxHp ? 14 + 3 / this.scale : 0;
+        (l.construction || l.upgrading) && l.hp < l.maxHp ? 14 + 3 / this.scale : 0;
       const labelY = bar
         ? bar.y - stackedBar - 2 - (12 * this.uiScale) / this.scale
         : (l.y + 8) * CELL + 16;
@@ -1686,6 +1709,8 @@ export class Renderer {
         if (l.hp < l.maxHp) this.bar(bar.x, bar.y, l.hp / l.maxHp, 80);
         if (l.construction)
           this.bar(bar.x, bar.y - stackedBar, l.construction.progress, 90);
+        else if (l.upgrading)
+          this.bar(bar.x, bar.y - stackedBar, 1 - l.upgrading.remaining / l.upgrading.duration, 90);
       }
       const hovered = this.hover?.type === 'lot' && this.hover.id === l.id;
       if (this.selection.type === 'lot' && this.selection.id === l.id)
@@ -1694,7 +1719,7 @@ export class Renderer {
           labelY,
           l.construction
             ? `Chantier · ${Math.floor(l.construction.progress * 100)} %`
-            : BUILDINGS[l.kind].name,
+            : l.upgrading ? `Niveau ${l.upgrading.targetLevel} · ${Math.ceil(l.upgrading.remaining)} s` : BUILDINGS[l.kind].name,
         );
       else if (l.kind === 'hall' && !l.owned)
         this.label(x, labelY, 'La mairie');

@@ -15,7 +15,7 @@ import {
   type Research,
 } from './strategy';
 import { ASSETS } from './art';
-import { GameButton as Button } from './PackUI';
+import { GameButton as Button, PackIcon } from './PackUI';
 import { AbilityCard, AbilityCosts } from './AbilityCard';
 import { manorRequirement } from './progression';
 const researchTime = (seconds: number) => {
@@ -79,7 +79,7 @@ export function ResearchPanel({
               </Button>
               {!acquired && (
                 <p className="ability-status" data-blocked={!!error}>
-                  {error || 'Recherche disponible'}
+                  <PackIcon asset="ui-info" /><span>{error || 'Recherche disponible'}</span>
                 </p>
               )}
             </div>
@@ -213,8 +213,8 @@ export function TowerPanel({
               Rapporter le butin
             </Button>
             <p className="ability-status" data-blocked={!!lootError}>
-              {lootError ||
-                'Un gobelin libre rapporte le butin à pied. Sa mort ou un nouvel ordre fait perdre la cargaison.'}
+              <PackIcon asset="ui-info" /><span>{lootError ||
+                'Un gobelin libre rapporte le butin à pied. Sa mort ou un nouvel ordre fait perdre la cargaison.'}</span>
             </p>
           </AbilityCard>
           <AbilityCard title="Fausse alerte" icon="specter-avatar">
@@ -232,7 +232,7 @@ export function TowerPanel({
               Déclencher l’alerte
             </Button>
             <p className="ability-status" data-blocked={!!alarmError}>
-              {alarmError || 'Disponible · récupération 60 s'}
+              <PackIcon asset="ui-info" /><span>{alarmError || 'Disponible · récupération 60 s'}</span>
             </p>
           </AbilityCard>
           <p>

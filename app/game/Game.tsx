@@ -60,7 +60,8 @@ import { Bestiary } from './Bestiary';
 import { CombatDetails } from './CombatDetails';
 import { CommandWheel } from './CommandWheel';
 import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
-import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
+import { UpgradeBenefit } from './UpgradeBenefit';
+import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit, upgradeDuration } from './progression';
 import { ManorProgression } from './ManorProgression';
 import { shieldActive, shieldSettings, provocationReason } from './shields';
 import { DomainPanel } from './DomainPanel';
@@ -372,6 +373,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     };
   }, [select, command, gameStore]);
   useEffect(() => {
+    const suspend = () => rendererRef.current?.setSuspended(modal !== null || document.hidden);
+    suspend();
+    document.addEventListener('visibilitychange', suspend);
+    return () => document.removeEventListener('visibilitychange', suspend);
+  }, [modal, ready]);
+  useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.selection = selection;
       rendererRef.current.buildKind = pendingBuild;
@@ -421,6 +428,29 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     [run],
   );
   useEffect(() => {
+    const held = new Map<string, [number, number]>();
+    let frame = 0;
+    let previous = 0;
+    const stop = () => {
+      held.clear();
+      cancelAnimationFrame(frame);
+      frame = 0;
+      previous = 0;
+    };
+    const move = (now: number) => {
+      if (!held.size) { stop(); return; }
+      const dt = previous ? Math.min((now - previous) / 1000, 0.05) : 1 / 60;
+      previous = now;
+      let x = 0, y = 0;
+      for (const direction of held.values()) { x += direction[0]; y += direction[1]; }
+      const length = Math.hypot(x, y);
+      if (length) rendererRef.current?.pan(x / length * 600 * dt, y / length * 600 * dt);
+      frame = requestAnimationFrame(move);
+    };
+    const keyup = (event: KeyboardEvent) => {
+      held.delete(event.code || event.key.toLowerCase());
+      if (!held.size) stop();
+    };
     const keydown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (
@@ -465,11 +495,21 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
         movement[event.key] ?? movement[event.key.toLowerCase()];
       if (direction && !event.ctrlKey && !event.metaKey && !event.altKey) {
         event.preventDefault();
-        rendererRef.current?.pan(...direction);
+        held.set(event.code || event.key.toLowerCase(), direction);
+        if (!frame) frame = requestAnimationFrame(move);
       }
     };
     window.addEventListener('keydown', keydown);
-    return () => window.removeEventListener('keydown', keydown);
+    window.addEventListener('keyup', keyup);
+    window.addEventListener('blur', stop);
+    document.addEventListener('visibilitychange', stop);
+    return () => {
+      stop();
+      window.removeEventListener('keydown', keydown);
+      window.removeEventListener('keyup', keyup);
+      window.removeEventListener('blur', stop);
+      document.removeEventListener('visibilitychange', stop);
+    };
   }, [modal, tab, chooseBuild, chooseRecruit, run]);
 
   const group = s.units.filter(
@@ -1192,7 +1232,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                           </Button>
                         ) : (
                           <>
-                            {canUpgradeKind(selectedLot.kind) && <Button
+                            {selectedLot.upgrading && <output className="upgrade-status">
+                              <strong>Niveau {selectedLot.upgrading.targetLevel} · Amélioration</strong>
+                              <Progress className="healthbar" value={(1 - selectedLot.upgrading.remaining / selectedLot.upgrading.duration) * 100} aria-label="Avancement de l’amélioration" />
+                              <span>{Math.ceil(selectedLot.upgrading.remaining)} s restantes</span>
+                            </output>}
+                            {canUpgradeKind(selectedLot.kind) && !selectedLot.upgrading && <Button
                               className="primary-btn"
                               disabled={!!upgradeReason(s, selectedLot.id)}
                               title={upgradeReason(s, selectedLot.id) || upgradeBenefit(selectedLot)}
@@ -1203,12 +1248,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                               <ArrowUp size={15} />
                               {selectedLot.level >= 3
                                 ? 'Niveau maximal'
-                                : `Passer au niveau ${selectedLot.level + 1}`}
+                                : `Niveau ${selectedLot.level + 1} · ${upgradeDuration(selectedLot)} s`}
                             </Button>}
-                            {canUpgradeKind(selectedLot.kind) && (selectedLot.kind !== 'hq' || selectedLot.level >= 3) && <p className="reason">{buildingLevelEffect(selectedLot.kind, selectedLot.level)}.</p>}
-                            {canUpgradeKind(selectedLot.kind) && selectedLot.level < 3 && (
+                            {canUpgradeKind(selectedLot.kind) && (selectedLot.upgrading || selectedLot.level >= 3) && <p className="reason">{buildingLevelEffect(selectedLot.kind, selectedLot.level)}.</p>}
+                            {canUpgradeKind(selectedLot.kind) && !selectedLot.upgrading && selectedLot.level < 3 && (
                               <div style={{ marginTop: 8 }}>
-                                <p className="reason">{upgradeBenefit(selectedLot)}</p>
+                                <UpgradeBenefit lot={selectedLot} />
                                 <Costs cost={upgradeCost(selectedLot)} />
                               </div>
                             )}
@@ -1219,7 +1264,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                                 cette propriété.
                               </p>
                             )}
-                            {canUpgradeKind(selectedLot.kind) && upgradeReason(s, selectedLot.id) &&
+                            {canUpgradeKind(selectedLot.kind) && !selectedLot.upgrading && upgradeReason(s, selectedLot.id) &&
                               selectedLot.level < 3 && (
                                 <p className="reason">
                                   {upgradeReason(s, selectedLot.id)}

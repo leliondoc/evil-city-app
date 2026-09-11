@@ -12,6 +12,7 @@ import {
 } from '../app/game/engine.ts';
 import {
   dragIntent,
+  unitsOfSameType,
   unitSelection,
   selectedUnitIds,
   unitsInRectangle,
@@ -256,4 +257,17 @@ test('Interception shows attack feedback and rejected interceptions preserve the
   enemy.hp = 0;
   assert.notEqual(intercept(s, enemy.id), '');
   assert.equal(s.attackOrder, accepted);
+});
+
+test('Same-type selection includes distant living allies and excludes other types and fallen units', () => {
+  const units = [
+    { id: 1, kind: 'goblin', hp: 10, x: 0, y: 0 },
+    { id: 2, kind: 'goblin', hp: 10, x: 30, y: 30 },
+    { id: 3, kind: 'goblin', hp: 0 },
+    { id: 4, kind: 'spear-goblin', hp: 10 },
+  ];
+  assert.deepEqual(unitsOfSameType(units, 1), [1, 2]);
+  assert.deepEqual(unitsOfSameType(units, 4), [4]);
+  assert.deepEqual(unitsOfSameType(units, 3), []);
+  assert.deepEqual(unitsOfSameType(units, 99), []);
 });

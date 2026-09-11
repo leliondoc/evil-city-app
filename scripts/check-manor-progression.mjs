@@ -57,6 +57,20 @@ try {
     await page.mouse.click(point.x, point.y);
     await page.keyboard.up('Shift');
   };
+  const finishUpgrade = async (id) => {
+    assert.equal(await page.evaluate((id) => window.manorState.lots[id].level, id), id === 6 && await page.evaluate(() => window.manorState.lots[6].upgrading.targetLevel) === 3 ? 2 : 1);
+    const remaining = await page.evaluate((id) => window.manorState.lots[id].upgrading.remaining, id);
+    await page.waitForTimeout(400);
+    assert.equal(await page.evaluate((id) => window.manorState.lots[id].upgrading.remaining, id), remaining, 'Pause freezes upgrades');
+    await page.evaluate(async (id) => {
+      const { tick } = await import('/app/game/engine.ts');
+      const s = window.manorState;
+      for (let i = 0; i < 1000 && s.lots[id].upgrading; i++) tick(s, 0.1);
+    }, id);
+    await page.getByRole('button', { name: 'Reprendre', exact: true }).click();
+    await page.waitForTimeout(180);
+    await page.getByRole('button', { name: 'Mettre en pause', exact: true }).click();
+  };
   const panel = page.locator('.selection-panel');
   const crypt = page.getByRole('button', { name: /^Crypte des murmures/ });
   const forge = page.getByRole('button', { name: /^Hutte des Trolls/ });
@@ -64,10 +78,10 @@ try {
   assert.match(await crypt.innerText(), /manoir au niveau 2/);
   assert.match(await forge.innerText(), /manoir au niveau 3/);
   await selectLot(3);
-  assert.match(await panel.innerText(), /6 → 12 places/);
+  assert.match(await panel.locator('.upgrade-benefit-values').innerText(), /6[\s\S]*12 places/);
   assert.ok(
     await panel
-      .getByRole('button', { name: 'Passer au niveau 2', exact: true })
+      .getByRole('button', { name: /Niveau 2 · \d+ s/ })
       .isDisabled(),
   );
   assert.ok(
@@ -84,12 +98,17 @@ try {
     ...window.manorState.resources,
   }));
   await panel
-    .getByRole('button', { name: 'Passer au niveau 2', exact: true })
+    .getByRole('button', { name: /Niveau 2 · \d+ s/ })
     .click();
+  assert.equal(await page.evaluate(() => window.manorState.lots[6].level), 1);
+  assert.match(await panel.innerText(), /60 s restantes/);
+  await page.screenshot({ path: join(output, 'manor-upgrading.png') });
+  const charged = await page.evaluate(() => ({ ...window.manorState.resources }));
+  await finishUpgrade(6);
   assert.equal(await page.evaluate(() => window.manorState.lots[6].level), 2);
   assert.equal(await panel.locator('.manor-tier[data-state="acquired"]').count(), 2);
   assert.equal(await panel.locator('.manor-tier[data-state="next"]').count(), 1);
-  const after = await page.evaluate(() => window.manorState.resources);
+  const after = charged;
   assert.equal(before.gold - after.gold, 80);
   assert.equal(before.wood - after.wood, 35);
   assert.equal(await crypt.getAttribute('aria-disabled'), 'false');
@@ -103,18 +122,20 @@ try {
       .isEnabled(),
   );
   await panel
-    .getByRole('button', { name: 'Passer au niveau 2', exact: true })
+    .getByRole('button', { name: /Niveau 2 · \d+ s/ })
     .click();
-  assert.match(await panel.innerText(), /\+12 places pour la horde/);
+  await finishUpgrade(3);
+  assert.match(await panel.locator('.upgrade-benefit-values').innerText(), /12[\s\S]*18 places/);
   assert.ok(
     await panel
-      .getByRole('button', { name: 'Passer au niveau 3', exact: true })
+      .getByRole('button', { name: /Niveau 3 · \d+ s/ })
       .isDisabled(),
   );
   await selectLot(6);
   await panel
-    .getByRole('button', { name: 'Passer au niveau 3', exact: true })
+    .getByRole('button', { name: /Niveau 3 · \d+ s/ })
     .click();
+  await finishUpgrade(6);
   assert.match(await forge.innerText(), /Terminez crypte/);
   // Build the required crypt using the actual construction UI and simulation.
   await crypt.click();

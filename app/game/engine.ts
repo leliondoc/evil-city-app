@@ -1,6 +1,6 @@
 import { streetCenter } from './streets.ts';
 import { COMBAT, humanMultiplier } from './combat.ts';
-import { BUILDING_TIER, canUpgradeKind, manorRequirement } from './progression.ts';
+import { BUILDING_TIER, canUpgradeKind, manorRequirement, upgradeDuration, advanceBuildingUpgrades } from './progression.ts';
 import { advanceHumanBuildings, humanBuildingHealth } from './humanBuildings.ts';
 import { advanceShields, shieldActive, provocationReason } from './shields.ts';
 import {
@@ -350,6 +350,7 @@ export interface Lot {
   level: number;
   humanKind: BuildingKind;
   construction: null | { kind: BuildingKind; progress: number };
+  upgrading?: { kind: BuildingKind; targetLevel: number; duration: number; remaining: number };
 }
 export interface Unit extends Point {
   provokedBy?: number;
@@ -1505,6 +1506,7 @@ export function upgradeReason(s: State, id: number) {
   const l = s.lots[id];
   if (!l?.owned || l.hp <= 0 || l.kind === 'empty' || l.construction)
     return 'Choisissez un bâtiment terminé.';
+  if (l.upgrading) return 'Amélioration en cours.';
   if (!canUpgradeKind(l.kind)) return 'Ce bâtiment ne possède pas d’amélioration.';
   if (l.level >= 3) return 'Niveau maximal atteint.';
   if (l.kind !== 'hq' && manorRequirement(s, l.level + 1))
@@ -1518,8 +1520,9 @@ export function upgrade(s: State, id: number) {
   if (error) return error;
   const l = s.lots[id];
   pay(s, upgradeCost(l));
-  l.level++;
-  announce(s, `${BUILDINGS[l.kind].name} passe au niveau ${l.level}.`);
+  const duration = upgradeDuration(l);
+  l.upgrading = { kind: l.kind, targetLevel: l.level + 1, duration, remaining: duration };
+  announce(s, `${BUILDINGS[l.kind].name} : amélioration lancée (${duration} s).`);
   return '';
 }
 export function foodBalance(s: State) {
@@ -2090,6 +2093,7 @@ function mobilize(s: State) {
   }
 }
 function loseLot(s: State, lot: Lot) {
+  lot.upgrading = undefined;
   if (lot.kind === 'hq') {
     lot.hp = 0;
     s.lost = true;
@@ -2734,6 +2738,8 @@ function tickStep(s: State, dt: number) {
   separateCombatants(s, dt);
   advanceProjectiles(s, dt);
   spreadBraises(s);
+  for (const lot of advanceBuildingUpgrades(s, dt))
+    announce(s, `${BUILDINGS[lot.kind].name} passe au niveau ${lot.level}.`);
   const defeated = s.enemies.filter((e) => e.hp <= 0);
   for (const e of defeated) leaveCorpse(s, e, 'human');
   s.defeatedEnemies += defeated.length;

@@ -9,6 +9,21 @@ import {
 } from './art';
 import type { CreatureKind } from './engine';
 
+const imageCache = new Map<AssetKey, Promise<HTMLImageElement>>();
+function loadImage(key: AssetKey) {
+  let image = imageCache.get(key);
+  if (!image) {
+    image = new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => { imageCache.delete(key); reject(new Error(`Missing sprite ${key}`)); };
+      im.src = ASSETS[key].src;
+    });
+    imageCache.set(key, image);
+  }
+  return image;
+}
+
 /** Preview the same unmodified sprite strips used on the map. */
 export function Sprite({
   asset,
@@ -34,37 +49,40 @@ export function Sprite({
   flankingTowers?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const sequenceKey = (providedSequence ?? (creature ? animationSequence(creature, action, mounted) : [asset!])).join(',');
   useEffect(() => {
     const canvas = ref.current!,
       ctx = canvas.getContext('2d')!;
-    const sequence =
-      providedSequence ??
-      (creature ? animationSequence(creature, action, mounted) : [asset!]);
+    const sequence = sequenceKey.split(',') as AssetKey[];
     const images = new Map<AssetKey, HTMLImageElement>();
     let frame = 0,
       disposed = false;
+    let visible = false;
+    let repaint: (() => void) | null = null;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      clearTimeout(frame);
+      if (visible && !document.hidden) repaint?.();
+    });
+    observer.observe(canvas);
+    const visibility = () => {
+      clearTimeout(frame);
+      if (visible && !document.hidden) repaint?.();
+    };
+    document.addEventListener('visibilitychange', visibility);
     const reduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
     const start = performance.now();
     Promise.all(
       [...new Set([...sequence, ...(ground ? [ground] : []), ...(flankingTowers ? ['tower-blue' as const] : [])])].map(
-        (key) =>
-          new Promise<void>((resolve, reject) => {
-            const im = new Image();
-            im.onload = () => {
-              images.set(key, im);
-              resolve();
-            };
-            im.onerror = reject;
-            im.src = ASSETS[key].src;
-          }),
+        async (key) => { images.set(key, await loadImage(key)); },
       ),
     )
       .then(() => {
         if (disposed) return;
         const draw = () => {
-          if (disposed) return;
+          if (disposed || !visible || document.hidden) return;
           const sample = animationFrame(
               sequence,
               reduced ? 0 : (performance.now() - start) / 1000,
@@ -101,8 +119,9 @@ export function Sprite({
               ctx.drawImage(tower, 128 + side * 82 - 24, 128 + a.height * scale / 2 - 100, 48, 96);
           }
           if (!reduced && sequence.some((key) => ASSETS[key].frames > 1))
-            frame = requestAnimationFrame(draw);
+            frame = window.setTimeout(draw, 100);
         };
+        repaint = draw;
         draw();
       })
       .catch(() => {
@@ -110,9 +129,11 @@ export function Sprite({
       });
     return () => {
       disposed = true;
-      cancelAnimationFrame(frame);
+      clearTimeout(frame);
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', visibility);
     };
-  }, [asset, creature, action, providedSequence, figure, mounted, ground, flankingTowers]);
+  }, [sequenceKey, creature, figure, ground, flankingTowers]);
   return (
     <canvas
       ref={ref}

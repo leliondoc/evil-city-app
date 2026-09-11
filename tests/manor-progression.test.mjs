@@ -1,3 +1,4 @@
+import { upgradeAndFinish } from './upgrade-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -113,7 +114,7 @@ test('Every construction entry point enforces the manor tier before spending res
     assert.match(buildMenuReason(s, kind), expected);
     assert.match(build(s, 7, kind), expected);
     assert.deepEqual(s, before);
-    while (manorLevel(s) < tier) assert.equal(upgrade(s, 6), '');
+    while (manorLevel(s) < tier) assert.equal(upgradeAndFinish(s, 6), '');
     assert.equal(buildUnlockReason(s, kind), '');
     s.lots[5].construction = { kind: s.lots[5].kind, progress: 0.9 };
     assert.match(buildUnlockReason(s, kind), /Terminez/);
@@ -132,8 +133,8 @@ test('Building upgrades are capped by the manor and rejected orders do not spend
       assert.match(upgradeReason(s, 7), /manoir/);
       assert.ok(upgrade(s, 7));
       assert.deepEqual(s, before);
-      assert.equal(upgrade(s, 6), '');
-      assert.equal(upgrade(s, 7), '');
+      assert.equal(upgradeAndFinish(s, 6), '');
+      assert.equal(upgradeAndFinish(s, 7), '');
       assert.equal(s.lots[7].level, level + 1);
       assert.equal(s.lots[7].level, manorLevel(s));
     }
@@ -162,7 +163,7 @@ test('All research tiers are required even with a funded room; upgrades never gr
     const before = structuredClone(s);
     assert.match(research(s, key), new RegExp(`niveau ${def.manor}`));
     assert.deepEqual(s, before);
-    while (manorLevel(s) < def.manor) assert.equal(upgrade(s, 6), '');
+    while (manorLevel(s) < def.manor) assert.equal(upgradeAndFinish(s, 6), '');
     assert.ok(!s.strategy.research.includes(key));
     assert.equal(research(s, key), '');
     advanceResearch(s, def.duration - 1);
@@ -179,33 +180,33 @@ test('Upgrade descriptions reflect the actual capacity, economy and army benefit
   const soldier = s.units[0];
   assert.match(upgradeBenefit(s.lots[6]), /crypte.*cochons/);
   const essence = rates(s).mana;
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.ok(Math.abs(rates(s).mana - essence - 0.18) < 1e-8);
   assert.match(upgradeBenefit(s.lots[6]), /hutte.*feu/);
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.match(upgradeBenefit(s.lots[3]), /6 → 12/);
   const places = capacity(s);
-  upgrade(s, 3);
+  upgradeAndFinish(s, 3);
   assert.equal(capacity(s) - places, 6);
   for (const kind of ['crypt', 'guild']) {
     Object.assign(s.lots[7], { kind, level: 1 });
     const before = rates(s).mana;
-    upgrade(s, 7);
+    upgradeAndFinish(s, 7);
     assert.ok(
       Math.abs(rates(s).mana - before - (kind === 'crypt' ? 0.4 : 0.3)) < 1e-8,
     );
   }
   Object.assign(s.lots[7], { kind: 'forge', level: 1 });
   const damage = armyDamage(s, soldier);
-  upgrade(s, 7);
+  upgradeAndFinish(s, 7);
   assert.ok(Math.abs(armyDamage(s, soldier) / damage - 1.15) < 1e-8);
   assert.match(buildingLevelEffect('forge', 2), /\+15 %/);
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
   Object.assign(s.lots[7], { kind: 'canteen', level: 1 });
   s.units = Array.from({ length: 10 }, (_, i) => ({ ...soldier, id: i + 100 }));
   assert.equal(foodBalance(s).consumption, 24);
-  upgrade(s, 7);
+  upgradeAndFinish(s, 7);
   assert.equal(foodBalance(s).consumption, 18);
-  upgrade(s, 7);
+  upgradeAndFinish(s, 7);
   assert.equal(foodBalance(s).consumption, 12);
 });

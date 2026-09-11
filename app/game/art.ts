@@ -48,8 +48,9 @@ export function buildingArt(kind: BuildingKind, owned = true, level = 1, id = 0)
     const tier = humanBuildingTier(level);
     if (kind === 'hall' && tier >= 2) return 'human-fortress-blue';
     if (kind === 'guild' && tier >= 2) return tier === 3 ? 'human-citadel-yellow' : 'human-barracks-yellow';
-    if (kind === 'tavern' && tier >= 2) return tier === 3 ? 'human-barracks-blue' : 'human-archery-blue';
-    if (kind === 'house') return tier === 3 ? 'human-barracks-blue' : tier === 2 ? 'human-archery-blue' : `house-blue-${(id % 2) + 2}` as AssetKey;
+    // Civilian buildings keep their economic identity at every city level.
+    if (kind === 'tavern') return 'tavern-blue';
+    if (kind === 'house') return (['house-blue', 'house-blue-2', 'house-blue-3'] as const)[id % 3];
   }
   if (kind === 'guild' && !owned) return 'guild-yellow';
   if (kind === 'den') return 'cave';

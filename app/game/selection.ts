@@ -79,3 +79,9 @@ export function extendUnitSelection(
   }
   return unitSelection([...selected]);
 }
+
+/** Select the living player units of this type throughout the district. */
+export function unitsOfSameType(units: Unit[], id: number): number[] {
+  const clicked = units.find((unit) => unit.id === id && unit.hp > 0);
+  return clicked ? units.filter((unit) => unit.hp > 0 && unit.kind === clicked.kind).map((unit) => unit.id) : [];
+}

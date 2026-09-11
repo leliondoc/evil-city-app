@@ -237,3 +237,17 @@ test('New arrows sound once and a paused simulation produces no repeats', () => 
   s.elapsed++;
   assert.deepEqual(audio.update(s), []);
 });
+
+test('Actual living and undead unit deaths emit one death cue each, without replay', () => {
+  for (const kind of ['goblin', 'skeleton', 'specter', 'spear-goblin']) {
+    const s = establishedGame();
+    s.units[0].kind = kind;
+    const events = new SoundEvents();
+    events.update(s);
+    s.units[0].hp = 0;
+    tick(s, 0.1);
+    assert.equal(events.update(s).filter((cue) => cue.kind === 'death').length, 1, kind);
+    tick(s, 0.1);
+    assert.equal(events.update(s).filter((cue) => cue.kind === 'death').length, 0);
+  }
+});

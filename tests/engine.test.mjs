@@ -1,3 +1,4 @@
+import { upgradeAndFinish } from './upgrade-fixture.mjs';
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -75,7 +76,7 @@ test('Starting at zero reaches every construction tier, funds trolls and repels 
   until(s, () => !claimReason(s, 4));
   assert.equal(claim(s, 4), '');
   until(s, () => !upgradeReason(s, 6));
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   construct(4, 'crypt');
   for (let i = 0; i < 3; i++) {
     until(s, () => !recruitReason(s, 'skeleton'));
@@ -88,7 +89,7 @@ test('Starting at zero reaches every construction tier, funds trolls and repels 
   assault = null;
   assert.equal(defend(s, 4), '');
   until(s, () => !upgradeReason(s, 6));
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   construct(8, 'forge');
   until(s, () => !recruitReason(s, 'troll'));
   assert.equal(recruit(s, 'troll'), '');
@@ -197,9 +198,9 @@ test('Upgrades change production and cannot exceed level three', () => {
   s.resources.gold = 999;
   s.resources.wood = 999;
   const before = rates(s).mana;
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.ok(rates(s).mana > before);
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.ok(upgrade(s, 6));
   assert.equal(s.lots[6].level, 3);
 });
@@ -210,10 +211,10 @@ test('Skeleton and minotaur progression is reachable from a developed domain', (
   s.lots[5].owned = true;
   s.lots[5].kind = 'canteen';
   assert.equal(claim(s, 4), '');
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.equal(build(s, 4, 'crypt'), '');
   until(s, () => s.lots[4].kind === 'crypt');
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.equal(build(s, 7, 'forge'), '');
   until(s, () => s.lots[7].kind === 'forge');
   assert.equal(recruit(s, 'skeleton'), '');

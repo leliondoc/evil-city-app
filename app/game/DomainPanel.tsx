@@ -11,7 +11,7 @@ import {
   sendBribe,
   thought,
 } from './domain';
-import { GameButton as Button } from './PackUI';
+import { GameButton as Button, PackIcon } from './PackUI';
 import { AbilityCard, AbilityCosts } from './AbilityCard';
 import { ResearchPanel } from './StrategyPanel';
 
@@ -111,7 +111,7 @@ export function DomainPanel({
           </Button>
           {hauntError && (
             <p className="ability-status" data-blocked="true">
-              {hauntError}
+              <PackIcon asset="ui-info" /><span>{hauntError}</span>
             </p>
           )}
           <details className="ability-details">
@@ -136,7 +136,7 @@ export function DomainPanel({
             Envoyer la bourse
           </Button>
           <p className="ability-status" data-blocked={!!bribeError}>
-            {bribeError || 'Disponible · récupération 120 s'}
+            <PackIcon asset="ui-info" /><span>{bribeError || 'Disponible · récupération 120 s'}</span>
           </p>
           <details className="ability-details">
             <summary>Transport de la bourse</summary>
@@ -176,7 +176,7 @@ export function DomainPanel({
             Relever un squelette
           </Button>
           <p className="ability-status" data-blocked={!!ritualError}>
-            {ritualError || 'Rituel disponible'}
+            <PackIcon asset="ui-info" /><span>{ritualError || 'Rituel disponible'}</span>
           </p>
           <label className="domain-toggle">
             <input

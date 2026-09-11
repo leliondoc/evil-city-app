@@ -1,7 +1,8 @@
+import { upgradeAndFinish } from './upgrade-fixture.mjs';
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tick, upgrade, entrance, RESOURCE_CAP } from '../app/game/engine.ts';
+import { tick, entrance, RESOURCE_CAP } from '../app/game/engine.ts';
 import { strategyUnit } from '../app/game/strategy.ts';
 
 test('Without workers only essence grows; buildings never fill material stocks', () => {
@@ -18,8 +19,8 @@ test('Without workers only essence grows; buildings never fill material stocks',
     mana: RESOURCE_CAP,
   });
   assert.equal(s.resourceGains.length, 0);
-  assert.equal(upgrade(s, 6), '');
-  assert.equal(upgrade(s, 3), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 3), '');
   const materials = { ...s.resources };
   tick(s, 10);
   assert.deepEqual(s.resources, materials);

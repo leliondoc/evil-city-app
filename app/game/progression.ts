@@ -76,3 +76,27 @@ export function upgradeBenefit(lot: Pick<Lot, 'kind' | 'level'>): string {
       return '';
   }
 }
+
+/** Seconds of simulation time; existing services remain active until completion. */
+export function upgradeDuration(lot: Pick<Lot, 'kind' | 'level'>): number {
+  if (lot.kind === 'hq') return lot.level === 1 ? 60 : 90;
+  return (lot.kind === 'den' || lot.kind === 'canteen' ? 30 : 45) + (lot.level - 1) * 15;
+}
+export function advanceBuildingUpgrades(s: State, dt: number): Lot[] {
+  const completed: Lot[] = [];
+  for (const lot of s.lots) {
+    const job = lot.upgrading;
+    if (!job) continue;
+    if (!lot.owned || lot.hp <= 0 || lot.construction || lot.kind !== job.kind || lot.level !== job.targetLevel - 1) {
+      lot.upgrading = undefined;
+      continue;
+    }
+    if (s.won || s.lost || !Number.isFinite(dt) || dt <= 0) continue;
+    job.remaining = Math.max(0, job.remaining - dt);
+    if (job.remaining > 1e-7) continue;
+    lot.level = job.targetLevel;
+    lot.upgrading = undefined;
+    completed.push(lot);
+  }
+  return completed;
+}

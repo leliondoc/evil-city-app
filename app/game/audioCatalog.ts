@@ -59,7 +59,7 @@ export const SOUND_DEFS: Record<SoundKind, SoundDefinition> = {
   'spawn-undead': { clips: ['ritual'], gain: 0.25, cooldown: 0.8, priority: 3 },
   ritual: { clips: ['ritual'], gain: 0.25, cooldown: 1, priority: 3 },
   destroy: { clips: ['rubble'], gain: 0.4, cooldown: 1, priority: 3 },
-  death: { clips: ['fall'], gain: 0.25, cooldown: 0.4, priority: 2 },
+  death: { clips: ['fall'], gain: 0.48, cooldown: 0.18, priority: 3 },
   'step-dirt': {
     clips: ['dirt-1', 'dirt-2'],
     gain: 0.095,

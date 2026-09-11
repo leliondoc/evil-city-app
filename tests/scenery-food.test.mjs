@@ -1,3 +1,4 @@
+import { upgradeAndFinish } from './upgrade-fixture.mjs';
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -6,7 +7,6 @@ import {
   tick,
   foodBalance,
   rates,
-  upgrade,
   findPath,
   entrance,
   resourceApproach,
@@ -188,8 +188,8 @@ test('A canteen consumes harvested food more efficiently without generating any 
   assert.equal(s.resources.food, 0);
   assert.equal(foodBalance(s).consumption, 8);
   assert.equal(rates(s).food, -8 / 60);
-  assert.equal(upgrade(s, 6), '');
-  assert.equal(upgrade(s, 7), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 7), '');
   assert.equal(foodBalance(s).consumption, 6);
   s.lots[7].owned = false;
   assert.equal(foodBalance(s).consumption, 9);

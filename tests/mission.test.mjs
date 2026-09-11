@@ -1,3 +1,4 @@
+import { upgradeAndFinish } from './upgrade-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -7,7 +8,6 @@ import {
   claim,
   attack,
   tick,
-  upgrade,
 } from '../app/game/engine.ts';
 import { mission } from '../app/game/mission.ts';
 import { drawTerrain } from '../app/game/terrainRenderer.ts';
@@ -60,13 +60,13 @@ test('The opening guides a real conquest before building the forge, then keeps c
   advanceUntil(s, () => s.lots[target].owned);
   assert.equal(mission(s).current.id, 'manor2');
   assert.deepEqual(mission(s).hint.action, { type: 'inspect', lotId: 6 });
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.equal(mission(s).current.id, 'claim');
   assert.equal(claim(s, mission(s).hint.action.lotId), '');
   assert.equal(mission(s).current.id, 'crypt');
   assert.equal(build(s, mission(s).hint.action.lotId, 'crypt'), '');
   advanceUntil(s, () => mission(s).current.id === 'manor3');
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
   assert.equal(mission(s).current.id, 'forge');
   assert.deepEqual(mission(s).hint.action, {
     type: 'inspect',

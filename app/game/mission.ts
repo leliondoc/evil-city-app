@@ -184,7 +184,7 @@ export function mission(s: State) {
   else if (current?.id === 'manor2' || current?.id === 'manor3') {
     const manor = s.lots.find((lot) => lot.owned && lot.kind === 'hq');
     if (manor) hint = {
-      detail: upgradeBenefit(manor),
+      detail: manor.upgrading ? `Amélioration en cours · ${Math.ceil(manor.upgrading.remaining)} s restantes.` : upgradeBenefit(manor),
       button: `Voir le manoir · niveau ${manor.level + 1}`,
       action: { type: 'inspect', lotId: manor.id },
       marker: { lotId: manor.id, kind: 'build', label: 'Améliorer le manoir' },

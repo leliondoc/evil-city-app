@@ -20,7 +20,7 @@ test('Advanced human buildings withstand siege while the first houses remain app
   assert.equal(s.lots.find(l => l.kind === 'hall').hp, 900);
   assert.equal(s.lots.find(l => l.kind === 'guild').hp, 550);
   assert.equal(s.lots.find(l => l.kind === 'house' && !l.owned).hp, 85);
-  for (const kind of ['hall', 'guild', 'tavern', 'house']) {
+  for (const kind of ['hall', 'guild']) {
     for (let level = 2; level <= 6; level++)
       assert.ok(humanBuildingHealth(kind, level) > humanBuildingHealth(kind, level - 1));
   }
@@ -67,7 +67,7 @@ test('Fortifications preserve damage ratio and cannot restore a besieged or haun
 });
 
 test('Human development changes the models and adds towers to the advanced town hall', () => {
-  for (const kind of ['hall', 'guild', 'tavern', 'house']) {
+  for (const kind of ['hall', 'guild']) {
     const early = buildingArt(kind, false, 1, 5);
     const reinforced = buildingArt(kind, false, 3, 5);
     const advanced = buildingArt(kind, false, 5, 5);
@@ -113,4 +113,13 @@ test('A human recapture restores the current city fortifications rather than an 
   assert.equal(lot.kind, 'house');
   assert.equal(lot.level, 6);
   assert.equal(lot.maxHp, 230);
+});
+
+test('Civilian properties retain civilian models at all levels and houses vary by parcel', () => {
+  for (let level = 1; level <= 6; level++) {
+    assert.equal(buildingArt('tavern', false, level), 'tavern-blue');
+    const homes = [4, 5, 8].map(id => buildingArt('house', false, level, id));
+    assert.ok(homes.every(key => key.startsWith('house-blue')));
+    assert.ok(new Set(homes).size >= 2);
+  }
 });

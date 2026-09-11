@@ -1,10 +1,10 @@
+import { upgradeAndFinish } from './upgrade-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createGame,
   recruit,
   recruitReason,
-  upgrade,
   tick,
   moveUnit,
   unitSpeed,
@@ -36,7 +36,7 @@ function prepared() {
   return s;
 }
 function unlock(s) {
-  assert.equal(upgrade(s, 6), '');
+  assert.equal(upgradeAndFinish(s, 6), '');
 }
 
 test('Foot lanciers recruit at tier one without a crypt; pig riding requires manor level two', () => {
