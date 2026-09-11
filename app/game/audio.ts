@@ -44,6 +44,7 @@ export class GameAudio {
   private sequence = new Map<SoundKind, number>();
   private paused = false;
   private disposed = false;
+  private confirmation = 0;
   private status: AudioStatus = 'idle';
 
   constructor(
@@ -145,6 +146,10 @@ export class GameAudio {
     if (paused) this.stop();
   }
 
+  setMusicPaused(paused: boolean) {
+    this.music.setPaused(paused);
+  }
+
   update(s: State) {
     // Consume events even while muted so turning sound back on never replays them.
     const cues = this.events.update(s);
@@ -157,6 +162,24 @@ export class GameAudio {
   preview() {
     this.unlock();
     this.play({ kind: 'chop' }, true);
+  }
+
+  confirmRecruit() {
+    if (this.disposed || this.settings.muted || this.settings.volume === 0)
+      return;
+    this.unlock();
+    const confirmation = ++this.confirmation;
+    const clickedAt = performance.now();
+    if (this.status === 'ready') this.play({ kind: 'recruit' }, true);
+    else
+      void this.loading?.then(() => {
+        // First interaction may still be decoding. Never replay a backlog of clicks.
+        if (
+          confirmation === this.confirmation &&
+          performance.now() - clickedAt < 1500
+        )
+          this.play({ kind: 'recruit' }, true);
+      });
   }
 
   private play(cue: SoundCue, preview = false) {

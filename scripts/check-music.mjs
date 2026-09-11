@@ -72,6 +72,36 @@ try {
   });
   await page.waitForFunction(() => !window.musicElement.paused);
   await page.clock.install();
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Mettre en pause', exact: true })
+    .click();
+  assert.equal(await page.evaluate(() => window.musicElement.paused), true);
+  const pausedAt = await page.evaluate(() => window.musicElement.currentTime);
+  await page.clock.fastForward(10_000);
+  assert.equal(
+    await page.evaluate(() => window.musicElement.currentTime),
+    pausedAt,
+  );
+  await page
+    .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })
+    .click();
+  await page.getByLabel('Volume de la musique').fill('15');
+  assert.equal(
+    await page.evaluate(() => window.musicElement.paused),
+    true,
+    'Settings cannot override manual pause',
+  );
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => !window.musicElement.paused);
+  assert.ok(
+    await page.evaluate((t) => window.musicElement.currentTime >= t, pausedAt),
+  );
+  await page
+    .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })
+    .click();
   const played = [await page.evaluate(() => window.musicElement.src)];
   for (let index = 2; index <= 9; index++) {
     const previous = played.at(-1);
@@ -82,6 +112,17 @@ try {
     // Ordinary clicks and volume changes must not bypass the scheduled silence.
     await page.getByLabel('Volume de la musique').fill('15');
     if (index === 2) {
+      await page
+        .getByRole('button', { name: 'Garder le jeu en pause', exact: true })
+        .click();
+      await page.clock.fastForward(240_000);
+      assert.equal(
+        await page.evaluate(() => window.musicElement.src),
+        previous,
+      );
+      await page
+        .getByRole('button', { name: 'Reprendre à la fermeture', exact: true })
+        .click();
       await page
         .getByRole('button', { name: 'Couper le son', exact: true })
         .click();

@@ -8,6 +8,7 @@ type SoundDefinition = {
 };
 // Prioritize significant events over work and footsteps, never just turn everything up.
 export const SOUND_DEFS: Record<SoundKind, SoundDefinition> = {
+  recruit: { clips: ['magic-2'], gain: 0.38, cooldown: 0.12, priority: 3 },
   chop: {
     clips: ['chop-1', 'chop-2', 'chop-3'],
     gain: 0.24,

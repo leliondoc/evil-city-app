@@ -270,6 +270,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   }, [audioSettings]);
   useEffect(() => {
     audioRef.current?.setPaused(paused || modal !== null || document.hidden);
+    audioRef.current?.setMusicPaused(paused);
   }, [paused, modal]);
 
   const notify = useCallback((message: string) => {
@@ -279,9 +280,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   }, []);
   const run = useCallback(
     (action: (s: State) => string | void) => {
+      const queuedBefore = gameStore.getState().recruits.length;
       const error = action(gameStore.getState());
       if (error) notify(error);
       else {
+        if (gameStore.getState().recruits.length > queuedBefore)
+          audioRef.current?.confirmRecruit();
         gameStore.publish();
       }
       return !error;

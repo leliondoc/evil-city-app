@@ -2,6 +2,7 @@ import type { Point, State } from './engine';
 import { ISLAND_BRIDGES } from './islandRoutes.ts';
 
 export type SoundKind =
+  | 'recruit'
   | 'chop'
   | 'mine'
   | 'melee'

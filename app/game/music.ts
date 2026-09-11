@@ -12,6 +12,7 @@ export class GameMusic {
   private breakTimer: ReturnType<typeof setTimeout> | null = null;
   private breakStarted = 0;
   private muted = false;
+  private paused = false;
   private volume = 0.2;
   private disposed = false;
   private failed = false;
@@ -59,6 +60,11 @@ export class GameMusic {
     this.sync();
   }
 
+  setPaused(paused: boolean) {
+    this.paused = paused;
+    this.sync();
+  }
+
   private load() {
     if (!this.element || !this.context || !this.gain) return;
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
@@ -75,7 +81,7 @@ export class GameMusic {
       !this.gain
     )
       return;
-    if (this.muted || this.volume === 0 || document.hidden) {
+    if (this.paused || this.muted || this.volume === 0 || document.hidden) {
       this.element.pause();
       this.suspendBreak();
       return;
