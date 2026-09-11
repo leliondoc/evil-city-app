@@ -1,7 +1,12 @@
 import type { Point, State } from './engine';
 import { SoundEvents, type SoundCue, type SoundKind } from './audioEvents';
+import { GameMusic } from './music';
 
-export type AudioSettings = { muted: boolean; volume: number };
+export type AudioSettings = {
+  muted: boolean;
+  volume: number;
+  musicVolume: number;
+};
 export type AudioStatus = 'idle' | 'loading' | 'ready' | 'error';
 const SETTINGS_KEY = 'evil-city-audio-v1';
 const clips: Record<SoundKind, string[]> = {
@@ -35,14 +40,18 @@ export function readAudioSettings(): AudioSettings {
       return {
         muted: saved.muted,
         volume: Math.max(0, Math.min(1, saved.volume)),
+        musicVolume: Number.isFinite(saved.musicVolume)
+          ? Math.max(0, Math.min(1, saved.musicVolume))
+          : 0.2,
       };
   } catch {
     /* Storage may be unavailable in private browsing. */
   }
-  return { muted: false, volume: 0.35 };
+  return { muted: false, volume: 0.35, musicVolume: 0.2 };
 }
 
 export class GameAudio {
+  private music = new GameMusic(import.meta.env.BASE_URL);
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
   private buffers = new Map<string, AudioBuffer>();
@@ -63,7 +72,11 @@ export class GameAudio {
 
   /** Called synchronously from a click or keyboard gesture for mobile autoplay. */
   unlock() {
-    if (this.disposed || this.settings.muted || this.settings.volume === 0)
+    if (
+      this.disposed ||
+      this.settings.muted ||
+      (this.settings.volume === 0 && this.settings.musicVolume === 0)
+    )
       return;
     try {
       this.context ??= new AudioContext();
@@ -73,6 +86,8 @@ export class GameAudio {
         this.master.gain.value = this.settings.volume;
       }
       void this.context.resume().catch(() => {});
+      this.music.configure(this.settings.muted, this.settings.musicVolume);
+      this.music.unlock(this.context);
       if (this.loading) return;
       this.status = 'loading';
       this.onStatus(this.status);
@@ -110,6 +125,7 @@ export class GameAudio {
 
   configure(settings: AudioSettings) {
     this.settings = settings;
+    this.music.configure(settings.muted, settings.musicVolume);
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch {
@@ -200,6 +216,7 @@ export class GameAudio {
 
   dispose() {
     this.disposed = true;
+    this.music.dispose();
     this.stop();
     void this.context?.close().catch(() => {});
   }

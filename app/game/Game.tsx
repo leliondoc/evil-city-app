@@ -1763,7 +1763,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   aria-label="Réglages du son"
                 >
                   <div className="audio-heading">
-                    <strong>Effets sonores</strong>
+                    <strong>Musique et effets sonores</strong>
                     <Button
                       className="subtle-btn"
                       aria-pressed={!audioSettings.muted}
@@ -1806,6 +1806,32 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       audioRef.current?.unlock();
                     }}
                   />
+                  <label htmlFor="music-volume">
+                    Volume de la musique{' '}
+                    <output>
+                      {Math.round(audioSettings.musicVolume * 100)} %
+                    </output>
+                  </label>
+                  <input
+                    id="music-volume"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={Math.round(audioSettings.musicVolume * 100)}
+                    onChange={(event) => {
+                      const next = {
+                        ...audioSettings,
+                        musicVolume: Number(event.target.value) / 100,
+                      };
+                      audioRef.current?.configure(next);
+                      setAudioSettings(next);
+                      audioRef.current?.unlock();
+                    }}
+                  />
+                  <span className="audio-status">
+                    Spooky Game Music Pack · AlkaKrab
+                  </span>
                   <Button
                     className="subtle-btn"
                     disabled={
@@ -2012,6 +2038,16 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   rel="noreferrer"
                 >
                   Free Fantasy SFX Pack, TomMusic
+                </a>
+                .
+                <br />
+                Musique :{' '}
+                <a
+                  href="https://alkakrab.itch.io/spooky-classical-game-music-pack"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Spooky Game Music Pack, AlkaKrab
                 </a>
                 .
               </p>

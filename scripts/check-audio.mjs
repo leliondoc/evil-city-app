@@ -76,7 +76,7 @@ try {
     const saved = await page.evaluate(() =>
       JSON.parse(localStorage.getItem('evil-city-audio-v1')),
     );
-    assert.deepEqual(saved, { muted: true, volume: 0.25 });
+    assert.deepEqual(saved, { muted: true, volume: 0.25, musicVolume: 0.2 });
     await page.reload();
     await page.locator('.loading-art').waitFor({ state: 'hidden' });
     await page
