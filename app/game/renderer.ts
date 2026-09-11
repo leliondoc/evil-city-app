@@ -175,7 +175,7 @@ export class Renderer {
                   'ui-sword',
                   'ui-shield',
                   'ui-info',
-                  'ui-building-frame',
+                  'ui-cursor-hand',
                 ].includes(k)),
           )
           .map(
@@ -821,41 +821,31 @@ export class Renderer {
     });
   }
   private factionPennant(x: number, y: number, owned: boolean) {
-    // Physical signs at the gate: shape and emblem identify the camp as well as color.
-    this.draw.rect(x - 2, y - 49, 4, 49, '#51453e');
-    this.draw.rect(x + 2, y - 46, 24, 24, owned ? '#694684' : '#3f6d96');
-    this.draw.rect(x + 2, y - 46, 24, 3, owned ? '#c6a0de' : '#b4d7ec');
+    // One continuous piece of cloth, with the emblem centered inside its border.
+    this.draw.rect(x - 2, y - 51, 4, 51, '#403b36');
+    this.draw.rect(x - 1, y - 49, 1, 47, '#97856b');
+    const cloth = [
+      { x: x + 1, y: y - 47 },
+      { x: x + 29, y: y - 47 },
+      { x: x + 29, y: y - (owned ? 14 : 22) },
+      { x: x + 15, y: y - (owned ? 22 : 12) },
+      { x: x + 1, y: y - (owned ? 14 : 22) },
+    ];
+    this.draw.polygon(cloth, owned ? '#74518d' : '#497c9c', '#302e3b', 1.5);
+    this.draw.line(
+      [
+        { x: x + 3, y: y - 44 },
+        { x: x + 27, y: y - 44 },
+      ],
+      owned ? '#b997cf' : '#a0c8db',
+      1,
+    );
     if (owned) {
-      this.draw.rect(x + 2, y - 22, 7, 5, '#694684');
-      this.draw.rect(x + 19, y - 22, 7, 5, '#694684');
-      this.draw.image('skull-spike', 16, 32, 32, 48, x + 6, y - 46, 16, 24);
+      // Crop only the skull, leaving the decorative stake out of the emblem.
+      this.draw.image('skull-spike', 18, 24, 30, 40, x + 7.5, y - 42, 15, 20);
     } else {
-      this.draw.rect(x + 6, y - 22, 16, 3, '#3f6d96');
-      this.draw.rect(x + 10, y - 19, 8, 3, '#3f6d96');
-      this.draw.whole('ui-shield', x + 3, y - 46, 22, 24);
+      this.draw.whole('ui-shield', x + 5, y - 42, 20, 20);
     }
-  }
-  private factionFootprint(x: number, y: number, owned: boolean) {
-    const color = owned ? '#ba92d3' : '#b5dded';
-    // Small diamonds for the horde, a shield point for humans. Selection keeps its yellow ring.
-    const points = owned
-      ? [
-          { x: x - 16, y },
-          { x, y: y - 6 },
-          { x: x + 16, y },
-          { x, y: y + 6 },
-          { x: x - 16, y },
-        ]
-      : [
-          { x: x - 15, y: y - 4 },
-          { x: x + 15, y: y - 4 },
-          { x: x + 15, y },
-          { x, y: y + 8 },
-          { x: x - 15, y },
-          { x: x - 15, y: y - 4 },
-        ];
-    this.draw.line(points, '#293333', 3 / this.scale);
-    this.draw.line(points, color, 1.5 / this.scale);
   }
   private render = () => {
     if (this.disposed) return;
@@ -1203,7 +1193,6 @@ export class Renderer {
         depth: worker.y * CELL + 1,
         draw: () => {
           const key = workerArt(worker, s.sites[worker.site]);
-          this.factionFootprint(worker.x * CELL, worker.y * CELL, false);
           if (
             this.selection.type === 'worker' &&
             this.selection.id === worker.id
@@ -1307,7 +1296,6 @@ export class Renderer {
             ),
             scale =
               u.kind === 'troll' ? 0.52 : u.kind === 'minotaur' ? 0.62 : 0.72;
-          if (!selected) this.factionFootprint(x, y, true);
           if (selected)
             this.draw.ellipse(x, y, 25, 12, '#fff1af', 2 / this.scale);
           const hit = this.sprite(
@@ -1423,7 +1411,6 @@ export class Renderer {
             motion = { action, since: t };
             this.motions.set(e.id, motion);
           }
-          this.factionFootprint(x, y, false);
           if (selected)
             this.draw.ellipse(
               x,
@@ -1683,7 +1670,7 @@ export class Renderer {
         guidance.kind === 'attack'
           ? 'ui-sword'
           : guidance.kind === 'build'
-            ? 'ui-building-frame'
+            ? 'ui-cursor-hand'
             : 'ui-info';
       const marker = this.sprite(icon, x, y, 0.55 * ui);
       marker.selection = { type: 'lot', id: lot.id };

@@ -167,6 +167,17 @@ export class DrawLayer {
     );
   }
 
+  polygon(points: Point[], fill: string, stroke: string, width: number) {
+    return this.shape(
+      JSON.stringify(['polygon', points, fill, stroke, width]),
+      (g) =>
+        g
+          .poly(points)
+          .fill(fill)
+          .stroke({ color: stroke, width, join: 'round' }),
+    );
+  }
+
   ellipse(
     x: number,
     y: number,
@@ -326,7 +337,8 @@ export class PixiScene {
       width: Math.max(1, width),
       height: Math.max(1, height),
       resolution: Math.min(window.devicePixelRatio || 1, 2),
-      antialias: false,
+      // Smooth vector indicators; sprite and terrain textures retain nearest sampling.
+      antialias: true,
       background: '#648b73',
       autoDensity: false,
     });
