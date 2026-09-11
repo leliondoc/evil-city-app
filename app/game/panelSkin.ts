@@ -2,7 +2,7 @@ export type PanelKind =
   | 'paper'
   | 'notice'
   | 'ribbon'
-  | 'yellow-ribbon'
+  | 'notice-ribbon'
   | 'wood'
   | 'banner'
   | 'button';
@@ -18,6 +18,28 @@ const large: Slice[] = [
   [320, 96],
 ];
 
+/** Shared slice edges land on the same physical pixel, including browser zoom. */
+function panelTile(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  sx: number,
+  sy: number,
+  sw: number,
+  sh: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const { a, d, e, f } = ctx.getTransform();
+  const left = (Math.round(x * a + e) - e) / a;
+  const top = (Math.round(y * d + f) - f) / d;
+  const right = (Math.round((x + width) * a + e) - e) / a;
+  const bottom = (Math.round((y + height) * d + f) - f) / d;
+  if (right !== left && bottom !== top)
+    ctx.drawImage(image, sx, sy, sw, sh, left, top, right - left, bottom - top);
+}
+
 /** Repeat texture pixels at a fixed scale. Never stretch the grain or corners. */
 export function paintPanel(
   ctx: CanvasRenderingContext2D,
@@ -26,18 +48,19 @@ export function paintPanel(
   width: number,
   height: number,
 ) {
-  if (kind === 'yellow-ribbon') {
+  if (kind === 'notice-ribbon') {
     ctx.clearRect(0, 0, width, height);
     ctx.imageSmoothingEnabled = false;
     // The tails keep their size even when a message wraps onto several lines.
     const scale = Math.min(1, height / 64, width / 128);
     const tail = 32 * scale;
     const tailY = (height - 64 * scale) / 2;
-    ctx.drawImage(image, 0, 256, 32, 64, 0, tailY, tail, 64 * scale);
-    ctx.drawImage(
+    panelTile(ctx, image, 0, 512, 32, 64, 0, tailY, tail, 64 * scale);
+    panelTile(
+      ctx,
       image,
       288,
-      256,
+      512,
       32,
       64,
       width - tail,
@@ -51,9 +74,9 @@ export function paintPanel(
       [256, 32],
     ];
     const rows: Slice[] = [
-      [256, 16],
-      [280, 16],
-      [304, 16],
+      [512, 16],
+      [536, 16],
+      [560, 16],
     ];
     const xs = [tail, tail * 2, width - tail * 2, width - tail];
     const ys = [0, 16 * scale, height - 16 * scale, height];
@@ -65,7 +88,7 @@ export function paintPanel(
           for (let x = xs[col]; x < xs[col + 1]; x += sw * scale) {
             const w = Math.min(sw * scale, xs[col + 1] - x);
             const h = Math.min(sh * scale, ys[row + 1] - y);
-            ctx.drawImage(image, sx, sy, w / scale, h / scale, x, y, w, h);
+            panelTile(ctx, image, sx, sy, w / scale, h / scale, x, y, w, h);
           }
       }
     return;
@@ -75,12 +98,12 @@ export function paintPanel(
     ctx.imageSmoothingEnabled = false;
     const scale = height / 128;
     const edge = 96 * scale;
-    ctx.drawImage(image, 32, 0, 96, 128, 0, 0, edge, height);
+    panelTile(ctx, image, 32, 0, 96, 128, 0, 0, edge, height);
     for (let x = edge; x < width - edge; x += 64 * scale) {
       const w = Math.min(64 * scale, width - edge - x);
-      ctx.drawImage(image, 192, 0, w / scale, 128, x, 0, w, height);
+      panelTile(ctx, image, 192, 0, w / scale, 128, x, 0, w, height);
     }
-    ctx.drawImage(image, 320, 0, 96, 128, width - edge, 0, edge, height);
+    panelTile(ctx, image, 320, 0, 96, 128, width - edge, 0, edge, height);
     return;
   }
   const cols =
@@ -118,7 +141,8 @@ export function paintPanel(
             ctx.save();
             ctx.translate(x + w, y);
             ctx.scale(-1, 1);
-            ctx.drawImage(
+            panelTile(
+              ctx,
               image,
               sx + sw - w / scale,
               sy,
@@ -131,7 +155,7 @@ export function paintPanel(
             );
             ctx.restore();
           } else {
-            ctx.drawImage(image, sx, sy, w / scale, h / scale, x, y, w, h);
+            panelTile(ctx, image, sx, sy, w / scale, h / scale, x, y, w, h);
           }
         }
     }

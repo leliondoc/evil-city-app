@@ -1369,13 +1369,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <div className="game-notifications">
               {paused && (
                 <div className="paused-label">
-                  <PanelSkin kind="yellow-ribbon" />
+                  <PanelSkin kind="notice-ribbon" />
                   <span>Le mal prend une pause.</span>
                 </div>
               )}
               {message && (
                 <output className="toast-message" aria-live="polite">
-                  <PanelSkin kind="yellow-ribbon" />
+                  <PanelSkin kind="notice-ribbon" />
                   <span>{message}</span>
                 </output>
               )}

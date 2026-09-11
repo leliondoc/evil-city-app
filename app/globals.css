@@ -2974,7 +2974,7 @@ svg {
   flex: 0 0 auto;
 }
 
-/* Central notices use the pack's plain yellow ribbon. */
+/* Central notices use the pack's slate ribbon with warm, readable lettering. */
 .game-notifications {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 84px);
@@ -3008,7 +3008,7 @@ svg {
   min-height: 64px;
   /* Lift Georgia's visible letters to the center of the painted ribbon face. */
   padding: 14px 42px 18px;
-  color: #4a241b;
+  color: #fff3d9;
   font: 20px/1.25 Georgia, serif;
   text-shadow: none;
   overflow-wrap: anywhere;

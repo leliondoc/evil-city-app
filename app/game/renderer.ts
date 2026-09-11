@@ -682,7 +682,7 @@ export class Renderer {
       );
     }
   }
-  private selectionHit(hit: Hit) {
+  private visibleBounds(hit: Hit) {
     const source = spriteFrame(hit.key, hit.frame);
     const cacheKey = `${hit.key}:${hit.frame}`;
     let bounds = this.markerBounds.get(cacheKey);
@@ -715,13 +715,23 @@ export class Renderer {
       this.markerBounds.set(cacheKey, bounds);
     }
     const scale = hit.w / source.width;
-    const padding = (4 * this.uiScale) / this.scale;
     const left = hit.flip ? source.width - bounds.x - bounds.width : bounds.x;
+    return {
+      x: hit.x + left * scale,
+      y: hit.y + bounds.y * scale,
+      width: bounds.width * scale,
+      height: bounds.height * scale,
+    };
+  }
+  private selectionHit(hit: Hit) {
+    const bounds = this.visibleBounds(hit);
+    if (!bounds) return;
+    const padding = (4 * this.uiScale) / this.scale;
     this.selectionCorners(
-      hit.x + left * scale - padding,
-      hit.y + bounds.y * scale - padding,
-      bounds.width * scale + padding * 2,
-      bounds.height * scale + padding * 2,
+      bounds.x - padding,
+      bounds.y - padding,
+      bounds.width + padding * 2,
+      bounds.height + padding * 2,
     );
   }
   private bar(x: number, y: number, ratio: number, width = 60) {
@@ -882,19 +892,6 @@ export class Renderer {
       });
     }
     for (const l of s.lots) {
-      const selected =
-          this.selection.type === 'lot' && this.selection.id === l.id,
-        hover = this.hover?.type === 'lot' && this.hover.id === l.id;
-      if (selected || hover) {
-        const inset = 24;
-        this.selectionCorners(
-          l.x * CELL + inset,
-          l.y * CELL + inset,
-          8 * CELL - inset * 2,
-          8 * CELL - inset * 2,
-          selected ? 1 : 0.45,
-        );
-      }
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
         y = (l.y + 6.2) * CELL - (l.id === 0 && !l.owned ? 28 : 0),
@@ -1018,6 +1015,15 @@ export class Renderer {
                   role &&
                   this.selection.type === 'guildHero' &&
                   this.selection.id === i;
+              if (selected)
+                this.draw.ellipse(
+                  heroX,
+                  gy,
+                  28,
+                  12,
+                  '#ff5b5b',
+                  2.5 / this.scale,
+                );
               const hit = this.sprite(
                 key,
                 role ? heroX : guardX,
@@ -1114,6 +1120,18 @@ export class Renderer {
         depth: worker.y * CELL + 1,
         draw: () => {
           const key = workerArt(worker, s.sites[worker.site]);
+          if (
+            this.selection.type === 'worker' &&
+            this.selection.id === worker.id
+          )
+            this.draw.ellipse(
+              worker.x * CELL,
+              worker.y * CELL,
+              25,
+              12,
+              '#ff5b5b',
+              2.5 / this.scale,
+            );
           const hit = this.sprite(
             key,
             worker.x * CELL,
@@ -1319,8 +1337,8 @@ export class Renderer {
             y,
             e.kind === 'hero' ? 28 : 21,
             11,
-            e.kind === 'hero' ? '#ffc85c' : '#ed886f',
-            2 / this.scale,
+            selected ? '#ff5b5b' : e.kind === 'hero' ? '#ffc85c' : '#ed886f',
+            (selected ? 2.5 : 2) / this.scale,
           );
           const sample = animationFrame(sequence, t - motion.since);
           const hit = this.sprite(
@@ -1568,11 +1586,30 @@ export class Renderer {
       const y = [-110, 170, 980][i];
       this.sprite(`cloud-${i + 1}` as AssetKey, x, y, 0.95, 0, 0.32);
     }
-    // Keep selected actors' four pack corners above scenery and animation effects.
+    // Parcel corners stay above trees, fences, buildings and clouds.
+    for (const lot of s.lots) {
+      const selected =
+        this.selection.type === 'lot' && this.selection.id === lot.id;
+      const hovered = this.hover?.type === 'lot' && this.hover.id === lot.id;
+      if (selected || hovered) {
+        const inset = 24;
+        this.selectionCorners(
+          lot.x * CELL + inset,
+          lot.y * CELL + inset,
+          8 * CELL - inset * 2,
+          8 * CELL - inset * 2,
+          selected ? 1 : 0.45,
+        );
+      }
+    }
+    // Characters use ground circles; only resources and towers use pack corners.
     for (const hit of this.hits) {
       if (
         hit.selection.type === 'lot' ||
         hit.selection.type === 'unit' ||
+        hit.selection.type === 'enemy' ||
+        hit.selection.type === 'worker' ||
+        hit.selection.type === 'guildHero' ||
         hit.selection.type === 'none' ||
         hit.selection.type === 'units'
       )
@@ -1617,6 +1654,8 @@ export class Renderer {
     if (this.attackFeedback && !s.won && !s.lost) {
       const age = (performance.now() - this.attackFeedback.since) / 1000;
       const { target } = this.attackFeedback.order;
+      const ui = this.uiScale / this.scale;
+      const unitTarget = target.type === 'enemy' || target.type === 'worker';
       let anchor: Point | undefined;
       if (target.type === 'lot') {
         const lot = s.lots.find((lot) => lot.id === target.id);
@@ -1631,19 +1670,54 @@ export class Renderer {
         const actor = actors.find(
           (actor) => actor.id === target.id && actor.hp > 0,
         );
-        if (actor) anchor = { x: actor.x * CELL, y: actor.y * CELL - 76 };
+        if (actor) {
+          const hit = this.hits.find(
+            (hit) =>
+              hit.selection.type === target.type &&
+              'id' in hit.selection &&
+              hit.selection.id === target.id,
+          );
+          const bounds = hit && this.visibleBounds(hit);
+          if (bounds) {
+            // Aim at the visible unit, close to its health bar, regardless of sprite size.
+            const barY =
+              actor.y * CELL -
+              (target.type === 'worker'
+                ? 52
+                : 'kind' in actor && actor.kind === 'hero'
+                  ? 74
+                  : 56);
+            anchor = {
+              x: actor.x * CELL,
+              y: Math.min(bounds.y, barY - Math.max(2, 1 / this.scale)),
+            };
+          }
+        }
       }
       if (anchor && age < 1.8) {
-        const ui = this.uiScale / this.scale;
         const bounce = this.reducedMotion ? 0 : Math.sin(age * Math.PI * 4) * 3;
-        this.sprite(
-          'ui-back',
-          anchor.x + 34 * ui,
-          anchor.y - (22 + bounce) * ui,
-          0.85 * ui,
-          0,
-          Math.min(1, (1.8 - age) / 0.3),
-        );
+        const alpha = Math.min(1, (1.8 - age) / 0.3);
+        if (unitTarget) {
+          // The source points left. Pin its tip above the target and rotate it down.
+          const arrow = this.draw.whole(
+            'ui-back',
+            anchor.x,
+            anchor.y - (2 + Math.abs(bounce) * 0.5) * ui,
+            28 * ui,
+            28 * ui,
+            alpha,
+          );
+          arrow.pivot.set(4, 32);
+          arrow.rotation = -Math.PI / 2;
+        } else
+          this.sprite(
+            'ui-back',
+            anchor.x + 34 * ui,
+            anchor.y - (22 + bounce) * ui,
+            0.85 * ui,
+            0,
+            alpha,
+          );
       }
     }
     // Resource deliveries float above their contributor and the combat overlays.

@@ -180,6 +180,47 @@ try {
     true,
     'Accepted individual attacks display the orange arrow',
   );
+  for (let step = 0; step < 2; step++) {
+    if (step) {
+      await page.evaluate(() => {
+        pixiTest.state.enemies[0].x += 0.5;
+        pixiTest.state.enemies[0].y += 0.25;
+      });
+      await frame();
+    }
+    const placement = await page.evaluate(() => {
+      const r = pixiTest.renderer;
+      const arrow = r.scene.actors.container.children.find(
+        (n) =>
+          n.visible && n.texture?.source === r.scene.textures.get('ui-back'),
+      );
+      const target = pixiTest.state.enemies[0];
+      return {
+        centered: Math.abs(arrow.x - target.x * 32) < 0.01,
+        down: Math.abs(arrow.rotation + Math.PI / 2) < 0.01,
+        gap: ((target.y * 32 - arrow.y) * r.scale) / r.uiScale,
+        size: (arrow.width * r.scale) / r.uiScale,
+      };
+    });
+    assert.equal(
+      placement.centered,
+      true,
+      'Attack arrow stays centered as its target moves',
+    );
+    assert.equal(
+      placement.down,
+      true,
+      'Attack arrow points down toward the target',
+    );
+    assert.ok(
+      placement.gap > 0 && placement.gap < 55,
+      'Arrow remains close to the unit',
+    );
+    assert.ok(
+      placement.size <= 28.1,
+      'Arrow remains compact at every zoom level',
+    );
+  }
   await page.screenshot({ path: join(output, 'individual-attack.png') });
   await page.evaluate(() =>
     pixiTest.select({
@@ -207,6 +248,59 @@ try {
     'Shift allows inspecting enemies while fighters are selected',
   );
   assert.equal(await page.evaluate(() => pixiTest.commands.length), count);
+  const enemySelection = await page.evaluate(() => {
+    const { scene } = pixiTest.renderer;
+    const { pixels } = scene.renderer.extract.pixels({ target: scene.stage });
+    let red = 0;
+    for (let i = 0; i < pixels.length; i += 4)
+      if (pixels[i] === 255 && pixels[i + 1] === 91 && pixels[i + 2] === 91)
+        red++;
+    const corners = scene.actors.container.children.filter(
+      (n) =>
+        n.visible &&
+        n.texture?.source === scene.textures.get('ui-selection-corners'),
+    ).length;
+    return { red, corners };
+  });
+  assert.ok(
+    enemySelection.red > 5,
+    'Selected enemies have a visible red circle',
+  );
+  assert.equal(enemySelection.corners, 0, 'Enemy selection has no pack frame');
+  await page.screenshot({ path: join(output, 'enemy-selection.png') });
+  for (const id of await page.evaluate(() =>
+    pixiTest.state.lots.map((l) => l.id),
+  )) {
+    await page.evaluate((id) => {
+      pixiTest.select({ type: 'lot', id });
+      pixiTest.renderer.hover = null;
+      pixiTest.renderer.attackFeedback = null;
+      pixiTest.state.attackOrder = undefined;
+    }, id);
+    await frame();
+    const marker = await page.evaluate(() => {
+      const { scene } = pixiTest.renderer;
+      const sprites = scene.actors.container.children.filter(
+        (n) => n.visible && n.texture,
+      );
+      const source = scene.textures.get('ui-selection-corners');
+      return {
+        count: sprites.filter((n) => n.texture.source === source).length,
+        aboveScenery:
+          sprites.findIndex((n) => n.texture.source === source) >
+          sprites.findLastIndex(
+            (n) => n.texture.source === scene.textures.get('cloud-3'),
+          ),
+      };
+    });
+    assert.deepEqual(
+      marker,
+      { count: 4, aboveScenery: true },
+      `All four corners stay visible above scenery for lot ${id}`,
+    );
+    if (id === 4)
+      await page.screenshot({ path: join(output, 'building-selection.png') });
+  }
   await page.setViewportSize({ width: 900, height: 700 });
   await page.evaluate(() => {
     pixiTest.renderer.zoomBy(1.5);

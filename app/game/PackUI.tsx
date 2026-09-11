@@ -26,7 +26,14 @@ export function PanelSkin({
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       const ctx = canvas.getContext('2d')!;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setTransform(
+        canvas.width / width,
+        0,
+        0,
+        canvas.height / height,
+        0,
+        0,
+      );
       paintPanel(ctx, image, kind, width, height);
     };
     image.onload = draw;
@@ -35,7 +42,7 @@ export function PanelSkin({
         asset ??
           (kind === 'notice'
             ? 'ui-banner'
-            : kind === 'yellow-ribbon'
+            : kind === 'notice-ribbon'
               ? 'ui-small-ribbons'
               : kind === 'ribbon'
                 ? 'ui-ribbons'
