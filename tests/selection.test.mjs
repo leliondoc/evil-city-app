@@ -8,6 +8,7 @@ import {
   entrance,
   attack,
   raidSupply,
+  intercept,
 } from '../app/game/engine.ts';
 import {
   dragIntent,
@@ -15,6 +16,7 @@ import {
   selectedUnitIds,
   unitsInRectangle,
   extendUnitSelection,
+  selectedFightersCanAttack,
 } from '../app/game/selection.ts';
 
 test('Rectangle selection works in all four directions and excludes fallen units', () => {
@@ -180,4 +182,78 @@ test('Invalid group attacks and orders after defeat change neither units nor res
 test('Left drags pan the map; Shift enables the selection rectangle without a hold delay', () => {
   assert.equal(dragIntent(false), 'pan');
   assert.equal(dragIntent(true), 'select');
+});
+
+test('Hostile clicks command individual fighters and mixed groups while other selections remain inspectable', () => {
+  const s = party();
+  s.lots[2].kind = 'empty';
+  const fighter = s.units.find((u) => u.kind === 'troll');
+  const goblin = s.units.find((u) => u.kind === 'goblin');
+  const enemy = { id: s.nextId++, hp: 100, kind: 'guard', x: 10.5, y: 10.5 };
+  s.enemies.push(enemy);
+  for (const selection of [
+    unitSelection([fighter.id]),
+    unitSelection([fighter.id, goblin.id]),
+  ]) {
+    assert.equal(
+      selectedFightersCanAttack(s, selection, { type: 'enemy', id: enemy.id }),
+      true,
+    );
+    assert.equal(
+      selectedFightersCanAttack(s, selection, { type: 'lot', id: 1 }),
+      true,
+    );
+    for (const target of [
+      null,
+      { type: 'unit', id: goblin.id },
+      { type: 'lot', id: 6 },
+      { type: 'lot', id: 2 },
+      { type: 'resource', id: s.sites[0].id },
+    ])
+      assert.equal(selectedFightersCanAttack(s, selection, target), false);
+  }
+  const target = { type: 'enemy', id: enemy.id };
+  assert.equal(selectedFightersCanAttack(s, { type: 'none' }, target), false);
+  assert.equal(
+    selectedFightersCanAttack(s, unitSelection([goblin.id]), target),
+    false,
+  );
+  s.strategy.research.push('embers');
+  assert.equal(
+    selectedFightersCanAttack(s, unitSelection([goblin.id]), target),
+    true,
+  );
+  fighter.hp = 0;
+  assert.equal(
+    selectedFightersCanAttack(s, unitSelection([fighter.id]), target),
+    false,
+  );
+  enemy.hp = 0;
+  assert.equal(
+    selectedFightersCanAttack(s, unitSelection([goblin.id]), target),
+    false,
+  );
+  s.won = true;
+  assert.equal(
+    selectedFightersCanAttack(s, unitSelection([goblin.id]), {
+      type: 'lot',
+      id: 1,
+    }),
+    false,
+  );
+});
+
+test('Interception shows attack feedback and rejected interceptions preserve the previous marker', () => {
+  const s = party();
+  const enemy = { id: s.nextId++, hp: 100, kind: 'guard', x: 10.5, y: 10.5 };
+  s.enemies.push(enemy);
+  assert.equal(intercept(s, enemy.id), '');
+  assert.deepEqual(s.attackOrder.target, { type: 'enemy', id: enemy.id });
+  const previous = s.attackOrder;
+  assert.equal(intercept(s, enemy.id), '');
+  assert.ok(s.attackOrder.sequence > previous.sequence);
+  const accepted = s.attackOrder;
+  enemy.hp = 0;
+  assert.notEqual(intercept(s, enemy.id), '');
+  assert.equal(s.attackOrder, accepted);
 });

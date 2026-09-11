@@ -7,7 +7,10 @@ const { chromium } = createRequire(import.meta.url)(
   process.env.PLAYWRIGHT_PACKAGE || 'playwright',
 );
 const output = await mkdtemp(join(tmpdir(), 'evil-display-'));
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await chromium.launch({
+  channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
+  headless: true,
+});
 try {
   const page = await browser.newPage();
   const errors = [];
@@ -46,7 +49,7 @@ try {
         footer: box('.bottom-bar'),
         questFont:
           Number.parseFloat(style('.mission-card .quest').fontSize) *
-          Number(style('.sidebar').zoom),
+          Number(style('.mission-sidebar').zoom),
         overflow: document.documentElement.scrollWidth > innerWidth,
       };
     });
@@ -77,20 +80,22 @@ try {
     await page.mouse.click(point.x, point.y);
     assert.match(await page.locator('.selection-name').innerText(), /Cantine/);
     const mapFont = await page.evaluate(async () => {
-      const ctx = document.querySelector('.world-canvas').getContext('2d');
-      const fill = ctx.fillText;
+      const { PixiScene } = await import('/app/game/pixiScene.ts');
+      const render = PixiScene.prototype.render;
       let size = 0;
-      ctx.fillText = function (...args) {
-        if (args[0] === 'Cantine des hordes')
-          size =
-            (Number.parseFloat(this.font.replace(/^400 /, '')) *
-              this.getTransform().a) /
-            Math.min(devicePixelRatio, 2);
-        return fill.apply(this, args);
+      PixiScene.prototype.render = function () {
+        const label = this.actors.container.children.find(
+          (node) => node.visible && node.text === 'Cantine des hordes',
+        );
+        if (label) size = label.style.fontSize * this.world.scale.x;
+        return render.call(this);
       };
-      await new Promise(requestAnimationFrame);
-      await new Promise(requestAnimationFrame);
-      ctx.fillText = fill;
+      try {
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+      } finally {
+        PixiScene.prototype.render = render;
+      }
       return size;
     });
     assert.ok(

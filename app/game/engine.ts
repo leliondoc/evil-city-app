@@ -1820,6 +1820,7 @@ export function intercept(s: State, id: number): string {
   if (!army(s).length)
     return 'Recrutez des combattants pour intercepter cet ennemi.';
   for (const u of army(s)) assign(u, enemy, 'defend', id);
+  markAttackOrder(s, { type: 'enemy', id });
   return '';
 }
 function raidTarget(s: State, e: Pick<Enemy, 'kind' | 'x' | 'y'>): Lot {

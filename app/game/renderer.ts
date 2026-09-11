@@ -31,19 +31,12 @@ import {
   type Animation,
 } from './art';
 
-import { BRIDGES, HIGHLANDS, makeScenery, type Decoration } from './scenery';
-import { ISLAND_PATHS } from './islandRoutes';
-import {
-  groundTiles,
-  patchTiles,
-  onGround,
-  onPatch,
-  type GroundPatch,
-  type GroundTile,
-} from './terrainLayout';
+import { makeScenery, type Decoration } from './scenery';
+import { PixiScene } from './pixiScene';
+import { drawTerrain } from './terrainRenderer';
+import type { GroundTile } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
-import { paintHealthBar } from './panelSkin';
 import { hasResearch, towerOccupant } from './strategy';
 import {
   selectedUnitIds,
@@ -51,6 +44,7 @@ import {
   unitsInRectangle,
   extendUnitSelection,
   dragIntent,
+  selectedFightersCanAttack,
 } from './selection';
 
 const CELL = 32,
@@ -74,8 +68,8 @@ type Hit = {
 type Motion = { action: Animation; since: number };
 
 export class Renderer {
-  private ctx: CanvasRenderingContext2D;
-  private images = new Map<AssetKey, HTMLImageElement>();
+  private scene = new PixiScene();
+  private draw = this.scene.actors;
   private pixels = new Map<AssetKey, Uint8ClampedArray>();
   private bounds = new Map<
     AssetKey,
@@ -85,7 +79,6 @@ export class Renderer {
     string,
     { x: number; y: number; width: number; height: number }
   >();
-  private terrain: HTMLCanvasElement;
   private ownership = '';
   private pointer: Point | null = null;
   private decorations: Decoration[] = [];
@@ -137,8 +130,6 @@ export class Renderer {
     private onCommand: (p: Point, target: Selection | null) => void,
     private onReady: (error?: string) => void,
   ) {
-    this.ctx = canvas.getContext('2d')!;
-    this.terrain = document.createElement('canvas');
     this.reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
@@ -157,6 +148,13 @@ export class Renderer {
   }
   private async load() {
     try {
+      // StrictMode disposes its first view synchronously. Avoid letting that
+      // abandoned view create/lose the next view's WebGL context.
+      await Promise.resolve();
+      if (this.disposed) return;
+      if (!(await this.scene.init(this.canvas, this.width, this.height)))
+        return;
+      this.resize();
       await document.fonts.load('16px "Pixel Operator"');
       await Promise.all(
         (Object.keys(ASSETS) as AssetKey[])
@@ -168,8 +166,6 @@ export class Renderer {
               (!k.startsWith('ui-') ||
                 [
                   'ui-selection-corners',
-                  'ui-health-small-base',
-                  'ui-health-small-fill',
                   'ui-gold',
                   'ui-wood-icon',
                   'ui-food',
@@ -181,17 +177,28 @@ export class Renderer {
               new Promise<void>((resolve, reject) => {
                 const im = new Image();
                 im.onload = () => {
-                  this.images.set(key, im);
-                  const c = document.createElement('canvas');
-                  c.width = im.width;
-                  c.height = im.height;
-                  const ctx = c.getContext('2d', { willReadFrequently: true })!;
-                  ctx.drawImage(im, 0, 0);
-                  this.pixels.set(
-                    key,
-                    ctx.getImageData(0, 0, c.width, c.height).data,
-                  );
-                  resolve();
+                  if (this.disposed) {
+                    resolve();
+                    return;
+                  }
+                  try {
+                    this.scene.textures.add(key, im);
+                    // Read sprite alpha once for precise picking; map drawing uses WebGL.
+                    const c = document.createElement('canvas');
+                    c.width = im.width;
+                    c.height = im.height;
+                    const ctx = c.getContext('2d', {
+                      willReadFrequently: true,
+                    })!;
+                    ctx.drawImage(im, 0, 0);
+                    this.pixels.set(
+                      key,
+                      ctx.getImageData(0, 0, c.width, c.height).data,
+                    );
+                    resolve();
+                  } catch (error) {
+                    reject(error);
+                  }
                 };
                 im.onerror = () => reject(new Error(key));
                 im.src = ASSETS[key].src;
@@ -205,10 +212,12 @@ export class Renderer {
       this.onReady();
       this.render();
     } catch {
-      if (!this.disposed)
+      if (!this.disposed) {
+        this.destroy();
         this.onReady(
-          'Les décors n’ont pas pu être chargés. Rechargez la page pour réessayer.',
+          'Le rendu du jeu n’a pas pu démarrer. Vérifiez que WebGL est disponible, puis rechargez la page.',
         );
+      }
     }
   }
   private resize() {
@@ -227,9 +236,7 @@ export class Renderer {
       width: view.width,
       height: view.height,
     };
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.canvas.width = Math.round(r.width * dpr);
-    this.canvas.height = Math.round(r.height * dpr);
+    this.scene.resize(r.width, r.height);
     this.recalculate();
   }
   private recalculate() {
@@ -438,7 +445,13 @@ export class Renderer {
           .sort((a, b) => a.distance - b.distance)[0];
         if (nearby) hit = { type: nearby.type, id: nearby.id };
       }
-      if (this.interactionMode === 'command') {
+      if (
+        this.interactionMode === 'command' ||
+        (this.interactionMode === 'inspect' &&
+          !this.down.additive &&
+          !this.buildKind &&
+          selectedFightersCanAttack(this.getState(), this.selection, hit))
+      ) {
         this.onCommand(this.toWorld(p), hit);
       } else if (this.down.additive && hit?.type === 'unit')
         this.onSelect(extendUnitSelection(this.selection, [hit.id], true));
@@ -506,201 +519,16 @@ export class Renderer {
     this.zoomBy(e.deltaY > 0 ? 0.9 : 1.1);
   };
 
-  private grassPatch(
-    ctx: CanvasRenderingContext2D,
-    key: AssetKey,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-  ) {
-    const im = this.images.get(key)!;
-    for (let ty = 0; ty < h; ty++)
-      for (let tx = 0; tx < w; tx++) {
-        const sx = tx === 0 ? 0 : tx === w - 1 ? 128 : 64,
-          sy = ty === 0 ? 0 : ty === h - 1 ? 128 : 64;
-        ctx.drawImage(im, sx, sy, 64, 64, x + tx * 64, y + ty * 64, 64, 64);
-      }
-  }
-  private terrainSurface(
-    ctx: CanvasRenderingContext2D,
-    tiles: GroundTile[],
-    raised = false,
-  ) {
-    const cells = new Set(tiles.map((t) => `${t.x},${t.y}`));
-    for (const tile of tiles) {
-      // Quarter tiles connect adjoining patches without rectangular inner borders.
-      for (const qy of [0, 1])
-        for (const qx of [0, 1]) {
-          const horizontal = cells.has(`${tile.x + (qx ? 64 : -64)},${tile.y}`);
-          const vertical = cells.has(`${tile.x},${tile.y + (qy ? 64 : -64)}`);
-          const sx =
-            (raised ? 320 : 0) + (horizontal ? 64 + qx * 32 : qx ? 160 : 0);
-          const sy = vertical ? 64 + qy * 32 : qy ? 160 : 0;
-          ctx.drawImage(
-            this.images.get(tile.key)!,
-            sx,
-            sy,
-            32,
-            32,
-            tile.x + qx * 32,
-            tile.y + qy * 32,
-            32,
-            32,
-          );
-        }
-    }
-  }
-  private terrace(
-    ctx: CanvasRenderingContext2D,
-    p: GroundPatch,
-    lower: GroundPatch[],
-  ) {
-    const tiles = patchTiles(p);
-    for (const tile of tiles)
-      ctx.drawImage(this.images.get('terrain-shadow')!, tile.x - 64, tile.y);
-    this.terrainSurface(ctx, tiles, true);
-    const cliffs = tiles.filter(
-      (tile) => !onPatch(p, tile.x + 32, tile.y + 96),
-    );
-    const cliffCells = new Set(cliffs.map((t) => `${t.x},${t.y}`));
-    for (const tile of cliffs) {
-      const left = cliffCells.has(`${tile.x - 64},${tile.y}`);
-      const right = cliffCells.has(`${tile.x + 64},${tile.y}`);
-      const sx = !left && !right ? 512 : !left ? 320 : !right ? 448 : 384;
-      const land =
-        onGround(tile.x + 32, tile.y + 128) ||
-        lower.some((p) => onPatch(p, tile.x + 32, tile.y + 128));
-      ctx.drawImage(
-        this.images.get(p.key)!,
-        sx,
-        land ? 256 : 320,
-        64,
-        64,
-        tile.x,
-        tile.y + 64,
-        64,
-        64,
-      );
-    }
-    for (const stair of p.stairs ?? [])
-      ctx.drawImage(
-        this.images.get(p.key)!,
-        stair.side === 'left' ? 0 : 128,
-        256,
-        128,
-        128,
-        p.x + stair.tx * 64 - (stair.side === 'left' ? 64 : 0),
-        p.y + stair.ty * 64,
-        128,
-        128,
-      );
-  }
   private makeTerrain() {
-    this.ownership = this.getState()
-      .lots.map((l) => Number(l.owned))
-      .join('');
-    const c = this.terrain;
-    c.width = SIZE + MARGIN * 2;
-    c.height = SIZE + MARGIN * 2;
-    const ctx = c.getContext('2d')!;
-    ctx.imageSmoothingEnabled = false;
-    ctx.translate(MARGIN, MARGIN);
-    const ground = groundTiles();
-    const coast = new Map(ground.map((t) => [`${t.x},${t.y}`, t]));
-    for (const p of HIGHLANDS)
-      for (const tile of patchTiles(p)) {
-        coast.set(`${tile.x},${tile.y}`, tile);
-        if (!onPatch(p, tile.x + 32, tile.y + 96))
-          coast.set(`${tile.x},${tile.y + 64}`, { ...tile, y: tile.y + 64 });
-      }
-    this.shore = [...coast.values()].filter((t) =>
-      [
-        [-64, 0],
-        [64, 0],
-        [0, -64],
-        [0, 64],
-      ].some(([dx, dy]) => !coast.has(`${t.x + dx},${t.y + dy}`)),
+    const state = this.getState();
+    this.ownership = state.lots.map((l) => Number(l.owned)).join('');
+    this.scene.setTerrain(
+      (layer) => {
+        this.shore = drawTerrain(layer, state);
+      },
+      SIZE,
+      MARGIN,
     );
-    this.terrainSurface(ctx, ground);
-    HIGHLANDS.forEach((p, i) => this.terrace(ctx, p, HIGHLANDS.slice(0, i)));
-    // Only streets and entrances are paved; gardens retain their own vegetation.
-    ctx.fillStyle = '#b9a67b';
-    for (const edge of [0, 10, 20, 30]) {
-      ctx.fillRect(edge * CELL, 0, 2 * CELL, SIZE);
-      ctx.fillRect(0, edge * CELL, SIZE, 2 * CELL);
-    }
-    for (let y = 0; y < SIZE; y += 16)
-      for (let x = 0; x < SIZE; x += 32) {
-        if (Math.floor(x / CELL) % 10 < 2 || Math.floor(y / CELL) % 10 < 2) {
-          ctx.fillStyle = noise(x, y) > 0.55 ? '#d2bd90' : '#b5a27c';
-          ctx.fillRect(x + (y % 32 ? 8 : 0), y, 28, 13);
-        }
-      }
-    for (const lot of this.getState().lots) {
-      const key: AssetKey =
-        lot.id === 6 || lot.id === 3
-          ? 'terrain-5'
-          : lot.id === 0
-            ? 'terrain-2'
-            : lot.id === 8
-              ? 'terrain-3'
-              : 'terrain-1';
-      this.grassPatch(ctx, key, lot.x * CELL, lot.y * CELL, 4, 4);
-      if (lot.id === 0 && !lot.owned) {
-        this.terrace(
-          ctx,
-          {
-            key: 'terrain-2',
-            x: (lot.x + 1) * CELL,
-            y: (lot.y + 1) * CELL - 40,
-            w: 3,
-            h: 3,
-          },
-          [],
-        );
-      }
-    }
-    // The same routes guide both the peasants and the visible dirt tracks.
-    ctx.strokeStyle = '#b9a67b';
-    ctx.lineWidth = 40;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    for (const path of ISLAND_PATHS) {
-      ctx.beginPath();
-      path.forEach((p, i) =>
-        i
-          ? ctx.lineTo(p.x * CELL, p.y * CELL)
-          : ctx.moveTo(p.x * CELL, p.y * CELL),
-      );
-      ctx.stroke();
-    }
-    ctx.lineCap = 'butt';
-    // Each bridge overlaps dry ground at both ends.
-    for (const { left, right, top, bottom } of BRIDGES) {
-      const vertical = bottom - top > right - left;
-      ctx.fillStyle = '#354957';
-      ctx.fillRect(left - 4, top + 4, right - left + 8, bottom - top + 4);
-      if (vertical) {
-        for (let y = top; y < bottom; y += 16) {
-          ctx.fillStyle = y % 32 ? '#a87e4e' : '#c1975c';
-          ctx.fillRect(left, y, right - left, 14);
-        }
-      } else {
-        for (let x = left; x < right; x += 16) {
-          ctx.fillStyle = x % 32 ? '#a87e4e' : '#c1975c';
-          ctx.fillRect(x, top, 14, bottom - top);
-        }
-      }
-      ctx.fillStyle = '#684c3b';
-      if (vertical) {
-        ctx.fillRect(left, top, 6, bottom - top);
-        ctx.fillRect(right - 6, top, 6, bottom - top);
-      } else {
-        ctx.fillRect(left, top, right - left, 6);
-        ctx.fillRect(left, bottom - 6, right - left, 6);
-      }
-    }
   }
   private makeDecorations() {
     this.decorations = makeScenery(this.getState().lots);
@@ -713,44 +541,32 @@ export class Renderer {
     frame = 0,
     alpha = 1,
     flip = false,
+    rotation = 0,
   ): Hit {
     const a = ASSETS[key],
       source = spriteFrame(key, frame),
-      im = this.images.get(key)!,
       w = a.frameWidth * scale,
       h = source.height * scale,
       left = Math.round(x - w / 2),
       top = Math.round(y - h * a.anchor);
-    const ctx = this.ctx;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    if (flip) {
-      ctx.translate(left + w, top);
-      ctx.scale(-1, 1);
-      ctx.drawImage(
-        im,
-        source.x,
-        source.y,
-        source.width,
-        source.height,
-        0,
-        0,
-        w,
-        h,
-      );
-    } else
-      ctx.drawImage(
-        im,
-        source.x,
-        source.y,
-        source.width,
-        source.height,
-        left,
-        top,
-        w,
-        h,
-      );
-    ctx.restore();
+    const node = this.draw.image(
+      key,
+      source.x,
+      source.y,
+      source.width,
+      source.height,
+      left,
+      top,
+      w,
+      h,
+      alpha,
+      flip,
+    );
+    if (rotation) {
+      node.position.set(x, y);
+      node.pivot.set(source.width / 2, source.height * a.anchor);
+      node.rotation = rotation;
+    }
     return {
       selection: { type: 'lot', id: 0 },
       key,
@@ -807,13 +623,10 @@ export class Renderer {
     };
   }
   private approach(lot: Lot, doorX: number, ground: number) {
-    const ctx = this.ctx;
     const center = (lot.x + 4) * CELL;
     if (lot.id === 0 && !lot.owned) {
-      // The original grassy slope is the church's only entrance.
-      // A paved stroke here would cut an artificial passage through the cliff.
-      ctx.drawImage(
-        this.images.get('terrain-2')!,
+      this.draw.image(
+        'terrain-2',
         128,
         256,
         128,
@@ -826,18 +639,16 @@ export class Renderer {
       return;
     }
     const bend = (lot.y + 6.3) * CELL;
-    ctx.save();
-    ctx.strokeStyle = '#c0aa7c';
-    ctx.lineWidth = 40;
-    ctx.lineJoin = 'miter';
-    ctx.lineCap = 'butt';
-    ctx.beginPath();
-    ctx.moveTo(doorX, ground - 24);
-    ctx.lineTo(doorX, bend);
-    ctx.lineTo(center, bend);
-    ctx.lineTo(center, (lot.y + 8) * CELL);
-    ctx.stroke();
-    ctx.restore();
+    this.draw.line(
+      [
+        { x: doorX, y: ground - 24 },
+        { x: doorX, y: bend },
+        { x: center, y: bend },
+        { x: center, y: (lot.y + 8) * CELL },
+      ],
+      '#c0aa7c',
+      40,
+    );
   }
   private selectionCorners(
     x: number,
@@ -846,22 +657,19 @@ export class Renderer {
     height: number,
     alpha = 1,
   ) {
-    const ctx = this.ctx;
     const corner = Math.min(
       width / 2,
       height / 2,
       Math.max(12, (10 * this.uiScale) / this.scale),
     );
-    ctx.save();
-    ctx.globalAlpha = alpha;
     for (const [right, bottom] of [
       [0, 0],
       [1, 0],
       [0, 1],
       [1, 1],
     ]) {
-      ctx.drawImage(
-        this.images.get('ui-selection-corners')!,
+      this.draw.image(
+        'ui-selection-corners',
         right * 96,
         bottom * 96,
         32,
@@ -870,9 +678,9 @@ export class Renderer {
         y + (bottom ? height - corner : 0),
         corner,
         corner,
+        alpha,
       );
     }
-    ctx.restore();
   }
   private selectionHit(hit: Hit) {
     const source = spriteFrame(hit.key, hit.frame);
@@ -916,52 +724,23 @@ export class Renderer {
       bounds.height * scale + padding * 2,
     );
   }
-  private healthBar(
-    x: number,
-    y: number,
-    ratio: number,
-    width: number,
-    height: number,
-  ) {
-    const ctx = this.ctx;
-    ctx.save();
-    ctx.translate(x - width / 2, y);
-    paintHealthBar(
-      ctx,
-      this.images.get('ui-health-small-base')!,
-      this.images.get('ui-health-small-fill')!,
-      width,
-      height,
-      ratio,
+  private bar(x: number, y: number, ratio: number, width = 60) {
+    this.draw.rect(x - width / 2 - 2, y - 2, width + 4, 10, '#293333');
+    this.draw.rect(
+      x - width / 2,
+      y,
+      width * Math.max(0, Math.min(1, ratio)),
+      6,
+      ratio < 0.3 ? '#ed9472' : '#bed27c',
     );
-    ctx.restore();
-  }
-  private bar(x: number, y: number, ratio: number, width = 60, health = true) {
-    if (health) {
-      this.healthBar(
-        x,
-        y - 2,
-        ratio,
-        Math.max(width, (40 * this.uiScale) / this.scale),
-        Math.max(12, (8 * this.uiScale) / this.scale),
-      );
-      return;
-    }
-    const ctx = this.ctx;
-    ctx.fillStyle = '#293333';
-    ctx.fillRect(x - width / 2 - 2, y - 2, width + 4, 10);
-    ctx.fillStyle = ratio < 0.3 ? '#ed9472' : '#bed27c';
-    ctx.fillRect(x - width / 2, y, width * Math.max(0, Math.min(1, ratio)), 6);
   }
   private fence(l: Lot, front: boolean) {
-    const im = this.images.get('fence')!,
-      ctx = this.ctx,
-      x = l.x * CELL,
+    const x = l.x * CELL,
       y = l.y * CELL;
     if (!front) {
       for (let i = 0; i < 4; i++)
-        ctx.drawImage(
-          im,
+        this.draw.image(
+          'fence',
           i === 0 ? 0 : i === 3 ? 192 : 64,
           0,
           64,
@@ -972,7 +751,7 @@ export class Renderer {
           64,
         );
       for (let i = 1; i < 3; i++)
-        ctx.drawImage(im, 0, 64, 64, 64, x, y + i * 64, 64, 64);
+        this.draw.image('fence', 0, 64, 64, 64, x, y + i * 64, 64, 64);
     } else {
       const site = this.getState().sites.find(
         (site) => site.home === l.id && site.x >= l.x && site.x < l.x + 8,
@@ -981,64 +760,47 @@ export class Renderer {
         // Leave the supply yard accessible instead of drawing a fence over its worker and resource.
         if (site && site.y - l.y >= i * 2 && site.y - l.y < (i + 1) * 2)
           continue;
-        ctx.drawImage(im, 192, 64, 64, 64, x + 192, y + i * 64, 64, 64);
+        this.draw.image('fence', 192, 64, 64, 64, x + 192, y + i * 64, 64, 64);
       }
       // Retain the two gateposts and leave a centered 40 px opening between them.
       for (const offset of [0, 148]) {
-        ctx.drawImage(im, offset, 128, 108, 64, x + offset, y + 192, 108, 64);
+        this.draw.image(
+          'fence',
+          offset,
+          128,
+          108,
+          64,
+          x + offset,
+          y + 192,
+          108,
+          64,
+        );
       }
     }
   }
   private label(x: number, y: number, text: string, color = '#eee4ce') {
-    const ctx = this.ctx;
-    ctx.save();
     const size = (18 * this.uiScale) / this.scale;
-    ctx.font = `400 ${size}px "Pixel Operator",monospace`;
     x =
       (Math.round(this.origin.x + x * this.scale) - this.origin.x) / this.scale;
     y =
       (Math.round(this.origin.y + y * this.scale) - this.origin.y) / this.scale;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.strokeStyle = '#172224';
-    ctx.lineWidth = 2.5 / this.scale;
-    ctx.lineJoin = 'round';
-    ctx.strokeText(text, x, y);
-    ctx.fillStyle = '#203235';
-    ctx.fillText(text, x + 1 / this.scale, y + 1 / this.scale);
-    ctx.fillStyle = color;
-    ctx.fillText(text, x, y);
-    ctx.restore();
+    this.draw.text(text, x, y, size, color, {
+      stroke: 2.5 / this.scale,
+      resolution: Math.min(window.devicePixelRatio || 1, 2) * this.scale,
+    });
   }
   private render = () => {
-    this.updateCursor();
     if (this.disposed) return;
-    const ctx = this.ctx,
-      s = this.getState(),
-      t = this.reducedMotion ? 0 : s.elapsed,
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.updateCursor();
+    const s = this.getState(),
+      t = this.reducedMotion ? 0 : s.elapsed;
     if (this.ownership !== s.lots.map((l) => Number(l.owned)).join(''))
       this.makeTerrain();
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = '#648b73';
-    ctx.fillRect(0, 0, this.width, this.height);
-    ctx.translate(this.origin.x, this.origin.y);
-    ctx.scale(this.scale, this.scale);
-    const grass = this.images.get('water')!,
-      left = Math.floor(-this.origin.x / this.scale / 64) * 64,
-      top = Math.floor(-this.origin.y / this.scale / 64) * 64;
-    ctx.fillStyle = ctx.createPattern(grass, 'repeat')!;
-    ctx.fillRect(
-      left,
-      top,
-      this.width / this.scale + 128,
-      this.height / this.scale + 128,
-    );
+    this.scene.begin(this.origin, this.scale, this.width, this.height);
     for (const tile of this.shore) {
       const frame = Math.floor(t * 10 + noise(tile.x, tile.y) * 16) % 16;
-      ctx.drawImage(
-        this.images.get('foam')!,
+      this.scene.shore.image(
+        'foam',
         frame * 192,
         0,
         192,
@@ -1049,7 +811,6 @@ export class Renderer {
         192,
       );
     }
-    ctx.drawImage(this.terrain, -MARGIN, -MARGIN);
     this.hits = [];
     if (s.elapsed === 0) this.motions.clear();
     const alive = new Set([...s.units, ...s.enemies].map((u) => u.id));
@@ -1096,7 +857,6 @@ export class Renderer {
                 barY,
                 (tower.progress || tower.reclaim) / 8,
                 60,
-                false,
               );
           }
           if (tower.lureUntil > s.elapsed)
@@ -1168,17 +928,15 @@ export class Renderer {
         depth: y,
         draw: () => {
           if (kind === 'empty') {
-            ctx.save();
-            ctx.strokeStyle = l.owned ? '#71538c' : '#657a66';
-            ctx.setLineDash([10, 10]);
-            ctx.lineWidth = 3;
-            ctx.strokeRect(
+            this.draw.outline(
               (l.x + 2) * CELL,
               (l.y + 2) * CELL,
               4 * CELL,
               3.5 * CELL,
+              l.owned ? '#71538c' : '#657a66',
+              3,
+              [10, 10],
             );
-            ctx.restore();
             this.sprite('wood', x - 25, y, 0.9);
             this.sprite('rock', x + 30, y - 10, 0.8);
           } else if (placement) {
@@ -1447,6 +1205,8 @@ export class Renderer {
             ),
             scale =
               u.kind === 'troll' ? 0.52 : u.kind === 'minotaur' ? 0.62 : 0.72;
+          if (selected)
+            this.draw.ellipse(x, y, 25, 12, '#fff1af', 2 / this.scale);
           const hit = this.sprite(
             sample.key,
             x,
@@ -1554,11 +1314,14 @@ export class Renderer {
             motion = { action, since: t };
             this.motions.set(e.id, motion);
           }
-          ctx.strokeStyle = e.kind === 'hero' ? '#ffc85c' : '#ed886f';
-          ctx.lineWidth = 2 / this.scale;
-          ctx.beginPath();
-          ctx.ellipse(x, y, e.kind === 'hero' ? 28 : 21, 11, 0, 0, Math.PI * 2);
-          ctx.stroke();
+          this.draw.ellipse(
+            x,
+            y,
+            e.kind === 'hero' ? 28 : 21,
+            11,
+            e.kind === 'hero' ? '#ffc85c' : '#ed886f',
+            2 / this.scale,
+          );
           const sample = animationFrame(sequence, t - motion.since);
           const hit = this.sprite(
             sample.key,
@@ -1635,11 +1398,16 @@ export class Renderer {
       drawables.push({
         depth: p.y * CELL + 1,
         draw: () => {
-          ctx.save();
-          ctx.translate(p.x * CELL, p.y * CELL - 20);
-          ctx.rotate(p.angle);
-          this.sprite('hero-arrow', 0, 0, 0.7);
-          ctx.restore();
+          this.sprite(
+            'hero-arrow',
+            p.x * CELL,
+            p.y * CELL - 20,
+            0.7,
+            0,
+            1,
+            false,
+            p.angle,
+          );
         },
       });
     // Remains lie on the ground, underneath living actors and scenery.
@@ -1760,13 +1528,7 @@ export class Renderer {
       if (bar) {
         if (l.hp < l.maxHp) this.bar(bar.x, bar.y, l.hp / l.maxHp, 80);
         if (l.construction)
-          this.bar(
-            bar.x,
-            bar.y - stackedBar,
-            l.construction.progress,
-            90,
-            false,
-          );
+          this.bar(bar.x, bar.y - stackedBar, l.construction.progress, 90);
       }
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
@@ -1789,14 +1551,15 @@ export class Renderer {
     for (const id of selectedUnitIds(this.selection)) {
       const u = s.units.find((u) => u.id === id);
       if (u?.path.length) {
-        ctx.strokeStyle = '#ffefb5';
-        ctx.lineWidth = 2 / this.scale;
-        ctx.setLineDash([6, 9]);
-        ctx.beginPath();
-        ctx.moveTo(u.x * CELL, u.y * CELL);
-        for (const p of u.path) ctx.lineTo(p.x * CELL, p.y * CELL);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        this.draw.line(
+          [
+            { x: u.x * CELL, y: u.y * CELL },
+            ...u.path.map((p) => ({ x: p.x * CELL, y: p.y * CELL })),
+          ],
+          '#ffefb5',
+          2 / this.scale,
+          [6, 9],
+        );
       }
     }
     // Cloud silhouettes use the original pack and drift with simulation time.
@@ -1806,28 +1569,39 @@ export class Renderer {
       this.sprite(`cloud-${i + 1}` as AssetKey, x, y, 0.95, 0, 0.32);
     }
     // Keep selected actors' four pack corners above scenery and animation effects.
-    const selectedIds = selectedUnitIds(this.selection);
     for (const hit of this.hits) {
       if (
         hit.selection.type === 'lot' ||
+        hit.selection.type === 'unit' ||
         hit.selection.type === 'none' ||
         hit.selection.type === 'units'
       )
         continue;
       const selected =
-        hit.selection.type === 'unit'
-          ? selectedIds.includes(hit.selection.id)
-          : this.selection.type === hit.selection.type &&
-            'id' in this.selection &&
-            this.selection.id === hit.selection.id;
+        this.selection.type === hit.selection.type &&
+        'id' in this.selection &&
+        this.selection.id === hit.selection.id;
       if (selected) this.selectionHit(hit);
     }
     // Draw combat health above all sprites and effects, at a readable size when zoomed out.
     const barWidth = Math.max(48, (32 * this.uiScale) / this.scale);
-    const barHeight = Math.max(12, (8 * this.uiScale) / this.scale);
+    const barHeight = Math.max(6, (4 * this.uiScale) / this.scale);
     const border = Math.max(2, 1 / this.scale);
     for (const bar of combatBars) {
-      this.healthBar(bar.x, bar.y, bar.ratio, barWidth, barHeight);
+      this.draw.rect(
+        bar.x - barWidth / 2 - border,
+        bar.y - border,
+        barWidth + border * 2,
+        barHeight + border * 2,
+        '#15212b',
+      );
+      this.draw.rect(
+        bar.x - barWidth / 2,
+        bar.y,
+        barWidth * Math.max(0, Math.min(1, bar.ratio)),
+        barHeight,
+        bar.enemy ? '#ef7972' : '#9ed779',
+      );
       if (bar.name)
         this.label(
           bar.x,
@@ -1887,45 +1661,42 @@ export class Renderer {
       const size = (16 * this.uiScale) / this.scale;
       const x = gain.x * CELL;
       const y = gain.y * CELL - 84 - (this.reducedMotion ? 0 : progress * 32);
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, (1 - progress) * 3);
-      ctx.font = `400 ${size}px "Pixel Operator", monospace`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      const text = `+${gain.amount}`;
-      const width = ctx.measureText(text).width + size + 4;
-      ctx.fillStyle = '#15212b';
-      ctx.fillText(text, x - width / 2 + 1 / this.scale, y + 1 / this.scale);
-      ctx.fillStyle =
+      const alpha = Math.min(1, (1 - progress) * 3);
+      const text = this.draw.text(
+        `+${gain.amount}`,
+        0,
+        y,
+        size,
         gain.kind === 'gold'
           ? '#ffe59b'
           : gain.kind === 'wood'
             ? '#c9f2a0'
-            : '#ffd0bd';
-      ctx.fillText(text, x - width / 2, y);
-      ctx.drawImage(
-        this.images.get(iconKey)!,
+            : '#ffd0bd',
+        {
+          anchor: 0,
+          alpha,
+          stroke: 1 / this.scale,
+          resolution: Math.min(window.devicePixelRatio || 1, 2) * this.scale,
+        },
+      );
+      const width = text.width + size + 4;
+      text.x = x - width / 2;
+      this.draw.whole(
+        iconKey,
         x + width / 2 - size,
         y - size / 2,
         size,
         size,
+        alpha,
       );
-      ctx.restore();
     }
     if (this.dragging && this.down?.mode === 'select') {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      ctx.save();
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const x = Math.min(this.down.x, this.down.end.x),
         y = Math.min(this.down.y, this.down.end.y);
       const width = Math.abs(this.down.end.x - this.down.x),
         height = Math.abs(this.down.end.y - this.down.y);
-      ctx.fillStyle = '#b9e99a22';
-      ctx.strokeStyle = '#d0f3ac';
-      ctx.lineWidth = 1.5;
-      ctx.fillRect(x, y, width, height);
-      ctx.strokeRect(x, y, width, height);
-      ctx.restore();
+      this.scene.overlay.rect(x, y, width, height, '#b9e99a22');
+      this.scene.overlay.outline(x, y, width, height, '#d0f3ac', 1.5);
     }
     if (this.buildKind && this.pointer) {
       const point = this.toWorld(this.pointer);
@@ -1942,7 +1713,6 @@ export class Renderer {
             ? 0.72
             : 0.9,
       );
-      ctx.save();
       this.sprite(
         key,
         p.x,
@@ -1951,12 +1721,15 @@ export class Renderer {
         0,
         lot && !buildReason(s, lot.id, this.buildKind) ? 0.6 : 0.35,
       );
-      ctx.restore();
     }
+    this.scene.render();
     this.frame = requestAnimationFrame(this.render);
   };
   destroy() {
+    if (this.disposed) return;
     this.disposed = true;
+    this.scene.destroy();
+    this.pixels.clear();
     cancelAnimationFrame(this.frame);
     this.resizeObserver.disconnect();
     this.canvas.removeEventListener('pointerdown', this.pointerDown);

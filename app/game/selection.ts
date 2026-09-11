@@ -1,4 +1,35 @@
-import type { Point, Selection, Unit } from './engine';
+import type { Point, Selection, State, Unit } from './engine';
+
+/** A normal click on a hostile target orders the selected fighters only. */
+export function selectedFightersCanAttack(
+  state: State,
+  selection: Selection,
+  target: Selection | null,
+): boolean {
+  if (state.won || state.lost || !target) return false;
+  const ids = selectedUnitIds(selection);
+  if (
+    !state.units.some(
+      (u) =>
+        ids.includes(u.id) &&
+        u.hp > 0 &&
+        u.kind !== 'specter' &&
+        (u.kind !== 'goblin' || state.strategy.research.includes('embers')),
+    )
+  )
+    return false;
+  if (target.type === 'enemy')
+    return state.enemies.some((e) => e.id === target.id && e.hp > 0);
+  if (target.type === 'worker')
+    return state.workers.some((w) => w.id === target.id && w.hp > 0);
+  const lot =
+    target.type === 'lot'
+      ? state.lots[target.id]
+      : target.type === 'guildHero'
+        ? state.lots[0]
+        : undefined;
+  return !!lot && !lot.owned && lot.kind !== 'empty' && lot.hp > 0;
+}
 
 export function dragIntent(shiftKey: boolean): 'select' | 'pan' {
   return shiftKey ? 'select' : 'pan';

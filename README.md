@@ -4,7 +4,7 @@ Prototype 0.4 de gestion, de conquête et de défense en 2D, en vue du dessus.
 
 [Jouer dans le navigateur](https://leliondoc.github.io/evil-city-app/)
 
-Application autonome React et Vite, publiée automatiquement avec GitHub Pages à chaque modification de la branche `main`. Le jeu fonctionne entièrement dans le navigateur et ne demande ni compte ni service serveur.
+Application solo React et Vite, en TypeScript 7.0.2, avec un rendu PixiJS 8.20.1 sur WebGL. Elle est publiée automatiquement avec GitHub Pages à chaque modification de la branche `main`. Le jeu fonctionne entièrement dans le navigateur et ne demande ni compte ni service serveur.
 
 ## Jouer
 
@@ -66,7 +66,9 @@ Node.js 24 et npm. Installation : `npm install`. La version jouable est vérifi�
 Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, puis ouvrir `/tests/domain-preview.html`. Cette partie préparée utilise l’interface réelle avec une crypte, des dépouilles, un spectre et un moine ; elle n’est pas incluse dans le site de production. Les scénarios automatisés correspondants se trouvent dans `tests/domain.test.mjs`.
 
 - `app/game/engine.ts` : simulation indépendante du rendu.
-- `app/game/renderer.ts` : terrain, caméra, profondeur, animation et sélection sur l’alpha de la frame affichée.
+- `app/game/renderer.ts` : caméra, profondeur, animation et sélection sur l’alpha de la frame affichée.
+- `app/game/pixiScene.ts` : scène WebGL, textures et objets Pixi réutilisés entre les images, libérés à la fermeture de la vue.
+- `app/game/terrainRenderer.ts` : décor statique assemblé dans une texture GPU, reconstruite quand les propriétés changent de camp. Canvas 2D sert uniquement à lire l’alpha des sprites au chargement et à préparer certains éléments d’interface ; la carte est dessinée par Pixi.
 - `app/game/art.ts` et `assets.json` : correspondance des sprites et séquences.
 - `app/game/Sprite.tsx` : aperçu animé dans les panneaux et le bestiaire.
 - `app/game/Game.tsx` : interface et commandes.
@@ -74,7 +76,9 @@ Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, 
 
 Les 110 tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
 
-Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Le clic droit commande les unités sélectionnées. Les gobelins d’un groupe mixte ne participent aux attaques qu’après la recherche Armes enflammées.
+Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Avec des combattants sélectionnés, un clic sur une unité ou un bâtiment ennemi leur donne l’ordre d’attaquer ; Shift + clic permet d’inspecter la cible. Le clic droit commande aussi les unités sélectionnées. Les gobelins d’un groupe mixte ne participent aux attaques qu’après la recherche Armes enflammées.
+
+La carte conserve les cercles de sélection jaunes et les barres de PV simples d’origine. Les barres Tiny Swords restent dans les panneaux de sélection. `node scripts/check-pixi.mjs` vérifie les pixels des barres et du cercle, la flèche d’attaque, les clics individuels et groupés, le redimensionnement et la libération de la vue. Comme les autres contrôles navigateur, il exige le serveur local et Playwright ; `PLAYWRIGHT_CHANNEL=chromium` permet d’utiliser son Chromium au lieu de Chrome. Cette option est également disponible pour `check-display-scaling.mjs`.
 
 ## Résurrection, combos et tours de quartier
 
