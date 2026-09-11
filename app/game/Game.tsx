@@ -1500,7 +1500,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     title={reason || b.short}
                     aria-label={`${b.name}${reason ? `. ${reason}` : ''}`}
                   >
-                    <PanelSkin kind="wood" />
+                    {compact && <PanelSkin kind="paper" />}
                     <Sprite asset={buildingArt(kind)} />
                     <div>
                       <strong>{b.name}</strong>
@@ -1551,7 +1551,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       title={reason || `Recruter : ${c.name}`}
                       aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
                     >
-                      <PanelSkin kind="wood" />
+                      {compact && <PanelSkin kind="paper" />}
                       <CreaturePortrait kind={kind} />
                       <div>
                         <strong>{c.name}</strong>

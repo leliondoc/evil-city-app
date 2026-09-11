@@ -1490,7 +1490,7 @@ svg {
   color: #ffe4a0;
 }
 .selection-panel > h3 {
-  font-family: 'Agenda Fantasy', Georgia, serif;
+  font-family: Georgia, serif;
   font-weight: 400;
   line-height: 1.2;
   text-align: center;
@@ -3326,7 +3326,7 @@ svg {
   min-width: 0;
   padding: 5px 12px;
 }
-.game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] { flex-basis: 144px; height: 144px; }
+.game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] { flex-basis: 128px; height: 128px; }
 .game-shell[data-compact='false'] .card-row { height: 100%; gap: 8px; padding-bottom: 0; }
 .game-shell[data-compact='false'] .card-row > .build-card { max-width: none; }
 .game-shell[data-compact='false'] .recruit-option {
@@ -3375,37 +3375,4 @@ svg {
   background: #192b31ed;
   border-radius: 3px;
   padding: 3px 5px;
-}
-
-/* Wood belongs to the construction/recruitment cards at the bottom. */
-.game-shell[data-compact] .bottom-bar .build-card {
-  isolation: isolate;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  opacity: 1;
-  padding: 16px 18px 28px;
-  color: #fff1d0;
-}
-.game-shell[data-compact] .bottom-bar .build-card > .pack-skin {
-  width: 100%;
-  height: 100%;
-}
-.game-shell[data-compact] .bottom-bar .build-card .keyhint {
-  top: 15px;
-  right: 17px;
-}
-.game-shell[data-compact] .bottom-bar .build-card :is(strong, small, .card-cost, .keyhint) {
-  color: #fff1d0;
-  text-shadow: 0 1px 2px #352016;
-}
-.game-shell[data-compact] .bottom-bar .build-card .cost-missing {
-  color: #ffcab3;
-}
-.game-shell[data-compact] .bottom-bar .build-card:hover > .pack-skin {
-  filter: brightness(1.1);
-}
-.game-shell[data-compact] .bottom-bar .build-card.chosen {
-  outline: 2px solid #ffe6a1;
-  outline-offset: -6px;
 }
