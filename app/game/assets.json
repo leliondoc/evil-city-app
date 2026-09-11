@@ -1791,5 +1791,45 @@
     "frameWidth": 128,
     "frames": 6,
     "anchor": 0.67
+  },
+  "ui-small-ribbons": {
+    "src": "/tiny-swords/ui-small-ribbons.png",
+    "width": 320,
+    "height": 640,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "ui-health-small-base": {
+    "src": "/tiny-swords/ui-health-small-base.png",
+    "width": 320,
+    "height": 64,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "ui-health-small-fill": {
+    "src": "/tiny-swords/ui-health-small-fill.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "ui-health-big-base": {
+    "src": "/tiny-swords/ui-health-big-base.png",
+    "width": 320,
+    "height": 64,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "ui-health-big-fill": {
+    "src": "/tiny-swords/ui-health-big-fill.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.5
   }
 }

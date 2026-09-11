@@ -43,6 +43,7 @@ import {
 } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
+import { paintHealthBar } from './panelSkin';
 import { hasResearch, towerOccupant } from './strategy';
 import {
   selectedUnitIds,
@@ -78,6 +79,10 @@ export class Renderer {
   private pixels = new Map<AssetKey, Uint8ClampedArray>();
   private bounds = new Map<
     AssetKey,
+    { x: number; y: number; width: number; height: number }
+  >();
+  private markerBounds = new Map<
+    string,
     { x: number; y: number; width: number; height: number }
   >();
   private terrain: HTMLCanvasElement;
@@ -163,6 +168,8 @@ export class Renderer {
               (!k.startsWith('ui-') ||
                 [
                   'ui-selection-corners',
+                  'ui-health-small-base',
+                  'ui-health-small-fill',
                   'ui-gold',
                   'ui-wood-icon',
                   'ui-food',
@@ -832,7 +839,114 @@ export class Renderer {
     ctx.stroke();
     ctx.restore();
   }
-  private bar(x: number, y: number, ratio: number, width = 60) {
+  private selectionCorners(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    alpha = 1,
+  ) {
+    const ctx = this.ctx;
+    const corner = Math.min(
+      width / 2,
+      height / 2,
+      Math.max(12, (10 * this.uiScale) / this.scale),
+    );
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    for (const [right, bottom] of [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+    ]) {
+      ctx.drawImage(
+        this.images.get('ui-selection-corners')!,
+        right * 96,
+        bottom * 96,
+        32,
+        32,
+        x + (right ? width - corner : 0),
+        y + (bottom ? height - corner : 0),
+        corner,
+        corner,
+      );
+    }
+    ctx.restore();
+  }
+  private selectionHit(hit: Hit) {
+    const source = spriteFrame(hit.key, hit.frame);
+    const cacheKey = `${hit.key}:${hit.frame}`;
+    let bounds = this.markerBounds.get(cacheKey);
+    if (!bounds) {
+      const pixels = this.pixels.get(hit.key)!;
+      let left = source.width,
+        top = source.height,
+        right = -1,
+        bottom = -1;
+      for (let y = 0; y < source.height; y++)
+        for (let x = 0; x < source.width; x++) {
+          if (
+            pixels[
+              ((source.y + y) * ASSETS[hit.key].width + source.x + x) * 4 + 3
+            ] > 40
+          ) {
+            left = Math.min(left, x);
+            right = Math.max(right, x);
+            top = Math.min(top, y);
+            bottom = Math.max(bottom, y);
+          }
+        }
+      if (right < left) return;
+      bounds = {
+        x: left,
+        y: top,
+        width: right - left + 1,
+        height: bottom - top + 1,
+      };
+      this.markerBounds.set(cacheKey, bounds);
+    }
+    const scale = hit.w / source.width;
+    const padding = (4 * this.uiScale) / this.scale;
+    const left = hit.flip ? source.width - bounds.x - bounds.width : bounds.x;
+    this.selectionCorners(
+      hit.x + left * scale - padding,
+      hit.y + bounds.y * scale - padding,
+      bounds.width * scale + padding * 2,
+      bounds.height * scale + padding * 2,
+    );
+  }
+  private healthBar(
+    x: number,
+    y: number,
+    ratio: number,
+    width: number,
+    height: number,
+  ) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(x - width / 2, y);
+    paintHealthBar(
+      ctx,
+      this.images.get('ui-health-small-base')!,
+      this.images.get('ui-health-small-fill')!,
+      width,
+      height,
+      ratio,
+    );
+    ctx.restore();
+  }
+  private bar(x: number, y: number, ratio: number, width = 60, health = true) {
+    if (health) {
+      this.healthBar(
+        x,
+        y - 2,
+        ratio,
+        Math.max(width, (40 * this.uiScale) / this.scale),
+        Math.max(12, (8 * this.uiScale) / this.scale),
+      );
+      return;
+    }
     const ctx = this.ctx;
     ctx.fillStyle = '#293333';
     ctx.fillRect(x - width / 2 - 2, y - 2, width + 4, 10);
@@ -981,6 +1095,8 @@ export class Renderer {
                 tower.artX * CELL,
                 barY,
                 (tower.progress || tower.reclaim) / 8,
+                60,
+                false,
               );
           }
           if (tower.lureUntil > s.elapsed)
@@ -1010,30 +1126,14 @@ export class Renderer {
           this.selection.type === 'lot' && this.selection.id === l.id,
         hover = this.hover?.type === 'lot' && this.hover.id === l.id;
       if (selected || hover) {
-        const corner = Math.min(20, 10 / this.scale);
         const inset = 24;
-        const marker = this.images.get('ui-selection-corners')!;
-        ctx.save();
-        ctx.globalAlpha = selected ? 0.9 : 0.45;
-        for (const [right, bottom] of [
-          [0, 0],
-          [1, 0],
-          [0, 1],
-          [1, 1],
-        ]) {
-          ctx.drawImage(
-            marker,
-            right * 96,
-            bottom * 96,
-            32,
-            32,
-            l.x * CELL + (right ? 8 * CELL - inset - corner : inset),
-            l.y * CELL + (bottom ? 8 * CELL - inset - corner : inset),
-            corner,
-            corner,
-          );
-        }
-        ctx.restore();
+        this.selectionCorners(
+          l.x * CELL + inset,
+          l.y * CELL + inset,
+          8 * CELL - inset * 2,
+          8 * CELL - inset * 2,
+          selected ? 1 : 0.45,
+        );
       }
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
@@ -1347,13 +1447,6 @@ export class Renderer {
             ),
             scale =
               u.kind === 'troll' ? 0.52 : u.kind === 'minotaur' ? 0.62 : 0.72;
-          if (selected) {
-            ctx.strokeStyle = '#fff1af';
-            ctx.lineWidth = 2 / this.scale;
-            ctx.beginPath();
-            ctx.ellipse(x, y, 25, 12, 0, 0, Math.PI * 2);
-            ctx.stroke();
-          }
           const hit = this.sprite(
             sample.key,
             x,
@@ -1461,12 +1554,8 @@ export class Renderer {
             motion = { action, since: t };
             this.motions.set(e.id, motion);
           }
-          ctx.strokeStyle = selected
-            ? '#fff1af'
-            : e.kind === 'hero'
-              ? '#ffc85c'
-              : '#ed886f';
-          ctx.lineWidth = (selected ? 3 : 2) / this.scale;
+          ctx.strokeStyle = e.kind === 'hero' ? '#ffc85c' : '#ed886f';
+          ctx.lineWidth = 2 / this.scale;
           ctx.beginPath();
           ctx.ellipse(x, y, e.kind === 'hero' ? 28 : 21, 11, 0, 0, Math.PI * 2);
           ctx.stroke();
@@ -1671,7 +1760,13 @@ export class Renderer {
       if (bar) {
         if (l.hp < l.maxHp) this.bar(bar.x, bar.y, l.hp / l.maxHp, 80);
         if (l.construction)
-          this.bar(bar.x, bar.y - stackedBar, l.construction.progress, 90);
+          this.bar(
+            bar.x,
+            bar.y - stackedBar,
+            l.construction.progress,
+            90,
+            false,
+          );
       }
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
@@ -1710,25 +1805,29 @@ export class Renderer {
       const y = [-110, 170, 980][i];
       this.sprite(`cloud-${i + 1}` as AssetKey, x, y, 0.95, 0, 0.32);
     }
+    // Keep selected actors' four pack corners above scenery and animation effects.
+    const selectedIds = selectedUnitIds(this.selection);
+    for (const hit of this.hits) {
+      if (
+        hit.selection.type === 'lot' ||
+        hit.selection.type === 'none' ||
+        hit.selection.type === 'units'
+      )
+        continue;
+      const selected =
+        hit.selection.type === 'unit'
+          ? selectedIds.includes(hit.selection.id)
+          : this.selection.type === hit.selection.type &&
+            'id' in this.selection &&
+            this.selection.id === hit.selection.id;
+      if (selected) this.selectionHit(hit);
+    }
     // Draw combat health above all sprites and effects, at a readable size when zoomed out.
     const barWidth = Math.max(48, (32 * this.uiScale) / this.scale);
-    const barHeight = Math.max(6, (4 * this.uiScale) / this.scale);
+    const barHeight = Math.max(12, (8 * this.uiScale) / this.scale);
     const border = Math.max(2, 1 / this.scale);
     for (const bar of combatBars) {
-      ctx.fillStyle = '#15212b';
-      ctx.fillRect(
-        bar.x - barWidth / 2 - border,
-        bar.y - border,
-        barWidth + border * 2,
-        barHeight + border * 2,
-      );
-      ctx.fillStyle = bar.enemy ? '#ef7972' : '#9ed779';
-      ctx.fillRect(
-        bar.x - barWidth / 2,
-        bar.y,
-        barWidth * Math.max(0, Math.min(1, bar.ratio)),
-        barHeight,
-      );
+      this.healthBar(bar.x, bar.y, bar.ratio, barWidth, barHeight);
       if (bar.name)
         this.label(
           bar.x,

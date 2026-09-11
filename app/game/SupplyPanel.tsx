@@ -1,6 +1,5 @@
-import { Progress } from '@/components/ui/progress';
 import { Sprite } from './Sprite';
-import { GameButton, PackIcon, ResourceIcon } from './PackUI';
+import { GameButton, PackIcon, ResourceIcon, HealthBar } from './PackUI';
 import {
   type State,
   type Selection,
@@ -158,8 +157,7 @@ export function SupplySelection({
               : 'Production coupée'}
         </span>
       </div>
-      <Progress
-        className="healthbar"
+      <HealthBar
         value={(target.hp / target.maxHp) * 100}
         aria-label="Santé du ravitaillement"
       />

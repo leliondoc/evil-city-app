@@ -257,7 +257,7 @@ svg {
 }
 .chapter h2 {
   font:
-    normal 25px/1.15 Georgia,
+    normal 25px/1.15 'Agenda Fantasy', Georgia,
     serif;
 }
 .intro-copy {
@@ -1489,6 +1489,13 @@ svg {
 .selection-panel .selection-name {
   color: #ffe4a0;
 }
+.selection-panel > h3 {
+  font-family: 'Agenda Fantasy', Georgia, serif;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 .selection-panel .selection-text,
 .selection-panel .reason,
 .selection-panel .selection-stats,
@@ -1799,7 +1806,7 @@ svg {
     padding: 18px 16px;
   }
 }
-/* The title uses three ribbon slices, without the transparent sheet gutters. */
+/* The ribbon repeats its center tile while preserving the end proportions. */
 .map-caption {
   isolation: isolate;
   width: 188px;
@@ -1813,22 +1820,6 @@ svg {
 }
 .map-caption p {
   display: none;
-}
-.ribbon-skin {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: 35px 1fr 35px;
-  z-index: -1;
-  pointer-events: none;
-  image-rendering: pixelated;
-}
-.ribbon-skin svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  overflow: hidden;
 }
 @media (max-width: 580px) {
   .map-caption {
@@ -2732,7 +2723,7 @@ svg {
   pointer-events: none;
   z-index: 45;
 }
-.toast-message > span:not(.ribbon-skin) {
+.toast-message > span {
   position: relative;
   z-index: 1;
 }
@@ -2983,7 +2974,7 @@ svg {
   flex: 0 0 auto;
 }
 
-/* Notifications reuse the map title's ribbon and lettering. */
+/* Central notices use the pack's plain yellow ribbon. */
 .game-notifications {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 84px);
@@ -3016,9 +3007,9 @@ svg {
   align-items: center;
   min-height: 64px;
   padding: 18px 42px 16px;
-  color: #fff1c9;
+  color: #392a1f;
   font: 20px/1.25 Georgia, serif;
-  text-shadow: 0 2px #243e49;
+  text-shadow: 0 1px #e9dc8c;
   overflow-wrap: anywhere;
 }
 .game-shell .game-notifications .toast-message {
@@ -3028,7 +3019,18 @@ svg {
   width: min(360px, 100%);
   max-width: none;
 }
-.paused-label > span:not(.ribbon-skin) { position: relative; z-index: 1; }
+.paused-label > span { position: relative; z-index: 1; }
+.pack-healthbar {
+  height: 26px;
+  width: 100%;
+  margin: 10px 0 12px;
+}
+.pack-healthbar canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
 .game-shell[data-compact='true'] .game-notifications .toast-message,
 .game-shell[data-compact='true'] .game-notifications .paused-label {
   font-size: 18px;
@@ -3266,10 +3268,28 @@ svg {
   max-height: 100%;
   zoom: 1;
   pointer-events: auto;
-  background: #192b31e0;
-  border: 1px solid #a1956855;
-  border-radius: 6px;
-  box-shadow: 0 3px 12px #0b1c2533;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.selection-card {
+  position: relative;
+  isolation: isolate;
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+  padding: 24px 24px 32px;
+}
+.game-shell[data-compact] .sidebar .selection-card > .selection-panel {
+  margin: 0;
+  padding: 0;
+  color: #fff1d0;
+}
+.selection-card > .selection-panel > :is(p, h3, label, .selection-stats) {
+  color: #fff1d0;
+  text-shadow: 0 1px 2px #352016;
 }
 .game-shell[data-compact='false'] .bottom-bar {
   background: transparent;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ComponentProps } from 'react';
-import { paintPanel, type PanelKind } from './panelSkin';
+import { paintPanel, paintHealthBar, type PanelKind } from './panelSkin';
 import { Button as BaseButton } from '@/components/ui/button';
 import { ASSETS, type AssetKey } from './art';
 
@@ -35,9 +35,11 @@ export function PanelSkin({
         asset ??
           (kind === 'notice'
             ? 'ui-banner'
-            : kind === 'ribbon'
-              ? 'ui-ribbons'
-              : `ui-${kind}`)
+            : kind === 'yellow-ribbon'
+              ? 'ui-small-ribbons'
+              : kind === 'ribbon'
+                ? 'ui-ribbons'
+                : `ui-${kind}`)
       ].src;
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
@@ -128,17 +130,68 @@ export function ResourceIcon({ kind }: { kind: 'gold' | 'wood' | 'food' }) {
 }
 
 export function RibbonSkin() {
+  return <PanelSkin kind="ribbon" />;
+}
+
+export function HealthBar({
+  value,
+  'aria-label': label,
+}: {
+  value: number;
+  'aria-label': string;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const currentValue = useRef(value);
+  const redraw = useRef<() => void>(() => {});
+  useEffect(() => {
+    const canvas = ref.current!;
+    const base = new Image(),
+      fill = new Image();
+    let disposed = false;
+    const draw = () => {
+      if (disposed || !base.naturalWidth || !fill.naturalWidth) return;
+      const { width, height } = canvas.getBoundingClientRect();
+      if (!width || !height) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      const ctx = canvas.getContext('2d')!;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paintHealthBar(
+        ctx,
+        base,
+        fill,
+        width,
+        height,
+        currentValue.current / 100,
+        true,
+      );
+    };
+    redraw.current = draw;
+    base.onload = fill.onload = draw;
+    base.src = ASSETS['ui-health-big-base'].src;
+    fill.src = ASSETS['ui-health-big-fill'].src;
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      base.onload = fill.onload = null;
+    };
+  }, []);
+  useEffect(() => {
+    currentValue.current = value;
+    redraw.current();
+  }, [value]);
   return (
-    <span className="ribbon-skin" aria-hidden="true">
-      {[
-        [0, 128],
-        [192, 64],
-        [320, 128],
-      ].map(([x, width]) => (
-        <svg key={x} viewBox={`${x} 0 ${width} 128`} preserveAspectRatio="none">
-          <image href={ASSETS['ui-ribbons'].src} width="448" height="640" />
-        </svg>
-      ))}
-    </span>
+    <div className="pack-healthbar">
+      <progress
+        className="sr-only"
+        aria-label={label}
+        max={100}
+        value={Math.max(0, Math.min(100, value))}
+      />
+      <canvas ref={ref} aria-hidden="true" />
+    </div>
   );
 }
