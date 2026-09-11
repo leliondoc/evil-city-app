@@ -788,455 +788,449 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             )}
             {sheetNotice}
             {compact && missionCard}
-            <div className="selection-card">
-              <PanelSkin kind="wood" />
-              {selection.type === 'units' ? (
-                <section
-                  className="selection-panel"
-                  aria-label="Groupe sélectionné"
+            {selection.type === 'units' ? (
+              <section
+                className="selection-panel"
+                aria-label="Groupe sélectionné"
+              >
+                <p className="eyebrow">Vos créatures</p>
+                <h3 className="selection-name">
+                  {group.length} unités sélectionnées
+                </h3>
+                <div className="selected-group">
+                  {group.map((unit) => (
+                    <button
+                      key={unit.id}
+                      onClick={() => select({ type: 'unit', id: unit.id })}
+                      aria-label={`Sélectionner ${CREATURES[unit.kind].name}, ${Math.ceil(unit.hp)} PV`}
+                    >
+                      <CreaturePortrait kind={unit.kind} />
+                      <span>{CREATURES[unit.kind].name}</span>
+                      <small>
+                        {Math.ceil(unit.hp)} / {CREATURES[unit.kind].hp} PV
+                      </small>
+                    </button>
+                  ))}
+                </div>
+                <p className="reason">
+                  {compact
+                    ? 'Fermez les détails, puis Ordre et touchez la destination ou la cible.'
+                    : 'Clic droit : déplacer le groupe ou attaquer une cible.'}{' '}
+                  Les gobelins ne combattent pas.
+                </p>
+                <p className="reason">
+                  {compact
+                    ? 'Groupe : touchez les créatures pour les ajouter ou les retirer, ou tracez un rectangle. Explorer revient au déplacement de la carte.'
+                    : 'Shift + clic : ajouter ou retirer une unité. Shift + rectangle : compléter la sélection. Échap ou clic dans le vide : désélectionner.'}
+                </p>
+              </section>
+            ) : selection.type === 'none' ? (
+              <section
+                className="selection-panel"
+                aria-label="Aucune sélection"
+              >
+                <p className="eyebrow">Le quartier vous attend</p>
+                <h3 className="selection-name">Aucune sélection</h3>
+                <p className="selection-text">
+                  {compact
+                    ? 'Touchez une créature ou une parcelle, puis ouvrez Détails. Groupe permet de sélectionner plusieurs créatures avec un rectangle.'
+                    : 'Cliquez sur une créature ou une parcelle pour afficher ses actions. Maintenez Shift et glissez avec le bouton gauche pour sélectionner plusieurs unités par rectangle.'}
+                </p>
+                <p className="reason">
+                  {compact
+                    ? 'Dans Explorer, touchez le vide pour désélectionner. Sélectionnez une créature, puis Ordre pour la déplacer ou attaquer.'
+                    : 'Clic dans le vide ou Échap : désélectionner. Clic droit : déplacer la créature sélectionnée ou attaquer une cible ennemie.'}
+                </p>
+              </section>
+            ) : selection.type === 'tower' ? (
+              <TowerPanel state={s} id={selection.id} onAction={run} />
+            ) : selection.type === 'worker' || selection.type === 'resource' ? (
+              <SupplySelection
+                state={s}
+                selection={selection}
+                onSelect={select}
+                onRaid={() => run((state) => raidSupply(state, selection))}
+                onGather={() =>
+                  run((state) => {
+                    const goblin = state.units.find(
+                      (u) =>
+                        u.hp > 0 &&
+                        u.kind === 'goblin' &&
+                        ['idle', 'forage'].includes(u.task) &&
+                        !u.gathering?.cargo &&
+                        u.gathering?.site !== selection.id,
+                    );
+                    return goblin
+                      ? gather(state, goblin.id, selection.id)
+                      : 'Aucun gobelin libre sans chargement. Sélectionnez un gobelin pour lui donner cet ordre.';
+                  })
+                }
+              />
+            ) : selection.type === 'guildHero' ? (
+              <GuildHeroSelection
+                state={s}
+                id={selection.id}
+                onSelect={select}
+              />
+            ) : (
+              <section
+                className="selection-panel"
+                aria-label="Détails de la sélection"
+              >
+                <h3 className="selection-name">
+                  {enemyDef?.name ||
+                    creature?.name ||
+                    def?.name ||
+                    'Unité disparue'}
+                </h3>
+                <div
+                  className={`selection-art${chosenKind === 'empty' ? ' empty-art' : selectedLot && chosenKind ? ' building-art' : ''}`}
                 >
-                  <p className="eyebrow">Vos créatures</p>
-                  <h3 className="selection-name">
-                    {group.length} unités sélectionnées
-                  </h3>
-                  <div className="selected-group">
-                    {group.map((unit) => (
-                      <button
-                        key={unit.id}
-                        onClick={() => select({ type: 'unit', id: unit.id })}
-                        aria-label={`Sélectionner ${CREATURES[unit.kind].name}, ${Math.ceil(unit.hp)} PV`}
-                      >
-                        <CreaturePortrait kind={unit.kind} />
-                        <span>{CREATURES[unit.kind].name}</span>
-                        <small>
-                          {Math.ceil(unit.hp)} / {CREATURES[unit.kind].hp} PV
-                        </small>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="reason">
-                    {compact
-                      ? 'Fermez les détails, puis Ordre et touchez la destination ou la cible.'
-                      : 'Clic droit : déplacer le groupe ou attaquer une cible.'}{' '}
-                    Les gobelins ne combattent pas.
-                  </p>
-                  <p className="reason">
-                    {compact
-                      ? 'Groupe : touchez les créatures pour les ajouter ou les retirer, ou tracez un rectangle. Explorer revient au déplacement de la carte.'
-                      : 'Shift + clic : ajouter ou retirer une unité. Shift + rectangle : compléter la sélection. Échap ou clic dans le vide : désélectionner.'}
-                  </p>
-                </section>
-              ) : selection.type === 'none' ? (
-                <section
-                  className="selection-panel"
-                  aria-label="Aucune sélection"
-                >
-                  <p className="eyebrow">Le quartier vous attend</p>
-                  <h3 className="selection-name">Aucune sélection</h3>
-                  <p className="selection-text">
-                    {compact
-                      ? 'Touchez une créature ou une parcelle, puis ouvrez Détails. Groupe permet de sélectionner plusieurs créatures avec un rectangle.'
-                      : 'Cliquez sur une créature ou une parcelle pour afficher ses actions. Maintenez Shift et glissez avec le bouton gauche pour sélectionner plusieurs unités par rectangle.'}
-                  </p>
-                  <p className="reason">
-                    {compact
-                      ? 'Dans Explorer, touchez le vide pour désélectionner. Sélectionnez une créature, puis Ordre pour la déplacer ou attaquer.'
-                      : 'Clic dans le vide ou Échap : désélectionner. Clic droit : déplacer la créature sélectionnée ou attaquer une cible ennemie.'}
-                  </p>
-                </section>
-              ) : selection.type === 'tower' ? (
-                <TowerPanel state={s} id={selection.id} onAction={run} />
-              ) : selection.type === 'worker' ||
-                selection.type === 'resource' ? (
-                <SupplySelection
-                  state={s}
-                  selection={selection}
-                  onSelect={select}
-                  onRaid={() => run((state) => raidSupply(state, selection))}
-                  onGather={() =>
-                    run((state) => {
-                      const goblin = state.units.find(
-                        (u) =>
-                          u.hp > 0 &&
-                          u.kind === 'goblin' &&
-                          ['idle', 'forage'].includes(u.task) &&
-                          !u.gathering?.cargo &&
-                          u.gathering?.site !== selection.id,
-                      );
-                      return goblin
-                        ? gather(state, goblin.id, selection.id)
-                        : 'Aucun gobelin libre sans chargement. Sélectionnez un gobelin pour lui donner cet ordre.';
-                    })
-                  }
-                />
-              ) : selection.type === 'guildHero' ? (
-                <GuildHeroSelection
-                  state={s}
-                  id={selection.id}
-                  onSelect={select}
-                />
-              ) : (
-                <section
-                  className="selection-panel"
-                  aria-label="Détails de la sélection"
-                >
-                  <h3 className="selection-name">
-                    {enemyDef?.name ||
-                      creature?.name ||
-                      def?.name ||
-                      'Unité disparue'}
-                  </h3>
-                  <div
-                    className={`selection-art${chosenKind === 'empty' ? ' empty-art' : selectedLot && chosenKind ? ' building-art' : ''}`}
-                  >
-                    {selectedLot && chosenKind && chosenKind !== 'empty' && (
-                      <PanelSkin kind="paper" asset="ui-building-frame" />
-                    )}
-                    {selectedEnemy ? (
-                      <Sprite
-                        asset={
-                          enemyAnimationSequence(
-                            selectedEnemy,
-                            selectedEnemy.fighting ||
-                              selectedEnemy.healTarget !== null
-                              ? 'attack'
-                              : selectedEnemy.path.length &&
-                                  selectedEnemy.moving !== false
-                                ? 'walk'
-                                : 'idle',
-                          )[0]
-                        }
-                        figure
-                      />
-                    ) : selectedUnit ? (
-                      <Sprite
-                        creature={selectedUnit.kind}
-                        action={
-                          selectedUnit.fighting
+                  {selectedLot && chosenKind && chosenKind !== 'empty' && (
+                    <PanelSkin kind="paper" asset="ui-building-frame" />
+                  )}
+                  {selectedEnemy ? (
+                    <Sprite
+                      asset={
+                        enemyAnimationSequence(
+                          selectedEnemy,
+                          selectedEnemy.fighting ||
+                            selectedEnemy.healTarget !== null
                             ? 'attack'
-                            : selectedUnit.path.length &&
-                                selectedUnit.moving !== false
+                            : selectedEnemy.path.length &&
+                                selectedEnemy.moving !== false
                               ? 'walk'
-                              : selectedUnit.task === 'attack'
-                                ? 'attack'
-                                : 'idle'
-                        }
-                      />
-                    ) : chosenKind ? (
-                      <Sprite
-                        asset={buildingArt(chosenKind, selectedLot?.owned)}
-                      />
-                    ) : null}
-                  </div>
-                  <p className="selection-text">
-                    {enemyDef?.description ||
-                      creature?.description ||
-                      def?.description ||
-                      'Sélectionnez une autre créature ou une parcelle.'}
-                  </p>
-                  {selectedEnemy && (
-                    <>
-                      <div className="selection-stats">
-                        <Shield size={14} /> {Math.ceil(selectedEnemy.hp)} /{' '}
-                        {selectedEnemy.maxHp} · Niv. {selectedEnemy.level}
+                              : 'idle',
+                        )[0]
+                      }
+                      figure
+                    />
+                  ) : selectedUnit ? (
+                    <Sprite
+                      creature={selectedUnit.kind}
+                      action={
+                        selectedUnit.fighting
+                          ? 'attack'
+                          : selectedUnit.path.length &&
+                              selectedUnit.moving !== false
+                            ? 'walk'
+                            : selectedUnit.task === 'attack'
+                              ? 'attack'
+                              : 'idle'
+                      }
+                    />
+                  ) : chosenKind ? (
+                    <Sprite
+                      asset={buildingArt(chosenKind, selectedLot?.owned)}
+                    />
+                  ) : null}
+                </div>
+                <p className="selection-text">
+                  {enemyDef?.description ||
+                    creature?.description ||
+                    def?.description ||
+                    'Sélectionnez une autre créature ou une parcelle.'}
+                </p>
+                {selectedEnemy && (
+                  <>
+                    <div className="selection-stats">
+                      <Shield size={14} /> {Math.ceil(selectedEnemy.hp)} /{' '}
+                      {selectedEnemy.maxHp} · Niv. {selectedEnemy.level}
+                    </div>
+                    <HealthBar
+                      value={(selectedEnemy.hp / selectedEnemy.maxHp) * 100}
+                      aria-label="Santé de l’ennemi"
+                    />
+                    <p className="reason">
+                      {pursuedUnit
+                        ? `Poursuite à mort : ${CREATURES[pursuedUnit.kind].name}`
+                        : `Objectif : ${BUILDINGS[s.lots[selectedEnemy.target].kind].name}`}
+                    </p>
+                    <p className="reason">
+                      {selectedEnemy.role === 'monk'
+                        ? pursuedUnit
+                          ? 'Exorcisme offensif · bonus contre les morts-vivants'
+                          : 'Soins aux alliés proches'
+                        : `${Math.round(selectedEnemy.damage)} dégâts/s · portée ${enemyDef?.range} cases`}
+                    </p>
+                    <Button
+                      className="primary-btn"
+                      tone="red"
+                      disabled={s.won || s.lost || !army(s).length}
+                      onClick={() =>
+                        run((state) => intercept(state, selectedEnemy.id))
+                      }
+                    >
+                      <PackIcon asset="ui-sword" /> Intercepter
+                    </Button>
+                  </>
+                )}
+                {selectedUnit && creature && (
+                  <>
+                    <div className="selection-stats">
+                      <span>
+                        <Shield size={14} />
+                        {Math.ceil(selectedUnit.hp)} / {creature.hp}
+                      </span>
+                      <span>
+                        {selectedUnit.path.length &&
+                        selectedUnit.moving === false &&
+                        !selectedUnit.fighting
+                          ? 'Attend le passage'
+                          : selectedUnit.task === 'forage'
+                            ? gatheringText(selectedUnit)
+                            : unitsText[selectedUnit.task]}
+                      </span>
+                    </div>
+                    <HealthBar
+                      value={(selectedUnit.hp / creature.hp) * 100}
+                      aria-label="Santé de la créature"
+                    />
+                    <Button
+                      className="primary-btn"
+                      onClick={() =>
+                        run((state) => {
+                          moveUnit(
+                            state,
+                            selectedUnit.id,
+                            entrance(state.lots[6]),
+                          );
+                        })
+                      }
+                    >
+                      Rentrer au manoir
+                    </Button>
+                    <p className="reason">
+                      {compact
+                        ? 'Fermez les détails, puis Ordre : touchez le sol pour déplacer cette créature, ou une cible ennemie pour attaquer.'
+                        : 'Clic droit au sol : déplacer cette créature. Sur un ennemi ou un bâtiment ennemi : attaquer avec cette créature.'}
+                    </p>
+                  </>
+                )}
+                <DomainPanel
+                  state={s}
+                  lot={selectedLot}
+                  unit={selectedUnit}
+                  onAction={run}
+                />
+                {selectedLot && (
+                  <>
+                    {chosenKind === 'canteen' && (
+                      <div className="food-production">
+                        <p>
+                          Les gobelins récoltent les vivres à la bergerie et les
+                          livrent au manoir. La cantine améliore les repas, sans
+                          créer de ressources.
+                        </p>
                       </div>
-                      <HealthBar
-                        value={(selectedEnemy.hp / selectedEnemy.maxHp) * 100}
-                        aria-label="Santé de l’ennemi"
-                      />
-                      <p className="reason">
-                        {pursuedUnit
-                          ? `Poursuite à mort : ${CREATURES[pursuedUnit.kind].name}`
-                          : `Objectif : ${BUILDINGS[s.lots[selectedEnemy.target].kind].name}`}
-                      </p>
-                      <p className="reason">
-                        {selectedEnemy.role === 'monk'
-                          ? pursuedUnit
-                            ? 'Exorcisme offensif · bonus contre les morts-vivants'
-                            : 'Soins aux alliés proches'
-                          : `${Math.round(selectedEnemy.damage)} dégâts/s · portée ${enemyDef?.range} cases`}
-                      </p>
-                      <Button
-                        className="primary-btn"
-                        tone="red"
-                        disabled={s.won || s.lost || !army(s).length}
-                        onClick={() =>
-                          run((state) => intercept(state, selectedEnemy.id))
-                        }
-                      >
-                        <PackIcon asset="ui-sword" /> Intercepter
-                      </Button>
-                    </>
-                  )}
-                  {selectedUnit && creature && (
-                    <>
-                      <div className="selection-stats">
-                        <span>
-                          <Shield size={14} />
-                          {Math.ceil(selectedUnit.hp)} / {creature.hp}
-                        </span>
-                        <span>
-                          {selectedUnit.path.length &&
-                          selectedUnit.moving === false &&
-                          !selectedUnit.fighting
-                            ? 'Attend le passage'
-                            : selectedUnit.task === 'forage'
-                              ? gatheringText(selectedUnit)
-                              : unitsText[selectedUnit.task]}
-                        </span>
-                      </div>
-                      <HealthBar
-                        value={(selectedUnit.hp / creature.hp) * 100}
-                        aria-label="Santé de la créature"
-                      />
-                      <Button
-                        className="primary-btn"
-                        onClick={() =>
-                          run((state) => {
-                            moveUnit(
-                              state,
-                              selectedUnit.id,
-                              entrance(state.lots[6]),
-                            );
-                          })
-                        }
-                      >
-                        Rentrer au manoir
-                      </Button>
-                      <p className="reason">
-                        {compact
-                          ? 'Fermez les détails, puis Ordre : touchez le sol pour déplacer cette créature, ou une cible ennemie pour attaquer.'
-                          : 'Clic droit au sol : déplacer cette créature. Sur un ennemi ou un bâtiment ennemi : attaquer avec cette créature.'}
-                      </p>
-                    </>
-                  )}
-                  <DomainPanel
-                    state={s}
-                    lot={selectedLot}
-                    unit={selectedUnit}
-                    onAction={run}
-                  />
-                  {selectedLot && (
-                    <>
-                      {chosenKind === 'canteen' && (
-                        <div className="food-production">
-                          <p>
-                            Les gobelins récoltent les vivres à la bergerie et
-                            les livrent au manoir. La cantine améliore les
-                            repas, sans créer de ressources.
-                          </p>
-                        </div>
-                      )}
-                      {selectedLot.owned && selectedLot.kind !== 'empty' && (
-                        <>
-                          <HealthBar
-                            value={(selectedLot.hp / selectedLot.maxHp) * 100}
-                            aria-label="Résistance du bâtiment"
-                          />
-                          <p className="building-health">
-                            {Math.ceil(selectedLot.hp)} / {selectedLot.maxHp}{' '}
-                            résistance
-                          </p>
-                        </>
-                      )}
-                      <div className="selection-stats">
-                        <span>
-                          {selectedLot.owned ? (
-                            <>
-                              <Flag size={14} />
-                              Niveau {selectedLot.level}
-                            </>
-                          ) : (
-                            <>
-                              <Shield size={14} />
-                              Défense {Math.ceil(selectedLot.hp)}
-                            </>
-                          )}
-                        </span>
-                        <span>
-                          {selectedLot.construction ? (
-                            <>
-                              <Hammer size={14} />
-                              Chantier
-                            </>
-                          ) : selectedLot.kind === 'empty' ? (
-                            'Parcelle libre'
-                          ) : selectedLot.owned ? (
-                            'Sous influence'
-                          ) : (
-                            'À conquérir'
-                          )}
-                        </span>
-                      </div>
-                      {selectedLot.construction ? (
-                        <>
-                          <Progress
-                            className="healthbar"
-                            value={selectedLot.construction.progress * 100}
-                            aria-label="Avancement du chantier"
-                          />
-                          <p className="reason">
-                            {Math.floor(
-                              selectedLot.construction.progress * 100,
-                            )}{' '}
-                            % · Les gobelins se chargent des travaux.
-                          </p>
-                        </>
-                      ) : selectedLot.owned ? (
-                        <>
-                          {pendingBuild &&
-                          (selectedLot.kind === 'empty' ||
-                            selectedLot.kind === 'house' ||
-                            selectedLot.kind === 'tavern') ? (
-                            <>
-                              <div style={{ marginBottom: 10 }}>
-                                <Costs cost={BUILDINGS[pendingBuild].cost} />
-                              </div>
-                              <Button
-                                className="primary-btn"
-                                disabled={
-                                  !!buildReason(s, selectedLot.id, pendingBuild)
-                                }
-                                onClick={buildSelected}
-                              >
-                                <Hammer size={15} />
-                                Construire ici
-                              </Button>
-                              {buildReason(s, selectedLot.id, pendingBuild) && (
-                                <p className="reason">
-                                  {buildReason(s, selectedLot.id, pendingBuild)}
-                                </p>
-                              )}
-                              <Button
-                                className="subtle-btn"
-                                onClick={() => {
-                                  setPendingBuild(null);
-                                  setFeedback('');
-                                }}
-                              >
-                                <PackIcon asset="ui-close" />
-                                Annuler
-                              </Button>
-                            </>
-                          ) : selectedLot.kind === 'empty' ? (
+                    )}
+                    {selectedLot.owned && selectedLot.kind !== 'empty' && (
+                      <>
+                        <HealthBar
+                          value={(selectedLot.hp / selectedLot.maxHp) * 100}
+                          aria-label="Résistance du bâtiment"
+                        />
+                        <p className="building-health">
+                          {Math.ceil(selectedLot.hp)} / {selectedLot.maxHp}{' '}
+                          résistance
+                        </p>
+                      </>
+                    )}
+                    <div className="selection-stats">
+                      <span>
+                        {selectedLot.owned ? (
+                          <>
+                            <Flag size={14} />
+                            Niveau {selectedLot.level}
+                          </>
+                        ) : (
+                          <>
+                            <Shield size={14} />
+                            Défense {Math.ceil(selectedLot.hp)}
+                          </>
+                        )}
+                      </span>
+                      <span>
+                        {selectedLot.construction ? (
+                          <>
+                            <Hammer size={14} />
+                            Chantier
+                          </>
+                        ) : selectedLot.kind === 'empty' ? (
+                          'Parcelle libre'
+                        ) : selectedLot.owned ? (
+                          'Sous influence'
+                        ) : (
+                          'À conquérir'
+                        )}
+                      </span>
+                    </div>
+                    {selectedLot.construction ? (
+                      <>
+                        <Progress
+                          className="healthbar"
+                          value={selectedLot.construction.progress * 100}
+                          aria-label="Avancement du chantier"
+                        />
+                        <p className="reason">
+                          {Math.floor(selectedLot.construction.progress * 100)}{' '}
+                          % · Les gobelins se chargent des travaux.
+                        </p>
+                      </>
+                    ) : selectedLot.owned ? (
+                      <>
+                        {pendingBuild &&
+                        (selectedLot.kind === 'empty' ||
+                          selectedLot.kind === 'house' ||
+                          selectedLot.kind === 'tavern') ? (
+                          <>
+                            <div style={{ marginBottom: 10 }}>
+                              <Costs cost={BUILDINGS[pendingBuild].cost} />
+                            </div>
                             <Button
                               className="primary-btn"
-                              onClick={() => chooseBuild('canteen')}
+                              disabled={
+                                !!buildReason(s, selectedLot.id, pendingBuild)
+                              }
+                              onClick={buildSelected}
                             >
                               <Hammer size={15} />
-                              Installer une cantine
+                              Construire ici
                             </Button>
-                          ) : (
-                            <>
-                              <Button
-                                className="primary-btn"
-                                disabled={!!upgradeReason(s, selectedLot.id)}
-                                onClick={() =>
-                                  run((state) => upgrade(state, selectedLot.id))
-                                }
-                              >
-                                <ArrowUp size={15} />
-                                {selectedLot.level >= 3
-                                  ? 'Niveau maximal'
-                                  : `Améliorer · ${80 * selectedLot.level} or`}
-                              </Button>
-                              {selectedLot.level < 3 && (
-                                <div style={{ marginTop: 8 }}>
-                                  <Costs cost={upgradeCost(selectedLot)} />
-                                </div>
-                              )}
-                              {(selectedLot.kind === 'house' ||
-                                selectedLot.kind === 'tavern') && (
-                                <p className="reason">
-                                  Choisissez un bâtiment en bas pour transformer
-                                  cette propriété.
-                                </p>
-                              )}
-                              {upgradeReason(s, selectedLot.id) &&
-                                selectedLot.level < 3 && (
-                                  <p className="reason">
-                                    {upgradeReason(s, selectedLot.id)}
-                                  </p>
-                                )}
-                            </>
-                          )}
-                        </>
-                      ) : selectedLot.kind === 'empty' ? (
-                        <>
-                          <Button
-                            className="primary-btn"
-                            disabled={!!claimReason(s, selectedLot.id)}
-                            onClick={() =>
-                              run((state) => claim(state, selectedLot.id))
-                            }
-                          >
-                            <Sparkles size={15} />
-                            Revendiquer le terrain
-                          </Button>
-                          <div style={{ marginTop: 8 }}>
-                            <Costs cost={{ gold: 40, mana: 18 }} />
-                          </div>
-                          {claimReason(s, selectedLot.id) && (
-                            <p className="reason">
-                              {claimReason(s, selectedLot.id)}
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <HealthBar
-                            value={(selectedLot.hp / selectedLot.maxHp) * 100}
-                            aria-label="Résistance des défenseurs"
-                          />
-                          <Button
-                            className="primary-btn"
-                            tone="red"
-                            disabled={!!attackReason(s, selectedLot.id)}
-                            onClick={() =>
-                              run((state) => attack(state, selectedLot.id))
-                            }
-                          >
-                            <PackIcon asset="ui-sword" />
-                            Envoyer l’armée
-                          </Button>
-                          <p className="reason">
-                            {attackReason(s, selectedLot.id) ||
-                              (selectedLot.kind === 'hall'
-                                ? '4 trolls en bonne santé sont conseillés. Surveillez les raids pendant le siège.'
-                                : `${army(s).length} combattant${army(s).length > 1 ? 's' : ''} prêt${army(s).length > 1 ? 's' : ''} à marcher.`)}
-                          </p>
-                          {army(s).some((u) => u.task === 'attack') && (
+                            {buildReason(s, selectedLot.id, pendingBuild) && (
+                              <p className="reason">
+                                {buildReason(s, selectedLot.id, pendingBuild)}
+                              </p>
+                            )}
                             <Button
                               className="subtle-btn"
-                              onClick={() => run((state) => retreat(state))}
+                              onClick={() => {
+                                setPendingBuild(null);
+                                setFeedback('');
+                              }}
                             >
-                              <PackIcon asset="ui-back" /> Sonner le repli
+                              <PackIcon asset="ui-close" />
+                              Annuler
                             </Button>
-                          )}
-                        </>
-                      )}
-                      {selectedLot.owned && (
-                        <div className="rally-action">
+                          </>
+                        ) : selectedLot.kind === 'empty' ? (
                           <Button
-                            className="subtle-btn rally-button"
-                            disabled={s.won || s.lost || !army(s).length}
-                            onClick={() =>
-                              run((state) => defend(state, selectedLot.id))
-                            }
+                            className="primary-btn"
+                            onClick={() => chooseBuild('canteen')}
                           >
-                            <PackIcon asset="ui-shield" />
-                            <span>Rassembler l’armée ici</span>
+                            <Hammer size={15} />
+                            Installer une cantine
                           </Button>
+                        ) : (
+                          <>
+                            <Button
+                              className="primary-btn"
+                              disabled={!!upgradeReason(s, selectedLot.id)}
+                              onClick={() =>
+                                run((state) => upgrade(state, selectedLot.id))
+                              }
+                            >
+                              <ArrowUp size={15} />
+                              {selectedLot.level >= 3
+                                ? 'Niveau maximal'
+                                : `Améliorer · ${80 * selectedLot.level} or`}
+                            </Button>
+                            {selectedLot.level < 3 && (
+                              <div style={{ marginTop: 8 }}>
+                                <Costs cost={upgradeCost(selectedLot)} />
+                              </div>
+                            )}
+                            {(selectedLot.kind === 'house' ||
+                              selectedLot.kind === 'tavern') && (
+                              <p className="reason">
+                                Choisissez un bâtiment en bas pour transformer
+                                cette propriété.
+                              </p>
+                            )}
+                            {upgradeReason(s, selectedLot.id) &&
+                              selectedLot.level < 3 && (
+                                <p className="reason">
+                                  {upgradeReason(s, selectedLot.id)}
+                                </p>
+                              )}
+                          </>
+                        )}
+                      </>
+                    ) : selectedLot.kind === 'empty' ? (
+                      <>
+                        <Button
+                          className="primary-btn"
+                          disabled={!!claimReason(s, selectedLot.id)}
+                          onClick={() =>
+                            run((state) => claim(state, selectedLot.id))
+                          }
+                        >
+                          <Sparkles size={15} />
+                          Revendiquer le terrain
+                        </Button>
+                        <div style={{ marginTop: 8 }}>
+                          <Costs cost={{ gold: 40, mana: 18 }} />
                         </div>
-                      )}
-                      {selectedLot.kind === 'guild' && (
-                        <GuildRoster state={s} onSelect={select} />
-                      )}
-                    </>
-                  )}
-                </section>
-              )}
-            </div>
+                        {claimReason(s, selectedLot.id) && (
+                          <p className="reason">
+                            {claimReason(s, selectedLot.id)}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <HealthBar
+                          value={(selectedLot.hp / selectedLot.maxHp) * 100}
+                          aria-label="Résistance des défenseurs"
+                        />
+                        <Button
+                          className="primary-btn"
+                          tone="red"
+                          disabled={!!attackReason(s, selectedLot.id)}
+                          onClick={() =>
+                            run((state) => attack(state, selectedLot.id))
+                          }
+                        >
+                          <PackIcon asset="ui-sword" />
+                          Envoyer l’armée
+                        </Button>
+                        <p className="reason">
+                          {attackReason(s, selectedLot.id) ||
+                            (selectedLot.kind === 'hall'
+                              ? '4 trolls en bonne santé sont conseillés. Surveillez les raids pendant le siège.'
+                              : `${army(s).length} combattant${army(s).length > 1 ? 's' : ''} prêt${army(s).length > 1 ? 's' : ''} à marcher.`)}
+                        </p>
+                        {army(s).some((u) => u.task === 'attack') && (
+                          <Button
+                            className="subtle-btn"
+                            onClick={() => run((state) => retreat(state))}
+                          >
+                            <PackIcon asset="ui-back" /> Sonner le repli
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {selectedLot.owned && (
+                      <div className="rally-action">
+                        <Button
+                          className="subtle-btn rally-button"
+                          disabled={s.won || s.lost || !army(s).length}
+                          onClick={() =>
+                            run((state) => defend(state, selectedLot.id))
+                          }
+                        >
+                          <PackIcon asset="ui-shield" />
+                          <span>Rassembler l’armée ici</span>
+                        </Button>
+                      </div>
+                    )}
+                    {selectedLot.kind === 'guild' && (
+                      <GuildRoster state={s} onSelect={select} />
+                    )}
+                  </>
+                )}
+              </section>
+            )}
           </aside>
         </div>
 
@@ -1506,7 +1500,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     title={reason || b.short}
                     aria-label={`${b.name}${reason ? `. ${reason}` : ''}`}
                   >
-                    {compact && <PanelSkin kind="paper" />}
+                    <PanelSkin kind="wood" />
                     <Sprite asset={buildingArt(kind)} />
                     <div>
                       <strong>{b.name}</strong>
@@ -1557,7 +1551,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       title={reason || `Recruter : ${c.name}`}
                       aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
                     >
-                      {compact && <PanelSkin kind="paper" />}
+                      <PanelSkin kind="wood" />
                       <CreaturePortrait kind={kind} />
                       <div>
                         <strong>{c.name}</strong>

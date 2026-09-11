@@ -108,7 +108,31 @@ export function paintPanel(
         for (let x = xs[col]; x < xs[col + 1]; x += tileWidth) {
           const w = Math.min(tileWidth, xs[col + 1] - x);
           const h = Math.min(tileHeight, ys[row + 1] - y);
-          ctx.drawImage(image, sx, sy, w / scale, h / scale, x, y, w, h);
+          // The wood grain is not seamless left-to-right. Mirror alternating
+          // center tiles so their edge pixels meet, including the last partial tile.
+          const mirrorWood =
+            kind === 'wood' &&
+            col === 1 &&
+            Math.floor((x - xs[col]) / tileWidth) % 2 === 1;
+          if (mirrorWood) {
+            ctx.save();
+            ctx.translate(x + w, y);
+            ctx.scale(-1, 1);
+            ctx.drawImage(
+              image,
+              sx + sw - w / scale,
+              sy,
+              w / scale,
+              h / scale,
+              0,
+              0,
+              w,
+              h,
+            );
+            ctx.restore();
+          } else {
+            ctx.drawImage(image, sx, sy, w / scale, h / scale, x, y, w, h);
+          }
         }
     }
 }
