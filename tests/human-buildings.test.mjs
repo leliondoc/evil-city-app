@@ -115,9 +115,9 @@ test('A human recapture restores the current city fortifications rather than an 
   assert.equal(lot.maxHp, 230);
 });
 
-test('Civilian properties retain civilian models at all levels and houses vary by parcel', () => {
+test('Only the supply relay develops into an archery and barracks; houses retain varied civilian models', () => {
   for (let level = 1; level <= 6; level++) {
-    assert.equal(buildingArt('tavern', false, level), 'tavern-blue');
+    assert.equal(buildingArt('tavern', false, level), level >= 5 ? 'human-barracks-blue' : level >= 3 ? 'human-archery-blue' : 'tavern-blue');
     const homes = [4, 5, 8].map(id => buildingArt('house', false, level, id));
     assert.ok(homes.every(key => key.startsWith('house-blue')));
     assert.ok(new Set(homes).size >= 2);
