@@ -46,6 +46,8 @@ Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche
 
 Le bouton du bestiaire utilise le portrait original `Enemy Pack/Imp/Imp_Avatar.png`, copié sans retouche dans `public/tiny-swords/imp-avatar.png` et affiché en grand dans le menu circulaire.
 
+Les fortifications humaines emploient cinq PNG originaux supplémentaires : le château bleu de Tiny Swords Update 010, les casernes bleues et jaunes, le pas de tir bleu et le château jaune du Free Pack. `scripts/import-human-building-models.ps1` copie ces seuls modèles depuis les archives fournies. La mairie avancée combine le château et deux tours bleues déjà présentes ; aucun PNG n’est retouché.
+
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.
 
 Les textures UI sont des planches de morceaux séparés. `PackUI.tsx` répète les morceaux des panneaux et boutons dans un canvas à échelle fixe, sans étirer le grain du bois ou le parchemin ; le ruban utilise trois morceaux SVG. Les coins restent à taille fixe. Le gisement d’or emploie Gold Stone 5 et Gold Stone 4, qui représentent des rochers plutôt que les petites pépites de Gold Stone 1. Le pack fourni ne contient pas de bâtiment de mine. Aucun PNG n’est redessiné.

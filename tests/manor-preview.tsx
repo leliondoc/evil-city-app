@@ -21,10 +21,10 @@ s.lots[5].owned = true;
 recruit(s, 'goblin');
 recruit(s, 'spear-goblin');
 tick(s, 6.1);
-const original = Reflect.get(Renderer.prototype, 'zoomBy') as Renderer['zoomBy'];
-Renderer.prototype.zoomBy = function (...args) {
+const original = Reflect.get(Renderer.prototype, 'resize') as () => void;
+Reflect.set(Renderer.prototype, 'resize', function (this: Renderer) {
   window.manorRenderer = this;
-  return original.apply(this, args);
-};
+  return original.call(this);
+});
 window.manorState = s;
 createRoot(document.getElementById('root')!).render(<Game initialState={s} />);

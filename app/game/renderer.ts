@@ -26,6 +26,7 @@ import {
   animationSequence,
   enemyAnimationSequence,
   buildingArt,
+  buildingHasTowers,
   buildingDoorX,
   workerArt,
   sheepReactionFrame,
@@ -139,6 +140,7 @@ export class Renderer {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     if (canvas.parentElement) this.resizeObserver.observe(canvas.parentElement);
+    this.zoom = this.initialZoom();
     this.resize();
     canvas.addEventListener('pointerdown', this.pointerDown);
     canvas.addEventListener('pointermove', this.pointerMove);
@@ -216,6 +218,7 @@ export class Renderer {
       if (this.disposed) return;
       this.makeTerrain();
       this.makeDecorations();
+      this.resize();
       this.ready = true;
       this.onReady();
       this.render();
@@ -275,24 +278,34 @@ export class Renderer {
   }
   public resetView() {
     this.pointerCancel();
-    this.zoom = 1;
+    this.zoom = this.initialZoom();
     this.panX = 0;
     this.panY = 0;
-    this.recalculate();
+    this.resize();
+  }
+  private initialZoom() {
+    return this.canvas.closest('.game-shell')?.getAttribute('data-compact') === 'false' ? 1.15 : 1;
   }
   public focusLot(id: number) {
     const lot = this.getState().lots[id];
     if (!lot) return;
     this.pointerCancel();
+    this.resize();
     const view = this.viewport;
+    // Aim at the visible building, accounting for transparent sprite margins.
+    const hit = this.hits.find((hit) => hit.selection.type === 'lot' && hit.selection.id === id);
+    const bounds = hit && this.visibleBounds(hit);
+    const target = bounds
+      ? { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+      : { x: (lot.x + 4) * CELL, y: (lot.y + 4) * CELL };
     this.panX +=
       view.x +
       view.width / 2 -
-      (this.origin.x + (lot.x + 4) * CELL * this.scale);
+      (this.origin.x + target.x * this.scale);
     this.panY +=
       view.y +
-      view.height * 0.38 -
-      (this.origin.y + (lot.y + 4) * CELL * this.scale);
+      view.height / 2 -
+      (this.origin.y + target.y * this.scale);
     this.recalculate();
   }
   public pan(dx: number, dy: number) {
@@ -952,9 +965,9 @@ export class Renderer {
         x = (l.x + 4) * CELL,
         y = (l.y + 6.2) * CELL - (l.id === 0 && !l.owned ? 28 : 0),
         key =
-          kind === 'house'
-            ? (`house-${l.owned ? 'purple' : 'blue'}-${(l.id % 2) + 2}` as AssetKey)
-            : buildingArt(kind, l.owned),
+          kind === 'house' && l.owned
+            ? (`house-purple-${(l.id % 2) + 2}` as AssetKey)
+            : buildingArt(kind, l.owned, l.level, l.id),
         preferredScale =
           kind === 'hq' || kind === 'hall'
             ? 0.78
@@ -1005,6 +1018,14 @@ export class Renderer {
             );
             hit.selection = { type: 'lot', id: l.id };
             this.hits.push(hit);
+            if (buildingHasTowers(kind, l.owned, l.level)) {
+              for (const side of [-1, 1]) {
+                const tower = this.buildingPlacement('tower-blue', x + side * 74, y - 4, 0.36);
+                const towerHit = this.sprite('tower-blue', tower.x, tower.y, tower.scale);
+                towerHit.selection = { type: 'lot', id: l.id };
+                this.hits.push(towerHit);
+              }
+            }
             if (
               !this.reducedMotion &&
               !l.construction &&

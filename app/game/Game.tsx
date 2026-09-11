@@ -64,7 +64,8 @@ import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
 import { createGameStore } from './gameStore';
-import { buildingArt, enemyAnimationSequence, type Animation } from './art';
+import { buildingArt, buildingHasTowers, enemyAnimationSequence, type Animation } from './art';
+import { humanBuildingDescription } from './humanBuildings';
 import {
   BUILDINGS,
   CREATURES,
@@ -95,8 +96,6 @@ import {
   recruitReason,
   claim,
   claimReason,
-  attack,
-  attackReason,
   retreat,
   defend,
   intercept,
@@ -987,13 +986,15 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     />
                   ) : chosenKind ? (
                     <Sprite
-                      asset={buildingArt(chosenKind, selectedLot?.owned)}
+                      asset={buildingArt(chosenKind, selectedLot?.owned, selectedLot?.level, selectedLot?.id)}
+                      flankingTowers={!!selectedLot && buildingHasTowers(chosenKind, selectedLot.owned, selectedLot.level)}
                     />
                   ) : null}
                 </div>
                 <p className="selection-text">
                   {enemyDef?.description ||
                     creature?.description ||
+                    (selectedLot && !selectedLot.owned && selectedLot.kind !== 'empty' ? humanBuildingDescription(selectedLot.kind, selectedLot.level) : undefined) ||
                     def?.description ||
                     'Sélectionnez une autre créature ou une parcelle.'}
                 </p>
@@ -1144,7 +1145,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         ) : (
                           <>
                             <Shield size={14} />
-                            Défense {Math.ceil(selectedLot.hp)}
+                            {Math.ceil(selectedLot.hp)} / {selectedLot.maxHp} PV
                           </>
                         )}
                       </span>
@@ -1159,7 +1160,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         ) : selectedLot.owned ? (
                           null
                         ) : (
-                          'Camp humain · À conquérir'
+                          `Humains · niveau ${selectedLot.level}`
                         )}
                       </span>
                     </div>
@@ -1234,7 +1235,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                                 ? 'Niveau maximal'
                                 : `Passer au niveau ${selectedLot.level + 1}`}
                             </Button>}
-                            {canUpgradeKind(selectedLot.kind) && <p className="reason">Actuellement : {buildingLevelEffect(selectedLot.kind, selectedLot.level)}.</p>}
+                            {canUpgradeKind(selectedLot.kind) && (selectedLot.kind !== 'hq' || selectedLot.level >= 3) && <p className="reason">{buildingLevelEffect(selectedLot.kind, selectedLot.level)}.</p>}
                             {canUpgradeKind(selectedLot.kind) && selectedLot.level < 3 && (
                               <div style={{ marginTop: 8 }}>
                                 <p className="reason">{upgradeBenefit(selectedLot)}</p>
@@ -1284,26 +1285,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                           value={(selectedLot.hp / selectedLot.maxHp) * 100}
                           aria-label="Résistance des défenseurs"
                         />
-                        <Button
-                          className="primary-btn"
-                          tone="red"
-                          disabled={!!attackReason(s, selectedLot.id)}
-                          onClick={() =>
-                            run((state) => attack(state, selectedLot.id))
-                          }
-                        >
-                          <PackIcon asset="ui-sword" />
-                          Envoyer l’armée
-                        </Button>
-                        <p className="reason">
-                          {attackReason(s, selectedLot.id) ||
-                            (selectedLot.kind === 'hall'
-                              ? '4 trolls en bonne santé sont conseillés. Surveillez les raids pendant le siège.'
-                              : selectedLot.kind === 'house' ||
-                                  selectedLot.kind === 'tavern'
-                                ? 'Réduisez sa résistance à zéro pour la conquérir. Vous pourrez ensuite y construire votre hutte des trolls.'
-                                : `${army(s).length} combattant${army(s).length > 1 ? 's' : ''} prêt${army(s).length > 1 ? 's' : ''} à marcher.`)}
-                        </p>
                         {army(s).some(
                           (u) =>
                             u.task === 'attack' && u.target === selectedLot.id,

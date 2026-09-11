@@ -70,19 +70,21 @@ export function GameButton({
   tone = 'blue',
   ...props
 }: ComponentProps<typeof BaseButton> & { tone?: 'blue' | 'red' }) {
+  const primary = typeof className === 'string' && className.includes('primary-btn');
   const skin =
     typeof className === 'string' &&
     (className.includes('primary-btn') || className.includes('touch-pack'));
   return (
     <BaseButton
       {...props}
+      data-tone={tone}
       className={
         typeof className === 'string'
           ? `${className}${skin ? ' pack-action' : ''}`
           : className
       }
     >
-      {skin && (
+      {skin && !primary && (
         <>
           <PanelSkin
             kind="button"

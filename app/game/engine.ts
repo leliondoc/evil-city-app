@@ -1,6 +1,7 @@
 import { streetCenter } from './streets.ts';
 import { COMBAT, humanMultiplier } from './combat.ts';
 import { BUILDING_TIER, canUpgradeKind, manorRequirement } from './progression.ts';
+import { advanceHumanBuildings, humanBuildingHealth } from './humanBuildings.ts';
 import {
   ISLAND_SITES,
   isIslandPathCell,
@@ -895,26 +896,8 @@ export function createGame(): State {
       y: STARTS[Math.floor(id / 3)],
       kind,
       owned: [3, 6, 7].includes(id),
-      hp:
-        kind === 'hq'
-          ? 500
-          : kind === 'hall'
-            ? 360
-            : kind === 'guild'
-              ? 220
-              : kind === 'tavern'
-                ? 140
-                : 85,
-      maxHp:
-        kind === 'hq'
-          ? 500
-          : kind === 'hall'
-            ? 360
-            : kind === 'guild'
-              ? 220
-              : kind === 'tavern'
-                ? 140
-                : 85,
+      hp: kind === 'hq' ? 500 : humanBuildingHealth(kind, 1),
+      maxHp: kind === 'hq' ? 500 : humanBuildingHealth(kind, 1),
       level: 1,
       humanKind: kind === 'den' ? 'house' : kind,
       construction: null,
@@ -1519,7 +1502,7 @@ export function upgradeReason(s: State, id: number) {
   if (l.kind !== 'hq' && manorRequirement(s, l.level + 1))
     return `${manorRequirement(s, l.level + 1)} Le niveau du manoir limite celui des bâtiments.`;
   if (!canAfford(s, upgradeCost(l)))
-    return 'Il manque des ressources pour cette amélioration.';
+    return 'Ressources insuffisantes.';
   return '';
 }
 export function upgrade(s: State, id: number) {
@@ -2111,15 +2094,8 @@ function loseLot(s: State, lot: Lot) {
   lot.owned = false;
   lot.kind = lot.humanKind;
   lot.construction = null;
-  lot.level = 1;
-  lot.maxHp =
-    lot.kind === 'hall'
-      ? 360
-      : lot.kind === 'guild'
-        ? 220
-        : lot.kind === 'tavern'
-          ? 140
-          : 85;
+  lot.level = humanLevel(s);
+  lot.maxHp = humanBuildingHealth(lot.kind, lot.level);
   lot.hp = lot.maxHp;
   for (const u of s.units.filter(
     (u) => u.task === 'build' && u.target === lot.id,
@@ -2512,6 +2488,7 @@ function tickStep(s: State, dt: number) {
     (gain) => s.elapsed - gain.at < RESOURCE_GAIN_LIFETIME,
   );
   advanceEconomy(s, dt);
+  advanceHumanBuildings(s);
   if (humanLevel(s) > s.humanLevelAnnounced) {
     s.humanLevelAnnounced = humanLevel(s);
     announce(
@@ -2703,6 +2680,7 @@ function tickStep(s: State, dt: number) {
           u.hp -= (retaliation * dt) / attackers.length;
         if (lot.hp <= 0) {
           lot.owned = true;
+          lot.level = 1;
           lot.hp = lot.maxHp;
           s.captures++;
           s.domain.suspicion = Math.min(100, s.domain.suspicion + 8);

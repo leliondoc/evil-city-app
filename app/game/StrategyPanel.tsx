@@ -121,10 +121,7 @@ export function TowerPanel({
     lootError = lootReason(s, id);
   return (
     <section className="selection-panel" aria-label="Détails de la tour">
-      <p className="eyebrow">
-        {tower.owned ? 'Votre poste de quartier' : 'Tour humaine à capturer'}
-      </p>
-      <h3>{tower.name}</h3>
+      <h3 className="selection-name">{tower.name}</h3>
       <img
         className="tower-portrait"
         src={ASSETS[tower.owned ? 'tower-purple' : 'tower-blue'].src}

@@ -68,7 +68,7 @@ export function CommandWheel(props: Props) {
         <PackIcon asset="hq-purple" className="command-wheel-castle" />
         <span className="command-wheel-name">Manoir</span>
         <span className="command-wheel-level">
-          <PackIcon asset="ui-shield" />
+          <PackIcon asset="ui-hammer" />
           {props.level}
         </span>
       </button>

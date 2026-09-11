@@ -1,4 +1,5 @@
 import manifest from './assets.json' with { type: 'json' };
+import { humanBuildingTier } from './humanBuildings.ts';
 import type {
   BuildingKind,
   CreatureKind,
@@ -41,13 +42,23 @@ export function spriteFrame(key: AssetKey, frame: number) {
     height,
   };
 }
-export function buildingArt(kind: BuildingKind, owned = true): AssetKey {
+export function buildingArt(kind: BuildingKind, owned = true, level = 1, id = 0): AssetKey {
+  if (!owned) {
+    const tier = humanBuildingTier(level);
+    if (kind === 'hall' && tier >= 2) return 'human-fortress-blue';
+    if (kind === 'guild' && tier >= 2) return tier === 3 ? 'human-citadel-yellow' : 'human-barracks-yellow';
+    if (kind === 'tavern' && tier >= 2) return tier === 3 ? 'human-barracks-blue' : 'human-archery-blue';
+    if (kind === 'house') return tier === 3 ? 'human-barracks-blue' : tier === 2 ? 'human-archery-blue' : `house-blue-${(id % 2) + 2}` as AssetKey;
+  }
   if (kind === 'guild' && !owned) return 'guild-yellow';
   if (kind === 'den') return 'cave';
   if (kind === 'forge' && owned) return 'troll-house';
   if (kind === 'empty') return 'wood';
   const name = kind === 'hall' ? 'hq' : kind === 'guild' ? 'crypt' : kind;
   return `${name}-${owned ? 'purple' : 'blue'}` as AssetKey;
+}
+export function buildingHasTowers(kind: BuildingKind, owned: boolean, level: number) {
+  return !owned && kind === 'hall' && humanBuildingTier(level) === 3;
 }
 /** Door axis in the original sprite. House 2 has its entrance on the left. */
 export function buildingDoorX(key: AssetKey) {

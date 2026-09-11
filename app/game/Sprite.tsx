@@ -20,6 +20,7 @@ export function Sprite({
   figure = false,
   mounted = false,
   ground,
+  flankingTowers = false,
 }: {
   asset?: AssetKey;
   creature?: CreatureKind;
@@ -30,6 +31,7 @@ export function Sprite({
   figure?: boolean;
   mounted?: boolean;
   ground?: AssetKey;
+  flankingTowers?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -46,7 +48,7 @@ export function Sprite({
     ).matches;
     const start = performance.now();
     Promise.all(
-      [...new Set([...sequence, ...(ground ? [ground] : [])])].map(
+      [...new Set([...sequence, ...(ground ? [ground] : []), ...(flankingTowers ? ['tower-blue' as const] : [])])].map(
         (key) =>
           new Promise<void>((resolve, reject) => {
             const im = new Image();
@@ -93,6 +95,11 @@ export function Sprite({
             a.frameWidth * scale,
             a.height * scale,
           );
+          if (flankingTowers) {
+            const tower = images.get('tower-blue')!;
+            for (const side of [-1, 1])
+              ctx.drawImage(tower, 128 + side * 82 - 24, 128 + a.height * scale / 2 - 100, 48, 96);
+          }
           if (!reduced && sequence.some((key) => ASSETS[key].frames > 1))
             frame = requestAnimationFrame(draw);
         };
@@ -105,7 +112,7 @@ export function Sprite({
       disposed = true;
       cancelAnimationFrame(frame);
     };
-  }, [asset, creature, action, providedSequence, figure, mounted, ground]);
+  }, [asset, creature, action, providedSequence, figure, mounted, ground, flankingTowers]);
   return (
     <canvas
       ref={ref}

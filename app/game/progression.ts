@@ -61,7 +61,7 @@ export function upgradeBenefit(lot: Pick<Lot, 'kind' | 'level'>): string {
   if (!canUpgradeKind(lot.kind) || n >= 3) return '';
   switch (lot.kind) {
     case 'hq':
-      return `${n === 1 ? 'Débloque la crypte et les chevaucheurs de cochons' : 'Débloque la hutte des trolls et les recherches de feu'}. Essence : ${number(10.8 * n)} → ${number(10.8 * (n + 1))}/min. Bâtiments améliorables jusqu’au niveau ${n + 1}.`;
+      return `${n === 1 ? 'Débloque la crypte et les chevaucheurs de cochons' : 'Débloque la hutte des trolls et les recherches de feu'}. +10,8 essence/min.`;
     case 'den':
       return `Capacité de cette grotte : ${6 * n} → ${6 * (n + 1)} places.`;
     case 'canteen':

@@ -61,7 +61,7 @@ try {
       .click();
     const point = await page.evaluate(() => {
       const r = document.querySelector('.world-wrap').getBoundingClientRect(),
-        scale = Math.max(0.1, Math.min(r.width / 1120, r.height / 1174));
+        scale = Math.max(0.1, Math.min(r.width / 1120, r.height / 1174)) * 1.15;
       return {
         x: Math.round(r.x + (r.width - 1024 * scale) / 2) + 512 * scale,
         y: Math.round(r.y + (r.height - 1024 * scale) / 2 + 14) + 512 * scale,

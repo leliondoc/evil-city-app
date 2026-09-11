@@ -1,4 +1,9 @@
 {
+  "human-fortress-blue": { "src": "/tiny-swords/human-fortress-blue.png", "width": 320, "height": 256, "frameWidth": 320, "frames": 1, "anchor": 0.94 },
+  "human-barracks-blue": { "src": "/tiny-swords/human-barracks-blue.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },
+  "human-archery-blue": { "src": "/tiny-swords/human-archery-blue.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },
+  "human-barracks-yellow": { "src": "/tiny-swords/human-barracks-yellow.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },
+  "human-citadel-yellow": { "src": "/tiny-swords/human-citadel-yellow.png", "width": 320, "height": 256, "frameWidth": 320, "frames": 1, "anchor": 0.94 },
   "goblin-idle": {
     "src": "/tiny-swords/goblin-idle.png",
     "width": 1536,
