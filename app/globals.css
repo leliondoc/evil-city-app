@@ -2733,8 +2733,6 @@ svg {
   flex-shrink: 0;
   padding: 4px;
   color: #f4e6c7;
-  background: #17252b;
-  box-shadow: inset 0 0 0 1px #a1956855;
   border-radius: 4px;
 }
 .session-status {
@@ -3459,6 +3457,74 @@ svg {
 .creation-scroll-controls .creation-arrow-right { transform: scaleX(-1); }
 
 /* Reserve a right-hand command wheel; creation cards stay centered between the two HUD wings. */
+.game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {
+  flex-basis: 196px;
+  height: 196px;
+}
+.game-shell[data-compact='false'] .build-tabs > [role='tablist'],
+.game-shell[data-compact='false'] .build-tabs [role='tab'] {
+  height: 58px;
+  flex-basis: 58px;
+}
+.game-shell[data-compact] .recruit-option > .recruit-card {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 196px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, #443a50, #20323b 70%);
+  border: 1px solid #9e8e6a;
+  border-radius: 5px 5px 2px 2px;
+  scroll-snap-align: start;
+}
+.game-shell[data-compact] .recruit-card > img {
+  width: 76px !important;
+  height: 76px !important;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 2px #101c25);
+}
+.game-shell[data-compact] .recruit-card > div {
+  display: grid;
+  grid-template-rows: 32px 28px 20px;
+  gap: 2px;
+  width: 100%;
+}
+.game-shell[data-compact] .recruit-card strong {
+  font-size: 13px;
+  line-height: 16px;
+  white-space: normal;
+  text-overflow: clip;
+}
+.game-shell[data-compact] .recruit-card small {
+  font-size: 10px;
+  line-height: 14px;
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.game-shell[data-compact] .recruit-card .card-cost { justify-content: center; gap: 6px; font-size: 11px; }
+.game-shell[data-compact] .recruit-card .card-cost img { width: 16px; height: 16px; }
+.game-shell .recruit-option { scroll-snap-align: start; }
+.game-shell .recruit-progress-label { font-size: 9px; }
+.game-shell[data-compact='true'] .recruit-option { flex: 0 0 116px; min-width: 116px; position: relative; }
+.game-shell[data-compact='true'] .recruit-progress {
+  position: absolute;
+  bottom: 3px;
+  left: 4px;
+  right: 4px;
+  background: #192b31;
+  border-radius: 3px;
+  padding: 3px;
+}
+.game-shell .creation-scroll-controls button { width: 44px; height: 36px; background: #20323b; }
 .game-shell[data-compact='false'] .bottom-bar {
   --command-wheel-width: 240px;
   gap: 14px;
@@ -3474,14 +3540,14 @@ svg {
   width: min(100%, 590px);
 }
 .game-shell[data-compact='false'] .creation-scroll-controls {
-  bottom: calc(100% + 82px);
+  bottom: calc(100% + 66px);
 }
 .game-shell[data-compact='false'] .card-row {
   justify-content: safe center;
 }
 .game-shell[data-compact='false'] .bottom-bar .recruit-option {
-  flex: 0 0 var(--creation-card-width);
-  min-width: 180px;
+  flex: 0 0 max(116px, calc((100% - 48px) / 7));
+  min-width: 116px;
 }
 .command-wheel {
   position: relative;
@@ -3492,17 +3558,6 @@ svg {
   isolation: isolate;
   pointer-events: none;
   filter: drop-shadow(0 5px 4px #06151b99);
-}
-.command-wheel-orbit {
-  position: absolute;
-  width: 184px;
-  height: 184px;
-  left: calc(50% - 92px);
-  top: 30px;
-  border: 2px solid #d8b46b;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 2px #16283099, 0 0 0 2px #16283099;
-  background: radial-gradient(circle, #263e4655 55%, #1b313466 72%, transparent 73%);
 }
 .command-wheel button {
   position: absolute;
@@ -3525,13 +3580,12 @@ svg {
   width: 130px;
   height: 130px;
   border-radius: 50%;
-  border: 5px solid #d7b66a;
-  background: #314450;
-  box-shadow: 0 0 0 2px #52462d, inset 0 0 0 3px #fff0bd, inset 0 0 0 6px #62727e;
+  border: 3px solid #d7b66a;
+  background: #e0ce9d;
 }
 .command-wheel-medallion {
   position: absolute;
-  inset: 8px;
+  inset: 0;
   border-radius: 50%;
   overflow: hidden;
   z-index: -1;
@@ -3578,11 +3632,9 @@ svg {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 3px solid #c5ced0;
-  background: #435660;
-  box-shadow: 0 0 0 2px #253039, inset 0 0 0 2px #596777, 0 3px 0 1px #17232a;
+  border: 1px solid #a6b5b9;
+  background: #253b44;
 }
-.command-wheel-plate { position: absolute; inset: 3px; overflow: hidden; border-radius: 50%; z-index: -1; }
 .command-wheel-action > .pack-icon { width: 38px; height: 38px; object-fit: contain; }
 .command-wheel-action:hover, .command-wheel-manor:hover { filter: brightness(1.15); }
 .command-wheel-action:active, .command-wheel-manor:active { translate: 0 2px; }

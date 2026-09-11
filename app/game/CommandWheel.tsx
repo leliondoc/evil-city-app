@@ -59,7 +59,6 @@ export function CommandWheel(props: Props) {
   ];
   return (
     <nav className="command-wheel" aria-label="Commandes du domaine">
-      <div className="command-wheel-orbit" aria-hidden="true" />
       <button
         type="button"
         className="command-wheel-manor"
@@ -91,9 +90,6 @@ export function CommandWheel(props: Props) {
           aria-pressed={action.key === 'pause' ? props.paused : undefined}
           onClick={action.onClick}
         >
-          <span className="command-wheel-plate">
-            <PanelSkin kind="button" />
-          </span>
           {action.icon ? (
             <PackIcon asset={action.icon} />
           ) : (

@@ -1670,7 +1670,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 return (
                   <div className="recruit-option" key={kind}>
                     <button
-                      className={`build-card ${reason ? 'locked' : ''}`}
+                      className={`build-card recruit-card ${reason ? 'locked' : ''}`}
                       onClick={() => chooseRecruit(kind)}
                       title={reason || `Recruter : ${c.name}`}
                       aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}

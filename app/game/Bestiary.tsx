@@ -52,7 +52,6 @@ export function Bestiary({ action }: { action: Animation }) {
                     action,
                     entry.id === 'spear-goblin' && mounted,
                   )}
-                  ground="terrain-5"
                   figure
                   label={entry.name}
                 />
@@ -86,7 +85,6 @@ export function Bestiary({ action }: { action: Animation }) {
               <article className="bestiary-creature" key={entry.id}>
                 <Sprite
                   sequence={entry.actions[action] as AssetKey[]}
-                  ground={entry.terrain as AssetKey}
                   figure
                   label={entry.name}
                 />

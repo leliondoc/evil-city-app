@@ -112,16 +112,26 @@ try {
       name: 'Voir les cartes à droite',
       exact: true,
     });
+    await page.mouse.move(width / 2, 200);
+    await page.screenshot({ path: join(output, `portraits-${width}.png`) });
+    const first = await row.locator('.recruit-option').first().boundingBox();
+    assert.ok(first.height > first.width, 'Recruitment cards use portrait proportions');
+    if (await next.count()) {
     const controls = await page.locator('.creation-scroll-controls').boundingBox();
     const currentTabs = await page.getByRole('tablist', {
       name: 'Construction et recrutement',
     }).boundingBox();
     assert.ok(controls.y + controls.height <= currentTabs.y,
       'Scroll arrows stay above the tabs');
+    await row.hover();
+    await page.mouse.wheel(0, 150);
+    await page.waitForTimeout(300);
+    assert.ok(await row.evaluate(el => el.scrollLeft > 0), 'Ordinary mouse wheel scrolls the cards');
     for (let i = 0; i < 8 && (await next.isEnabled()); i++) {
       await next.click();
       // Let smooth scrolling finish before testing the next arrow state.
       await page.waitForTimeout(600);
+    }
     }
     const right = await row.boundingBox(),
       last = await row.locator('.recruit-option').last().boundingBox();
