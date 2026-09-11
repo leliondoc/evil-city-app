@@ -2,6 +2,7 @@ import { streetCenter } from './streets.ts';
 import { COMBAT, humanMultiplier } from './combat.ts';
 import { BUILDING_TIER, canUpgradeKind, manorRequirement } from './progression.ts';
 import { advanceHumanBuildings, humanBuildingHealth } from './humanBuildings.ts';
+import { advanceShields, shieldActive, provocationReason } from './shields.ts';
 import {
   ISLAND_SITES,
   isIslandPathCell,
@@ -351,6 +352,8 @@ export interface Lot {
   construction: null | { kind: BuildingKind; progress: number };
 }
 export interface Unit extends Point {
+  provokedBy?: number;
+  provokedUntil?: number;
   /** A player rest order lasts until healed or replaced by another order. */
   manualRest?: boolean;
   /** A player-designated enemy takes priority over opportunistic combat. */
@@ -474,6 +477,8 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  shieldUntil?: number;
+  shieldReadyAt?: number;
   /** Actual ranged target for this simulation step, including between arrows. */
   shotTarget?: Projectile['target'];
   /** Guild defenders are separate from the offensive expedition waves. */
@@ -1347,7 +1352,7 @@ export function attackReason(s: State, id: number) {
 export function attack(s: State, id: number) {
   const error = attackReason(s, id);
   if (error) return error;
-  for (const u of army(s)) assign(u, entrance(s.lots[id]), 'attack', id);
+  for (const u of army(s)) if (!provocationReason(s, u)) assign(u, entrance(s.lots[id]), 'attack', id);
   markAttackOrder(s, { type: 'lot', id });
   announce(
     s,
@@ -1357,13 +1362,14 @@ export function attack(s: State, id: number) {
 }
 export function retreat(s: State) {
   if (s.won || s.lost) return;
-  for (const u of army(s)) assign(u, entrance(s.lots[6]), 'move', null);
+  for (const u of army(s)) if (!provocationReason(s, u)) assign(u, entrance(s.lots[6]), 'move', null);
   announce(s, 'Repli au manoir. Les blessés s’y rétabliront.');
 }
 export function moveUnit(s: State, id: number, point: Point) {
   if (s.won || s.lost) return;
   const u = s.units.find((v) => v.id === id);
   if (!u) return;
+  if (provocationReason(s, u)) return;
   assign(u, point, 'move', null);
 }
 function markAttackOrder(
@@ -1385,6 +1391,8 @@ export function commandUnit(
   if (s.won || s.lost) return 'La partie est terminée.';
   const unit = s.units.find((u) => u.id === id && u.hp > 0);
   if (!unit) return 'Cette créature n’est plus disponible.';
+  const locked = provocationReason(s, unit);
+  if (locked) return locked;
   if (unit.kind === 'goblin' && target?.type === 'resource')
     return gather(s, unit.id, target.id);
   if (target?.type === 'tower') return towerOrder(s, target.id, id);
@@ -1897,6 +1905,7 @@ export function intercept(s: State, id: number): string {
   if (!army(s).length)
     return 'Recrutez des combattants pour intercepter cet ennemi.';
   for (const u of army(s)) {
+    if (provocationReason(s, u)) continue;
     assign(u, enemy, 'defend', id);
     u.focusTarget = id;
   }
@@ -2176,6 +2185,10 @@ function advanceEnemies(s: State, dt: number) {
     e.healTarget = null;
     e.shotTarget = undefined;
     e.attackCooldown -= dt;
+    if (shieldActive(e, s.elapsed)) {
+      e.path = [];
+      continue;
+    }
     const def = enemyDefinition(e);
     e.aggressors = e.aggressors?.filter((id) =>
       s.units.some((u) => u.id === id && u.hp > 0),
@@ -2519,6 +2532,7 @@ function tickStep(s: State, dt: number) {
   }
   s.recruits = s.recruits.filter((r) => r.remaining !== -Infinity);
   allocateWorkers(s);
+  advanceShields(s);
   for (const u of s.units) {
     if (u.hp <= 0) continue;
     u.fighting = false;

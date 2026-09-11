@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { ArrowLeft, Shield, Swords } from 'lucide-react';
-import { enemyAnimationSequence, type Animation } from './art';
+import { enemyPortrait } from './art';
 import {
   GUILD_ROLES,
   GUILD_RECOVERY_SECONDS,
@@ -12,7 +11,7 @@ import {
   type State,
 } from './engine';
 import { GameButton as Button } from './PackUI';
-import { Sprite } from './Sprite';
+import { SelectionPortrait } from './SelectionPortrait';
 import { AbilityCard } from './AbilityCard';
 import { isHaunted } from './domain';
 import { CombatDetails } from './CombatDetails';
@@ -60,10 +59,7 @@ export function GuildRoster({ state, onSelect }: Props) {
             onClick={() => onSelect({ type: 'guildHero', id })}
             aria-label={`Voir la fiche : ${HEROES[role].name}`}
           >
-            <Sprite
-              asset={enemyAnimationSequence({ kind: 'hero', role }, 'idle')[0]}
-              figure
-            />
+            <SelectionPortrait asset={enemyPortrait({ kind: 'hero', role })} label={HEROES[role].name} />
             <span>{HEROES[role].short}</span>
           </button>
         ))}
@@ -90,7 +86,6 @@ export function GuildHeroSelection({
   id,
   onSelect,
 }: Props & { id: number }) {
-  const [action, setAction] = useState<Animation>('idle');
   const role = GUILD_ROLES[id] ?? 'warrior';
   const hero = HEROES[role];
   const guild = sourceBuilding(state, 'hero');
@@ -99,31 +94,9 @@ export function GuildHeroSelection({
       className="selection-panel"
       aria-label="Fiche de classe de la guilde"
     >
-      <p className="eyebrow">Les Lames de l’Aube · Classe de héros</p>
       <h3 className="selection-name">{hero.name}</h3>
       <div className="selection-art">
-        <Sprite
-          asset={enemyAnimationSequence({ kind: 'hero', role }, action)[0]}
-          figure
-          label={hero.name}
-        />
-      </div>
-      <div className="guild-actions" aria-label="Animations du héros">
-        {(['idle', 'walk', 'attack'] as const).map((value) => (
-          <button
-            key={value}
-            aria-pressed={action === value}
-            onClick={() => setAction(value)}
-          >
-            {value === 'idle'
-              ? 'Repos'
-              : value === 'walk'
-                ? 'Marche'
-                : role === 'monk'
-                  ? 'Soin'
-                  : 'Attaque'}
-          </button>
-        ))}
+        <SelectionPortrait asset={enemyPortrait({ kind: 'hero', role })} label={hero.name} />
       </div>
       <p className="selection-text">{hero.description}</p>
       <CombatDetails profile={HUMAN_COMBAT[role]} />

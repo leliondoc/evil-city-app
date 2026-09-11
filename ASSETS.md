@@ -46,6 +46,8 @@ Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche
 
 Le bouton du bestiaire utilise le portrait original `Enemy Pack/Imp/Imp_Avatar.png`, copié sans retouche dans `public/tiny-swords/imp-avatar.png` et affiché en grand dans le menu circulaire.
 
+Les fiches d’unités utilisent les portraits fixes du pack. `scripts/import-human-portraits.ps1` copie les Human Avatars 02 (garde bleu), 11/13/15/14 (chevalier, lancier, archère et moine jaunes) et 05 (paysans bleus). Les trois métiers partagent ce portrait de paysan ; le chevaucheur conserve le portrait du gobelin lancier. Les deux animations `Warrior_Guard.png` des unités bleues et jaunes du Free Pack sont utilisées pour leur posture défensive, sans retouche (six images de 192 × 192).
+
 Les fortifications humaines emploient cinq PNG originaux supplémentaires : le château bleu de Tiny Swords Update 010, les casernes bleues et jaunes, le pas de tir bleu et le château jaune du Free Pack. `scripts/import-human-building-models.ps1` copie ces seuls modèles depuis les archives fournies. La mairie avancée combine le château et deux tours bleues déjà présentes ; aucun PNG n’est retouché.
 
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.

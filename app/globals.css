@@ -326,6 +326,7 @@ svg {
 }
 .selection-stats {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
   margin: 13px 0;
@@ -334,9 +335,19 @@ svg {
 }
 .selection-stats span {
   display: flex;
+  flex: 0 0 auto;
+  white-space: nowrap;
   gap: 5px;
   align-items: center;
 }
+.selection-stats svg { flex-shrink: 0; }
+.selection-stats .unit-activity { max-width: 100%; white-space: normal; }
+.combat-status { display: flex; align-items: center; gap: 6px; padding: 8px; border-left: 2px solid #dfbd74; background: #182c37; color: #ffe3a7; font-size: 13px; }
+.combat-status svg { flex-shrink: 0; }
+.selection-stats > span:empty { display: none; }
+.selection-art:has(> .selection-portrait) { height: 144px; }
+.selection-art .selection-portrait { width: 144px; height: 144px; max-width: 100%; object-fit: contain; image-rendering: pixelated; }
+.guild-members .selection-portrait { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; }
 .primary-btn {
   display: flex !important;
   width: 100%;

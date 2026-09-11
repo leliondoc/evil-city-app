@@ -135,12 +135,12 @@ export const HUMAN_COMBAT: Record<HeroRole | 'guard', CombatProfile> = {
     strength: 'Ouvriers isolés et reprise des propriétés',
     weakness: 'Gobelins lanciers, Squelettes en nombre et Minotaures',
     effect:
-      'Milice sans bonus de combat. Les gardes regroupés sont vulnérables au balayage du minotaure.',
+      'À 20 % de PV : bouclier pendant 6 s, −25 % de dégâts reçus, sans attaquer ni se déplacer. Aucune provocation. Réactivation après 30 s.',
   },
   warrior: {
     strength: 'Squelettes et Gobelins lanciers à pied',
     weakness: 'Trolls ; Alchimistes soutenus par le feu',
-    effect: `${bonus(COMBAT.knightVsLight)} de dégâts contre les squelettes et lanciers gobelins à pied. Première ligne avec plus de PV que le lancier au même niveau.`,
+    effect: `${bonus(COMBAT.knightVsLight)} contre les squelettes et lanciers à pied. Bouclier 10 s à 30 % de PV : −40 % de dégâts reçus, immobile, sans attaquer. Protège aussi un soldat proche à 30 % de PV : attire ses assaillants pendant 10 s. Portée 4 cases ; réactivation après 30 s.`,
   },
   lancer: {
     strength: 'Gobelins sur cochon, Trolls et Minotaures',

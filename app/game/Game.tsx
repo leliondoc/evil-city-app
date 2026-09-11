@@ -52,6 +52,7 @@ import { GameAudio, readAudioSettings, type AudioStatus } from './audio';
 import { selectedUnitIds, unitSelection } from './selection';
 import { Sprite } from './Sprite';
 import { CreaturePortrait } from './CreaturePortrait';
+import { SelectionPortrait } from './SelectionPortrait';
 import { CreationCards } from './CreationCards';
 import { ThreatPanel } from './ThreatPanel';
 import { GuildRoster, GuildHeroSelection } from './GuildPanel';
@@ -61,11 +62,12 @@ import { CommandWheel } from './CommandWheel';
 import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
 import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
 import { ManorProgression } from './ManorProgression';
+import { shieldActive, shieldSettings, provocationReason } from './shields';
 import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
 import { createGameStore } from './gameStore';
-import { buildingArt, buildingHasTowers, enemyAnimationSequence, type Animation } from './art';
+import { buildingArt, buildingHasTowers, enemyPortrait, type Animation } from './art';
 import { humanBuildingDescription } from './humanBuildings';
 import {
   BUILDINGS,
@@ -845,7 +847,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 className="selection-panel"
                 aria-label="Groupe sélectionné"
               >
-                <p className="eyebrow">Vos créatures</p>
                 <h3 className="selection-name">
                   {group.length} unités sélectionnées
                 </h3>
@@ -955,36 +956,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     <PanelSkin kind="paper" asset="ui-building-frame" />
                   )}
                   {selectedEnemy ? (
-                    <Sprite
-                      asset={
-                        enemyAnimationSequence(
-                          selectedEnemy,
-                          selectedEnemy.fighting ||
-                            selectedEnemy.healTarget !== null
-                            ? 'attack'
-                            : selectedEnemy.path.length &&
-                                selectedEnemy.moving !== false
-                              ? 'walk'
-                              : 'idle',
-                        )[0]
-                      }
-                      figure
-                    />
+                    <SelectionPortrait asset={enemyPortrait(selectedEnemy)} label={enemyDef?.name || 'Humain'} />
                   ) : selectedUnit ? (
-                    <Sprite
-                      creature={selectedUnit.kind}
-                      mounted={unitIsMounted(s, selectedUnit)}
-                      action={
-                        selectedUnit.fighting
-                          ? 'attack'
-                          : selectedUnit.path.length &&
-                              selectedUnit.moving !== false
-                            ? 'walk'
-                            : selectedUnit.task === 'attack'
-                              ? 'attack'
-                              : 'idle'
-                      }
-                    />
+                    <SelectionPortrait asset={`${selectedUnit.kind}-avatar`} label={creature?.name || 'Créature'} />
                   ) : chosenKind ? (
                     <Sprite
                       asset={buildingArt(chosenKind, selectedLot?.owned, selectedLot?.level, selectedLot?.id)}
@@ -1002,9 +976,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 {selectedEnemy && (
                   <>
                     <CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} />
+                    {shieldActive(selectedEnemy, s.elapsed) && <p className="combat-status"><Shield size={16} />Bouclier · {Math.ceil(selectedEnemy.shieldUntil! - s.elapsed)} s · −{shieldSettings(selectedEnemy).reduction * 100} % de dégâts reçus</p>}
                     <div className="selection-stats">
-                      <Shield size={14} /> {Math.ceil(selectedEnemy.hp)} /{' '}
-                      {selectedEnemy.maxHp} · Niv. {selectedEnemy.level}
+                      <span><Shield size={14} />{Math.ceil(selectedEnemy.hp)} / {selectedEnemy.maxHp} PV</span>
+                      <span>Niveau {selectedEnemy.level}</span>
                     </div>
                     <HealthBar
                       value={(selectedEnemy.hp / selectedEnemy.maxHp) * 100}
@@ -1037,12 +1012,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 {selectedUnit && creature && (
                   <>
                     <CombatDetails profile={creatureCombatProfile(selectedUnit.kind, unitIsMounted(s, selectedUnit))} />
+                    {provocationReason(s, selectedUnit) && <p className="combat-status">{provocationReason(s, selectedUnit)}</p>}
                     <div className="selection-stats">
                       <span>
                         <Shield size={14} />
                         {Math.ceil(selectedUnit.hp)} / {creature.hp}
                       </span>
-                      <span>
+                      <span className="unit-activity">
                         {selectedUnit.path.length &&
                         selectedUnit.moving === false &&
                         !selectedUnit.fighting

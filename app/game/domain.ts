@@ -1,3 +1,4 @@
+import { provocationReason } from './shields.ts';
 import {
   announce,
   assign,
@@ -118,6 +119,7 @@ export function restReason(s: State, id: number, preferred?: number): string {
   if (s.won || s.lost) return 'La partie est terminée.';
   const u = s.units.find((u) => u.id === id && u.hp > 0);
   if (!u) return 'Cette créature n’est plus disponible.';
+  if (provocationReason(s, u)) return provocationReason(s, u);
   if (u.hp >= CREATURES[u.kind].hp)
     return 'Cette créature est déjà en pleine santé.';
   if (u.manualRest) return 'Cette créature a déjà reçu l’ordre de se soigner.';

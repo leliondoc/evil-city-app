@@ -11,7 +11,8 @@ import {
   PRESSURE,
   HUMAN_WORKER_CAP,
 } from './engine';
-import { workerArt, type AssetKey } from './art';
+import { type AssetKey } from './art';
+import { SelectionPortrait } from './SelectionPortrait';
 import { isHaunted } from './domain';
 
 export function SupplyPanel({
@@ -111,19 +112,15 @@ export function SupplySelection({
   const reason = raidSupplyReason(s, selection);
   return (
     <section className="selection-panel" aria-label="Détails du ravitaillement">
-      {worker && <p className="eyebrow">Économie humaine</p>}
       <h3 className="selection-name">{worker ? def.worker : def.name}</h3>
       <div className="selection-art">
-        <Sprite
+        {worker ? <SelectionPortrait asset="worker-avatar" label={def.worker} /> : <Sprite
           asset={
-            worker
-              ? workerArt(worker, site)
-              : site.kind === 'food'
+            site.kind === 'food'
                 ? 'pig-idle'
                 : (def.art as AssetKey)
           }
-          figure={!!worker}
-        />
+        />}
       </div>
       <p className="selection-text">
         {worker

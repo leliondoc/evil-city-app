@@ -1,3 +1,4 @@
+import { shieldMultiplier, provocationReason } from './shields.ts';
 import {
   announce,
   creditResource,
@@ -188,7 +189,7 @@ export function hitEnemy(
   )
     rememberAggressor(s, enemy, u);
   const directDamage = damage * creatureMultiplier(u.kind, unitIsMounted(s, u), enemy);
-  enemy.hp = Math.max(0, enemy.hp - directDamage * dt);
+  enemy.hp = Math.max(0, enemy.hp - directDamage * shieldMultiplier(enemy, s.elapsed) * dt);
   // Only nearby militia receive the sweep: heroes are not collateral targets.
   // Do not recurse through hitEnemy, which would multiply sweeps and fire procs.
   if (u.kind === 'minotaur' && damage > 0) {
@@ -200,7 +201,7 @@ export function hitEnemy(
       .slice(0, COMBAT.sweepTargets);
     for (const guard of guards) {
       rememberAggressor(s, guard, u);
-      guard.hp = Math.max(0, guard.hp - directDamage * COMBAT.sweepFraction * dt);
+      guard.hp = Math.max(0, guard.hp - directDamage * COMBAT.sweepFraction * shieldMultiplier(guard, s.elapsed) * dt);
     }
   }
   if (u.kind === 'alchemist') {
@@ -209,7 +210,7 @@ export function hitEnemy(
   }
   if (hasResearch(s, 'embers')) {
     const combo = (enemy.solventUntil ?? 0) > s.elapsed;
-    enemy.hp = Math.max(0, enemy.hp - 3 * fireMultiplier(enemy, s.elapsed) * dt);
+    enemy.hp = Math.max(0, enemy.hp - 3 * fireMultiplier(enemy, s.elapsed) * shieldMultiplier(enemy, s.elapsed) * dt);
     enemy.burningUntil = s.elapsed + 3;
     if (combo && (enemy.comboAt ?? -10) + 1 <= s.elapsed) {
       enemy.comboAt = s.elapsed;
@@ -232,6 +233,7 @@ export function towerOrder(s: State, id: number, unitId: number): string {
   const tower = s.strategy.towers[id],
     u = s.units.find((u) => u.id === unitId && u.hp > 0);
   if (!tower || !u) return 'Choisissez une tour et une créature vivante.';
+  if (provocationReason(s, u)) return provocationReason(s, u);
   if (tower.owned && !['goblin', 'skeleton', 'specter'].includes(u.kind))
     return 'Affectez un gobelin, un squelette ou un spectre à cette tour.';
   const path = findPath(u, tower);
@@ -415,7 +417,7 @@ export function advanceStrategy(s: State, dt: number) {
   advanceResearch(s, dt);
   for (const e of s.enemies)
     if (e.hp > 0 && (e.burningUntil ?? 0) > s.elapsed) {
-      e.hp = Math.max(0, e.hp - 2 * fireMultiplier(e, s.elapsed) * dt);
+      e.hp = Math.max(0, e.hp - 2 * fireMultiplier(e, s.elapsed) * shieldMultiplier(e, s.elapsed) * dt);
     }
   spreadBraises(s);
   for (const t of s.strategy.towers) {

@@ -1,4 +1,12 @@
 {
+  "guard-shield": { "src": "/tiny-swords/guard-shield.png", "width": 1152, "height": 192, "frameWidth": 192, "frames": 6, "anchor": 0.67 },
+  "hero-warrior-shield": { "src": "/tiny-swords/hero-warrior-shield.png", "width": 1152, "height": 192, "frameWidth": 192, "frames": 6, "anchor": 0.67 },
+  "guard-avatar": { "src": "/tiny-swords/guard-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
+  "hero-warrior-avatar": { "src": "/tiny-swords/hero-warrior-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
+  "hero-lancer-avatar": { "src": "/tiny-swords/hero-lancer-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
+  "hero-archer-avatar": { "src": "/tiny-swords/hero-archer-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
+  "hero-monk-avatar": { "src": "/tiny-swords/hero-monk-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
+  "worker-avatar": { "src": "/tiny-swords/worker-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
   "human-fortress-blue": { "src": "/tiny-swords/human-fortress-blue.png", "width": 320, "height": 256, "frameWidth": 320, "frames": 1, "anchor": 0.94 },
   "human-barracks-blue": { "src": "/tiny-swords/human-barracks-blue.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },
   "human-archery-blue": { "src": "/tiny-swords/human-archery-blue.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },

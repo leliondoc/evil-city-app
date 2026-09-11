@@ -1436,6 +1436,7 @@ export class Renderer {
               : e.path.length && e.moving !== false
                 ? 'walk'
                 : 'idle',
+            t,
           );
           let motion = this.motions.get(e.id);
           const action: Animation =
