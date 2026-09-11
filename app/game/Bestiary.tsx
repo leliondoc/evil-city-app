@@ -62,7 +62,7 @@ export function Bestiary({ action }: { action: Animation }) {
                     aria-pressed={mounted}
                     onClick={() => setMounted((value) => !value)}
                   >
-                    {mounted ? 'Voir à pied' : 'Voir le chevaucheur de porc'}
+                    {mounted ? 'Voir à pied' : 'Voir le chevaucheur de cochon'}
                   </button>
                 )}
               </article>

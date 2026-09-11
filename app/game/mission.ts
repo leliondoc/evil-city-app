@@ -72,7 +72,7 @@ export function mission(s: State) {
     },
     {
       id: 'forge',
-      label: 'Construire une forge sur le terrain gagné',
+      label: 'Construire une hutte des trolls sur le terrain gagné',
       done: forge,
     },
     {
@@ -152,12 +152,12 @@ export function mission(s: State) {
         ? 'la cantine'
         : kind === 'crypt'
           ? 'la crypte'
-          : 'la forge';
+          : 'la hutte des trolls';
     return {
       detail: work
         ? 'Vos gobelins construisent sur place. Le bâtiment sera disponible à la fin des travaux.'
         : kind === 'forge'
-          ? 'Le terrain gagné peut maintenant accueillir la forge. Préparez-la, puis lancez le chantier ici.'
+          ? 'Le terrain gagné peut maintenant accueillir la hutte des trolls. Préparez-la, puis lancez le chantier ici.'
           : kind === 'crypt'
             ? 'Sur la friche revendiquée, la crypte permettra de recruter vos premiers combattants.'
             : 'Installez la cantine sur votre terrain libre, près du manoir.',
@@ -226,7 +226,7 @@ export function mission(s: State) {
         detail: marching
           ? `Votre armée ${besieging ? 'réduit les défenses' : 'rejoint la cible'}. Le bâtiment sera à vous quand sa résistance atteindra zéro.`
           : current.id === 'capture'
-            ? 'Envoyez vos combattants conquérir la propriété indiquée. Une fois à vous, elle pourra accueillir la forge.'
+            ? 'Envoyez vos combattants conquérir la propriété indiquée. Une fois à vous, elle pourra accueillir la hutte des trolls.'
             : 'Conquérez ce bâtiment avec votre armée pour couper les renforts humains.',
         button: marching ? 'Voir l’assaut' : 'Voir la cible',
         action: { type: 'inspect', lotId: target.id },

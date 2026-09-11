@@ -11,7 +11,6 @@ import {
   supplyActive,
   entrance,
   atEntrance,
-  canSetRally,
   buildReason,
   type BuildingKind,
   type State,
@@ -1675,7 +1674,7 @@ export class Renderer {
         this.label(
           x,
           labelY,
-          `${BUILDINGS[l.kind].name} · ${l.owned ? 'Votre domaine' : 'Humains'}`,
+          `${BUILDINGS[l.kind].name}${l.owned ? '' : ' · Humains'}`,
         );
     }
     if (guidance) {
@@ -1749,39 +1748,6 @@ export class Renderer {
         'id' in this.selection &&
         this.selection.id === hit.selection.id;
       if (selected) this.selectionHit(hit);
-    }
-    if (this.selection.type === 'lot') {
-      const selectedId = this.selection.id;
-      const lot = s.lots.find((lot) => lot.id === selectedId);
-      if (lot && canSetRally(lot) && lot.rallyPoint) {
-        const building = this.hits.find(
-          (hit) => hit.selection.type === 'lot' && hit.selection.id === lot.id,
-        );
-        const bounds = building && this.visibleBounds(building);
-        const origin = bounds
-          ? { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
-          : { x: (lot.x + 4) * CELL, y: (lot.y + 4) * CELL };
-        const ui = this.uiScale / this.scale;
-        const x = lot.rallyPoint.x * CELL,
-          y = lot.rallyPoint.y * CELL;
-        this.draw.line([origin, { x, y }], '#72b6d3', 1.5 / this.scale, [
-          6 * ui,
-          5 * ui,
-        ]);
-        // Join the three original pieces once: a small folded ribbon, with no extended center.
-        for (const [i, sx] of [0, 128, 256].entries())
-          this.draw.image(
-            'ui-small-ribbons',
-            sx,
-            64,
-            64,
-            64,
-            x + (i - 1.5) * 16 * ui,
-            y - 8 * ui,
-            16 * ui,
-            16 * ui,
-          );
-      }
     }
     // Draw combat health above all sprites and effects, at a readable size when zoomed out.
     const barWidth = Math.max(48, (32 * this.uiScale) / this.scale);

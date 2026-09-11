@@ -6,7 +6,6 @@ import {
   recruit,
   recruitmentSource,
   entrance,
-  setRallyPoint,
   commandUnit,
   build,
   tick,
@@ -69,31 +68,17 @@ test('Recruitment remembers the matching production building for every creature'
       );
   }
 });
-test('A selected production building is retained and its current rally applies only to new recruits', () => {
+test('Recruits wait at the selected building even when an old save contains a rally point', () => {
   const s = setup();
-  Object.assign(s.lots[8], { kind: 'forge', owned: true });
-  const existing = unit(s);
+  Object.assign(s.lots[8], { kind: 'forge', owned: true, rallyPoint: { x: 20.5, y: 30.5 } });
   assert.equal(recruit(s, 'troll', 8), '');
   assert.equal(s.recruits[0].source, 8);
-  assert.equal(setRallyPoint(s, 8, { x: 20.5, y: 30.5 }), '');
-  const rally = { ...s.lots[8].rallyPoint };
   tick(s, 6.1);
-  const born = s.units.find((u) => u.kind === 'troll' && u.id !== existing.id);
-  assert.equal(born.task, 'move');
-  assert.deepEqual(born.path.at(-1), rally);
-  assert.notEqual(existing.task, 'move');
-  assert.equal(setRallyPoint(s, 8, null), '');
-  assert.equal(s.lots[8].rallyPoint, undefined);
-});
-test('An unreachable rally or enemy building cannot replace a valid rally', () => {
-  const s = setup();
-  assert.equal(setRallyPoint(s, 4, { x: 20.5, y: 20.5 }), '');
-  const before = { ...s.lots[4].rallyPoint };
-  assert.ok(setRallyPoint(s, 4, { x: NaN, y: 0 }));
-  assert.deepEqual(s.lots[4].rallyPoint, before);
-  assert.ok(setRallyPoint(s, 4, { x: 47, y: 36 }));
-  assert.deepEqual(s.lots[4].rallyPoint, before);
-  assert.ok(setRallyPoint(s, 1, { x: 20.5, y: 20.5 }));
+  const born = s.units.find((u) => u.kind === 'troll');
+  assert.equal(born.task, 'idle');
+  assert.deepEqual(born.path, []);
+  const door = entrance(s.lots[8]);
+  assert.ok(Math.hypot(born.x - door.x, born.y - door.y) < 2);
 });
 test('Manual rest overrides combat, heals beyond four seconds and completes at full HP', () => {
   const s = setup(),

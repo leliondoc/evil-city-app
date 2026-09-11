@@ -114,9 +114,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     duration: 18,
   },
   forge: {
-    name: 'Forge des trolls',
+    name: 'Hutte des Trolls',
     description:
-      'Une forge nichée dans un arbre mort. Recrute les trolls et les minotaures, et améliore la puissance de toute votre armée.',
+      'Une hutte nichée dans un arbre mort. Recrute les trolls et les minotaures, et améliore la puissance de toute votre armée.',
     short: 'Débloque les trolls',
     art: 3,
     cost: { gold: 180, wood: 75 },
@@ -235,7 +235,7 @@ export const CREATURES: Record<
     name: 'Gobelin lancier',
     job: 'Combattant mobile',
     description:
-      'Se recrute à la grotte après votre premier squelette. Sa lance frappe au corps à corps. La recherche Chevaucheurs de porcs le monte sur un porc et augmente sa vitesse de 50 %.',
+      'Se recrute à la grotte après votre premier squelette. Sa lance frappe au corps à corps. La recherche Chevaucheurs de cochons le monte sur un cochon et augmente sa vitesse de 50 %.',
     art: 6,
     cost: { gold: 75, food: 20 },
     hp: 80,
@@ -248,7 +248,7 @@ export const CREATURES: Record<
     name: 'Troll',
     job: 'Combattant',
     description:
-      'Le gros bras de votre quartier. Solide au combat, il exige la maison des trolls et des repas réguliers.',
+      'Le gros bras de votre quartier. Solide au combat, il exige la hutte des trolls et des repas réguliers.',
     art: 1,
     cost: { gold: 90, food: 30 },
     hp: 100,
@@ -328,7 +328,6 @@ export const RECRUIT_OPTIONS: CreatureKind[] = [
 export const BOARD = 32;
 export const STARTS = [2, 12, 22];
 export interface Lot {
-  rallyPoint?: Point;
   /** The visible guild defenders have left their posts. */
   garrisonReleased?: boolean;
   garrisonReturnsAt?: number;
@@ -1195,8 +1194,6 @@ function spawnUnit(s: State, kind: CreatureKind, source = 6) {
     nextMealAt: s.elapsed + 65 + (id % 15),
   };
   s.units.push(unit);
-  const rally = s.lots[source].rallyPoint;
-  if (rally) assign(unit, rally, 'move', null);
 }
 export function buildReason(s: State, id: number, kind: BuildingKind): string {
   if (s.won || s.lost) return 'La partie est terminée.';
@@ -1263,42 +1260,6 @@ export function claim(s: State, id: number) {
   announce(s, 'La friche est à vous. Les gobelins attendent vos plans.');
   return '';
 }
-export function canSetRally(lot: Lot) {
-  return (
-    lot.owned &&
-    lot.hp > 0 &&
-    !lot.construction &&
-    ['hq', 'den', 'forge', 'crypt'].includes(lot.kind)
-  );
-}
-export function setRallyPoint(
-  s: State,
-  id: number,
-  point: Point | null,
-): string {
-  if (s.won || s.lost) return 'La partie est terminée.';
-  const lot = s.lots.find((lot) => lot.id === id);
-  if (!lot || !canSetRally(lot))
-    return 'Sélectionnez un manoir, une tanière, une forge ou une crypte à vous.';
-  if (!point) {
-    delete lot.rallyPoint;
-    announce(
-      s,
-      'Point de ralliement supprimé. Les recrues attendront à la sortie.',
-    );
-    return '';
-  }
-  if (!Number.isFinite(point.x) || !Number.isFinite(point.y))
-    return 'Destination inaccessible.';
-  const destination = findPath(entrance(lot), point).at(-1);
-  if (!destination) return 'Choisissez un point accessible sur la terre ferme.';
-  lot.rallyPoint = { ...destination };
-  announce(
-    s,
-    'Point de ralliement défini pour les prochaines recrues de ce bâtiment.',
-  );
-  return '';
-}
 export function recruitmentSource(
   s: State,
   kind: CreatureKind,
@@ -1313,7 +1274,7 @@ export function recruitmentSource(
           ? ['forge']
           : ['crypt'];
   const available = s.lots.filter(
-    (lot) => canSetRally(lot) && rooms.includes(lot.kind),
+    (lot) => lot.owned && lot.hp > 0 && !lot.construction && rooms.includes(lot.kind),
   );
   return (
     available.find((lot) => lot.id === preferred) ??
@@ -1346,7 +1307,7 @@ export function recruitReason(s: State, kind: CreatureKind) {
   if (kind === 'alchemist' && !hasBuilding(s, 'crypt'))
     return 'Construisez une crypte pour recruter un alchimiste.';
   if (kind === 'troll' && !hasBuilding(s, 'forge'))
-    return 'Construisez une forge pour recruter les trolls.';
+    return 'Construisez une hutte des trolls pour recruter les trolls.';
   if (kind === 'skeleton' && !hasBuilding(s, 'crypt'))
     return 'Construisez une crypte pour éveiller les squelettes.';
   if (kind === 'specter' && !hasBuilding(s, 'crypt'))
@@ -1355,7 +1316,7 @@ export function recruitReason(s: State, kind: CreatureKind) {
     kind === 'minotaur' &&
     (!hasBuilding(s, 'forge') || !hasBuilding(s, 'crypt'))
   )
-    return 'Le Minotaure exige une forge et une crypte.';
+    return 'Le Minotaure exige une hutte des trolls et une crypte.';
   if (!recruitmentSource(s, kind))
     return 'Aucun bâtiment de recrutement opérationnel.';
   if (population(s) + CREATURES[kind].population > capacity(s))

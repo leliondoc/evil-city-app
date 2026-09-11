@@ -22,7 +22,6 @@ recruit(s, 'spear-goblin');
 recruit(s, 'goblin');
 tick(s, 6.1);
 s.resources = { gold: 900, food: 900, wood: 900, mana: 900 };
-s.lots[3].rallyPoint = { x: 15, y: 21 };
 Object.assign(
   s.units.find((u) => u.kind === 'spear-goblin')!,
   {

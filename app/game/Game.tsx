@@ -86,8 +86,6 @@ import {
   buildMenuReason,
   recruit,
   recruitReason,
-  canSetRally,
-  setRallyPoint,
   claim,
   claimReason,
   attack,
@@ -315,11 +313,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           setFeedback('');
           setTouchMode('inspect');
         }
-      } else if (selected.type === 'lot') {
-        run((state) => setRallyPoint(state, selected.id, point));
       } else
         notify(
-          'Sélectionnez une créature ou un bâtiment de recrutement pour donner un ordre.',
+          'Sélectionnez une créature pour donner un ordre.',
         );
     },
     [notify, run],
@@ -1092,26 +1088,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 )}
                 {selectedLot && (
                   <>
-                    {canSetRally(selectedLot) && (
-                      <div className="rally-control">
-                        <p className="reason">
-                          Clic droit sur la carte : définir le point de
-                          ralliement des prochaines recrues de ce bâtiment.
-                        </p>
-                        {selectedLot.rallyPoint && (
-                          <Button
-                            className="subtle-btn"
-                            onClick={() =>
-                              run((state) =>
-                                setRallyPoint(state, selectedLot.id, null),
-                              )
-                            }
-                          >
-                            Supprimer le point de ralliement
-                          </Button>
-                        )}
-                      </div>
-                    )}
                     {chosenKind === 'canteen' && (
                       <div className="food-production">
                         <p>
@@ -1156,7 +1132,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         ) : selectedLot.kind === 'empty' ? (
                           'Parcelle libre'
                         ) : selectedLot.owned ? (
-                          'Votre domaine'
+                          null
                         ) : (
                           'Camp humain · À conquérir'
                         )}
@@ -1297,7 +1273,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                               ? '4 trolls en bonne santé sont conseillés. Surveillez les raids pendant le siège.'
                               : selectedLot.kind === 'house' ||
                                   selectedLot.kind === 'tavern'
-                                ? 'Réduisez sa résistance à zéro pour la conquérir. Vous pourrez ensuite y construire votre forge.'
+                                ? 'Réduisez sa résistance à zéro pour la conquérir. Vous pourrez ensuite y construire votre hutte des trolls.'
                                 : `${army(s).length} combattant${army(s).length > 1 ? 's' : ''} prêt${army(s).length > 1 ? 's' : ''} à marcher.`)}
                         </p>
                         {army(s).some(
@@ -1338,20 +1314,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                         )}
                       </>
                     )}
-                    {selectedLot.owned && (
-                      <div className="rally-action">
-                        <Button
-                          className="subtle-btn rally-button"
-                          disabled={s.won || s.lost || !army(s).length}
-                          onClick={() =>
-                            run((state) => defend(state, selectedLot.id))
-                          }
-                        >
-                          <PackIcon asset="ui-shield" />
-                          <span>Rassembler l’armée ici</span>
-                        </Button>
-                      </div>
-                    )}
                     {selectedLot.kind === 'guild' && (
                       <GuildRoster state={s} onSelect={select} />
                     )}
@@ -1380,22 +1342,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 : 'Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette, ZQSD ou flèches : déplacer la carte.'
             }
           />
-          <details className="canvas-help">
-            <summary>Commandes</summary>
-            <div className="canvas-help-keys">
-              <span>
-                <PackIcon asset="ui-cursor" />
-                Shift + glisser gauche : groupe
-              </span>
-              <span>
-                <PackIcon asset="ui-cursor-hand" />
-                Glisser / ZQSD : explorer
-              </span>
-              <span>Molette : zoom</span>
-              <span>Violet · Votre domaine · Emblème à crâne</span>
-              <span>Bleu / or · Humains · Emblème à bouclier</span>
-            </div>
-          </details>
           <ThreatPanel
             state={s}
             compact={compact}
@@ -1629,7 +1575,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="build">
-            <div className="card-row">
+            <div className="card-row" aria-label="Options disponibles, défilement horizontal">
               {BUILD_OPTIONS.map((kind, i) => {
                 const b = BUILDINGS[kind];
                 const locked = buildUnlockReason(s, kind);
@@ -1662,7 +1608,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </div>
           </TabsContent>
           <TabsContent value="recruit">
-            <div className="card-row">
+            <div className="card-row" aria-label="Options disponibles, défilement horizontal">
               {RECRUIT_OPTIONS.map((kind, i) => {
                 const c = CREATURES[kind],
                   reason = recruitReason(s, kind);
@@ -1968,7 +1914,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       Envoyer l’armée ». Réduisez sa résistance à zéro pour la
                       conquérir. Son herbe et son fanion prennent les couleurs
                       de votre domaine. Après la conquête, la crypte vous permet
-                      de construire une forge sur le terrain gagné : 180 or et
+                      de construire une hutte des trolls sur le terrain gagné : 180 or et
                       75 bois. Vous pouvez alors recruter des trolls pour 90 or
                       et 30 vivres, avant de viser la mairie et la guilde.
                     </p>

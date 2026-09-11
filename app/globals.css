@@ -442,21 +442,7 @@ svg {
 .map-status svg {
   color: #626e4d;
 }
-.canvas-help {
-  position: absolute;
-  left: 24px;
-  bottom: 15px;
-  display: flex;
-  gap: 15px;
-  font-size: 12px;
-  color: #4f5c47;
-  pointer-events: none;
-}
-.canvas-help span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+
 .map-controls {
   display: flex;
   flex-direction: column;
@@ -994,9 +980,7 @@ svg {
     padding: 6px 8px;
     font-size: 12px;
   }
-  .canvas-help {
-    display: none;
-  }
+
   .army-overview {
     display: none;
   }
@@ -1240,12 +1224,7 @@ svg {
 .map-status svg {
   color: #e8c17a;
 }
-.canvas-help {
-  background: #24363bdc;
-  color: #e8ecd4;
-  padding: 7px 10px;
-  border-radius: 2px;
-}
+
 .map-controls .icon-btn {
   background: #2a4148 !important;
   color: #ffdf9d !important;
@@ -1591,31 +1570,7 @@ svg {
   background: #ffffff08 !important;
   border-color: transparent !important;
 }
-.rally-action {
-  padding-top: 14px;
-  padding-bottom: 8px;
-}
-.selection-panel .rally-button {
-  min-height: 42px;
-  margin: 0;
-  padding: 10px 12px !important;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  white-space: normal;
-  line-height: 1.35;
-  text-align: center;
-  border: 0 !important;
-  border-radius: 4px;
-  box-shadow: none;
-  background: #3a4e59 !important;
-}
-.rally-button span {
-  min-width: 0;
-}
-.selection-panel .rally-button:hover:not(:disabled) {
-  background: #46616e !important;
-}
+
 .selection-panel .healthbar {
   margin-bottom: 12px;
   background: #20303a;
@@ -2120,11 +2075,7 @@ svg {
   width: 28px;
   height: 28px;
 }
-.canvas-help .pack-icon {
-  width: 26px;
-  height: 26px;
-  margin: -5px;
-}
+
 .pack-button-down {
   display: none;
 }
@@ -2593,8 +2544,7 @@ svg {
   text-align: center;
   pointer-events: none;
 }
-.game-shell[data-compact='true'] .map-caption,
-.game-shell[data-compact='true'] .canvas-help {
+.game-shell[data-compact='true'] .map-caption {
   display: none;
 }
 .game-shell[data-compact='true'] .map-status {
@@ -3175,10 +3125,7 @@ svg {
 .objective-progress progress::-moz-progress-bar, .capture-status progress::-moz-progress-bar { background: #8556a0; }
 .capture-status { color: #e3cded; font-size: 13px; padding: 10px; background: #69468433; border-left: 2px solid #ba92d3; }
 .capture-status small { color: #cbd3c6; font-size: 11px; line-height: 1.4; }
-.canvas-help > summary { cursor: pointer; list-style: none; padding: 6px 10px; border-radius: 3px; background: #192b31e0; color: #e3ddc7; }
-.canvas-help > summary:focus-visible { outline: 2px solid #e2c48e; outline-offset: 3px; }
-.canvas-help-keys { display: grid; gap: 8px; margin-top: 5px; padding: 12px; background: #192b31f2; border: 1px solid #a1956855; border-radius: 4px; }
-.canvas-help-keys > span { display: flex; gap: 8px; align-items: center; }
+
 /* Objectives and the current selection scroll independently on desktop. */
 .mission-sidebar {
   flex: 0 0 220px;
@@ -3207,7 +3154,7 @@ svg {
 
 /* Scale whole interface surfaces so text, controls and their frames grow together.
    The world canvas retains native pointer coordinates and scales its labels separately. */
-:is(.topbar, .sidebar, .bottom-bar, .map-caption, .map-status, .canvas-help,
+:is(.topbar, .sidebar, .bottom-bar, .map-caption, .map-status,
     .map-controls, .district-menu, .game-notifications, .ui-modal, .district-popover) {
   zoom: var(--game-ui-scale);
 }
@@ -3256,16 +3203,7 @@ svg {
   right: 12px;
   top: 12px;
 }
-.game-shell[data-compact='false'] .canvas-help {
-  display: block;
-  left: auto;
-  right: 17px;
-  bottom: 64px;
-  max-width: calc(100% - 34px);
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px 15px;
-}
+
 .game-shell[data-compact='false'] .world-canvas {
   position: fixed;
   inset: 0;
@@ -3311,15 +3249,14 @@ svg {
   align-items: stretch;
 }
 .game-shell[data-compact='false'] .bottom-bar .army-overview {
-  /* The button artwork starts four screen pixels below its canvas. */
-  --tab-art-inset: calc(4px / var(--game-ui-scale));
-  margin-top: var(--tab-art-inset);
+  margin-top: 0;
   align-self: stretch;
   flex: 0 0 240px;
   width: 240px;
   background: #192b31de;
   display: grid;
-  grid-template-rows: calc(48px - var(--tab-art-inset)) 52px minmax(0, 1fr);
+  grid-template-rows: 48px 112px minmax(0, 1fr);
+  min-height: 218px;
   gap: 8px;
   padding: 0 10px 10px;
   border: 0;
@@ -3331,7 +3268,7 @@ svg {
 .game-shell[data-compact='false'] .army-note { margin: 0; align-self: start; }
 .game-shell[data-compact='false'] .army-faces {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
 }
 .game-shell[data-compact='false'] .army-face { width: 100%; min-width: 0; height: 52px; }
@@ -3415,4 +3352,30 @@ svg {
 
 .world-canvas[data-cursor='hammer'] {
   cursor: url('/tiny-swords/ui-hammer.png') 36 24, crosshair;
+}
+
+/* Keep the three map controls centered together. */
+
+.game-shell[data-compact='false'] .map-controls {
+  width: 116px;
+  justify-content: center;
+}
+/* One scroll container per tab keeps every card reachable on laptop screens. */
+.game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {
+  min-width: 0;
+  overflow: hidden;
+  flex-basis: 162px;
+  height: 162px;
+}
+.game-shell[data-compact='false'] .card-row {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 12px;
+  overscroll-behavior-x: contain;
+  scrollbar-color: #bda978 #20323b;
+}
+.game-shell[data-compact='false'] .card-row:focus-visible {
+  outline: 2px solid #e2c48e;
+  outline-offset: -2px;
 }

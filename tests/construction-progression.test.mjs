@@ -54,7 +54,7 @@ test('Completed buildings unlock the next tier; money alone cannot bypass progre
   assert.equal(s.lots[4].kind, 'crypt');
   assert.equal(buildUnlockReason(s, 'forge'), '');
   assert.equal(recruitReason(s, 'skeleton'), '');
-  assert.match(recruitReason(s, 'troll'), /forge/);
+  assert.match(recruitReason(s, 'troll'), /hutte/);
 });
 
 test('Troll recruitment applies its increased price and never debits an unaffordable order', () => {

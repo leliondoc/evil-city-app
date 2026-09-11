@@ -25,8 +25,8 @@ export const RESEARCH: Record<
   { name: string; text: string; cost: Cost; room: 'forge' | 'crypt' | 'den' }
 > = {
   'pig-riding': {
-    name: 'Chevaucheurs de porcs',
-    text: 'Tous vos gobelins lanciers, actuels et futurs, montent un porc : vitesse +50 %. Conserve les bonus des armes enflammées.',
+    name: 'Chevaucheurs de cochons',
+    text: 'Tous vos gobelins lanciers, actuels et futurs, montent un cochon : vitesse +50 %. Conserve les bonus des armes enflammées.',
     cost: { gold: 150, wood: 40, food: 50 },
     room: 'den',
   },
@@ -115,7 +115,7 @@ export function researchReason(s: State, key: Research) {
   if (hasResearch(s, key)) return 'Amélioration acquise.';
   const def = RESEARCH[key];
   if (!s.lots.some((l) => l.owned && !l.construction && l.kind === def.room))
-    return `Construisez ${def.room === 'forge' ? 'la maison des trolls' : def.room === 'den' ? 'une grotte gobeline' : 'une crypte'}.`;
+    return `Construisez ${def.room === 'forge' ? 'la hutte des trolls' : def.room === 'den' ? 'une grotte gobeline' : 'une crypte'}.`;
   if (key === 'pig-riding' && spearUnlockReason(s)) return spearUnlockReason(s);
   if (key === 'chain' && !hasResearch(s, 'embers'))
     return 'Recherchez les armes enflammées.';

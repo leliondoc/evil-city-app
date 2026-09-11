@@ -10,7 +10,6 @@ import {
   unitIsMounted,
   CREATURES,
   entrance,
-  setRallyPoint,
   gather,
   playerFoodPoint,
   resourceApproach,
@@ -55,10 +54,9 @@ test('Lanciers and their research unlock only after a skeleton has actually spaw
   assert.match(recruitReason(s, 'spear-goblin'), /grotte/);
 });
 
-test('Both goblins recruit at the cave, and a lancier follows that cave’s rally point', () => {
+test('Both goblins recruit at the cave, and a lancier waits at its entrance', () => {
   const s = prepared();
   unlock(s);
-  assert.equal(setRallyPoint(s, 3, { x: 18, y: 21 }), '');
   assert.equal(recruit(s, 'spear-goblin', 6), '');
   assert.equal(s.recruits[0].source, 3);
   assert.equal(recruit(s, 'goblin'), '');
@@ -71,8 +69,8 @@ test('Both goblins recruit at the cave, and a lancier follows that cave’s rall
       spear.y - entrance(s.lots[3]).y,
     ) < 2,
   );
-  assert.equal(spear.task, 'move');
-  assert.deepEqual(spear.path.at(-1), s.lots[3].rallyPoint);
+  assert.equal(spear.task, 'idle');
+  assert.deepEqual(spear.path, []);
 });
 
 test('Pig riding pays once and upgrades current and future lanciers without changing workers or attack bonuses', () => {
