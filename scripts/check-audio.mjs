@@ -61,7 +61,7 @@ try {
           b.textContent.includes('Tester le son'),
         )?.disabled,
     );
-    assert.equal(new Set(requests).size, 40);
+    assert.equal(new Set(requests).size, 41);
     await preview.click();
     const starts = await page.evaluate(() => window.audioStarts);
     assert.ok(

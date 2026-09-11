@@ -1940,5 +1940,6 @@
     "frameWidth": 64,
     "frames": 1,
     "anchor": 0.5
-  }
+  },
+  "ui-swords": { "src": "/tiny-swords/ui-swords.png", "width": 448, "height": 640, "frameWidth": 448, "frameHeight": 128, "frames": 5, "anchor": 0.5 }
 }

@@ -185,10 +185,11 @@ export class DrawLayer {
     ry: number,
     color: string,
     width: number,
+    alpha = 1,
   ) {
     return this.shape(
-      `e:${rx}:${ry}:${color}:${width}`,
-      (g) => g.ellipse(0, 0, rx, ry).stroke({ color, width }),
+      `e:${rx}:${ry}:${color}:${width}:${alpha}`,
+      (g) => g.ellipse(0, 0, rx, ry).stroke({ color, width, alpha }),
       x,
       y,
     );

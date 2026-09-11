@@ -1130,8 +1130,7 @@ export class Renderer {
                   28,
                   12,
                   '#ff5b5b',
-                  2.5 / this.scale,
-                );
+                  2.5 / this.scale, 0.75);
               const hit = this.sprite(
                 key,
                 role ? heroX : guardX,
@@ -1258,8 +1257,7 @@ export class Renderer {
               25,
               12,
               '#ff5b5b',
-              2.5 / this.scale,
-            );
+              2.5 / this.scale, 0.75);
           const hit = this.sprite(
             key,
             worker.x * CELL,
@@ -1352,7 +1350,7 @@ export class Renderer {
             scale =
               u.kind === 'troll' ? 0.52 : u.kind === 'minotaur' ? 0.62 : 0.72;
           if (selected)
-            this.draw.ellipse(x, y, 25, 12, '#fff1af', 2 / this.scale);
+            this.draw.ellipse(x, y, 25, 12, '#fff1af', 2 / this.scale, 0.75);
           const hit = this.sprite(
             sample.key,
             x,
@@ -1479,8 +1477,7 @@ export class Renderer {
               e.kind === 'hero' ? 28 : 21,
               11,
               selected ? '#ff5b5b' : e.kind === 'hero' ? '#ffc85c' : '#ed886f',
-              (selected ? 2.5 : 2) / this.scale,
-            );
+              (selected ? 2.5 : 2) / this.scale, 0.75);
           const sample = animationFrame(sequence, t - motion.since);
           const hit = this.sprite(
             sample.key,

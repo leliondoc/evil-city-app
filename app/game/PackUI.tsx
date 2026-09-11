@@ -40,7 +40,7 @@ export function PanelSkin({
     image.src =
       ASSETS[
         asset ??
-          (kind === 'notice'
+          (kind === 'sword' ? 'ui-swords' : kind === 'notice'
             ? 'ui-banner'
             : kind === 'notice-ribbon'
               ? 'ui-small-ribbons'

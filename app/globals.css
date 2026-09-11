@@ -3716,3 +3716,9 @@ svg {
 .combat-matchups dd { margin: 0; color: #d0ddd1; font: 14px/1.5 'Trebuchet MS', sans-serif; }
 .combat-details .combat-advice { display: flex; align-items: flex-start; gap: 9px; padding-top: 10px; border-top: 1px solid #a8916233; color: #bbc8c1; font-size: 12px; line-height: 1.6; }
 .combat-details .combat-advice .pack-icon { width: 20px; height: 20px; flex: 0 0 20px; object-fit: contain; margin: 1px 0 0; }
+
+.combat-matchups > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.combat-matchups dt { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: center; width: 148px; height: 44px; max-width: 100%; font-size: 13px; }
+.combat-matchups .combat-strength-label { padding-left: 44px; padding-right: 33px; color: #473723; }
+.combat-matchups .combat-weakness-label { width: 118px; height: 34px; color: #fff1d2; text-shadow: 0 1px #763337; margin: 5px 0; }
+.combat-matchups dd { padding-left: 7px; }

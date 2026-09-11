@@ -1,4 +1,5 @@
 export type PanelKind =
+  | 'sword'
   | 'paper'
   | 'notice'
   | 'ribbon'
@@ -48,6 +49,19 @@ export function paintPanel(
   width: number,
   height: number,
 ) {
+  if (kind === 'sword') {
+    ctx.clearRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = false;
+    const scale = Math.min(height / 128, width / 224);
+    const left = 128 * scale, right = 96 * scale;
+    panelTile(ctx, image, 0, 0, 128, 128, 0, 0, left, height);
+    for (let x = left; x < width - right; x += 64 * scale) {
+      const w = Math.min(64 * scale, width - right - x);
+      panelTile(ctx, image, 192, 0, w / scale, 128, x, 0, w, height);
+    }
+    panelTile(ctx, image, 320, 0, 96, 128, width - right, 0, right, height);
+    return;
+  }
   if (kind === 'notice-ribbon') {
     ctx.clearRect(0, 0, width, height);
     ctx.imageSmoothingEnabled = false;
