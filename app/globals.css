@@ -3668,7 +3668,7 @@ svg {
 }
 .wheel-guide { right: calc(50% - 102px); top: 30px; }
 .wheel-pause { left: calc(50% - 98px); top: 152px; }
-.wheel-settings { left: calc(50% - 44px); top: 214px; width: 44px; height: 44px; }
+.wheel-settings { left: calc(50% - 60px); top: 190px; width: 44px; height: 44px; }
 .wheel-settings > .pack-icon { width: 32px; height: 32px; }
 .command-wheel-pause { display: flex; gap: 5px; }
 .command-wheel-pause i { width: 7px; height: 21px; background: #ffe3a3; border: 1px solid #795c3b; box-shadow: 1px 1px #23323c; }
