@@ -551,6 +551,14 @@
     "frames": 7,
     "anchor": 0.67
   },
+  "imp-avatar": {
+    "src": "/tiny-swords/imp-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
   "bestiary-imp-idle": {
     "src": "/tiny-swords/bestiary-imp-idle.png",
     "width": 1536,

@@ -44,6 +44,8 @@ Les particules `Dust_01`, `Dust_02`, `Explosion_01`, `Explosion_02` et `Fire_01`
 
 Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les sept recrutables ne possèdent pas encore de comportements jouables.
 
+Le bouton du bestiaire utilise le portrait original `Enemy Pack/Imp/Imp_Avatar.png`, copié sans retouche dans `public/tiny-swords/imp-avatar.png` et affiché en grand dans le menu circulaire.
+
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.
 
 Les textures UI sont des planches de morceaux séparés. `PackUI.tsx` répète les morceaux des panneaux et boutons dans un canvas à échelle fixe, sans étirer le grain du bois ou le parchemin ; le ruban utilise trois morceaux SVG. Les coins restent à taille fixe. Le gisement d’or emploie Gold Stone 5 et Gold Stone 4, qui représentent des rochers plutôt que les petites pépites de Gold Stone 1. Le pack fourni ne contient pas de bâtiment de mine. Aucun PNG n’est redessiné.

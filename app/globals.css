@@ -3590,17 +3590,8 @@ svg {
   height: 130px;
   border-radius: 50%;
   border: 3px solid #d7b66a;
-  background: #e0ce9d;
+  background: linear-gradient(180deg, #443a50d9, #20323bd9 70%);
 }
-.command-wheel-medallion {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  overflow: hidden;
-  z-index: -1;
-  background: #e0ce9d;
-}
-.command-wheel-medallion .pack-skin { opacity: 0.95; }
 .command-wheel-castle.pack-icon {
   position: absolute;
   width: 100px;
@@ -3613,8 +3604,8 @@ svg {
   position: absolute;
   bottom: 24px;
   font: bold 17px Georgia, serif;
-  color: #443328;
-  text-shadow: 0 1px #f8e9bc;
+  color: #fff0c5;
+  text-shadow: 0 1px 2px #101c25;
 }
 .command-wheel-level {
   position: absolute;
@@ -3647,6 +3638,7 @@ svg {
 .command-wheel-action[aria-pressed='true'] { border-color: #f1d18a; }
 .wheel-army { left: calc(50% - 76px); top: 30px; }
 .wheel-bestiary { left: calc(50% - 11px); top: 2px; }
+.wheel-bestiary > .pack-icon { width: 64px; height: 64px; }
 .wheel-guide { right: calc(50% - 102px); top: 30px; }
 .wheel-pause { left: calc(50% - 98px); top: 152px; }
 .wheel-settings { left: calc(50% - 44px); top: 214px; width: 44px; height: 44px; }

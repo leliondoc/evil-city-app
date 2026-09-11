@@ -1,4 +1,4 @@
-import { PackIcon, PanelSkin } from './PackUI';
+import { PackIcon } from './PackUI';
 import type { AssetKey } from './art';
 
 type Props = {
@@ -31,7 +31,7 @@ export function CommandWheel(props: Props) {
       key: 'bestiary',
       label: 'Ouvrir le bestiaire',
       tooltip: 'Bestiaire',
-      icon: 'skeleton-avatar',
+      icon: 'imp-avatar',
       onClick: props.onBestiary,
     },
     {
@@ -65,9 +65,6 @@ export function CommandWheel(props: Props) {
         aria-label={`Voir le manoir, niveau ${props.level}`}
         title={`Manoir niveau ${props.level} · progression du domaine`}
       >
-        <span className="command-wheel-medallion">
-          <PanelSkin kind="paper" />
-        </span>
         <PackIcon asset="hq-purple" className="command-wheel-castle" />
         <span className="command-wheel-name">Manoir</span>
         <span className="command-wheel-level">
