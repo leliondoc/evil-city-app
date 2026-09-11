@@ -78,6 +78,8 @@ Les 110 tests couvrent la progression depuis zéro ressource jusqu’à la forge
 
 Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Avec des combattants sélectionnés, un clic sur une unité ou un bâtiment ennemi leur donne l’ordre d’attaquer ; Shift + clic permet d’inspecter la cible. Le clic droit commande aussi les unités sélectionnées. Les gobelins d’un groupe mixte ne participent aux attaques qu’après la recherche Armes enflammées.
 
+Un ennemi désigné par un ordre individuel, de groupe ou d’interception reste prioritaire : les combattants le poursuivent et le frappent sans se détourner vers un adversaire plus proche. Un nouvel ordre remplace cette priorité ; la mort ou la disparition de la cible rétablit le choix automatique. Les déplacements continuent de respecter la portée, les murs et les passages.
+
 La carte conserve les cercles de sélection jaunes et les barres de PV simples d’origine. Les barres Tiny Swords restent dans les panneaux de sélection. `node scripts/check-pixi.mjs` vérifie les pixels des barres et du cercle, la flèche d’attaque, les clics individuels et groupés, le redimensionnement et la libération de la vue. Comme les autres contrôles navigateur, il exige le serveur local et Playwright ; `PLAYWRIGHT_CHANNEL=chromium` permet d’utiliser son Chromium au lieu de Chrome. Cette option est également disponible pour `check-display-scaling.mjs`.
 
 ## Résurrection, combos et tours de quartier

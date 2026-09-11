@@ -328,6 +328,8 @@ export interface Lot {
   construction: null | { kind: BuildingKind; progress: number };
 }
 export interface Unit extends Point {
+  /** A player-designated enemy takes priority over opportunistic combat. */
+  focusTarget?: number;
   loot?: Cost;
   nextRestAt?: number;
   nextMealAt?: number;
@@ -1132,6 +1134,7 @@ export function assign(
   target: number | null,
 ) {
   if (u.task === 'deliver-loot' && task !== 'deliver-loot') u.loot = undefined;
+  delete u.focusTarget;
   u.path = findPath(u, point);
   u.task = task;
   u.target = target;
@@ -1346,6 +1349,7 @@ export function commandUnit(
     const enemy = s.enemies.find((e) => e.id === target.id && e.hp > 0);
     if (!enemy) return 'Cet ennemi n’est plus dans le quartier.';
     assign(unit, enemy, 'defend', enemy.id);
+    unit.focusTarget = enemy.id;
     markAttackOrder(s, { type: 'enemy', id: enemy.id });
     announce(
       s,
@@ -1819,7 +1823,10 @@ export function intercept(s: State, id: number): string {
   if (!enemy) return 'Cet ennemi a déjà été vaincu.';
   if (!army(s).length)
     return 'Recrutez des combattants pour intercepter cet ennemi.';
-  for (const u of army(s)) assign(u, enemy, 'defend', id);
+  for (const u of army(s)) {
+    assign(u, enemy, 'defend', id);
+    u.focusTarget = id;
+  }
   markAttackOrder(s, { type: 'enemy', id });
   return '';
 }
@@ -2243,7 +2250,11 @@ function separateCombatants(s: State, dt: number) {
       bodies
         .filter(
           (other) =>
-            other.enemy !== body.enemy && clearShot(body.actor, other.actor),
+            other.enemy !== body.enemy &&
+            (!('focusTarget' in body.actor) ||
+              body.actor.focusTarget === undefined ||
+              other.actor.id === body.actor.focusTarget) &&
+            clearShot(body.actor, other.actor),
         )
         .map((other) => other.actor),
       2.4,
@@ -2441,6 +2452,13 @@ function tickStep(s: State, dt: number) {
   for (const u of s.units) {
     if (u.hp <= 0) continue;
     u.fighting = false;
+    if (
+      u.focusTarget !== undefined &&
+      (u.task !== 'defend' ||
+        u.target !== u.focusTarget ||
+        !s.enemies.some((e) => e.id === u.focusTarget && e.hp > 0))
+    )
+      delete u.focusTarget;
     if (strategyUnit(s, u, dt)) continue;
     if (advanceSpecialUnit(s, u, dt)) continue;
     if (advanceGathering(s, u, dt)) continue;
@@ -2464,7 +2482,11 @@ function tickStep(s: State, dt: number) {
       }
       const threat = nearest(
         u,
-        s.enemies.filter((e) => clearShot(u, e)),
+        s.enemies.filter(
+          (e) =>
+            (u.focusTarget === undefined || e.id === u.focusTarget) &&
+            clearShot(u, e),
+        ),
         u.kind === 'alchemist' ? 4 : 1.9,
       );
       if (threat) {
