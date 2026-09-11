@@ -1,6 +1,7 @@
 import type { Point, State } from './engine';
 import { SoundEvents, type SoundCue, type SoundKind } from './audioEvents';
 import { GameMusic } from './music';
+import { SOUND_DEFS, effectCalibration } from './audioCatalog';
 
 export type AudioSettings = {
   muted: boolean;
@@ -9,30 +10,6 @@ export type AudioSettings = {
 };
 export type AudioStatus = 'idle' | 'loading' | 'ready' | 'error';
 const SETTINGS_KEY = 'evil-city-audio-v1';
-const clips: Record<SoundKind, string[]> = {
-  chop: ['chop-1', 'chop-2'],
-  mine: ['mine-1', 'mine-2'],
-  melee: ['sword-1', 'sword-2'],
-  bow: ['bow'],
-  magic: ['magic'],
-  fire: ['fire'],
-  build: ['chop-1', 'chop-2'],
-  deposit: ['deposit'],
-  complete: ['complete'],
-  spawn: ['magic'],
-};
-const levels: Record<SoundKind, number> = {
-  chop: 0.3,
-  mine: 0.25,
-  melee: 0.35,
-  bow: 0.3,
-  magic: 0.3,
-  fire: 0.3,
-  build: 0.2,
-  deposit: 0.28,
-  complete: 0.4,
-  spawn: 0.4,
-};
 export function readAudioSettings(): AudioSettings {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null');
@@ -57,7 +34,12 @@ export class GameAudio {
   private buffers = new Map<string, AudioBuffer>();
   private loading: Promise<void> | null = null;
   private events = new SoundEvents();
-  private active = new Set<AudioBufferSourceNode>();
+  private active = new Map<
+    AudioBufferSourceNode,
+    { kind: SoundKind; priority: number }
+  >();
+  private calibration = new Map<string, number>();
+  private compressor: DynamicsCompressorNode | null = null;
   private cooldown = new Map<SoundKind, number>();
   private sequence = new Map<SoundKind, number>();
   private paused = false;
@@ -82,7 +64,13 @@ export class GameAudio {
       this.context ??= new AudioContext();
       if (!this.master) {
         this.master = this.context.createGain();
-        this.master.connect(this.context.destination);
+        this.compressor = this.context.createDynamicsCompressor();
+        this.compressor.threshold.value = -12;
+        this.compressor.knee.value = 12;
+        this.compressor.ratio.value = 6;
+        this.compressor.attack.value = 0.003;
+        this.compressor.release.value = 0.15;
+        this.master.connect(this.compressor).connect(this.context.destination);
         this.master.gain.value = this.settings.volume;
       }
       void this.context.resume().catch(() => {});
@@ -93,16 +81,28 @@ export class GameAudio {
       this.onStatus(this.status);
       const context = this.context;
       this.loading = Promise.all(
-        [...new Set(Object.values(clips).flat())].map(async (name) => {
-          const response = await fetch(
-            `${import.meta.env.BASE_URL}audio/tommusic/${name}.wav`,
-          );
-          if (!response.ok) throw new Error('Audio unavailable');
-          const buffer = await context.decodeAudioData(
-            await response.arrayBuffer(),
-          );
-          if (!this.disposed) this.buffers.set(name, buffer);
-        }),
+        [...new Set(Object.values(SOUND_DEFS).flatMap((def) => def.clips))].map(
+          async (name) => {
+            const response = await fetch(
+              `${import.meta.env.BASE_URL}audio/tommusic/${name}.wav`,
+            );
+            if (!response.ok) throw new Error('Audio unavailable');
+            const buffer = await context.decodeAudioData(
+              await response.arrayBuffer(),
+            );
+            if (!this.disposed) {
+              this.buffers.set(name, buffer);
+              this.calibration.set(
+                name,
+                effectCalibration(
+                  Array.from({ length: buffer.numberOfChannels }, (_, i) =>
+                    buffer.getChannelData(i),
+                  ),
+                ),
+              );
+            }
+          },
+        ),
       )
         .then(() => {
           if (!this.disposed) {
@@ -147,7 +147,11 @@ export class GameAudio {
 
   update(s: State) {
     // Consume events even while muted so turning sound back on never replays them.
-    for (const cue of this.events.update(s)) this.play(cue);
+    const cues = this.events.update(s);
+    cues.sort(
+      (a, b) => SOUND_DEFS[b.kind].priority - SOUND_DEFS[a.kind].priority,
+    );
+    for (const cue of cues) this.play(cue);
   }
 
   preview() {
@@ -170,30 +174,43 @@ export class GameAudio {
     )
       return;
     const now = context.currentTime;
-    if (
-      this.active.size >= 4 ||
-      (!preview && now < (this.cooldown.get(cue.kind) ?? 0))
-    )
-      return;
+    const definition = SOUND_DEFS[cue.kind];
+    if (!preview && now < (this.cooldown.get(cue.kind) ?? 0)) return;
     const location = cue.point ? this.position(cue.point) : { pan: 0, gain: 1 };
     if (!location) return;
     const index = this.sequence.get(cue.kind) ?? 0;
-    const variants = clips[cue.kind];
+    const variants = definition.clips;
     const buffer = this.buffers.get(variants[index % variants.length]);
     if (!buffer) return;
+    const voices = [...this.active.entries()];
+    // Two footsteps at most; leave room for impacts, spells and important events.
+    if (
+      definition.priority === 0 &&
+      voices.filter(([, v]) => v.priority === 0).length >= 2
+    )
+      return;
+    if (voices.filter(([, v]) => v.kind === cue.kind).length >= 2) return;
+    if (this.active.size >= 8) {
+      const quietest = voices.sort((a, b) => a[1].priority - b[1].priority)[0];
+      if (quietest[1].priority >= definition.priority) return;
+      quietest[0].stop();
+      this.active.delete(quietest[0]);
+    }
     this.sequence.set(cue.kind, index + 1);
-    this.cooldown.set(
-      cue.kind,
-      now + (cue.kind === 'complete' || cue.kind === 'spawn' ? 1 : 0.6),
-    );
+    this.cooldown.set(cue.kind, now + definition.cooldown);
     const source = context.createBufferSource();
     source.buffer = buffer;
     const gain = context.createGain();
-    gain.gain.value = levels[cue.kind] * location.gain;
+    gain.gain.value =
+      definition.gain *
+      location.gain *
+      (this.calibration.get(variants[index % variants.length]) ?? 1);
     const pan = context.createStereoPanner();
     pan.pan.value = location.pan;
     source.connect(gain).connect(pan).connect(this.master);
-    this.active.add(source);
+    if (definition.priority < 3)
+      source.playbackRate.value = 0.97 + Math.random() * 0.06;
+    this.active.set(source, { kind: cue.kind, priority: definition.priority });
     source.onended = () => {
       this.active.delete(source);
       source.disconnect();
@@ -204,7 +221,7 @@ export class GameAudio {
   }
 
   private stop() {
-    for (const source of this.active) {
+    for (const source of this.active.keys()) {
       try {
         source.stop();
       } catch {
@@ -217,6 +234,7 @@ export class GameAudio {
   dispose() {
     this.disposed = true;
     this.music.dispose();
+    this.compressor?.disconnect();
     this.stop();
     void this.context?.close().catch(() => {});
   }

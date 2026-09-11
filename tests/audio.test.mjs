@@ -3,6 +3,156 @@ import assert from 'node:assert/strict';
 import { establishedGame } from './established-fixture.mjs';
 import { SoundEvents } from '../app/game/audioEvents.ts';
 import { recruit, tick, resourceGain } from '../app/game/engine.ts';
+import { effectCalibration, SOUND_DEFS } from '../app/game/audioCatalog.ts';
+import { existsSync } from 'node:fs';
+
+test('All configured effects exist and calibration limits peaks and silent amplification', () => {
+  for (const clip of new Set(Object.values(SOUND_DEFS).flatMap((d) => d.clips)))
+    assert.ok(
+      existsSync(
+        new URL(`../public/audio/tommusic/${clip}.wav`, import.meta.url),
+      ),
+      clip,
+    );
+  assert.equal(effectCalibration([new Float32Array(100)]), 1);
+  assert.ok(effectCalibration([new Float32Array([0.02])]) <= 2.5);
+  const hot = new Float32Array([1, -1, 0.02]);
+  assert.ok(effectCalibration([hot]) <= 0.72);
+  const quiet = effectCalibration([new Float32Array([0.04, -0.04])]);
+  const loud = effectCalibration([new Float32Array([0.2, -0.2])]);
+  assert.ok(Math.abs(quiet * 0.04 - loud * 0.2) < 0.00001);
+});
+
+test('Footsteps follow movement and ground; ghosts and stationary units remain silent', () => {
+  const s = establishedGame(),
+    audio = new SoundEvents(),
+    unit = s.units[0];
+  s.workers = [];
+  audio.update(s);
+  Object.assign(unit, { moving: true, x: -2, y: 20.5 });
+  s.elapsed++;
+  assert.ok(audio.update(s).some((c) => c.kind === 'step-wood'));
+  Object.assign(unit, { x: 0.5, y: 0.5 });
+  s.elapsed++;
+  assert.ok(audio.update(s).some((c) => c.kind === 'step-stone'));
+  Object.assign(unit, { x: -8, y: 12 });
+  s.elapsed++;
+  assert.ok(audio.update(s).some((c) => c.kind === 'step-dirt'));
+  unit.moving = false;
+  s.elapsed++;
+  assert.deepEqual(audio.update(s), []);
+  unit.moving = true;
+  unit.kind = 'specter';
+  s.elapsed++;
+  assert.deepEqual(audio.update(s), []);
+});
+
+test('Shield activation, received hits and monk healing have distinct paced cues', () => {
+  const s = establishedGame(),
+    audio = new SoundEvents();
+  s.workers = [];
+  s.enemies = [
+    {
+      id: 500,
+      kind: 'guard',
+      role: 'warrior',
+      x: 10,
+      y: 10,
+      hp: 20,
+      maxHp: 55,
+      healTarget: null,
+    },
+  ];
+  audio.update(s);
+  s.elapsed++;
+  s.enemies[0].shieldUntil = 7;
+  assert.equal(audio.update(s).filter((c) => c.kind === 'shield').length, 1);
+  s.elapsed++;
+  s.enemies[0].hp--;
+  assert.equal(audio.update(s).filter((c) => c.kind === 'shield').length, 1);
+  s.elapsed++;
+  s.enemies[0].healTarget = 501;
+  assert.ok(audio.update(s).some((c) => c.kind === 'heal'));
+  s.elapsed += 0.1;
+  assert.ok(!audio.update(s).some((c) => c.kind === 'heal'));
+});
+
+test('Arrow impact requires an arriving arrow and damaged target; expired arrows stay silent', () => {
+  const s = establishedGame(),
+    audio = new SoundEvents(),
+    unit = s.units[0];
+  s.workers = [];
+  s.projectiles.push({
+    id: 999,
+    target: { type: 'unit', id: unit.id },
+    x: unit.x,
+    y: unit.y,
+  });
+  audio.update(s);
+  s.elapsed++;
+  s.projectiles = [];
+  assert.ok(!audio.update(s).some((c) => c.kind === 'arrow-hit'));
+  s.elapsed++;
+  s.projectiles.push({
+    id: 1000,
+    target: { type: 'unit', id: unit.id },
+    x: unit.x,
+    y: unit.y,
+  });
+  audio.update(s);
+  s.elapsed++;
+  s.projectiles = [];
+  unit.hp -= 5;
+  assert.equal(audio.update(s).filter((c) => c.kind === 'arrow-hit').length, 1);
+});
+
+test('New soldiers and undead do not use the worker recruitment sound', () => {
+  const s = establishedGame(),
+    audio = new SoundEvents();
+  audio.update(s);
+  s.units.push(
+    { ...s.units[0], id: 900, kind: 'skeleton' },
+    { ...s.units[0], id: 901, kind: 'spear-goblin' },
+  );
+  s.elapsed++;
+  const cues = audio.update(s);
+  assert.equal(cues.filter((c) => c.kind === 'spawn-undead').length, 1);
+  assert.equal(cues.filter((c) => c.kind === 'spawn-soldier').length, 1);
+  assert.ok(!cues.some((c) => c.kind === 'spawn'));
+});
+
+test('Health loss outside a physical fight does not invent sword impacts', () => {
+  const s = establishedGame(),
+    audio = new SoundEvents();
+  s.workers = [];
+  audio.update(s);
+  s.elapsed++;
+  s.units[0].hp--;
+  assert.deepEqual(audio.update(s), []);
+});
+
+test('Cancelled construction is silent; capture, destruction and death are emitted once', () => {
+  const s = establishedGame(),
+    audio = new SoundEvents(),
+    lot = s.lots[7];
+  s.workers = [];
+  lot.construction = { kind: 'den', progress: 0 };
+  audio.update(s);
+  s.elapsed++;
+  lot.construction = null;
+  assert.deepEqual(audio.update(s), []);
+  s.elapsed++;
+  lot.owned = !lot.owned;
+  assert.equal(audio.update(s).filter((c) => c.kind === 'capture').length, 1);
+  s.elapsed++;
+  lot.hp = 0;
+  s.domain.deaths.push({ x: 10, y: 10, at: s.elapsed });
+  const cues = audio.update(s);
+  assert.equal(cues.filter((c) => c.kind === 'destroy').length, 1);
+  assert.equal(cues.filter((c) => c.kind === 'death').length, 1);
+  s.elapsed++;
+  assert.deepEqual(audio.update(s), []);
+});
 
 test('Audio ignores pre-existing events and emits each new delivery only once', () => {
   const s = establishedGame(),
