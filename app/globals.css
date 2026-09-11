@@ -342,7 +342,7 @@ svg {
 }
 .selection-stats svg { flex-shrink: 0; }
 .selection-stats .unit-activity { max-width: 100%; white-space: normal; }
-.combat-status { display: flex; align-items: center; gap: 6px; padding: 8px; border-left: 2px solid #dfbd74; background: #182c37; color: #ffe3a7; font-size: 13px; }
+.combat-status { display: flex; align-items: center; gap: 6px; padding: 8px; background: #182c37; color: #ffe3a7; font-size: 13px; }
 .combat-status svg { flex-shrink: 0; }
 .selection-stats > span:empty { display: none; }
 .selection-art:has(> .selection-portrait) { height: 144px; }
@@ -1216,7 +1216,6 @@ svg {
   padding: 10px 14px;
   background: #24363bea;
   color: #fff0bc;
-  border-left: 3px solid #eac277;
 }
 .map-caption h2 {
   font-size: 23px;
@@ -1498,11 +1497,9 @@ svg {
 .manor-tier {
   padding: 8px 10px;
   border: 1px solid #586367;
-  border-left: 3px solid #586367;
   border-radius: 3px;
   background: linear-gradient(135deg, #303d45f2, #182a32f2);
 }
-.manor-tier[data-state='acquired'] { border-left-color: #9cab7c; }
 .manor-tier[data-state='next'] { border-color: #b89b61; background: linear-gradient(135deg, #48433bf2, #24323bf2); }
 .manor-tier-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .manor-tier-number { color: #ead8ab; font: bold 15px/1 Georgia, serif; }
@@ -3172,7 +3169,7 @@ svg {
 .objective-progress progress::-webkit-progress-bar, .capture-status progress::-webkit-progress-bar { background: #4b493a40; }
 .objective-progress progress::-webkit-progress-value, .capture-status progress::-webkit-progress-value { background: #8556a0; }
 .objective-progress progress::-moz-progress-bar, .capture-status progress::-moz-progress-bar { background: #8556a0; }
-.capture-status { color: #e3cded; font-size: 13px; padding: 10px; background: #69468433; border-left: 2px solid #ba92d3; }
+.capture-status { color: #e3cded; font-size: 13px; padding: 10px; background: #69468433; }
 .capture-status small { color: #cbd3c6; font-size: 11px; line-height: 1.4; }
 
 /* Objectives and the current selection scroll independently on desktop. */
@@ -3192,7 +3189,6 @@ svg {
 .game-shell[data-compact='false'] .sidebar {
   order: 2;
   border-right: 0;
-  border-left: 1px solid #71847d;
   padding-top: 8px;
 }
 .game-shell[data-compact='false'] .sidebar .selection-panel { padding-top: 0; }
