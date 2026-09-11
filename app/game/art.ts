@@ -43,13 +43,15 @@ export function spriteFrame(key: AssetKey, frame: number) {
 }
 export function buildingArt(kind: BuildingKind, owned = true): AssetKey {
   if (kind === 'guild' && !owned) return 'guild-yellow';
-  if (kind === 'den') return 'den';
+  if (kind === 'den') return 'cave';
+  if (kind === 'forge' && owned) return 'troll-house';
   if (kind === 'empty') return 'wood';
   const name = kind === 'hall' ? 'hq' : kind === 'guild' ? 'crypt' : kind;
   return `${name}-${owned ? 'purple' : 'blue'}` as AssetKey;
 }
 /** Door axis in the original sprite. House 2 has its entrance on the left. */
 export function buildingDoorX(key: AssetKey) {
+  if (key === 'troll-house') return 154;
   return key.startsWith('tavern-') || /^house-(blue|purple)-2$/.test(key)
     ? 30
     : ASSETS[key].frameWidth / 2;
@@ -67,7 +69,10 @@ export function enemyAnimationSequence(
 export function animationSequence(
   kind: CreatureKind,
   action: Animation,
+  mounted = false,
 ): AssetKey[] {
+  if (kind === 'spear-goblin' && mounted)
+    return [`pig-rider-${action}` as AssetKey];
   if (kind === 'troll' && action === 'attack')
     return ['troll-windup', 'troll-attack', 'troll-recovery'];
   return [`${kind}-${action}` as AssetKey];

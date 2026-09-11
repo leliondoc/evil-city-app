@@ -3331,7 +3331,7 @@ svg {
 .game-shell[data-compact='false'] .army-note { margin: 0; align-self: start; }
 .game-shell[data-compact='false'] .army-faces {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
 }
 .game-shell[data-compact='false'] .army-face { width: 100%; min-width: 0; height: 52px; }
@@ -3402,4 +3402,17 @@ svg {
   background: #192b31ed;
   border-radius: 3px;
   padding: 3px 5px;
+}
+
+/* Bestiary groups use the same faction terrain as their buildings. */
+.bestiary-faction { margin-top: 20px; }
+.bestiary-faction h3 { margin-bottom: 12px; color: #eee4ce; font-size: 20px; }
+.bestiary-faction[data-faction='horde'] .bestiary-creature { background: #393044; }
+.bestiary-faction[data-faction='humans'] .bestiary-creature { background: #263d48; }
+.bestiary-faction .sprite-preview { border-radius: 3px; }
+.bestiary-mount { padding: 7px 10px; border: 1px solid #b99acb; border-radius: 3px; color: #f3e9df; font-size: 13px; }
+.bestiary-mount[aria-pressed='true'] { background: #6c527d; }
+
+.world-canvas[data-cursor='hammer'] {
+  cursor: url('/tiny-swords/ui-hammer.png') 36 24, crosshair;
 }

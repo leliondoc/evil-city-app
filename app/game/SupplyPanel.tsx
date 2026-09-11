@@ -117,7 +117,13 @@ export function SupplySelection({
       <h3 className="selection-name">{worker ? def.worker : def.name}</h3>
       <div className="selection-art">
         <Sprite
-          asset={worker ? workerArt(worker, site) : (def.art as AssetKey)}
+          asset={
+            worker
+              ? workerArt(worker, site)
+              : site.kind === 'food'
+                ? 'pig-idle'
+                : (def.art as AssetKey)
+          }
           figure={!!worker}
         />
       </div>
@@ -136,6 +142,8 @@ export function SupplySelection({
             <ResourceIcon kind={site.kind} /> Envoyer un gobelin récolter
           </GameButton>
           <p className="reason">
+            {site.kind === 'food' &&
+              'Vos gobelins récoltent les cochons en bas du pâturage ; les bergers humains gardent leurs moutons. '}
             Chargements de 30, livrés au manoir. Vous pouvez aussi sélectionner
             un gobelin puis donner un ordre sur ce site.
           </p>

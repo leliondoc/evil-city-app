@@ -27,11 +27,17 @@ export function ResearchPanel({
   lot: Lot;
   onAction: Action;
 }) {
-  if (!lot.owned || !['forge', 'crypt'].includes(lot.kind)) return null;
+  if (!lot.owned || !['forge', 'crypt', 'den'].includes(lot.kind)) return null;
   return (
     <AbilityCard
       title="Recherches"
-      icon={lot.kind === 'crypt' ? 'alchemist-avatar' : 'ui-sword'}
+      icon={
+        lot.kind === 'crypt'
+          ? 'alchemist-avatar'
+          : lot.kind === 'den'
+            ? 'spear-goblin-avatar'
+            : 'ui-sword'
+      }
     >
       <p className="ability-meta">Améliorations permanentes · toute l’armée</p>
       {(Object.keys(RESEARCH) as Research[])
@@ -121,7 +127,7 @@ export function TowerPanel({
             : 'Tour sans garnison.'}
       </p>
       <p className="reason">
-        Portée affichée :{' '}
+        Influence :{' '}
         {towerInfluence(s, tower)
           .map((range) => `${range.label} : ${range.radius} cases`)
           .join(' · ')}

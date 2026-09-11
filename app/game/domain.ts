@@ -4,6 +4,7 @@ import {
   capacity,
   clearShot,
   CREATURES,
+  unitSpeed,
   entrance,
   findPath,
   navigationTarget,
@@ -617,7 +618,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
       idle(u);
       return true;
     }
-    walk(s, u, CREATURES[u.kind].speed * dt);
+    walk(s, u, unitSpeed(s, u) * dt);
     if (!u.path.length && distance(u, monk) <= 2.2 && clearShot(u, monk)) {
       u.fighting = true;
       u.facing = monk.x >= u.x ? 1 : -1;
@@ -677,7 +678,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
       idle(u);
       return true;
     }
-    walk(s, u, CREATURES[u.kind].speed * dt);
+    walk(s, u, unitSpeed(s, u) * dt);
     if (!u.path.length && distance(u, entrance(lot)) < 1) {
       u.activityProgress = (u.activityProgress ?? 0) + dt;
       if (u.activityProgress >= 3 && lot.hauntedBy === undefined) {
@@ -795,7 +796,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
       idle(u);
       return true;
     }
-    walk(s, u, CREATURES[u.kind].speed * dt);
+    walk(s, u, unitSpeed(s, u) * dt);
     if (!u.path.length && distance(u, entrance(lot)) < 1) {
       if (u.task === 'eat' && s.resources.food <= 0) {
         idle(u);

@@ -1831,5 +1831,93 @@
     "frameWidth": 64,
     "frames": 1,
     "anchor": 0.5
+  },
+  "spear-goblin-avatar": {
+    "src": "/tiny-swords/spear-goblin-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "spear-goblin-idle": {
+    "src": "/tiny-swords/spear-goblin-idle.png",
+    "width": 2048,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "spear-goblin-walk": {
+    "src": "/tiny-swords/spear-goblin-walk.png",
+    "width": 1536,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "spear-goblin-attack": {
+    "src": "/tiny-swords/spear-goblin-attack.png",
+    "width": 1792,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 7,
+    "anchor": 0.67
+  },
+  "pig-idle": {
+    "src": "/tiny-swords/pig-idle.png",
+    "width": 1920,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 10,
+    "anchor": 0.67
+  },
+  "pig-walk": {
+    "src": "/tiny-swords/pig-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "pig-rider-idle": {
+    "src": "/tiny-swords/pig-rider-idle.png",
+    "width": 2048,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 8,
+    "anchor": 0.64
+  },
+  "pig-rider-walk": {
+    "src": "/tiny-swords/pig-rider-walk.png",
+    "width": 1024,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 4,
+    "anchor": 0.64
+  },
+  "pig-rider-attack": {
+    "src": "/tiny-swords/pig-rider-attack.png",
+    "width": 1792,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 7,
+    "anchor": 0.64
+  },
+  "troll-house": {
+    "src": "/tiny-swords/troll-house.png",
+    "width": 384,
+    "height": 320,
+    "frameWidth": 384,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "ui-hammer": {
+    "src": "/tiny-swords/ui-hammer.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.5
   }
 }

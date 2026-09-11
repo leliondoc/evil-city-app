@@ -63,6 +63,7 @@ import { buildingArt, enemyAnimationSequence, type Animation } from './art';
 import {
   BUILDINGS,
   CREATURES,
+  unitIsMounted,
   RESOURCE_LABELS,
   enemyDefinition,
   BUILD_OPTIONS,
@@ -431,7 +432,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       }
       if (event.key.toLowerCase() === 'h') setModal('guide');
       if (event.key.toLowerCase() === 'r') run((s) => retreat(s));
-      if (['1', '2', '3', '4', '5'].includes(event.key)) {
+      if (['1', '2', '3', '4', '5', '6', '7'].includes(event.key)) {
         const i = Number(event.key) - 1;
         if (tab === 'build' && BUILD_OPTIONS[i]) chooseBuild(BUILD_OPTIONS[i]);
         else if (tab === 'recruit' && RECRUIT_OPTIONS[i])
@@ -968,6 +969,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   ) : selectedUnit ? (
                     <Sprite
                       creature={selectedUnit.kind}
+                      mounted={unitIsMounted(s, selectedUnit)}
                       action={
                         selectedUnit.fighting
                           ? 'attack'
@@ -1950,8 +1952,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       Sélectionnez la friche au centre et revendiquez-la pour 40
                       or et 18 essence. Une fois la cantine terminée,
                       construisez-y une crypte. Elle produit de l’essence et
-                      débloque les squelettes. Améliorer le manoir augmente sa
-                      production d’essence.
+                      débloque les squelettes. Le premier squelette recruté
+                      débloque ensuite les gobelins lanciers à la grotte.
+                      Améliorer le manoir augmente sa production d’essence.
                     </p>
                   </div>
                 </div>
@@ -2092,8 +2095,8 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <>
               <DialogTitle>Des voisins peu fréquentables</DialogTitle>
               <DialogDescription>
-                Les 22 créatures du pack Enemy et les 4 classes de héros de la
-                guilde.
+                Vos 7 créatures recrutables et les 8 unités humaines : gardes,
+                héros et travailleurs.
               </DialogDescription>
               <Tabs
                 className="animation-tabs"

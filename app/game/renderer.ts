@@ -1,6 +1,8 @@
 import {
   BUILDINGS,
   CREATURES,
+  unitIsMounted,
+  playerFoodPoint,
   ENEMIES,
   GUILD_ROLES,
   HEROES,
@@ -39,7 +41,7 @@ import { mission } from './mission';
 import type { GroundTile } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
-import { hasResearch, towerOccupant, towerInfluence } from './strategy';
+import { hasResearch, towerOccupant } from './strategy';
 import {
   selectedUnitIds,
   unitSelection,
@@ -168,6 +170,7 @@ export class Renderer {
               (!k.startsWith('ui-') ||
                 [
                   'ui-selection-corners',
+                  'ui-small-ribbons',
                   'ui-gold',
                   'ui-wood-icon',
                   'ui-food',
@@ -518,9 +521,11 @@ export class Renderer {
           ? 'arrow'
           : forbidden
             ? 'forbidden'
-            : this.hover
-              ? 'hand'
-              : 'arrow';
+            : this.buildKind !== null
+              ? 'hammer'
+              : this.hover
+                ? 'hand'
+                : 'arrow';
     if (this.canvas.dataset.cursor !== cursor)
       this.canvas.dataset.cursor = cursor;
   }
@@ -888,17 +893,6 @@ export class Renderer {
       name?: string;
     }[] = [];
     for (const tower of s.strategy.towers) {
-      if (this.selection.type === 'tower' && this.selection.id === tower.id) {
-        for (const [index, range] of towerInfluence(s, tower).entries())
-          this.draw.ellipse(
-            tower.x * CELL,
-            tower.y * CELL,
-            range.radius * CELL,
-            range.radius * CELL,
-            index ? '#a9cbe8' : '#f5da83',
-            2 / this.scale,
-          );
-      }
       drawables.push({
         depth: tower.artY * CELL,
         draw: () => {
@@ -1188,6 +1182,26 @@ export class Renderer {
             );
         },
       });
+    for (const site of s.sites.filter((site) => site.kind === 'food')) {
+      const pig = playerFoodPoint(site);
+      drawables.push({
+        depth: pig.y * CELL,
+        draw: () => {
+          const hit = this.sprite(
+            'pig-idle',
+            pig.x * CELL,
+            pig.y * CELL,
+            0.8,
+            this.reducedMotion
+              ? 0
+              : Math.floor(t * 10) % ASSETS['pig-idle'].frames,
+            site.hp > 0 ? 1 : 0.4,
+          );
+          hit.selection = { type: 'resource', id: site.id };
+          this.hits.push(hit);
+        },
+      });
+    }
     for (const worker of s.workers)
       drawables.push({
         depth: worker.y * CELL + 1,
@@ -1291,7 +1305,7 @@ export class Renderer {
             this.motions.set(u.id, motion);
           }
           const sample = animationFrame(
-              animationSequence(u.kind, action),
+              animationSequence(u.kind, action, unitIsMounted(s, u)),
               t - motion.since,
             ),
             scale =
@@ -1311,7 +1325,12 @@ export class Renderer {
           this.hits.push(hit);
           const bubble = thought(s, u);
           const barY =
-            y - (u.kind === 'troll' || u.kind === 'minotaur' ? 84 : 58);
+            y -
+            (u.kind === 'spear-goblin'
+              ? 96
+              : u.kind === 'troll' || u.kind === 'minotaur'
+                ? 84
+                : 58);
           if (
             bubble &&
             u.task !== 'duel' &&
@@ -1735,23 +1754,33 @@ export class Renderer {
       const selectedId = this.selection.id;
       const lot = s.lots.find((lot) => lot.id === selectedId);
       if (lot && canSetRally(lot) && lot.rallyPoint) {
-        const origin = entrance(lot),
-          ui = this.uiScale / this.scale;
+        const building = this.hits.find(
+          (hit) => hit.selection.type === 'lot' && hit.selection.id === lot.id,
+        );
+        const bounds = building && this.visibleBounds(building);
+        const origin = bounds
+          ? { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+          : { x: (lot.x + 4) * CELL, y: (lot.y + 4) * CELL };
+        const ui = this.uiScale / this.scale;
         const x = lot.rallyPoint.x * CELL,
           y = lot.rallyPoint.y * CELL;
-        this.draw.line(
-          [
-            { x: origin.x * CELL, y: origin.y * CELL },
-            { x, y },
-          ],
-          '#f5da83',
-          1.5 / this.scale,
-          [6 * ui, 5 * ui],
-        );
-        this.draw.ellipse(x, y, 8 * ui, 4 * ui, '#f5da83', 2 / this.scale);
-        this.draw.rect(x - ui, y - 30 * ui, 2 * ui, 30 * ui, '#fff0b8');
-        this.draw.rect(x + ui, y - 30 * ui, 16 * ui, 11 * ui, '#d8ac51');
-        this.draw.rect(x + ui, y - 30 * ui, 16 * ui, 2 * ui, '#fff0b8');
+        this.draw.line([origin, { x, y }], '#72b6d3', 1.5 / this.scale, [
+          6 * ui,
+          5 * ui,
+        ]);
+        // Join the three original pieces once: a small folded ribbon, with no extended center.
+        for (const [i, sx] of [0, 128, 256].entries())
+          this.draw.image(
+            'ui-small-ribbons',
+            sx,
+            64,
+            64,
+            64,
+            x + (i - 1.5) * 16 * ui,
+            y - 8 * ui,
+            16 * ui,
+            16 * ui,
+          );
       }
     }
     // Draw combat health above all sprites and effects, at a readable size when zoomed out.

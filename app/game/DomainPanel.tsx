@@ -1,4 +1,4 @@
-import type { Lot, State, Unit } from './engine';
+import { recruitmentSource, type Lot, type State, type Unit } from './engine';
 import {
   BRIBE_GOLD,
   REMAINS_CAP,
@@ -26,6 +26,11 @@ export function DomainPanel({
   unit?: Unit;
   onAction: (action: (s: State) => string | void) => unknown;
 }) {
+  const researchLot =
+    lot ??
+    (unit?.kind === 'spear-goblin'
+      ? recruitmentSource(s, unit.kind)
+      : undefined);
   const locked = s.won || s.lost;
   const hauntError = lot ? hauntReason(s, lot.id) : '';
   const bribeError = bribeReason(s);
@@ -38,7 +43,9 @@ export function DomainPanel({
       s.domain.souls.some((body) => body.home === lot.id));
   return (
     <>
-      {lot && <ResearchPanel state={s} lot={lot} onAction={onAction} />}
+      {researchLot && (
+        <ResearchPanel state={s} lot={researchLot} onAction={onAction} />
+      )}
       {resurrectionSite && (
         <AbilityCard
           title="Résurrection humaine"

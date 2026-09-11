@@ -341,6 +341,13 @@ export class PixiScene {
       antialias: true,
       background: '#648b73',
       autoDensity: false,
+      // Native canvas handlers own game input and CSS cursors.
+      eventFeatures: {
+        move: false,
+        globalMove: false,
+        click: false,
+        wheel: false,
+      },
     });
     this.initialized = true;
     if (this.destroyed) {

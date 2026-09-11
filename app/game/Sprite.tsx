@@ -18,6 +18,8 @@ export function Sprite({
   label = '',
   sequence: providedSequence,
   figure = false,
+  mounted = false,
+  ground,
 }: {
   asset?: AssetKey;
   creature?: CreatureKind;
@@ -26,6 +28,8 @@ export function Sprite({
   label?: string;
   sequence?: AssetKey[];
   figure?: boolean;
+  mounted?: boolean;
+  ground?: AssetKey;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -33,7 +37,7 @@ export function Sprite({
       ctx = canvas.getContext('2d')!;
     const sequence =
       providedSequence ??
-      (creature ? animationSequence(creature, action) : [asset!]);
+      (creature ? animationSequence(creature, action, mounted) : [asset!]);
     const images = new Map<AssetKey, HTMLImageElement>();
     let frame = 0,
       disposed = false;
@@ -42,7 +46,7 @@ export function Sprite({
     ).matches;
     const start = performance.now();
     Promise.all(
-      sequence.map(
+      [...new Set([...sequence, ...(ground ? [ground] : [])])].map(
         (key) =>
           new Promise<void>((resolve, reject) => {
             const im = new Image();
@@ -67,6 +71,12 @@ export function Sprite({
             im = images.get(sample.key)!;
           ctx.clearRect(0, 0, 256, 256);
           ctx.imageSmoothingEnabled = false;
+          if (ground) {
+            const terrain = images.get(ground)!;
+            for (let y = 0; y < 256; y += 64)
+              for (let x = 0; x < 256; x += 64)
+                ctx.drawImage(terrain, 64, 64, 64, 64, x, y, 64, 64);
+          }
           // Creature strips include generous margins for weapons and effects.
           const scale =
             creature || figure
@@ -95,7 +105,7 @@ export function Sprite({
       disposed = true;
       cancelAnimationFrame(frame);
     };
-  }, [asset, creature, action, providedSequence, figure]);
+  }, [asset, creature, action, providedSequence, figure, mounted, ground]);
   return (
     <canvas
       ref={ref}

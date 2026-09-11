@@ -43,6 +43,7 @@ export type BuildingKind =
   | 'empty';
 export type CreatureKind =
   | 'goblin'
+  | 'spear-goblin'
   | 'troll'
   | 'skeleton'
   | 'minotaur'
@@ -95,9 +96,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     duration: 0,
   },
   den: {
-    name: 'Tanière gobeline',
+    name: 'Grotte gobeline',
     description:
-      'Des lits de fortune, une odeur douteuse. Accueille 6 créatures de plus et leur permet de se reposer.',
+      'Recrute les gobelins bâtisseurs, puis les lanciers après votre premier squelette. Accueille 6 créatures de plus et leur permet de se reposer.',
     short: '+6 places · repos',
     art: 1,
     cost: { gold: 70, wood: 25 },
@@ -115,7 +116,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   forge: {
     name: 'Forge des trolls',
     description:
-      'Un ancien garage, beaucoup de suie. Débloque les trolls et améliore la puissance de toute votre armée.',
+      'Une forge nichée dans un arbre mort. Recrute les trolls et les minotaures, et améliore la puissance de toute votre armée.',
     short: 'Débloque les trolls',
     art: 3,
     cost: { gold: 180, wood: 75 },
@@ -230,11 +231,24 @@ export const CREATURES: Record<
     size: 31,
     population: 1,
   },
+  'spear-goblin': {
+    name: 'Gobelin lancier',
+    job: 'Combattant mobile',
+    description:
+      'Se recrute à la grotte après votre premier squelette. Sa lance frappe au corps à corps. La recherche Chevaucheurs de porcs le monte sur un porc et augmente sa vitesse de 50 %.',
+    art: 6,
+    cost: { gold: 75, food: 20 },
+    hp: 80,
+    damage: 11,
+    speed: 2,
+    size: 38,
+    population: 1,
+  },
   troll: {
     name: 'Troll',
     job: 'Combattant',
     description:
-      'Le gros bras de votre quartier. Solide au combat, il exige une forge et des repas réguliers.',
+      'Le gros bras de votre quartier. Solide au combat, il exige la maison des trolls et des repas réguliers.',
     art: 1,
     cost: { gold: 90, food: 30 },
     hp: 100,
@@ -304,8 +318,9 @@ export function buildMenuReason(s: State, kind: BuildingKind): string {
 }
 export const RECRUIT_OPTIONS: CreatureKind[] = [
   'goblin',
-  'troll',
   'skeleton',
+  'spear-goblin',
+  'troll',
   'minotaur',
   'specter',
   'alchemist',
@@ -793,6 +808,8 @@ export function resourceGain(
   });
 }
 export interface State {
+  /** Permanent progression, even if the first skeleton later dies. */
+  skeletonsAwakened?: boolean;
   attackOrder?: {
     sequence: number;
     target: { type: 'lot' | 'enemy' | 'worker' | 'resource'; id: number };
@@ -1159,6 +1176,7 @@ export function assign(
   u.activityProgress = 0;
 }
 function spawnUnit(s: State, kind: CreatureKind, source = 6) {
+  if (kind === 'skeleton') s.skeletonsAwakened = true;
   const home = entrance(s.lots[source]),
     id = s.nextId++;
   const unit: Unit = {
@@ -1289,9 +1307,11 @@ export function recruitmentSource(
   const rooms: BuildingKind[] =
     kind === 'goblin'
       ? ['den', 'hq']
-      : kind === 'troll' || kind === 'minotaur'
-        ? ['forge']
-        : ['crypt'];
+      : kind === 'spear-goblin'
+        ? ['den']
+        : kind === 'troll' || kind === 'minotaur'
+          ? ['forge']
+          : ['crypt'];
   const available = s.lots.filter(
     (lot) => canSetRally(lot) && rooms.includes(lot.kind),
   );
@@ -1300,6 +1320,18 @@ export function recruitmentSource(
     rooms.flatMap((room) => available.filter((lot) => lot.kind === room))[0]
   );
 }
+export function spearUnlockReason(s: State): string {
+  return s.skeletonsAwakened ||
+    s.units.some((u) => u.kind === 'skeleton' && u.hp > 0)
+    ? ''
+    : 'Recrutez d’abord votre premier squelette à la crypte.';
+}
+export function unitIsMounted(s: State, u: Pick<Unit, 'kind'>): boolean {
+  return u.kind === 'spear-goblin' && hasResearch(s, 'pig-riding');
+}
+export function unitSpeed(s: State, u: Pick<Unit, 'kind'>): number {
+  return CREATURES[u.kind].speed * (unitIsMounted(s, u) ? 1.5 : 1);
+}
 export function recruitReason(s: State, kind: CreatureKind) {
   if (s.won || s.lost) return 'La partie est terminée.';
   if (kind === 'goblin') {
@@ -1307,6 +1339,10 @@ export function recruitReason(s: State, kind: CreatureKind) {
     if (workforce.total + workforce.queued >= GOBLIN_CAP)
       return `Limite de ${GOBLIN_CAP} gobelins atteinte, recrutements en cours inclus.`;
   }
+  if (kind === 'spear-goblin' && spearUnlockReason(s))
+    return spearUnlockReason(s);
+  if (kind === 'spear-goblin' && !hasBuilding(s, 'den'))
+    return 'Construisez une grotte gobeline pour recruter les lanciers.';
   if (kind === 'alchemist' && !hasBuilding(s, 'crypt'))
     return 'Construisez une crypte pour recruter un alchimiste.';
   if (kind === 'troll' && !hasBuilding(s, 'forge'))
@@ -1573,7 +1609,14 @@ function gathers(unit: Unit, kind: Supply) {
     unit.gathering?.kind === kind
   );
 }
+export function playerFoodPoint(site: ResourceSite): Point {
+  return { x: site.x, y: site.y + 2 };
+}
 function gatheringApproach(site: ResourceSite, u: Unit): Point {
+  if (site.kind === 'food') {
+    const pig = playerFoodPoint(site);
+    return { x: pig.x - 1, y: pig.y };
+  }
   const p = resourceApproach(site);
   return site.kind === 'wood'
     ? { x: p.x, y: p.y + (u.id % 3) * 1.1 }
@@ -1710,7 +1753,8 @@ function advanceGathering(s: State, u: Unit, dt: number): boolean {
     return true;
   }
   g.phase = 'harvest';
-  resourceHit(s, site);
+  // Player goblins harvest pigs; only human harvesting animates the sheep.
+  if (site.kind !== 'food') resourceHit(s, site);
   u.facing = site.x >= u.x ? 1 : -1;
   g.progress += dt;
   // Material resources enter storage only after a complete physical round trip.
@@ -2631,7 +2675,7 @@ function tickStep(s: State, dt: number) {
         !atEntrance(u, s.lots[u.target])
       )
         u.path = findPath(u, entrance(s.lots[u.target]));
-      walk(s, u, CREATURES[u.kind].speed * dt);
+      walk(s, u, unitSpeed(s, u) * dt);
     }
     if (!u.path.length) {
       if (u.task === 'move' || u.task === 'forage') {

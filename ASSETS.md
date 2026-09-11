@@ -34,7 +34,7 @@ Les morts utilisent la planche originale `Factions/Knights/Troops/Dead/Dead.png`
 
 Les dimensions sont décrites dans `app/game/assets.json`. Les tags des sources Aseprite ont été vérifiés. Les images sont lues dans leur ordre d’origine à 100 ms par frame. Le maintien de 5 secondes sur la dernière frame Wind-up du fichier Aseprite du troll est ramené à 100 ms pour le cycle de combat du prototype ; les cinq images de préparation sont conservées.
 
-Les arbres, les buissons et la fumée de la tanière utilisent également les animations originales. La mairie utilise le château bleu, le manoir le château violet, la forge la caserne violette et la crypte le monastère violet. Les rues pavées sont une géométrie de terrain simple dessinée par le moteur.
+Les arbres, les buissons et la fumée de la tanière utilisent également les animations originales. La mairie utilise le château bleu, le manoir le château violet, la forge la Troll House (`Extra/Dead Tree/Dead Tree.png`) et la crypte le monastère violet. Les rues pavées sont une géométrie de terrain simple dessinée par le moteur.
 
 Les reliefs suivent le [guide des terrains de Pixel Frog](https://pixelfrog-assets.itch.io/tiny-swords/devlog/1138989/tilemap-guide) : surface herbeuse continue, puis une seule rangée de falaise avec un pied adapté à la terre ou à l’eau. La rangée de pelouse isolée n’est pas intercalée dans les falaises. Les ombres originales sont répétées sur la grille de 64 pixels, décalées d’une case vers le bas, sans étirement.
 
@@ -42,7 +42,7 @@ La composition des abords utilise des silhouettes de tuiles découpées : anses,
 
 Les particules `Dust_01`, `Dust_02`, `Explosion_01`, `Explosion_02` et `Fire_01` du dossier `Particle FX` sont copiées sans retouche par `scripts/import-particle-fx.ps1`. Elles accompagnent le travail des bâtisseurs, les impacts réels, les fins de chantier, les changements de propriétaire et la destruction du manoir. Quelques flammes signalent les bâtiments sous 40 % de résistance. Ces effets restent visuels, suivent la pause et la vitesse de simulation et sont masqués avec la réduction des animations ; seul l’impact final termine sa lecture après la défaite.
 
-Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les six recrutables ne possèdent pas encore de comportements jouables.
+Les 22 créatures originales du pack Enemy ont leurs séquences de repos, marche et attaque dans le catalogue. `scripts/import-enemy-pack.py` copie ces seules séquences et construit le manifeste ; les autres créatures que les sept recrutables ne possèdent pas encore de comportements jouables.
 
 `scripts/import-free-pack.py` copie les quatre classes humaines jaunes (Warrior, Lancer, Archer, Monk), les flèches et soins, le monastère de la guilde, les paysans bleus avec outils et cargaisons, les décors variés et les éléments UI utilisés. Les paysans utilisent les cycles Axe/Wood, Pickaxe/Gold et Knife/Meat.
 
@@ -53,7 +53,7 @@ L’alchimiste emploie les séquences Idle, Walk et Attack du Hex Shaman origina
 
 Les jardins conservent les couleurs originales du pack, sans modification de palette. Les notices du haut utilisent le parchemin enroulé `ui-banner.png` et la pause le ruban bleu `ui-ribbons.png`, avec leurs bordures et ornements originaux. Les rampes de terrain emploient leurs deux moitiés (128 × 128 pixels) et les surfaces de sol contiguës partagent une même palette. L’aperçu de construction réutilise le sprite final avec une opacité réduite.
 
-La réaction des moutons utilise les six images originales de `Resources/Sheep/HappySheep_Bouncing.png` (Tiny Swords Update 010), copiées sans retouche par `scripts/import-sheep-pack.py` vers `sheep-hit.png`. Elle accompagne la récolte de viande des bergers et gobelins ainsi que les dégâts de sabotage, puis revient au cycle normal. Elle suit le temps de simulation et respecte la réduction des animations.
+La réaction des moutons humains utilise les six images originales de `Resources/Sheep/HappySheep_Bouncing.png` (Tiny Swords Update 010), copiées sans retouche par `scripts/import-sheep-pack.py` vers `sheep-hit.png`. Elle accompagne la récolte de viande des bergers ainsi que les dégâts de sabotage, puis revient au cycle normal. Elle suit le temps de simulation et respecte la réduction des animations.
 
 ## Effets sonores TomMusic
 
@@ -63,3 +63,13 @@ L’archive fournie par l’utilisateur a servi à importer 11 fichiers WAV orig
 La page de l’auteur autorise l’utilisation dans des projets commerciaux ou personnels et interdit la revente ou redistribution du pack seul. TomMusic est crédité dans l’aide du jeu. Seuls les 11 effets utilisés par Evil City sont inclus dans les ressources du jeu ; ils conservent les conditions de TomMusic et ne constituent pas une banque de sons réutilisable sous la licence du code.
 
 Importer à nouveau les originaux : `powershell -NoProfile -File scripts/import-tommusic.ps1 -Archive "C:/chemin/Free Fantasy SFX Pack By TomMusic.zip"`. Les fichiers arrivent dans `public/audio/tommusic/`. Ils sont suivis par Git et copiés par Vite dans le jeu compilé, y compris lors du déploiement GitHub Pages. `scripts/check-audio.mjs` vérifie leur chargement et leur lecture sur ordinateur, téléphone et tablette ; `GAME_URL` permet de viser la version publiée.
+
+## Grotte, lanciers et porcs
+
+La grotte gobeline utilise `Extra/Cave/Cave_Idle.png`. La forge des trolls conserve ses règles de progression et emploie la **Troll House**, nommée `Extra/Dead Tree/Dead Tree.png` dans l’archive Enemy Pack (384 × 320). Les portes des deux bâtiments sont alignées sur leur accès.
+
+Le gobelin lancier utilise `Spear Goblin_Idle`, `Spear Goblin_Run`, `Spear Goblin_Attack Fast` et son avatar. Après la recherche « Chevaucheurs de porcs », les mêmes unités utilisent les séquences originales de `Extra/Pig Rider Spear Goblin`. Les porcs de récolte utilisent `Extra/Pig/Pig_Idle.png`, au sud des moutons humains dans le pâturage. Tous ces PNG sont copiés sans retouche ; le manifeste règle les ancres et les images à 10 fps.
+
+Le curseur de construction réutilise le marteau `UI Elements/UI Elements/Icons/Icon_01.png`. Le trait de ralliement part du centre visuel du bâtiment. Son repère utilise la seconde rangée bleue de `SmallRibbons.png`, avec ses trois morceaux joints une seule fois, sans déplier ni allonger son centre. Aucun cercle de portée n’est dessiné autour de la tour.
+
+Le bestiaire est construit depuis les unités de la simulation : sept créatures recrutables, les gardes, les quatre classes de héros et les trois métiers humains. Les sprites de réserve restent archivés mais ne sont plus présentés comme unités jouables. Les aperçus utilisent les sols d’origine de leur faction.

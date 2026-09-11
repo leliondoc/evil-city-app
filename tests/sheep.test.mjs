@@ -7,6 +7,7 @@ import {
   findPath,
   entrance,
   resourceApproach,
+  playerFoodPoint,
 } from '../app/game/engine.ts';
 import { sheepReactionFrame } from '../app/game/art.ts';
 import { makeScenery } from '../app/game/scenery.ts';
@@ -76,13 +77,14 @@ test('Sheep reacts to a shepherd harvesting, then settles when harvesting stops'
   assert.equal(sheepReactionFrame(site, s.elapsed), null);
 });
 
-test('Goblin meat gathering triggers the same sheep reaction without changing its health', () => {
+test('Goblins harvest the pig pen without animating or damaging the human sheep', () => {
   const [s, site] = fixture();
   s.workers = [];
   s.units = [s.units[0]];
   const u = s.units[0];
   Object.assign(u, {
-    ...resourceApproach(site),
+    x: playerFoodPoint(site).x - 1,
+    y: playerFoodPoint(site).y,
     nextMealAt: Infinity,
     nextRestAt: Infinity,
   });
@@ -90,7 +92,7 @@ test('Goblin meat gathering triggers the same sheep reaction without changing it
   u.path = [];
   tick(s, 0.1);
   assert.equal(u.gathering.phase, 'harvest');
-  assert.equal(site.hitAt, s.elapsed);
+  assert.equal(site.hitAt, undefined);
   assert.equal(site.hp, site.maxHp);
 });
 

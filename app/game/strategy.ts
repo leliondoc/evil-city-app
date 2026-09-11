@@ -5,6 +5,8 @@ import {
   assign,
   clearShot,
   CREATURES,
+  unitSpeed,
+  spearUnlockReason,
   entrance,
   findPath,
   rememberAggressor,
@@ -17,11 +19,17 @@ import {
   type Resources,
 } from './engine.ts';
 
-export type Research = 'embers' | 'solvent' | 'chain';
+export type Research = 'embers' | 'solvent' | 'chain' | 'pig-riding';
 export const RESEARCH: Record<
   Research,
-  { name: string; text: string; cost: Cost; room: 'forge' | 'crypt' }
+  { name: string; text: string; cost: Cost; room: 'forge' | 'crypt' | 'den' }
 > = {
+  'pig-riding': {
+    name: 'Chevaucheurs de porcs',
+    text: 'Tous vos gobelins lanciers, actuels et futurs, montent un porc : vitesse +50 %. Conserve les bonus des armes enflammées.',
+    cost: { gold: 150, wood: 40, food: 50 },
+    room: 'den',
+  },
   embers: {
     name: 'Armes enflammées',
     text: 'Arme aussi les gobelins. Les coups ajoutent 3 dégâts de feu/s et embrasent la cible.',
@@ -107,7 +115,8 @@ export function researchReason(s: State, key: Research) {
   if (hasResearch(s, key)) return 'Amélioration acquise.';
   const def = RESEARCH[key];
   if (!s.lots.some((l) => l.owned && !l.construction && l.kind === def.room))
-    return `Construisez ${def.room === 'forge' ? 'une forge' : 'une crypte'}.`;
+    return `Construisez ${def.room === 'forge' ? 'la maison des trolls' : def.room === 'den' ? 'une grotte gobeline' : 'une crypte'}.`;
+  if (key === 'pig-riding' && spearUnlockReason(s)) return spearUnlockReason(s);
   if (key === 'chain' && !hasResearch(s, 'embers'))
     return 'Recherchez les armes enflammées.';
   const labels = { gold: 'or', wood: 'bois', food: 'viande', mana: 'essence' };
@@ -272,7 +281,7 @@ export function collectLoot(s: State, id: number) {
 }
 export function strategyUnit(s: State, u: Unit, dt: number) {
   if (!['tower', 'collect-loot', 'deliver-loot'].includes(u.task)) return false;
-  walk(s, u, CREATURES[u.kind].speed * dt);
+  walk(s, u, unitSpeed(s, u) * dt);
   if (u.path.length) return true;
   if (u.task === 'deliver-loot') {
     if (distance(u, entrance(s.lots[6])) < 1 && u.loot) {
