@@ -3,6 +3,13 @@
 @import 'shadcn/tailwind.css';
 @custom-variant dark (&:is(.dark *));
 @font-face {
+  font-family: 'Agenda Fantasy';
+  src: url('/fonts/AgendaFantasy-Demo.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
   font-family: 'Pixel Operator';
   src: url('/fonts/PixelOperator-Regular.ttf') format('truetype');
   font-weight: 400;
@@ -404,7 +411,7 @@ svg {
 }
 .map-caption h2 {
   font:
-    25px Georgia,
+    25px 'Agenda Fantasy', Georgia,
     serif;
 }
 .map-caption p {
@@ -2697,7 +2704,7 @@ svg {
   }
 }
 
-/* Pack parchment notices stay above the action on every screen size. */
+/* Notices stay above the action on every screen size. */
 .game-shell .toast-message,
 .game-shell[data-compact='true'] .toast-message {
   position: fixed;
@@ -2725,7 +2732,7 @@ svg {
   pointer-events: none;
   z-index: 45;
 }
-.toast-message > span {
+.toast-message > span:not(.ribbon-skin) {
   position: relative;
   z-index: 1;
 }
@@ -2976,7 +2983,7 @@ svg {
   flex: 0 0 auto;
 }
 
-/* Original rolled parchment and ribbon, grouped above the map. */
+/* Notifications reuse the map title's ribbon and lettering. */
 .game-notifications {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 84px);
@@ -3004,26 +3011,28 @@ svg {
   box-shadow: none;
   isolation: isolate;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 64px;
+  padding: 18px 42px 16px;
+  color: #fff1c9;
+  font: 20px/1.25 Georgia, serif;
+  text-shadow: 0 2px #243e49;
+  overflow-wrap: anywhere;
 }
 .game-shell .game-notifications .toast-message {
   width: 100%;
-  min-height: 96px;
-  padding: 26px 42px 32px;
 }
 .game-shell .game-notifications .paused-label {
   width: min(360px, 100%);
   max-width: none;
-  min-height: 76px;
-  padding: 0 48px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff1ce;
-  font: 700 20px/1.2 'Trebuchet MS', sans-serif;
-  text-shadow: 0 2px #203c4a;
 }
-.paused-label > .pack-skin { z-index: 0; }
-.paused-label > span { position: relative; z-index: 1; }
+.paused-label > span:not(.ribbon-skin) { position: relative; z-index: 1; }
+.game-shell[data-compact='true'] .game-notifications .toast-message,
+.game-shell[data-compact='true'] .game-notifications .paused-label {
+  font-size: 18px;
+}
 .game-shell[data-compact='true'] .game-notifications {
   top: calc(env(safe-area-inset-top, 0px) + 100px);
 }
@@ -3141,18 +3150,6 @@ svg {
 .mission-card .quest > svg { color: #8b754d; }
 .mission-card .quest.active { color: #773f1e; font-weight: 700; }
 .mission-card .quest.done, .mission-card .quest.done > svg { color: #4e6a3d; }
-.selection-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-  color: #b7cac4;
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin: 0 0 -14px;
-}
-
 /* Objectives and the current selection scroll independently on desktop. */
 .mission-sidebar {
   flex: 0 0 220px;
@@ -3171,9 +3168,8 @@ svg {
   order: 2;
   border-right: 0;
   border-left: 1px solid #71847d;
-  padding-top: 16px;
+  padding-top: 8px;
 }
-.game-shell[data-compact='false'] .sidebar .selection-divider { margin: 0; }
 .game-shell[data-compact='false'] .sidebar .selection-panel { padding-top: 0; }
 @media (min-width: 801px) and (max-width: 1100px) {
   .mission-sidebar { flex-basis: 190px; width: 190px; padding-inline: 6px; }

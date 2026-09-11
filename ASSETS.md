@@ -12,6 +12,8 @@ Les archives complètes et les fichiers Aseprite restent hors du site distribué
 
 Le logo `public/evil-city-logo.png` provient de `eclogo.png`, fourni par l’utilisateur. Son fond a été retiré avec l’outil imagegen intégré, avec cette consigne : « Retirer uniquement le fond blanc, fournir un PNG à transparence réelle, conserver le dessin, les couleurs et les proportions du logo, nettoyer les contours sans halo blanc et garder une petite marge transparente. » Il est affiché à 40 px sur ordinateur et 30 px sur petit écran.
 
+Direction typographique retenue pour le futur logo : **Agenda Fantasy**, parmi les deux références fournies (Fantasy Magist et Agenda Fantasy), pour ses lettres anguleuses adaptées à l’ambiance d’Evil City. Elle est également utilisée pour « Les Tilleuls », centré dans le ruban bleu. La version Demo de 177Studio est intégrée dans `public/fonts/AgendaFantasy-Demo.otf` ; [source de l’auteur](https://www.dafont.com/agenda-fantasy.font), licence conservée dans `public/fonts/AgendaFantasy-License.txt`. Cette version est réservée à l’usage personnel ; un usage commercial nécessite la licence correspondante de [177Studio](https://177studio.com/product/agenda-fantasy-font/).
+
 La licence indiquée sur la page officielle autorise l’usage personnel et commercial ainsi que la modification. Elle interdit la redistribution, la revente et le reconditionnement des ressources comme pack, y compris après modification. Ces ressources sont réservées à leur intégration dans le jeu ; ne pas les redistribuer séparément. Le crédit, facultatif selon l’auteur, figure dans le guide.
 
 ## Créatures jouables

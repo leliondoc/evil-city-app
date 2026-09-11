@@ -787,7 +787,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             )}
             {sheetNotice}
             {compact && missionCard}
-            <div className="selection-divider">Sélection</div>
             {selection.type === 'units' ? (
               <section
                 className="selection-panel"
@@ -1019,25 +1018,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   <>
                     {chosenKind === 'canteen' && (
                       <div className="food-production">
-                        <strong>
-                          {selectedLot.kind === 'canteen' && selectedLot.owned
-                            ? 'Économie de vivres'
-                            : 'Après construction'}{' '}
-                          : −
-                          {Math.min(
-                            60,
-                            20 *
-                              (selectedLot.kind === 'canteen'
-                                ? selectedLot.level
-                                : 1),
-                          )}{' '}
-                          % de consommation
-                        </strong>
-                        <p>
-                          Votre armée consomme {food.consumption}/min. Bilan
-                          estimé de vos réserves : {food.net >= 0 ? '+' : ''}
-                          {food.net}/min.
-                        </p>
                         <p>
                           Les gobelins récoltent les vivres à la bergerie et les
                           livrent au manoir. La cantine améliore les repas, sans
@@ -1392,13 +1372,13 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <div className="game-notifications">
               {paused && (
                 <div className="paused-label">
-                  <PanelSkin kind="ribbon" />
+                  <RibbonSkin />
                   <span>Le mal prend une pause.</span>
                 </div>
               )}
               {message && (
                 <output className="toast-message" aria-live="polite">
-                  <PanelSkin kind="notice" />
+                  <RibbonSkin />
                   <span>{message}</span>
                 </output>
               )}
