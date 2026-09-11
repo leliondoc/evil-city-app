@@ -100,6 +100,7 @@ import {
   recruitReason,
   claim,
   claimReason,
+  CLAIM_COST,
   retreat,
   defend,
   intercept,
@@ -1286,7 +1287,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                           Revendiquer le terrain
                         </Button>
                         <div style={{ marginTop: 8 }}>
-                          <Costs cost={{ gold: 40, mana: 18 }} />
+                          <Costs cost={CLAIM_COST} />
                         </div>
                         {claimReason(s, selectedLot.id) && (
                           <p className="reason">

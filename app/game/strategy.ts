@@ -74,6 +74,9 @@ export type Tower = Point & {
   alarmAt: number;
   lureUntil: number;
   readyAt: number;
+  racketStolen?: number;
+  racketRaidAt?: number;
+  racketReadyAt?: number;
 };
 export type StrategyState = {
   research: Research[];
@@ -81,6 +84,7 @@ export type StrategyState = {
   towers: Tower[];
   comboHits: number;
 };
+export const RACKET = { share: 0.8, capacity: 120, retaliation: 60, warning: 20, cooldown: 120 } as const;
 export const TOWER_RANGE = {
   threat: 3,
   racket: 3.5,
@@ -444,6 +448,8 @@ export function advanceStrategy(s: State, dt: number) {
       t.owned = false;
       t.reclaim = 0;
       t.loot = {};
+      t.racketStolen = 0;
+      t.racketRaidAt = undefined;
       t.lureUntil = 0;
       announce(
         s,
@@ -477,10 +483,11 @@ export function advanceStrategy(s: State, dt: number) {
           continue;
         const kind = s.sites[w.site].kind,
           amount = Math.min(
-            Math.ceil(w.cargo * 0.3),
-            Math.max(0, 30 - (t.loot[kind] ?? 0)),
+            Math.ceil(w.cargo * RACKET.share),
+            Math.max(0, RACKET.capacity - (t.loot[kind] ?? 0)),
           );
         if (!amount) continue;
+        t.racketStolen = (t.racketStolen ?? 0) + amount;
         w.cargo -= amount;
         w.taxed = true;
         t.loot[kind] = (t.loot[kind] ?? 0) + amount;

@@ -175,16 +175,16 @@ test('Racket subtracts a cargo share once, then a separate courier must bring it
   const kind = s.sites[w.site].kind,
     before = s.resources[kind];
   advanceStrategy(s, 0.1);
-  assert.equal(w.cargo, 7);
-  assert.equal(t.loot[kind], 3);
+  assert.equal(w.cargo, 2);
+  assert.equal(t.loot[kind], 8);
   assert.equal(s.resourceGains.length, 1);
-  assert.equal(s.resourceGains[0].amount, 3);
+  assert.equal(s.resourceGains[0].amount, 8);
   assert.equal(s.resourceGains[0].kind, kind);
   assert.equal(s.resourceGains[0].x, t.artX);
   assert.ok(s.resourceGains[0].y < t.artY);
   assert.equal(s.resources[kind], before);
   advanceStrategy(s, 0.1);
-  assert.equal(w.cargo, 7);
+  assert.equal(w.cargo, 2);
   assert.equal(s.resourceGains.length, 1);
   assert.equal(collectLoot(s, t.id), '');
   const courier = s.units.find((u) => u.task === 'collect-loot');
@@ -195,9 +195,9 @@ test('Racket subtracts a cargo share once, then a separate courier must bring it
   assert.deepEqual(t.loot, {});
   for (let i = 0; i < 1000 && courier.task === 'deliver-loot'; i++)
     strategyUnit(s, courier, 0.1);
-  assert.equal(s.resources[kind], before + 3);
+  assert.equal(s.resources[kind], before + 8);
   strategyUnit(s, courier, 1);
-  assert.equal(s.resources[kind], before + 3);
+  assert.equal(s.resources[kind], before + 8);
 });
 test('A new order loses carried loot; false alarms need a present specter and ignore monks', () => {
   const s = prepared(),

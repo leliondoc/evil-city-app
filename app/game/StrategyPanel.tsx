@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CREATURES, type State, type Lot } from './engine';
 import {
   RESEARCH,
+  RACKET,
   research,
   researchReason,
   towerOrder,
@@ -200,9 +201,12 @@ export function TowerPanel({
                 : 'Aucun butin stocké'}
             </p>
             <AbilityCosts cost={tower.loot} label="Butin stocké" />
+            {s.enemies.some(e => e.hp > 0 && e.racketTower === id) ? <p className="ability-status"><PackIcon asset="ui-sword" /><span>Patrouille en route pour reprendre la tour.</span></p>
+              : tower.racketRaidAt !== undefined ? <p className="ability-status"><PackIcon asset="ui-sword" /><span>{tower.racketRaidAt > s.elapsed ? `Départ de la patrouille dans ${Math.ceil(tower.racketRaidAt - s.elapsed)} s.` : 'Patrouille en préparation : la mairie attend ses moyens.'}</span></p>
+              : <p className="ability-meta">{Math.min(RACKET.retaliation, tower.racketStolen ?? 0)} / {RACKET.retaliation} ressources avant alerte.</p>}
             <p>
-              Le gobelin prélève 30 % des cargaisons proches. Limite : 30 par
-              ressource. Le racket augmente la suspicion.
+              Le gobelin vole {RACKET.share * 100} % des cargaisons proches. Stock : {RACKET.capacity} par ressource.
+              Après {RACKET.retaliation} ressources volées, la mairie prépare une patrouille pour reprendre la tour.
             </p>
             <Button
               className="primary-btn"

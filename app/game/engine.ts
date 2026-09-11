@@ -27,6 +27,7 @@ import {
   advanceStrategy,
   strategyUnit,
   towerOrder,
+  RACKET,
   divertEnemy,
   hitEnemy,
   hasResearch,
@@ -478,6 +479,8 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  /** Patrol sent specifically to evict a tower racketeer. */
+  racketTower?: number;
   shieldUntil?: number;
   shieldReadyAt?: number;
   /** Actual ranged target for this simulation step, including between arrows. */
@@ -1232,14 +1235,14 @@ function allocateWorkers(s: State) {
       assign(worker, door, 'build', lot.id);
   }
 }
-export const CLAIM_COST: Cost = { gold: 40, mana: 18 };
+export const CLAIM_COST: Cost = { gold: 80, mana: 30 };
 export function claimReason(s: State, id: number) {
   if (s.won || s.lost) return 'La partie est terminée.';
   const l = s.lots[id];
   if (!l || l.owned || l.kind !== 'empty')
     return 'Ce terrain ne peut pas être revendiqué.';
   if (!adjacent(s, l)) return 'Conquérez d’abord une parcelle voisine.';
-  if (!canAfford(s, CLAIM_COST)) return 'Il faut 40 or et 18 essence.';
+  if (!canAfford(s, CLAIM_COST)) return `Il faut ${CLAIM_COST.gold} or et ${CLAIM_COST.mana} essence.`;
   return '';
 }
 export function claim(s: State, id: number) {
@@ -2006,6 +2009,43 @@ function releaseGuildDefenders(s: State, lot: Lot, attackers: Unit[]) {
     'Les quatre héros quittent la guilde ! Ils poursuivront ses assaillants jusqu’à la mort.',
   );
 }
+function mobilizeRacketPatrols(s: State) {
+  const hall = sourceBuilding(s, 'guard');
+  for (const tower of s.strategy.towers) {
+    if (!tower.owned || !hall || hall.owned || hall.hp <= 0) {
+      tower.racketRaidAt = undefined;
+      continue;
+    }
+    if (s.enemies.some(e => e.hp > 0 && e.racketTower === tower.id)) continue;
+    if (tower.racketRaidAt === undefined) {
+      if ((tower.racketStolen ?? 0) < RACKET.retaliation || s.elapsed < (tower.racketReadyAt ?? 0)) continue;
+      tower.racketRaidAt = s.elapsed + RACKET.warning;
+      announce(s, `${tower.name} : le racket a alerté la mairie. Une patrouille se prépare dans ${RACKET.warning} s !`);
+    }
+    if (s.elapsed < tower.racketRaidAt || isHaunted(s, hall) || s.elapsed < s.domain.bribedUntil) continue;
+    const level = humanLevel(s), count = level >= 5 ? 3 : 2;
+    const cost = { gold: count * 8, food: count * 4 };
+    if (s.enemies.length + count > 16 || !suppliesAvailable(s, cost)) continue;
+    const point = entrance(hall);
+    if (!findPath(point, tower).length) continue;
+    spendSupplies(s, cost);
+    for (let i = 0; i < count; i++) {
+      const def = enemyDefinition({ kind: 'guard', role: 'warrior' });
+      const hp = Math.round(def.hp * (1 + (level - 1) * 0.15));
+      s.enemies.push({
+        id: s.nextId++, kind: 'guard', role: 'warrior', ...point,
+        hp, maxHp: hp, damage: def.damage * (1 + (level - 1) * 0.12), level,
+        path: findPath(point, tower), target: hall.id, racketTower: tower.id,
+        facing: -1, fighting: false, healTarget: null, attackCooldown: 0.6,
+      });
+    }
+    tower.racketStolen = Math.max(0, (tower.racketStolen ?? 0) - RACKET.retaliation);
+    tower.racketRaidAt = undefined;
+    tower.racketReadyAt = s.elapsed + RACKET.cooldown;
+    announce(s, `${count} gardes quittent la mairie pour reprendre ${tower.name.toLowerCase()} !`);
+  }
+}
+
 function mobilize(s: State) {
   for (const kind of ['guard', 'hero'] as const) {
     const settings = PRESSURE[kind],
@@ -2182,6 +2222,7 @@ function advanceProjectiles(s: State, dt: number) {
   s.projectiles = s.projectiles.filter((p) => p.life > 0);
 }
 function advanceEnemies(s: State, dt: number) {
+  const returnedPatrols = new Set<number>();
   for (const e of s.enemies) {
     if (e.hp <= 0 || s.lost) continue;
     e.fighting = false;
@@ -2287,6 +2328,19 @@ function advanceEnemies(s: State, dt: number) {
       pursue(e, victim);
     } else {
       if (divertEnemy(s, e, dt)) continue;
+      if (e.racketTower !== undefined) {
+        const tower = s.strategy.towers.find(t => t.id === e.racketTower);
+        const hall = sourceBuilding(s, 'guard');
+        const destination = tower?.owned ? tower : entrance(hall ?? s.lots[2]);
+        if (distanceBetween(e, destination) < 1) {
+          e.path = [];
+          if (!tower?.owned) returnedPatrols.add(e.id);
+        } else {
+          pursue(e, destination);
+          walk(s, e, def.speed * dt);
+        }
+        continue;
+      }
       if (!s.lots[e.target].owned) e.target = raidTarget(s, e).id;
       const destination = entrance(s.lots[e.target]);
       if (
@@ -2309,6 +2363,7 @@ function advanceEnemies(s: State, dt: number) {
     }
     walk(s, e, def.speed * dt);
   }
+  if (returnedPatrols.size) s.enemies = s.enemies.filter(e => !returnedPatrols.has(e.id));
 }
 
 /** Keep bodies apart during fights without pushing them through walls or fences. */
@@ -2514,6 +2569,7 @@ function tickStep(s: State, dt: number) {
     );
   }
   mobilize(s);
+  mobilizeRacketPatrols(s);
   const income = rates(s);
   for (const key of Object.keys(income) as (keyof Resources)[]) {
     if (income[key] < 0)
