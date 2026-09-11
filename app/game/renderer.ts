@@ -1655,71 +1655,50 @@ export class Renderer {
       const age = (performance.now() - this.attackFeedback.since) / 1000;
       const { target } = this.attackFeedback.order;
       const ui = this.uiScale / this.scale;
-      const unitTarget = target.type === 'enemy' || target.type === 'worker';
-      let anchor: Point | undefined;
+      let active = false;
       if (target.type === 'lot') {
         const lot = s.lots.find((lot) => lot.id === target.id);
-        if (lot && !lot.owned && lot.hp > 0 && lot.kind !== 'empty')
-          anchor = buildingBars.get(lot.id);
+        active = !!lot && !lot.owned && lot.hp > 0 && lot.kind !== 'empty';
       } else if (target.type === 'resource') {
         const site = s.sites.find((site) => site.id === target.id);
-        if (site && supplyActive(s, site))
-          anchor = { x: site.x * CELL, y: site.y * CELL - 44 };
+        active = !!site && supplyActive(s, site);
       } else {
         const actors = target.type === 'enemy' ? s.enemies : s.workers;
-        const actor = actors.find(
-          (actor) => actor.id === target.id && actor.hp > 0,
-        );
-        if (actor) {
-          const hit = this.hits.find(
+        active = actors.some((actor) => actor.id === target.id && actor.hp > 0);
+      }
+      const hit = active
+        ? this.hits.find(
             (hit) =>
               hit.selection.type === target.type &&
               'id' in hit.selection &&
               hit.selection.id === target.id,
-          );
-          const bounds = hit && this.visibleBounds(hit);
-          if (bounds) {
-            // Aim at the visible unit, close to its health bar, regardless of sprite size.
-            const barY =
-              actor.y * CELL -
-              (target.type === 'worker'
-                ? 52
-                : 'kind' in actor && actor.kind === 'hero'
-                  ? 74
-                  : 56);
-            anchor = {
-              x: actor.x * CELL,
-              y: Math.min(bounds.y, barY - Math.max(2, 1 / this.scale)),
-            };
-          }
-        }
-      }
-      if (anchor && age < 1.8) {
-        const bounce = this.reducedMotion ? 0 : Math.sin(age * Math.PI * 4) * 3;
+          )
+        : undefined;
+      const bounds = hit && this.visibleBounds(hit);
+      if (bounds && age < 1.8) {
+        const unitTarget = target.type === 'enemy' || target.type === 'worker';
+        // Put the tip on the target itself, below the floating health bar.
+        const x = bounds.x + bounds.width / 2;
+        const y = bounds.y + bounds.height * (unitTarget ? 0.2 : 0.3);
+        const bounce = this.reducedMotion
+          ? 0
+          : Math.abs(Math.sin(age * Math.PI * 4)) * 2;
         const alpha = Math.min(1, (1.8 - age) / 0.3);
-        if (unitTarget) {
-          // The source points left. Pin its tip above the target and rotate it down.
-          const arrow = this.draw.whole(
-            'ui-back',
-            anchor.x,
-            anchor.y - (2 + Math.abs(bounce) * 0.5) * ui,
-            28 * ui,
-            28 * ui,
-            alpha,
-          );
-          arrow.pivot.set(4, 32);
-          arrow.rotation = -Math.PI / 2;
-        } else
-          this.sprite(
-            'ui-back',
-            anchor.x + 34 * ui,
-            anchor.y - (22 + bounce) * ui,
-            0.85 * ui,
-            0,
-            alpha,
-          );
+        const arrow = this.draw.whole(
+          'ui-back',
+          x,
+          y - bounce * ui,
+          24 * ui,
+          24 * ui,
+          alpha,
+        );
+        // The original image points left; its visible tip is at (6, 32).
+        // Pin that tip to the target and turn it downward for every target type.
+        arrow.pivot.set(6, 32);
+        arrow.rotation = -Math.PI / 2;
       }
     }
+
     // Resource deliveries float above their contributor and the combat overlays.
     for (const gain of s.resourceGains) {
       const progress = Math.max(
