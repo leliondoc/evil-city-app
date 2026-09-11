@@ -1,10 +1,16 @@
+import { MusicPlaylist, musicBreakDuration } from './musicPlaylist';
+
 /** Stream one track at a time; keep music independent of simulation speed. */
 export class GameMusic {
   private element: HTMLAudioElement | null = null;
   private gain: GainNode | null = null;
   private source: MediaElementAudioSourceNode | null = null;
   private context: AudioContext | null = null;
-  private index = 1;
+  private playlist = new MusicPlaylist();
+  private index = this.playlist.next();
+  private breakRemaining: number | null = null;
+  private breakTimer: ReturnType<typeof setTimeout> | null = null;
+  private breakStarted = 0;
   private muted = false;
   private volume = 0.2;
   private disposed = false;
@@ -26,9 +32,17 @@ export class GameMusic {
       this.source = context.createMediaElementSource(this.element);
       this.source.connect(this.gain).connect(context.destination);
       this.element.onended = () => {
-        this.index = (this.index % 8) + 1;
-        this.load();
+        if (this.breakRemaining !== null) return;
+        this.element?.pause();
+        this.breakRemaining = musicBreakDuration();
         this.sync();
+      };
+      this.element.onplaying = () => {
+        if (!this.gain || this.disposed) return;
+        // Start the fade when audio actually plays, including after buffering.
+        this.gain.gain.cancelScheduledValues(context.currentTime);
+        this.gain.gain.setValueAtTime(0, context.currentTime);
+        this.gain.gain.setTargetAtTime(this.volume, context.currentTime, 0.6);
       };
       // Stop retrying on every click if the optional music files are absent.
       this.element.onerror = () => {
@@ -63,6 +77,21 @@ export class GameMusic {
       return;
     if (this.muted || this.volume === 0 || document.hidden) {
       this.element.pause();
+      this.suspendBreak();
+      return;
+    }
+    if (this.breakRemaining !== null) {
+      if (this.breakTimer === null) {
+        this.breakStarted = performance.now();
+        this.breakTimer = setTimeout(() => {
+          this.breakTimer = null;
+          this.breakRemaining = null;
+          if (this.disposed) return;
+          this.index = this.playlist.next();
+          this.load();
+          this.sync();
+        }, this.breakRemaining);
+      }
       return;
     }
     this.gain.gain.setTargetAtTime(this.volume, this.context.currentTime, 0.35);
@@ -72,11 +101,23 @@ export class GameMusic {
       });
   }
 
+  private suspendBreak() {
+    if (this.breakTimer === null || this.breakRemaining === null) return;
+    clearTimeout(this.breakTimer);
+    this.breakTimer = null;
+    this.breakRemaining = Math.max(
+      0,
+      this.breakRemaining - (performance.now() - this.breakStarted),
+    );
+  }
+
   dispose() {
     this.disposed = true;
+    this.suspendBreak();
     document.removeEventListener('visibilitychange', this.hidden);
     if (this.element) {
       this.element.onended = null;
+      this.element.onplaying = null;
       this.element.onerror = null;
       this.element.pause();
       this.element.removeAttribute('src');

@@ -71,17 +71,67 @@ try {
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await page.waitForFunction(() => !window.musicElement.paused);
+  await page.clock.install();
+  const played = [await page.evaluate(() => window.musicElement.src)];
   for (let index = 2; index <= 9; index++) {
+    const previous = played.at(-1);
     await page.evaluate(() =>
       window.musicElement.dispatchEvent(new Event('ended')),
     );
-    await page.waitForFunction(
-      (expected) =>
-        window.musicElement.src.endsWith(`spooky-${expected}.mp3`) &&
-        window.musicElement.currentTime > 0.05,
-      ((index - 1) % 8) + 1,
+    assert.equal(await page.evaluate(() => window.musicElement.paused), true);
+    // Ordinary clicks and volume changes must not bypass the scheduled silence.
+    await page.getByLabel('Volume de la musique').fill('15');
+    if (index === 2) {
+      await page
+        .getByRole('button', { name: 'Couper le son', exact: true })
+        .click();
+      await page.clock.fastForward(240_000);
+      assert.equal(
+        await page.evaluate(() => window.musicElement.src),
+        previous,
+      );
+      await page
+        .getByRole('button', { name: 'Activer le son', exact: true })
+        .click();
+      await page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', {
+          configurable: true,
+          get: () => true,
+        });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await page.clock.fastForward(240_000);
+      assert.equal(
+        await page.evaluate(() => window.musicElement.src),
+        previous,
+      );
+      await page.evaluate(() => {
+        delete document.hidden;
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    }
+    await page.clock.fastForward(119_000);
+    assert.equal(
+      await page.evaluate(() => window.musicElement.src),
+      previous,
+      'No track before two minutes',
     );
+    assert.equal(await page.evaluate(() => window.musicElement.paused), true);
+    await page.clock.fastForward(121_000);
+    await page.waitForFunction(
+      (old) =>
+        window.musicElement.src !== old &&
+        window.musicElement.currentTime > 0.05,
+      previous,
+    );
+    played.push(await page.evaluate(() => window.musicElement.src));
   }
+  assert.equal(
+    new Set(played.slice(0, 8)).size,
+    8,
+    'All tracks play before any repeat',
+  );
+  assert.notEqual(played[7], played[8], 'No repeat at the round boundary');
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('evil-city-audio-v1')),
   );
@@ -107,7 +157,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    'PASS: all 8 tracks play; playlist wraps; independent volume, mute, hidden tab, saved settings and mobile controls.',
+    'PASS: 8 shuffled tracks, 2–4 minute breaks, no early playback on clicks, frozen breaks when muted/hidden, saved volume and mobile controls.',
   );
 } finally {
   await browser.close();
