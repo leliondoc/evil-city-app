@@ -1615,7 +1615,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 const reason = buildMenuReason(s, kind);
                 return (
                   <button
-                    className={`build-card ${pendingBuild === kind ? 'chosen' : ''} ${reason ? 'locked' : ''}`}
+                    className={`build-card building-card ${pendingBuild === kind ? 'chosen' : ''} ${reason ? 'locked' : ''}`}
                     key={kind}
                     onClick={() => chooseBuild(kind)}
                     aria-pressed={pendingBuild === kind}
