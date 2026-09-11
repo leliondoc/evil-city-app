@@ -75,11 +75,6 @@ export function CommandWheel(props: Props) {
           <PackIcon asset="ui-shield" />
           {props.level}
         </span>
-        <span className="command-wheel-tiers" aria-hidden="true">
-          {[1, 2, 3].map((level) => (
-            <i key={level} data-unlocked={props.level >= level} />
-          ))}
-        </span>
       </button>
       {actions.map((action) => (
         <button

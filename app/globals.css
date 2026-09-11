@@ -3625,9 +3625,6 @@ svg {
   font: bold 22px Georgia, serif;
 }
 .command-wheel-level .pack-icon { width: 24px; height: 24px; }
-.command-wheel-tiers { position: absolute; bottom: -25px; display: flex; gap: 6px; }
-.command-wheel-tiers i { width: 6px; height: 6px; transform: rotate(45deg); background: #3d4650; border: 1px solid #cfb574; }
-.command-wheel-tiers i[data-unlocked='true'] { background: #ffe09b; }
 .command-wheel-action {
   width: 52px;
   height: 52px;

@@ -70,10 +70,6 @@ try {
         .getByRole('button', { name: 'Voir le manoir, niveau 2', exact: true })
         .isVisible(),
     );
-    assert.equal(
-      await wheel.locator('.command-wheel-tiers [data-unlocked=true]').count(),
-      2,
-    );
     const resources = await page.evaluate(() => ({
       ...window.manorState.resources,
     }));
