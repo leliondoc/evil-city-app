@@ -6,7 +6,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.addInitScript(() => {
     window.spritePaints = new Map();
-    const clear = CanvasRenderingContext2D.prototype.clearRect;
+    const clear = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'clearRect').value;
     CanvasRenderingContext2D.prototype.clearRect = function(...args) {
       if (this.canvas.classList.contains('sprite-preview')) window.spritePaints.set(this.canvas, (window.spritePaints.get(this.canvas) || 0) + 1);
       return clear.apply(this, args);
