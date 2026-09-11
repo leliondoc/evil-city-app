@@ -126,7 +126,7 @@ test('A marching group forms a spaced file and every member reaches the destinat
   for (const unit of s.units) {
     assert.equal(unit.path.length, 0);
     assert.equal(unit.task, 'idle');
-    assert.deepEqual({ x: unit.x, y: unit.y }, { x: 9.5, y: 20.5 });
+    assert.deepEqual({ x: unit.x, y: unit.y }, { x: 9.5, y: 21 });
   }
 });
 

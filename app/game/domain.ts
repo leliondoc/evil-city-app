@@ -6,6 +6,7 @@ import {
   CREATURES,
   entrance,
   findPath,
+  navigationTarget,
   population,
   rememberAggressor,
   walk,
@@ -251,7 +252,10 @@ export function exorcise(s: State, monk: Enemy, dt: number): boolean {
     monk.moving = false;
   }
   if (!lot) return false;
-  const destination = { x: entrance(lot).x - 1, y: lot.y + 8.5 };
+  const destination = navigationTarget({
+    x: entrance(lot).x - 1,
+    y: lot.y + 8.5,
+  });
   if (distance(monk, destination) > 0.5) {
     if (!monk.path.length || distance(monk.path.at(-1)!, destination) > 1)
       monk.path = findPath(monk, destination);
@@ -259,7 +263,10 @@ export function exorcise(s: State, monk: Enemy, dt: number): boolean {
   } else {
     monk.path = [];
     const ghost = s.units.find((u) => u.id === lot.hauntedBy)!;
-    monk.exorcismStreet = { x: entrance(lot).x + 1, y: lot.y + 8.5 };
+    monk.exorcismStreet = navigationTarget({
+      x: entrance(lot).x + 1,
+      y: lot.y + 8.5,
+    });
     assign(ghost, monk.exorcismStreet, 'duel', monk.id);
     ghost.hauntReadyAt = s.elapsed + 60;
     lot.hauntedBy = undefined;

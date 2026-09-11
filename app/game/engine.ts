@@ -1,3 +1,4 @@
+import { streetCenter } from './streets.ts';
 import {
   ISLAND_SITES,
   isIslandPathCell,
@@ -1025,14 +1026,20 @@ function walkableCell(x: number, y: number) {
 }
 function navigationPoint(x: number, y: number): Point {
   // Align the driveway and its street exit with the visible 40 px gate.
-  const gate = x % 10 === 6 && (y % 10 >= 8 || y % 10 === 0);
-  return { x: x + (gate ? 0 : 0.5), y: y + 0.5 };
+  const inTown = x >= 0 && x < BOARD && y >= 0 && y < BOARD;
+  const roadX = inTown ? streetCenter(x) : undefined;
+  const roadY = inTown ? streetCenter(y) : undefined;
+  const gate = inTown && x % 10 === 6 && (y % 10 >= 8 || y % 10 < 2);
+  return {
+    x: roadX ?? x + (gate ? 0 : 0.5),
+    y: roadY ?? y + 0.5,
+  };
 }
 const PATH_MIN_X = -14;
 const PATH_MAX_X = 47;
 const PATH_MAX_Y = 36;
 const PATH_WIDTH = PATH_MAX_X - PATH_MIN_X + 1;
-function navigationTarget(point: Point): Point {
+export function navigationTarget(point: Point): Point {
   let x = Math.min(PATH_MAX_X, Math.max(PATH_MIN_X, Math.floor(point.x)));
   let y = Math.min(PATH_MAX_Y, Math.max(0, Math.floor(point.y)));
   const lot = navigationLot(x, y);
@@ -1121,7 +1128,12 @@ export function findPath(from: Point, to: Point): Point[] {
     );
   // Start at the current cell's waypoint so a fresh order cannot cut a corner.
   path.push(navigationPoint(sx, sy));
-  return path.reverse();
+  return path
+    .reverse()
+    .filter(
+      (point, i, points) =>
+        i === 0 || point.x !== points[i - 1].x || point.y !== points[i - 1].y,
+    );
 }
 function pursue(u: Point & { path: Point[] }, point: Point) {
   const destination = navigationTarget(point),

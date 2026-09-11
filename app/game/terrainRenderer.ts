@@ -1,3 +1,4 @@
+import { STREET_STARTS, STREET_WIDTH } from './streets.ts';
 import type { State } from './engine';
 import type { AssetKey } from './art';
 import type { DrawLayer } from './pixiScene';
@@ -117,9 +118,9 @@ export function drawTerrain(draw: DrawLayer, state: State): GroundTile[] {
   HIGHLANDS.forEach((p, i) => terrace(draw, p, HIGHLANDS.slice(0, i)));
   // Only streets and entrances are paved; gardens retain their own vegetation.
   let color = '#b9a67b';
-  for (const edge of [0, 10, 20, 30]) {
-    draw.rect(edge * CELL, 0, 2 * CELL, SIZE, color);
-    draw.rect(0, edge * CELL, SIZE, 2 * CELL, color);
+  for (const edge of STREET_STARTS) {
+    draw.rect(edge * CELL, 0, STREET_WIDTH * CELL, SIZE, color);
+    draw.rect(0, edge * CELL, SIZE, STREET_WIDTH * CELL, color);
   }
   for (let y = 0; y < SIZE; y += 16)
     for (let x = 0; x < SIZE; x += 32) {

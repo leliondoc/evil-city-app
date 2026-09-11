@@ -123,7 +123,7 @@ test('Group movement sends only the selected living units to the requested stree
   assert.equal(commandUnits(s, ids, null, { x: 10.5, y: 20.5 }), '');
   for (const u of [s.units[0], s.units[3]]) {
     assert.equal(u.task, 'move');
-    assert.deepEqual(u.path.at(-1), { x: 10.5, y: 20.5 });
+    assert.deepEqual(u.path.at(-1), { x: 11, y: 21 });
   }
   assert.deepEqual(s.units[2], untouched);
 });

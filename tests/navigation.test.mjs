@@ -206,3 +206,39 @@ for (const [name, from, to] of [
     assert.equal(u.task, 'idle', 'A retreat still releases the fighter');
   });
 }
+
+test('Town routes follow the middle of each two-cell street, including intersections', () => {
+  const s = createGame();
+  const axis = (n) =>
+    [0, 10, 20, 30].find((start) => n >= start && n < start + 2);
+  for (const from of s.lots)
+    for (const to of s.lots) {
+      const path = findPath(entrance(from), entrance(to));
+      for (const [i, p] of path.entries()) {
+        const x = axis(p.x),
+          y = axis(p.y);
+        if (x !== undefined) assert.equal(p.x, x + 1, 'Vertical road center');
+        if (y !== undefined) assert.equal(p.y, y + 1, 'Horizontal road center');
+        if (i)
+          assert.notDeepEqual(
+            p,
+            path[i - 1],
+            'No duplicate waypoints at shared lane centers',
+          );
+      }
+    }
+});
+test('Road clicks use the center from either side and keep gates aligned', () => {
+  const s = createGame(),
+    from = entrance(s.lots[6]);
+  for (const x of [10.2, 10.8, 11.2, 11.8])
+    assert.deepEqual(findPath(from, { x, y: 15.5 }).at(-1), { x: 11, y: 15.5 });
+  for (const y of [20.2, 20.8, 21.2, 21.8])
+    assert.deepEqual(findPath(from, { x: 15.5, y }).at(-1), { x: 15.5, y: 21 });
+  const exit = findPath(from, { x: 6.5, y: 31.5 });
+  assert.deepEqual(exit.at(-1), { x: 6, y: 31 });
+  assert.ok(
+    exit.every((p) => p.x === 6),
+    'The driveway stays on its gate axis',
+  );
+});
