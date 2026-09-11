@@ -4,9 +4,8 @@ import type { AssetKey } from './art';
 type Props = {
   level: number;
   paused: boolean;
-  objective: string;
   onManor: () => void;
-  onObjective: () => void;
+  onArmy: () => void;
   onBestiary: () => void;
   onGuide: () => void;
   onSettings: () => void;
@@ -22,11 +21,11 @@ export function CommandWheel(props: Props) {
     onClick: () => void;
   }[] = [
     {
-      key: 'objective',
-      label: 'Voir les objectifs',
-      tooltip: props.objective,
-      icon: 'ui-shield',
-      onClick: props.onObjective,
+      key: 'army',
+      label: 'Sélectionner l’armée',
+      tooltip: 'Sélectionner l’armée · hors bâtisseurs',
+      icon: 'ui-sword',
+      onClick: props.onArmy,
     },
     {
       key: 'bestiary',

@@ -175,7 +175,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const s = useSyncExternalStore(gameStore.subscribe, gameStore.getSnapshot);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
-  const objectivesRef = useRef<HTMLDetailsElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const audioRef = useRef<GameAudio | null>(null);
   const [audioSettings, setAudioSettings] = useState(readAudioSettings);
@@ -631,7 +630,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <p className="objective-reason">{hint.reason}</p>
           )}
         </div>
-        <details ref={objectivesRef} className="objectives-disclosure">
+        <details className="objectives-disclosure">
           <summary>
             Objectifs{' '}
             <span>
@@ -1721,7 +1720,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           <CommandWheel
             level={manorLevel(s)}
             paused={paused}
-            objective={currentObjective?.label || (s.won ? 'Le quartier est à vous' : 'Objectifs du quartier')}
             onManor={() => {
               const manor = s.lots.find((lot) => lot.kind === 'hq');
               if (!manor) return;
@@ -1729,17 +1727,15 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               select({ type: 'lot', id: manor.id });
               rendererRef.current?.focusLot(manor.id);
             }}
-            onObjective={() => {
-              if (objectivesRef.current) {
-                objectivesRef.current.open = true;
-                objectivesRef.current.scrollIntoView({ block: 'nearest' });
+            onArmy={() => {
+              const ids = s.units.filter((unit) => unit.hp > 0 && unit.kind !== 'goblin').map((unit) => unit.id);
+              if (!ids.length) {
+                setFeedback('Recrutez des combattants pour former votre armée.');
+                return;
               }
-              const lotId = hint.marker?.lotId ?? (hint.action?.type === 'inspect' ? hint.action.lotId : undefined);
-              if (lotId !== undefined) {
-                setPendingBuild(null);
-                select({ type: 'lot', id: lotId });
-                rendererRef.current?.focusLot(lotId);
-              }
+              setPendingBuild(null);
+              select(unitSelection(ids));
+              setTouchMode('inspect');
             }}
             onBestiary={() => setModal('bestiary')}
             onGuide={() => setModal('guide')}

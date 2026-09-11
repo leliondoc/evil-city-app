@@ -3636,11 +3636,11 @@ svg {
 .command-wheel-action:hover, .command-wheel-manor:hover { filter: brightness(1.15); }
 .command-wheel-action:active, .command-wheel-manor:active { translate: 0 2px; }
 .command-wheel-action[aria-pressed='true'] { border-color: #f1d18a; }
-.wheel-objective { left: 17px; top: 35px; }
-.wheel-bestiary { left: calc(50% - 26px); top: 0; }
-.wheel-guide { right: 17px; top: 35px; }
-.wheel-pause { left: 3px; top: 153px; }
-.wheel-settings { right: 3px; top: 153px; }
+.wheel-army { left: calc(50% - 89px); top: 57px; }
+.wheel-bestiary { left: calc(50% - 26px); top: 24px; }
+.wheel-guide { right: calc(50% - 89px); top: 57px; }
+.wheel-pause { left: calc(50% - 89px); top: 145px; }
+.wheel-settings { right: calc(50% - 89px); top: 145px; }
 .command-wheel-pause { display: flex; gap: 5px; }
 .command-wheel-pause i { width: 7px; height: 21px; background: #ffe3a3; border: 1px solid #795c3b; box-shadow: 1px 1px #23323c; }
 .command-wheel-tooltip {
@@ -3666,8 +3666,4 @@ svg {
 @media (max-width: 1100px) {
   .game-shell[data-compact='false'] .bottom-bar { --command-wheel-width: 212px; gap: 10px; }
   .game-shell[data-compact='false'] .bottom-bar .army-overview { flex-basis: 200px; width: 200px; }
-  .wheel-objective { left: 3px; }
-  .wheel-guide { right: 3px; }
-  .wheel-pause { left: 0; }
-  .wheel-settings { right: 0; }
 }

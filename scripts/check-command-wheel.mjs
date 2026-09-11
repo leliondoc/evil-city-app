@@ -74,15 +74,13 @@ try {
       ...window.manorState.resources,
     }));
     await wheel
-      .getByRole('button', { name: 'Voir les objectifs', exact: true })
+      .getByRole('button', { name: 'Sélectionner l’armée', exact: true })
       .click();
     assert.deepEqual(
       await page.evaluate(() => window.manorState.resources),
       resources,
     );
-    assert.ok(
-      await page.locator('.objectives-disclosure').evaluate((el) => el.open),
-    );
+    assert.equal(await page.locator('.selection-name').innerText(), 'Gobelin lancier');
     for (const label of [
       'Ouvrir le bestiaire',
       'Comment jouer',
