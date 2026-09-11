@@ -14,6 +14,7 @@ import {
   isHaunted,
   exorcise,
   resurrect,
+  restUnit,
   type DomainState,
 } from './domain.ts';
 import {
@@ -311,6 +312,7 @@ export const RECRUIT_OPTIONS: CreatureKind[] = [
 export const BOARD = 32;
 export const STARTS = [2, 12, 22];
 export interface Lot {
+  rallyPoint?: Point;
   /** The visible guild defenders have left their posts. */
   garrisonReleased?: boolean;
   garrisonReturnsAt?: number;
@@ -328,6 +330,8 @@ export interface Lot {
   construction: null | { kind: BuildingKind; progress: number };
 }
 export interface Unit extends Point {
+  /** A player rest order lasts until healed or replaced by another order. */
+  manualRest?: boolean;
   /** A player-designated enemy takes priority over opportunistic combat. */
   focusTarget?: number;
   loot?: Cost;
@@ -1135,6 +1139,7 @@ export function assign(
 ) {
   if (u.task === 'deliver-loot' && task !== 'deliver-loot') u.loot = undefined;
   delete u.focusTarget;
+  delete u.manualRest;
   u.path = findPath(u, point);
   u.task = task;
   u.target = target;
@@ -1144,7 +1149,7 @@ export function assign(
 function spawnUnit(s: State, kind: CreatureKind, source = 6) {
   const home = entrance(s.lots[source]),
     id = s.nextId++;
-  s.units.push({
+  const unit: Unit = {
     id,
     kind,
     x: home.x - 0.7 + (id % 3) * 0.6,
@@ -1158,7 +1163,10 @@ function spawnUnit(s: State, kind: CreatureKind, source = 6) {
     fighting: false,
     nextRestAt: s.elapsed + 90 + (id % 15),
     nextMealAt: s.elapsed + 65 + (id % 15),
-  });
+  };
+  s.units.push(unit);
+  const rally = s.lots[source].rallyPoint;
+  if (rally) assign(unit, rally, 'move', null);
 }
 export function buildReason(s: State, id: number, kind: BuildingKind): string {
   if (s.won || s.lost) return 'La partie est terminée.';
@@ -1193,6 +1201,7 @@ function allocateWorkers(s: State) {
       (u) =>
         u.hp > 0 &&
         u.kind === 'goblin' &&
+        !u.manualRest &&
         ['idle', 'forage', 'eat', 'rest', 'collect'].includes(u.task),
     );
     const door = entrance(lot);
@@ -1224,6 +1233,61 @@ export function claim(s: State, id: number) {
   announce(s, 'La friche est à vous. Les gobelins attendent vos plans.');
   return '';
 }
+export function canSetRally(lot: Lot) {
+  return (
+    lot.owned &&
+    lot.hp > 0 &&
+    !lot.construction &&
+    ['hq', 'den', 'forge', 'crypt'].includes(lot.kind)
+  );
+}
+export function setRallyPoint(
+  s: State,
+  id: number,
+  point: Point | null,
+): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  const lot = s.lots.find((lot) => lot.id === id);
+  if (!lot || !canSetRally(lot))
+    return 'Sélectionnez un manoir, une tanière, une forge ou une crypte à vous.';
+  if (!point) {
+    delete lot.rallyPoint;
+    announce(
+      s,
+      'Point de ralliement supprimé. Les recrues attendront à la sortie.',
+    );
+    return '';
+  }
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y))
+    return 'Destination inaccessible.';
+  const destination = findPath(entrance(lot), point).at(-1);
+  if (!destination) return 'Choisissez un point accessible sur la terre ferme.';
+  lot.rallyPoint = { ...destination };
+  announce(
+    s,
+    'Point de ralliement défini pour les prochaines recrues de ce bâtiment.',
+  );
+  return '';
+}
+export function recruitmentSource(
+  s: State,
+  kind: CreatureKind,
+  preferred?: number,
+): Lot | undefined {
+  const rooms: BuildingKind[] =
+    kind === 'goblin'
+      ? ['den', 'hq']
+      : kind === 'troll' || kind === 'minotaur'
+        ? ['forge']
+        : ['crypt'];
+  const available = s.lots.filter(
+    (lot) => canSetRally(lot) && rooms.includes(lot.kind),
+  );
+  return (
+    available.find((lot) => lot.id === preferred) ??
+    rooms.flatMap((room) => available.filter((lot) => lot.kind === room))[0]
+  );
+}
 export function recruitReason(s: State, kind: CreatureKind) {
   if (s.won || s.lost) return 'La partie est terminée.';
   if (kind === 'goblin') {
@@ -1244,6 +1308,8 @@ export function recruitReason(s: State, kind: CreatureKind) {
     (!hasBuilding(s, 'forge') || !hasBuilding(s, 'crypt'))
   )
     return 'Le Minotaure exige une forge et une crypte.';
+  if (!recruitmentSource(s, kind))
+    return 'Aucun bâtiment de recrutement opérationnel.';
   if (population(s) + CREATURES[kind].population > capacity(s))
     return 'Plus de place. Construisez ou améliorez une tanière.';
   if (!canAfford(s, CREATURES[kind].cost)) {
@@ -1257,13 +1323,21 @@ export function recruitReason(s: State, kind: CreatureKind) {
   }
   return '';
 }
-export function recruit(s: State, kind: CreatureKind) {
+export function recruit(
+  s: State,
+  kind: CreatureKind,
+  preferredSource?: number,
+) {
   const error = recruitReason(s, kind);
   if (error) return error;
   pay(s, CREATURES[kind].cost);
   const duration = kind === 'minotaur' ? 15 : 6;
-  s.recruits.push({ kind, remaining: duration, duration });
-  announce(s, `${CREATURES[kind].name} en route vers votre manoir.`);
+  const source = recruitmentSource(s, kind, preferredSource)!;
+  s.recruits.push({ kind, remaining: duration, duration, source: source.id });
+  announce(
+    s,
+    `${CREATURES[kind].name} en préparation : ${BUILDINGS[source.kind].name.toLowerCase()}.`,
+  );
   return '';
 }
 export function army(s: State) {
@@ -1334,6 +1408,8 @@ export function commandUnit(
       : target?.type === 'guildHero'
         ? s.lots[0]
         : undefined;
+  if (lot?.owned && ['den', 'crypt'].includes(lot.kind))
+    return restUnit(s, unit.id, lot.id);
   const hostile =
     target?.type === 'enemy' ||
     target?.type === 'worker' ||
@@ -2437,17 +2513,17 @@ function tickStep(s: State, dt: number) {
   }
   for (const r of s.recruits) r.remaining -= dt;
   for (const r of s.recruits.filter((r) => r.remaining <= 0)) {
+    // A reserved recruit falls back to the manor if its production building is lost.
     const source =
-      r.source !== undefined &&
-      s.lots[r.source]?.owned &&
-      s.lots[r.source].kind === 'crypt'
-        ? r.source
-        : 6;
-    spawnUnit(s, r.kind, source);
+      recruitmentSource(s, r.kind, r.source) ??
+      s.lots.find((lot) => lot.owned && lot.hp > 0 && lot.kind === 'hq');
+    if (!source) continue;
+    spawnUnit(s, r.kind, source.id);
+    r.remaining = -Infinity;
     s.recruited++;
     announce(s, `${CREATURES[r.kind].name} a rejoint votre domaine.`);
   }
-  s.recruits = s.recruits.filter((r) => r.remaining > 0);
+  s.recruits = s.recruits.filter((r) => r.remaining !== -Infinity);
   allocateWorkers(s);
   for (const u of s.units) {
     if (u.hp <= 0) continue;

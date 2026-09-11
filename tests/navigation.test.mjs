@@ -80,13 +80,13 @@ test('An assault, a new target mid-route and retreat never cut through buildings
   assert.equal(attack(s, 0), '');
   for (let i = 0; i < 31; i++) {
     tick(s, 0.1);
-    onStreetOrGate(s, u, [6, 0]);
+    onStreetOrGate(s, u, [4, 0]);
   }
   assert.equal(attack(s, 1), '');
   const hp = s.lots[1].hp;
   for (let i = 0; i < 600 && s.lots[1].hp === hp; i++) {
     tick(s, 0.1);
-    onStreetOrGate(s, u, [6, 1]);
+    onStreetOrGate(s, u, [4, 1]);
   }
   assert.ok(s.lots[1].hp < hp, 'The army reaches the gate and attacks');
   retreat(s);

@@ -9,6 +9,7 @@ import {
   supplyActive,
   entrance,
   atEntrance,
+  canSetRally,
   buildReason,
   type BuildingKind,
   type State,
@@ -37,7 +38,7 @@ import { drawTerrain } from './terrainRenderer';
 import type { GroundTile } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
-import { hasResearch, towerOccupant } from './strategy';
+import { hasResearch, towerOccupant, towerInfluence } from './strategy';
 import {
   selectedUnitIds,
   unitSelection,
@@ -836,6 +837,17 @@ export class Renderer {
       name?: string;
     }[] = [];
     for (const tower of s.strategy.towers) {
+      if (this.selection.type === 'tower' && this.selection.id === tower.id) {
+        for (const [index, range] of towerInfluence(s, tower).entries())
+          this.draw.ellipse(
+            tower.x * CELL,
+            tower.y * CELL,
+            range.radius * CELL,
+            range.radius * CELL,
+            index ? '#a9cbe8' : '#f5da83',
+            2 / this.scale,
+          );
+      }
       drawables.push({
         depth: tower.artY * CELL,
         draw: () => {
@@ -1619,6 +1631,29 @@ export class Renderer {
         'id' in this.selection &&
         this.selection.id === hit.selection.id;
       if (selected) this.selectionHit(hit);
+    }
+    if (this.selection.type === 'lot') {
+      const selectedId = this.selection.id;
+      const lot = s.lots.find((lot) => lot.id === selectedId);
+      if (lot && canSetRally(lot) && lot.rallyPoint) {
+        const origin = entrance(lot),
+          ui = this.uiScale / this.scale;
+        const x = lot.rallyPoint.x * CELL,
+          y = lot.rallyPoint.y * CELL;
+        this.draw.line(
+          [
+            { x: origin.x * CELL, y: origin.y * CELL },
+            { x, y },
+          ],
+          '#f5da83',
+          1.5 / this.scale,
+          [6 * ui, 5 * ui],
+        );
+        this.draw.ellipse(x, y, 8 * ui, 4 * ui, '#f5da83', 2 / this.scale);
+        this.draw.rect(x - ui, y - 30 * ui, 2 * ui, 30 * ui, '#fff0b8');
+        this.draw.rect(x + ui, y - 30 * ui, 16 * ui, 11 * ui, '#d8ac51');
+        this.draw.rect(x + ui, y - 30 * ui, 16 * ui, 2 * ui, '#fff0b8');
+      }
     }
     // Draw combat health above all sprites and effects, at a readable size when zoomed out.
     const barWidth = Math.max(48, (32 * this.uiScale) / this.scale);

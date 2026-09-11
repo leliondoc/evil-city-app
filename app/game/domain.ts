@@ -83,6 +83,7 @@ const free = (u: Unit) =>
 const courierAvailable = (u: Unit) =>
   u.hp > 0 &&
   u.kind === 'goblin' &&
+  !u.manualRest &&
   ['idle', 'forage', 'eat', 'rest', 'collect'].includes(u.task);
 const safe = (s: State, p: Point, range = 5) =>
   !s.enemies.some(
@@ -91,10 +92,69 @@ const safe = (s: State, p: Point, range = 5) =>
 const room = (s: State, kind: Lot['kind']) =>
   s.lots.find((l) => l.owned && l.hp > 0 && !l.construction && l.kind === kind);
 function idle(u: Unit) {
+  delete u.manualRest;
   u.task = 'idle';
   u.target = null;
   u.path = [];
   u.activityProgress = 0;
+}
+
+function restRoom(s: State, u: Unit, preferred?: number) {
+  const kind = ['skeleton', 'specter'].includes(u.kind) ? 'crypt' : 'den';
+  return s.lots
+    .filter(
+      (lot) =>
+        lot.owned &&
+        lot.hp > 0 &&
+        !lot.construction &&
+        lot.kind === kind &&
+        (preferred === undefined || lot.id === preferred),
+    )
+    .sort((a, b) => distance(u, entrance(a)) - distance(u, entrance(b)))[0];
+}
+export function restReason(s: State, id: number, preferred?: number): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  const u = s.units.find((u) => u.id === id && u.hp > 0);
+  if (!u) return 'Cette créature n’est plus disponible.';
+  if (u.hp >= CREATURES[u.kind].hp)
+    return 'Cette créature est déjà en pleine santé.';
+  if (u.manualRest) return 'Cette créature a déjà reçu l’ordre de se soigner.';
+  const lot = restRoom(s, u, preferred);
+  if (!lot)
+    return ['skeleton', 'specter'].includes(u.kind)
+      ? 'Il faut une crypte à vous pour régénérer cette créature.'
+      : 'Il faut une tanière à vous pour mettre cette créature au lit.';
+  return '';
+}
+export function restUnit(s: State, id: number, preferred?: number): string {
+  const error = restReason(s, id, preferred);
+  if (error) return error;
+  const u = s.units.find((u) => u.id === id)!;
+  const lot = restRoom(s, u, preferred)!;
+  if (!findPath(u, entrance(lot)).length)
+    return 'Aucun chemin vers le lieu de repos.';
+  assign(u, entrance(lot), lot.kind === 'crypt' ? 'restore' : 'rest', lot.id);
+  u.manualRest = true;
+  announce(
+    s,
+    `${CREATURES[u.kind].name} part se soigner jusqu’à récupération complète.`,
+  );
+  return '';
+}
+export function restUnits(s: State, ids: number[]): string {
+  let count = 0,
+    error = '';
+  for (const id of new Set(ids)) {
+    const reason = restUnit(s, id);
+    if (reason) error ||= reason;
+    else count++;
+  }
+  if (!count) return error || 'Aucune créature à soigner.';
+  announce(
+    s,
+    `${count} créature${count > 1 ? 's partent' : ' part'} se soigner.`,
+  );
+  return '';
 }
 
 export function isHaunted(s: State, lot: Lot): boolean {
@@ -560,7 +620,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
     return true;
   }
   const needs = ['eat', 'rest', 'restore'];
-  if (needs.includes(u.task) && !safe(s, u)) idle(u);
+  if (needs.includes(u.task) && !u.manualRest && !safe(s, u)) idle(u);
   if (free(u) && safe(s, u)) {
     const crypt = room(s, 'crypt');
     if (
@@ -719,7 +779,12 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
     const lot = u.target === null ? undefined : s.lots[u.target];
     const expected =
       u.task === 'eat' ? 'canteen' : u.task === 'rest' ? 'den' : 'crypt';
-    if (!lot?.owned || lot.kind !== expected || lot.construction) {
+    if (
+      !lot?.owned ||
+      lot.hp <= 0 ||
+      lot.kind !== expected ||
+      lot.construction
+    ) {
       idle(u);
       return true;
     }
@@ -729,10 +794,13 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
         idle(u);
         return true;
       }
+      if (u.manualRest && !safe(s, u)) return true;
       u.activityProgress = (u.activityProgress ?? 0) + dt;
       if (u.task !== 'eat')
         u.hp = Math.min(CREATURES[u.kind].hp, u.hp + 4 * dt);
-      if (u.activityProgress >= 4) {
+      if (
+        u.manualRest ? u.hp >= CREATURES[u.kind].hp : u.activityProgress >= 4
+      ) {
         if (u.task === 'eat') u.nextMealAt = s.elapsed + 70;
         else u.nextRestAt = s.elapsed + 100;
         idle(u);

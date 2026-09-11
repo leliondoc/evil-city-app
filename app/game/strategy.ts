@@ -60,6 +60,26 @@ export type StrategyState = {
   towers: Tower[];
   comboHits: number;
 };
+export const TOWER_RANGE = {
+  threat: 3,
+  racket: 3.5,
+  reinforcement: 8,
+  lure: 14,
+};
+/** The overlay and the simulation share the same distances, centered on the door. */
+export function towerInfluence(s: State, tower: Tower) {
+  const kind = towerOccupant(s, tower)?.kind;
+  if (kind === 'goblin')
+    return [{ radius: TOWER_RANGE.racket, label: 'Racket' }];
+  if (kind === 'specter')
+    return [{ radius: TOWER_RANGE.lure, label: 'Fausse alerte · à activer' }];
+  if (kind === 'skeleton')
+    return [
+      { radius: TOWER_RANGE.threat, label: 'Détection' },
+      { radius: TOWER_RANGE.reinforcement, label: 'Appel des défenseurs' },
+    ];
+  return [{ radius: TOWER_RANGE.threat, label: 'Zone de capture / reprise' }];
+}
 export function createStrategy(): StrategyState {
   return {
     research: [],
@@ -215,7 +235,7 @@ export function divertEnemy(s: State, e: Enemy, dt: number) {
       t.owned &&
       t.lureUntil > s.elapsed &&
       towerOccupant(s, t)?.kind === 'specter' &&
-      distance(t, e) < 14,
+      distance(t, e) < TOWER_RANGE.lure,
   );
   if (!t) return false;
   if (distance(e, t) > 1.5) {
@@ -294,7 +314,8 @@ export function strategyUnit(s: State, u: Unit, dt: number) {
     hitEnemy(s, u, threat, CREATURES[u.kind].damage, dt);
   }
   if (!t.owned) {
-    if (s.enemies.some((e) => e.hp > 0 && distance(e, t) < 3)) t.progress = 0;
+    if (s.enemies.some((e) => e.hp > 0 && distance(e, t) < TOWER_RANGE.threat))
+      t.progress = 0;
     else t.progress += dt;
     if (t.progress >= 8) {
       t.owned = true;
@@ -354,7 +375,8 @@ export function advanceStrategy(s: State, dt: number) {
     if (!t.owned) continue;
     const occupant = towerOccupant(s, t);
     const threats = s.enemies.filter(
-      (e) => e.hp > 0 && e.role !== 'monk' && distance(e, t) < 3,
+      (e) =>
+        e.hp > 0 && e.role !== 'monk' && distance(e, t) < TOWER_RANGE.threat,
     );
     t.reclaim = threats.length && !occupant ? t.reclaim + dt : 0;
     if (t.reclaim >= 8) {
@@ -379,13 +401,18 @@ export function advanceStrategy(s: State, dt: number) {
           u.hp > 0 &&
           u.task === 'idle' &&
           !['goblin', 'specter'].includes(u.kind) &&
-          distance(u, t) < 8
+          distance(u, t) < TOWER_RANGE.reinforcement
         )
           assign(u, threats[0], 'defend', threats[0].id);
     }
     if (occupant?.kind === 'goblin')
       for (const w of s.workers) {
-        if (w.hp <= 0 || w.cargo <= 0 || w.taxed || distance(w, t) > 3.5)
+        if (
+          w.hp <= 0 ||
+          w.cargo <= 0 ||
+          w.taxed ||
+          distance(w, t) > TOWER_RANGE.racket
+        )
           continue;
         const kind = s.sites[w.site].kind,
           amount = Math.min(

@@ -6,6 +6,7 @@ import {
   researchReason,
   towerOrder,
   towerOccupant,
+  towerInfluence,
   releaseTower,
   falseAlarm,
   lureReason,
@@ -118,6 +119,13 @@ export function TowerPanel({
           : tower.occupant
             ? 'La garnison est en route.'
             : 'Tour sans garnison.'}
+      </p>
+      <p className="reason">
+        Portée affichée :{' '}
+        {towerInfluence(s, tower)
+          .map((range) => `${range.label} : ${range.radius} cases`)
+          .join(' · ')}
+        .
       </p>
       {tower.progress > 0 && (
         <p>Capture : {Math.floor((tower.progress / 8) * 100)} %</p>

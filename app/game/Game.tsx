@@ -1,5 +1,7 @@
 'use client';
 
+import { restReason, restUnit, restUnits } from './domain';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Sparkles,
@@ -76,6 +78,8 @@ import {
   buildMenuReason,
   recruit,
   recruitReason,
+  canSetRally,
+  setRallyPoint,
   claim,
   claimReason,
   attack,
@@ -297,8 +301,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           setFeedback('');
           setTouchMode('inspect');
         }
+      } else if (selected.type === 'lot') {
+        run((state) => setRallyPoint(state, selected.id, point));
       } else
-        notify('Sélectionnez une de vos créatures pour lui donner un ordre.');
+        notify(
+          'Sélectionnez une créature ou un bâtiment de recrutement pour donner un ordre.',
+        );
     },
     [notify, run],
   );
@@ -382,7 +390,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   );
   const chooseRecruit = useCallback(
     (kind: CreatureKind) => {
-      run((s) => recruit(s, kind));
+      const selected = selectionRef.current;
+      run((s) =>
+        recruit(s, kind, selected.type === 'lot' ? selected.id : undefined),
+      );
     },
     [run],
   );
@@ -797,6 +808,20 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 <h3 className="selection-name">
                   {group.length} unités sélectionnées
                 </h3>
+                <Button
+                  className="primary-btn"
+                  disabled={group.every((unit) => !!restReason(s, unit.id))}
+                  onClick={() =>
+                    run((state) =>
+                      restUnits(
+                        state,
+                        group.map((unit) => unit.id),
+                      ),
+                    )
+                  }
+                >
+                  Soigner les blessés
+                </Button>
                 <div className="selected-group">
                   {group.map((unit) => (
                     <button
@@ -988,6 +1013,27 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     />
                     <Button
                       className="primary-btn"
+                      disabled={!!restReason(s, selectedUnit.id)}
+                      title={
+                        restReason(s, selectedUnit.id) ||
+                        'Récupère 4 PV/s sur place jusqu’à guérison complète. Un nouvel ordre interrompt le repos.'
+                      }
+                      onClick={() =>
+                        run((state) => restUnit(state, selectedUnit.id))
+                      }
+                    >
+                      {selectedUnit.manualRest
+                        ? 'Soins en cours'
+                        : ['skeleton', 'specter'].includes(selectedUnit.kind)
+                          ? 'Régénérer à la crypte'
+                          : 'Mettre au lit'}
+                    </Button>
+                    <p className="reason">
+                      {restReason(s, selectedUnit.id) ||
+                        '4 PV/s au repos, jusqu’aux PV maximum. Un nouvel ordre interrompt les soins.'}
+                    </p>
+                    <Button
+                      className="primary-btn"
                       onClick={() =>
                         run((state) => {
                           moveUnit(
@@ -1015,6 +1061,26 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 />
                 {selectedLot && (
                   <>
+                    {canSetRally(selectedLot) && (
+                      <div className="rally-control">
+                        <p className="reason">
+                          Clic droit sur la carte : définir le point de
+                          ralliement des prochaines recrues de ce bâtiment.
+                        </p>
+                        {selectedLot.rallyPoint && (
+                          <Button
+                            className="subtle-btn"
+                            onClick={() =>
+                              run((state) =>
+                                setRallyPoint(state, selectedLot.id, null),
+                              )
+                            }
+                          >
+                            Supprimer le point de ralliement
+                          </Button>
+                        )}
+                      </div>
+                    )}
                     {chosenKind === 'canteen' && (
                       <div className="food-production">
                         <p>

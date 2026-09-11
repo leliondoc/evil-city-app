@@ -130,3 +130,11 @@ Sur ordinateur, la carte se prolonge derrière l’interface. Les grandes bandes
 ### Effets sonores
 
 Les paramètres proposent le volume des effets, une coupure du son et un bouton de test. Les préférences sont mémorisées dans ce navigateur. Le son démarre après une interaction, s’arrête pendant la pause ou lorsque l’onglet est masqué, et accompagne les récoltes actives, livraisons, combats, recrutements terminés et bâtiments terminés. Les actions hors champ sont silencieuses ; les sons simultanés sont plafonnés à quatre, avec un délai entre effets similaires. Les 11 effets TomMusic utilisés sont inclus dans la version publiée. Voir `ASSETS.md` pour leur provenance et les conditions de l’auteur.
+
+Les recrues apparaissent à leur bâtiment de production : gobelins à la tanière (ou au manoir avant sa construction), trolls et minotaures à la forge, squelettes, spectres et alchimistes à la crypte. Sélectionner un bâtiment compatible avant de recruter privilégie celui-ci ; la file conserve ce bâtiment. Si celui-ci est perdu, une autre production compatible prend le relais, puis le manoir en dernier recours.
+
+Un clic droit sur la carte avec un bâtiment de recrutement sélectionné définit son point de ralliement. Le drapeau et son lien sont visibles à la sélection ; les nouvelles recrues y marchent automatiquement. Le panneau permet de supprimer ce point. Les unités déjà présentes conservent leurs ordres.
+
+« Mettre au lit » envoie une créature vivante blessée à la tanière ; les squelettes et spectres utilisent « Régénérer à la crypte ». Le groupe dispose de « Soigner les blessés ». Un clic droit avec une unité sur le bâtiment de soins compatible donne aussi cet ordre. Les soins manuels durent jusqu’aux PV maximum à 4 PV/s, une fois arrivé et hors de danger ; un nouvel ordre les interrompt. Les chantiers n’interrompent plus automatiquement un gobelin soigné manuellement.
+
+Sélectionner une tour affiche sa portée réelle depuis sa porte : racket du gobelin à 3,5 cases ; détection du squelette à 3 et appel des défenseurs à 8 ; fausse alerte du spectre à 14 (sur activation). Sans garnison, la zone de capture/reprise de 3 cases est affichée.
