@@ -1598,11 +1598,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               value="recruit"
               className="creation-tab creation-tab-recruit"
             >
-              {!compact && hint.marker?.kind === 'recruit' && (
-                <span className="recruit-tutorial-marker" aria-hidden="true">
-                  Recruter
-                </span>
-              )}
               <PackIcon asset="goblin-avatar" />
               <span>Recruter des créatures</span>
             </TabsTrigger>
@@ -1788,11 +1783,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
               setTab('recruit');
             }}
           >
-            {hint.marker?.kind === 'recruit' && (
-              <span className="recruit-tutorial-marker" aria-hidden="true">
-                Recruter
-              </span>
-            )}
             <PackIcon asset="ui-sword" />
             Recruter
           </Button>
