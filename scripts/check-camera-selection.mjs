@@ -7,13 +7,13 @@ const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PACKA
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const output = await mkdtemp(join(tmpdir(), 'evil-camera-selection-'));
 try {
-  for (const [width, height] of [[1440, 900], [1920, 1080], [900, 700]]) {
+  for (const [width, height] of [[2554, 1295], [1440, 900], [1920, 1080], [900, 700]]) {
     // New context for each first visit: no cookies, storage or cached assets.
     const page = await browser.newPage({ viewport: { width, height }, reducedMotion: 'reduce' });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const open = async () => {
-      await page.goto('http://127.0.0.1:3000/tests/manor-preview.html');
+      await page.goto('http://127.0.0.1:3000/tests/manor-preview.html?fresh');
       await page.locator('.world-canvas[data-ready=true]').waitFor();
       await page.getByRole('button', { name: 'Mettre en pause', exact: true }).click();
       await page.evaluate(() => new Promise(requestAnimationFrame));
@@ -24,7 +24,11 @@ try {
     });
     await open();
     const initial = await snapshot();
-    assert.equal(initial.zoom, 1.15);
+    assert.equal(initial.zoom, 1);
+    // Check the actual screen center, independently of the renderer viewport.
+    assert.ok(Math.abs(initial.origin.x + 512 * initial.scale - width / 2) <= 1);
+    assert.ok(Math.abs(initial.origin.y + 512 * initial.scale - height / 2) <= 1);
+    assert.ok(Math.abs(initial.scale - Math.min(width / 1120, height / 1174)) < 0.001);
     await page.screenshot({ path: join(output, `initial-${width}.png`) });
     // Simulate an arbitrary previous camera position before using the real button.
     await page.evaluate(() => { window.manorRenderer.pan(-240, 130); window.manorRenderer.zoomBy(1.8); });
@@ -32,6 +36,9 @@ try {
     await manor.click();
     const title = page.locator('.selection-name');
     assert.equal(await title.innerText(), 'Manoir du mal');
+    for (const state of ['acquired', 'next', 'locked'])
+      assert.equal(await page.locator(`.manor-tier[data-state="${state}"]`).count(), 1);
+    assert.equal(await page.locator('.manor-progression').evaluate(el => el.scrollWidth > el.clientWidth + 1), false);
     const font = await title.evaluate(el => ({ font: getComputedStyle(el).font, color: getComputedStyle(el).color }));
     const checkFocus = async () => {
       await page.evaluate(() => new Promise(requestAnimationFrame));
@@ -40,7 +47,7 @@ try {
         const hit = r.hits.find(h => h.key === 'hq-purple' && h.selection.type === 'lot');
         const b = r.visibleBounds(hit);
         const point = { x: r.origin.x + (b.x + b.width / 2) * r.scale, y: r.origin.y + (b.y + b.height / 2) * r.scale };
-        return { dx: point.x - r.viewport.x - r.viewport.width / 2, dy: point.y - r.viewport.y - r.viewport.height / 2, hit: r.hit(point) };
+        return { dx: point.x - innerWidth / 2, dy: point.y - innerHeight / 2, hit: r.hit(point) };
       });
       assert.ok(Math.abs(result.dx) <= 1 && Math.abs(result.dy) <= 1, JSON.stringify(result));
       assert.deepEqual(result.hit, { type: 'lot', id: 6 });

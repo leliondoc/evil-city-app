@@ -60,11 +60,11 @@ try {
       .getByRole('button', { name: 'Recentrer le quartier', exact: true })
       .click();
     const point = await page.evaluate(() => {
-      const r = document.querySelector('.world-wrap').getBoundingClientRect(),
-        scale = Math.max(0.1, Math.min(r.width / 1120, r.height / 1174)) * 1.15;
+      const r = document.querySelector('.world-canvas').getBoundingClientRect(),
+        scale = Math.max(0.1, Math.min(r.width / 1120, r.height / 1174));
       return {
         x: Math.round(r.x + (r.width - 1024 * scale) / 2) + 512 * scale,
-        y: Math.round(r.y + (r.height - 1024 * scale) / 2 + 14) + 512 * scale,
+        y: Math.round(r.y + (r.height - 1024 * scale) / 2) + 512 * scale,
       };
     });
     await page.mouse.click(point.x, point.y);

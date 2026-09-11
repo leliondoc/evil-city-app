@@ -59,7 +59,8 @@ import { Bestiary } from './Bestiary';
 import { CombatDetails } from './CombatDetails';
 import { CommandWheel } from './CommandWheel';
 import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
-import { MANOR_TIERS, manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
+import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
+import { ManorProgression } from './ManorProgression';
 import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
@@ -998,17 +999,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     def?.description ||
                     'Sélectionnez une autre créature ou une parcelle.'}
                 </p>
-                {selectedLot?.kind === 'hq' && (
-                  <details className="manor-progression" aria-label="Paliers du manoir">
-                    <summary>Voir les trois paliers du manoir</summary>
-                    {MANOR_TIERS.map((tier) => (
-                      <p className="reason" key={tier.level}>
-                        <strong>Niveau {tier.level}{manorLevel(s) >= tier.level ? ' · Acquis' : ' · À débloquer'} : </strong>
-                        {tier.description}
-                      </p>
-                    ))}
-                  </details>
-                )}
                 {selectedEnemy && (
                   <>
                     <CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} />
@@ -1328,6 +1318,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     )}
                   </>
                 )}
+                {selectedLot?.kind === 'hq' && <ManorProgression level={manorLevel(s)} />}
                 <DomainPanel
                   state={s}
                   lot={selectedLot}

@@ -13,6 +13,7 @@ declare global {
 }
 // Funded tier-one domain for UI checks; real harvest progression is tested separately.
 const s = createGame();
+if (!new URLSearchParams(location.search).has('fresh')) {
 s.resources = { gold: 1000, food: 1000, wood: 1000, mana: 1000 };
 s.economy.stocks = { gold: 0, food: 0, wood: 0 };
 s.economy.workerReadyAt = Infinity;
@@ -21,6 +22,7 @@ s.lots[5].owned = true;
 recruit(s, 'goblin');
 recruit(s, 'spear-goblin');
 tick(s, 6.1);
+}
 const original = Reflect.get(Renderer.prototype, 'resize') as () => void;
 Reflect.set(Renderer.prototype, 'resize', function (this: Renderer) {
   window.manorRenderer = this;

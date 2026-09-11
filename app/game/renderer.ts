@@ -140,7 +140,6 @@ export class Renderer {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     if (canvas.parentElement) this.resizeObserver.observe(canvas.parentElement);
-    this.zoom = this.initialZoom();
     this.resize();
     canvas.addEventListener('pointerdown', this.pointerDown);
     canvas.addEventListener('pointermove', this.pointerMove);
@@ -239,8 +238,9 @@ export class Renderer {
       ) || 1;
     this.width = r.width;
     this.height = r.height;
-    // The desktop canvas extends under the HUD; frame the town in its clear center.
-    const view = this.canvas.parentElement?.getBoundingClientRect() ?? r;
+    // Camera coordinates follow the visible canvas, including the floating HUD.
+    // The parent only describes the space beside the panels, not the screen center.
+    const view = r;
     this.viewport = {
       x: view.left - r.left,
       y: view.top - r.top,
@@ -260,7 +260,7 @@ export class Renderer {
     this.origin = {
       x: Math.round(view.x + (view.width - SIZE * this.scale) / 2 + this.panX),
       y: Math.round(
-        view.y + (view.height - SIZE * this.scale) / 2 + this.panY + 14,
+        view.y + (view.height - SIZE * this.scale) / 2 + this.panY,
       ),
     };
   }
@@ -278,13 +278,10 @@ export class Renderer {
   }
   public resetView() {
     this.pointerCancel();
-    this.zoom = this.initialZoom();
+    this.zoom = 1;
     this.panX = 0;
     this.panY = 0;
     this.resize();
-  }
-  private initialZoom() {
-    return this.canvas.closest('.game-shell')?.getAttribute('data-compact') === 'false' ? 1.15 : 1;
   }
   public focusLot(id: number) {
     const lot = this.getState().lots[id];

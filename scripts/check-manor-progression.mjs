@@ -87,6 +87,8 @@ try {
     .getByRole('button', { name: 'Passer au niveau 2', exact: true })
     .click();
   assert.equal(await page.evaluate(() => window.manorState.lots[6].level), 2);
+  assert.equal(await panel.locator('.manor-tier[data-state="acquired"]').count(), 2);
+  assert.equal(await panel.locator('.manor-tier[data-state="next"]').count(), 1);
   const after = await page.evaluate(() => window.manorState.resources);
   assert.equal(before.gold - after.gold, 80);
   assert.equal(before.wood - after.wood, 35);
@@ -103,7 +105,7 @@ try {
   await panel
     .getByRole('button', { name: 'Passer au niveau 2', exact: true })
     .click();
-  assert.match(await panel.innerText(), /Actuellement : \+12 places/);
+  assert.match(await panel.innerText(), /\+12 places pour la horde/);
   assert.ok(
     await panel
       .getByRole('button', { name: 'Passer au niveau 3', exact: true })
@@ -134,8 +136,8 @@ try {
     .getByRole('button', { name: 'Mettre en pause', exact: true })
     .click();
   await selectLot(6);
-  await panel.locator('.manor-progression summary').click();
-  assert.match(await panel.innerText(), /Niveau 3 · Acquis/);
+  assert.equal(await panel.locator('.manor-tier[data-state="acquired"]').count(), 3);
+  assert.equal(await panel.locator('.manor-tier[aria-current="step"] .manor-tier-number').getAttribute('aria-label'), 'Niveau 3');
   await page.setViewportSize({ width: 390, height: 844 });
   await page
     .getByRole('button', {
