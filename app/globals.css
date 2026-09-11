@@ -3589,7 +3589,7 @@ svg {
   width: 130px;
   height: 130px;
   border-radius: 50%;
-  border: 3px solid #d7b66a;
+  border: 1px solid #b9a578;
   background: linear-gradient(180deg, #443a50d9, #20323bd9 70%);
 }
 .command-wheel-castle.pack-icon {
@@ -3637,8 +3637,17 @@ svg {
 .command-wheel-action:active, .command-wheel-manor:active { translate: 0 2px; }
 .command-wheel-action[aria-pressed='true'] { border-color: #f1d18a; }
 .wheel-army { left: calc(50% - 76px); top: 30px; }
+.wheel-army > .pack-icon { filter: sepia(0.85) saturate(1.8) hue-rotate(315deg); }
 .wheel-bestiary { left: calc(50% - 11px); top: 2px; }
-.wheel-bestiary > .pack-icon { width: 64px; height: 64px; }
+.wheel-bestiary > .pack-icon {
+  position: absolute;
+  left: calc(50% + 1px);
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  max-width: none;
+  transform: translate(-50%, -50%);
+}
 .wheel-guide { right: calc(50% - 102px); top: 30px; }
 .wheel-pause { left: calc(50% - 98px); top: 152px; }
 .wheel-settings { left: calc(50% - 44px); top: 214px; width: 44px; height: 44px; }
