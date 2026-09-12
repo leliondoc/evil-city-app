@@ -212,7 +212,7 @@ export default function Game({
   );
   const [mobilePanel, setMobilePanel] = useState<
     'details' | 'build' | 'recruit' | null
-  >(null);
+  >('details');
   const [touchMode, setTouchMode] = useState<'inspect' | 'select' | 'command'>(
     'inspect',
   );
@@ -649,7 +649,7 @@ export default function Game({
     setSpeed(1);
     setFeedback('');
     setModal(null);
-    setMobilePanel(null);
+    setMobilePanel('details');
     setTouchMode('inspect');
     victoryShown.current = false;
     rendererRef.current?.resetView();
@@ -938,12 +938,14 @@ export default function Game({
             aria-label={compact ? 'Objectifs et sélection' : 'Sélection'}
           >
             {compact && (
-              <Button
-                className="mobile-sheet-close primary-btn"
+              <button
+                type="button"
+                className="mobile-sheet-close"
+                aria-label="Fermer les détails"
                 onClick={() => setMobilePanel(null)}
               >
-                Fermer les détails <PackIcon asset="ui-close" />
-              </Button>
+                <PackIcon asset="ui-close" />
+              </button>
             )}
             {sheetNotice}
             {compact && missionCard}
@@ -1581,12 +1583,14 @@ export default function Game({
 
       <footer className="bottom-bar">
         {compact && (
-          <Button
-            className="mobile-sheet-close primary-btn"
+          <button
+            type="button"
+            className="mobile-sheet-close"
+            aria-label="Retour à la carte"
             onClick={() => setMobilePanel(null)}
           >
-            Retour à la carte <PackIcon asset="ui-close" />
-          </Button>
+            <PackIcon asset="ui-close" />
+          </button>
         )}
         {sheetNotice}
         <section className="army-overview" aria-label="Votre population">

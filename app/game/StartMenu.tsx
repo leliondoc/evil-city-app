@@ -90,18 +90,22 @@ export function StartMenu({
       className="start-menu"
       aria-label="Menu principal d’Evil City"
       onPointerDownCapture={() => unlockMusic()}
+      onClickCapture={() => unlockMusic()}
       onKeyDownCapture={() => unlockMusic()}
     >
       <picture className="start-art">
         <source
           media="(max-aspect-ratio: 3/4)"
-          srcSet={`${import.meta.env.BASE_URL}menu/evil-city-nightfall-portrait.png?v=village-1`}
+          type="image/webp"
+          srcSet={`${import.meta.env.BASE_URL}menu/evil-city-nightfall-portrait.webp?v=storm-1`}
         />
         <img
           className="start-scenery"
-          src={`${import.meta.env.BASE_URL}menu/evil-city-nightfall.png?v=village-1`}
-          alt="Une rue pavée déserte, éclairée de lanternes, traverse un village nocturne dominé par un château sous la lune."
+          src={`${import.meta.env.BASE_URL}menu/evil-city-nightfall.webp?v=storm-1`}
+          alt="La brume enveloppe un village nocturne désert, éclairé de lanternes, sous un château et un ciel d’orage."
           fetchPriority="high"
+          decoding="async"
+          loading="eager"
         />
       </picture>
       <div className="start-motes" aria-hidden="true">
@@ -192,7 +196,6 @@ export function StartMenu({
         <span>
           EVIL CITY <i /> v0.4
         </span>
-        <span>Un quartier tranquille. Pour l’instant.</span>
       </footer>
 
       <Dialog

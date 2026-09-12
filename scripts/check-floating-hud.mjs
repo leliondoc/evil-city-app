@@ -19,6 +19,14 @@ try {
     await page.setViewportSize({ width, height });
     await page.goto('http://127.0.0.1:3000/tests/domain-preview.html');
     await page.locator('.loading-art').waitFor({ state: 'hidden' });
+    const pause = await page.locator('.wheel-pause').boundingBox();
+    const settings = await page.locator('.wheel-settings').boundingBox();
+    assert.equal(
+      pause.width,
+      settings.width,
+      'Pause uses the same diameter as settings',
+    );
+    assert.equal(pause.height, settings.height);
     await page
       .getByRole('button', { name: 'Mettre en pause', exact: true })
       .click();

@@ -29,12 +29,93 @@ try {
       isMobile: viewport.width < 900,
     });
     const page = await context.newPage();
+    const artworkRequests = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/menu/evil-city-nightfall'))
+        artworkRequests.push(request.url());
+    });
+    await page.addInitScript(() => {
+      window.menuAudio = [];
+      window.Audio = new Proxy(window.Audio, {
+        construct(target, args) {
+          const element = Reflect.construct(target, args);
+          window.menuAudio.push(element);
+          return element;
+        },
+      });
+    });
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(base);
     await page.locator('.start-scenery').evaluate(async (img) => {
       await img.decode();
     });
     await page.evaluate(() => document.fonts.ready);
+    assert.equal(
+      artworkRequests.length,
+      1,
+      'Only the matching portrait or landscape is downloaded',
+    );
+    assert.ok(
+      artworkRequests[0].includes('.webp'),
+      'Menu art uses the compressed export',
+    );
+    assert.equal(
+      await page.getByText('Un quartier tranquille. Pour l’instant.').count(),
+      0,
+    );
+    await page.waitForFunction(() =>
+      window.menuAudio.some(
+        (el) => el.getAttribute('src') && el.readyState >= 3,
+      ),
+    );
+    const beforeGesture = await page.evaluate(() => {
+      const element = window.menuAudio.find((el) => el.getAttribute('src'));
+      window.preloadedMenuAudio = element;
+      element.addEventListener(
+        'playing',
+        () => {
+          window.menuPlayingAt = performance.now();
+        },
+        { once: true },
+      );
+      return {
+        preload: element.preload,
+        paused: element.paused,
+        time: element.currentTime,
+      };
+    });
+    assert.deepEqual(
+      beforeGesture,
+      { preload: 'auto', paused: true, time: 0 },
+      'The menu is buffered before interaction without bypassing autoplay',
+    );
+    await page.evaluate(() => {
+      window.menuGestureAt = performance.now();
+    });
+    if (viewport.width < 900)
+      await page.locator('.start-menu').tap({ position: { x: 5, y: 5 } });
+    else await page.locator('.start-menu').click({ position: { x: 5, y: 5 } });
+    await page.waitForFunction(
+      () =>
+        window.menuPlayingAt > 0 &&
+        window.preloadedMenuAudio.currentTime > 0.03,
+    );
+    const playback = await page.evaluate(() => ({
+      active: window.menuAudio.filter((el) => el.getAttribute('src')).length,
+      delay: window.menuPlayingAt - window.menuGestureAt,
+    }));
+    assert.equal(
+      playback.active,
+      1,
+      'The preloaded element is reused, without another music stream',
+    );
+    assert.ok(
+      playback.delay < 1500,
+      `Buffered music starts on the first gesture (${Math.round(playback.delay)} ms)`,
+    );
+    console.log(
+      `${viewport.width}×${viewport.height}: buffered music started in ${Math.round(playback.delay)} ms`,
+    );
     assert.equal(
       await page.locator('.world-canvas').count(),
       0,
@@ -129,6 +210,9 @@ try {
           .click();
       } else {
         await page
+          .getByRole('button', { name: 'Fermer les détails', exact: true })
+          .click();
+        await page
           .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })
           .click();
         await page
@@ -191,6 +275,33 @@ try {
     await context.close();
     console.log(`Passed ${viewport.width}×${viewport.height}`);
   }
+  const mutedContext = await browser.newContext();
+  const mutedPage = await mutedContext.newPage();
+  const mutedRequests = [];
+  await mutedPage.addInitScript(() =>
+    localStorage.setItem(
+      'evil-city-audio-v1',
+      JSON.stringify({ muted: true, volume: 0.35, musicVolume: 0.2 }),
+    ),
+  );
+  mutedPage.on('request', (request) => {
+    if (request.url().includes('/audio/')) mutedRequests.push(request.url());
+  });
+  await mutedPage.goto(base);
+  await mutedPage.locator('.start-scenery').evaluate((img) => img.decode());
+  assert.equal(
+    mutedRequests.length,
+    0,
+    'A saved mute does not preload unwanted audio',
+  );
+  const enabledMusic = mutedPage.waitForResponse((response) =>
+    response.url().includes('/audio/menu-music.mp3'),
+  );
+  await mutedPage
+    .getByRole('button', { name: 'Activer le son', exact: true })
+    .click();
+  await enabledMusic;
+  await mutedContext.close();
   assert.deepEqual(errors, [], 'No browser runtime errors');
   console.log(`Screenshots: ${output}`);
 } finally {

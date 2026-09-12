@@ -1,40 +1,52 @@
-# Illustrations du menu Evil City
+# Artwork du menu Evil City
 
-Les deux décors ont été retouchés avec **l’outil imagegen intégré**, en mode édition, le 12 septembre 2026. L’utilisateur a choisi de retirer tous les personnages sur PC et mobile, ce qui remplace les demandes de retouches de leurs yeux, peau et accessoires.
+Les deux décors ont été retouchés avec **l’outil imagegen intégré**, en mode édition, le 12 septembre 2026.
 
-- Paysage : [evil-city-nightfall.png](../public/menu/evil-city-nightfall.png), 1672 × 941.
-- Portrait : [evil-city-nightfall-portrait.png](../public/menu/evil-city-nightfall-portrait.png), 948 × 1659.
-- Sources finales : [landscape.png](../art-source/menu/landscape.png) et [portrait.png](../art-source/menu/portrait.png).
-- Export : `python scripts/compose-menu-art.py` copie les deux sources à l’identique, sans dépendance externe, traitement d’image ni ajout de personnage.
-- Ancienne source archivée : `art-source/menu/lancer-generated.png`. Elle n’est pas exportée ni affichée.
+## Fichiers livrés
 
-Les rues sont désormais vides. Les personnages, équipements, fumées du spectre et objets de bois incohérents ont été supprimés ; les zones découvertes sont reconstruites avec des pavés et des murs de pierre. Le village, les bannières, les lanternes et le château restent présents. Le fond conserve son fini net et ses couleurs nocturnes. Aucun voile, filtre ou réduction d’opacité ne couvre les images dans l’interface.
+- Paysage : [evil-city-nightfall.webp](../public/menu/evil-city-nightfall.webp), 1672 × 941, **228 028 octets**.
+- Portrait : [evil-city-nightfall-portrait.webp](../public/menu/evil-city-nightfall-portrait.webp), 948 × 1660, **219 228 octets**.
+- Sources PNG finales : [landscape.png](../art-source/menu/landscape.png) et [portrait.png](../art-source/menu/portrait.png).
+- Export : `python scripts/compose-menu-art.py`, avec Pillow. WebP qualité 90, méthode 6, dimensions conservées, sans recomposition.
+- Les PNG publics précédents pesaient respectivement 2 324 103 et 2 300 004 octets. Les exports finaux représentent **90,2 % et 90,5 % de moins** ; seuls les WebP sont distribués.
+- Le HTML précharge uniquement le format correspondant au rapport de l’écran. Le `picture` réutilise exactement cette URL, avec décodage asynchrone et priorité haute. Les tests navigateur vérifient une seule requête d’artwork au chargement.
+- L’ancienne source `art-source/menu/lancer-generated.png` est archivée et n’est pas affichée.
 
-La typographie et les commandes restent en React. Le titre utilise « Evil » et « City », avec la police Agenda Fantasy et ses dégradés d’origine ; l’interligne est augmenté pour éviter le chevauchement des ornements. La phrase est « Le mal ne fait pas de quartier. ». Le cadre ornemental de « Jouer » est conservé ; seul le contour de sélection extérieur est retiré. Au clavier, le cadre existant s’éclaircit pour signaler le focus.
+## Direction artistique finale
 
-## Sorties retenues
+Le village reste entièrement vide. Les façades ont été reconstruites avec des fenêtres, des portes, de la maçonnerie et des poutres compréhensibles. Les points lumineux isolés et les supports de torches incohérents ont été nettoyés. Le château conserve une entrée principale ouverte et un passage en retrait ; l’ouverture orange parasite dans la colline du portrait a été retirée.
 
-- Paysage : `exec-71e676d2-e9bf-4a47-b2a6-7aa313721635.png`.
-- Portrait : `exec-0084912d-a9c8-49aa-949e-e0f8183bd06f.png`.
-- Le paysage validé sert de référence de continuité pour l’édition portrait.
-- Mode intégré uniquement, sans CLI/API de génération.
+La nouvelle demande assombrit l’ambiance : brume basse dans les rues, autour des arbres et de la colline, ciel d’orage et éclairs discrets. Les pavés et leurs reflets sont moins éclairés. Les fenêtres et lanternes gardent une lumière chaude. Cette atmosphère est peinte dans les images, sans ajouter de filtre CSS global sur le menu.
 
-## Consigne exacte — paysage
+La typographie et les commandes restent en React. Le titre utilise « Evil » et « City », la police Agenda Fantasy et ses dégradés d’origine. La devise reste « Le mal ne fait pas de quartier. ». La phrase de pied de page « Un quartier tranquille. Pour l’instant. » est retirée. Le cadre ornemental de « Jouer » reste inchangé.
 
-Use case: precise-object-edit.
-Asset type: Evil City desktop game menu background, wide landscape illustration.
-Input image 1 is the EDIT TARGET, the existing approved village artwork. Keep its composition, camera, framing, linework, saturated crisp cel-shaded illustration style, blue nocturnal palette and warm window/lantern lights.
-Primary request: REMOVE EVERY CHARACTER completely: the large green troll and wooden club on the left, the hooded purple specter and all of its character-shaped smoke/glow, the small goblin and handheld torch at lower left, the yellow archer and all her equipment at right, and the monk at lower right. There must be no people, monsters, humanoids, character silhouettes, leftover limbs, clothes, weapons, floating equipment, or character shadows anywhere.
-Reconstruct the areas they covered into the same coherent empty cobblestone village street and simple stone boundary walls continuing the perspective of the existing center street. Keep the street open and spacious. Remove the unrecognizable broken wooden object/planks at the very bottom left and the stray broken upright plank at the bottom right; finish those small areas with plausible cobblestones and stones. Correct the incoherent timber fence behind the former archer into a simple, properly joined stone boundary wall. Do not invent decorative objects to fill the empty areas.
-Preserve the existing surrounding half-timber houses, purple skull banners, attached wall torches and hanging lantern, distant gateway, forest, mountains, moon, sky and stars. Preserve the castle with ONE visible open main entrance reached by the path, narrow upper windows, and clear logical architecture. Keep trees distinct from chimneys. No new door above the castle entrance. No fire floating on stone. Buildings and mounted lanterns remain.
-Output a single full-bleed wide landscape image of the same scene. No text, logo, frame, vignette, haze, foggy veil, soft overlay, desaturation, or global relighting. Make the local replacements seamless and keep the rest of the artwork unchanged.
+## Sorties retenues et provenance
 
-## Consigne exacte — portrait
+- Nettoyage paysage : `exec-e1a64fc8-d63f-4d10-838a-886740e1df0a.png`.
+- Nettoyage portrait : `exec-dd95eaa3-752e-4c00-a501-8cb96b9986f0.png`, puis retrait de l’ouverture parasite : `exec-cf74169e-65cb-47fd-b848-0dad382271aa.png`.
+- **Atmosphère finale paysage** : `exec-67eaad78-49ea-44bf-84b0-923eba68740d.png`.
+- **Atmosphère finale portrait** : `exec-07be0795-1d13-4483-8377-91ad66c23f4a.png`.
+- Les deux dernières éditions utilisent chaque décor nettoyé comme cible et conservent son cadrage.
+- Mode intégré uniquement, sans CLI/API de génération. La conversion WebP locale est autorisée par la demande d’optimisation.
 
-Use case: precise-object-edit.
-Asset type: Evil City mobile game menu background, tall portrait illustration.
-Input image 1 is the EDIT TARGET: keep its tall portrait framing, long village street, sky, moon and castle composition. Input image 2 is a SUPPORTING REFERENCE showing the approved empty desktop village, for matching the character removal and clean stone walls; do not turn the portrait into a landscape image.
-Primary request: REMOVE EVERY CHARACTER from image 1 completely: the large green troll and club on the left, purple hooded specter with all its smoke/glow, goblin and handheld torch in lower left, yellow archer with bow/arrows on the right, and monk at lower right. No characters, monsters, people, silhouettes, equipment, leftover clothes or limbs, purple character smoke, or their cast shadows anywhere.
-Reconstruct the occluded areas with a continuous open cobbled street, coherent stone boundary walls and the existing half-timber village behind them, matching the same perspective. The street stays empty. Remove the unrecognizable broken wooden object/planks at the very bottom left, replacing with plausible stones and cobbles. Any incoherent timber fence behind the former archer becomes a simple properly joined stone boundary wall. Do not add decorative filler or other objects.
-Preserve the surrounding houses, purple skull banners, wall-mounted torches, right hanging lantern, distant village gateway, trees, mountains, moon, sky and stars. Trees and chimneys must remain separate recognizable objects. Preserve one castle with ONE open main entrance connected logically to the path. Remove any extra small glowing doorway in the rock below that main entrance; use plain stone there. Upper castle openings are narrow windows, never a second door. No floating flame or fire on stone.
-Keep exactly the sharp saturated cel-shaded drawing style, clean black linework and nocturnal blue/orange palette of the edit target and supporting reference. No global recoloring, veil, mist, fog, dimming, vignette, frame, text or watermark. Output a single full-bleed TALL PORTRAIT background of the same scene without any characters.
+## Consigne exacte finale — paysage
+
+Use case: lighting-weather. Image 1 is the EDIT TARGET, the existing Evil City empty medieval village menu artwork with recently repaired architecture.
+Change the atmosphere to distinctly darker, ominous, haunted NIGHT BEFORE A STORM. The current bright cobbles and cheerful cyan sky dominate too much.
+Darken the ambient illumination to deep midnight indigo, muted blue-violet and charcoal. Reduce the brightness and visual contrast of individual foreground paving stones and their large orange reflections, so the road recedes into shadow instead of dominating the picture. Keep the same paving geometry.
+Add natural low drifting blue-gray FOG in several depth layers: across sections of the foreground cobbles, flowing through the middle street, between houses and garden walls, among the trees, and around the lower castle hillside. Wisps partially obscure the ground and distant details. This is spatial atmospheric fog in the scene, not a flat gray overlay over the entire illustration. Keep nearby architecture edges, lamps and banners readable.
+Replace much of the cheerful bright sky with brooding layered storm clouds; partially shroud the moon and reduce the busy stars. Add ONE OR TWO slender distant branching LIGHTNING bolts high in the sky or behind the distant mountains, cool pale lavender-white, restrained scale, integrated into the clouds. No giant dominant bolt or overall white flash. The moon still gives a dim cool rim to the castle.
+Keep small warm amber/orange windows and real attached torches/lanterns as inviting but uneasy points of light against the dark. Light should diffuse gently through nearby fog. Keep enough local color and crisp ink outlines to retain the existing hand-painted cartoon fantasy game art style; do not turn it into photorealism.
+Preserve the exact composition, camera, empty village, road, clean structural timber, stone walls, roofs, skull banners, mountains, castle silhouette, and single OPEN main castle gateway. No people, creatures, faces in fog, equipment, new buildings, text, logo, interface or frame. Do not reintroduce malformed architectural details or a second castle doorway. Change weather and lighting only.
+Maintain exactly the wide landscape framing and proportions. Return one complete LANDSCAPE background.
+
+## Consigne exacte finale — portrait
+
+Use case: lighting-weather. Image 1 is the EDIT TARGET, the existing Evil City empty medieval village menu artwork with recently repaired architecture.
+Change the atmosphere to distinctly darker, ominous, haunted NIGHT BEFORE A STORM. The current bright cobbles and cheerful cyan sky dominate too much.
+Darken the ambient illumination to deep midnight indigo, muted blue-violet and charcoal. Reduce the brightness and visual contrast of individual foreground paving stones and their large orange reflections, so the road recedes into shadow instead of dominating the picture. Keep the same paving geometry.
+Add natural low drifting blue-gray FOG in several depth layers: across sections of the foreground cobbles, flowing through the middle street, between houses and garden walls, among the trees, and around the lower castle hillside. Wisps partially obscure the ground and distant details. This is spatial atmospheric fog in the scene, not a flat gray overlay over the entire illustration. Keep nearby architecture edges, lamps and banners readable.
+Replace much of the cheerful bright sky with brooding layered storm clouds; partially shroud the moon and reduce the busy stars. Add ONE OR TWO slender distant branching LIGHTNING bolts high in the sky or behind the distant mountains, cool pale lavender-white, restrained scale, integrated into the clouds. No giant dominant bolt or overall white flash. The moon still gives a dim cool rim to the castle.
+Keep small warm amber/orange windows and real attached torches/lanterns as inviting but uneasy points of light against the dark. Light should diffuse gently through nearby fog. Keep enough local color and crisp ink outlines to retain the existing hand-painted cartoon fantasy game art style; do not turn it into photorealism.
+Preserve the exact composition, camera, empty village, road, clean structural timber, stone walls, roofs, skull banners, mountains, castle silhouette, and single OPEN main castle gateway. No people, creatures, faces in fog, equipment, new buildings, text, logo, interface or frame. Do not reintroduce malformed architectural details or a second castle doorway. Change weather and lighting only.
+Maintain exactly the tall portrait framing, with the long street and castle at upper right. Return one complete TALL PORTRAIT background.

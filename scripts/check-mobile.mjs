@@ -35,6 +35,9 @@ try {
       await page.getByRole('button', { name: 'Jouer', exact: true }).tap();
       await page.locator('.world-canvas[data-ready=true]').waitFor();
       await page.locator('.loading-art').waitFor({ state: 'hidden' });
+      assert.equal(await page.locator('.sidebar').isVisible(), true,
+        'Selection and the first objective are open when a game starts');
+      await page.getByRole('button', { name: 'Fermer les détails', exact: true }).tap();
       await page
         .getByRole('button', { name: 'Mettre en pause', exact: true })
         .tap();
@@ -74,7 +77,14 @@ try {
       await page.locator('main').getAttribute('data-compact'),
       'true',
     );
-    assert.equal(await page.locator('.sidebar').isVisible(), false);
+    assert.equal(await page.locator('.sidebar').isVisible(), true,
+      'Touch players can understand their selection immediately');
+    const closeDetails = page.getByRole('button', { name: 'Fermer les détails', exact: true });
+    const closeBox = await closeDetails.boundingBox();
+    assert.equal(closeBox.width, 44, 'The close action is a small touch target');
+    assert.equal(await closeDetails.innerText(), '', 'Only the cross is visible');
+    await page.screenshot({ path: join(output, `${viewport.width}-initial-details.png`) });
+    await closeDetails.tap();
     assert.equal(await page.locator('.bottom-bar').isVisible(), false);
     assert.equal(await page.locator('.resource.mana').isVisible(), true);
     assert.ok(
@@ -143,6 +153,10 @@ try {
         'Navigation shares the desktop faction button');
     }
     const wheel = page.getByRole('navigation', { name: 'Commandes du domaine' });
+    const pauseBox = await wheel.locator('.wheel-pause').boundingBox();
+    const gearBox = await wheel.locator('.wheel-settings').boundingBox();
+    assert.equal(pauseBox.width, gearBox.width, 'Pause matches settings in size');
+    assert.equal(pauseBox.height, gearBox.height);
     assert.ok(await wheel.isVisible(), 'The desktop domain wheel is available on touch');
     for (const button of await wheel.getByRole('button').all()) {
       const box = await button.boundingBox();
@@ -156,6 +170,8 @@ try {
     assert.equal(await page.locator('.sidebar').isVisible(), true);
     await page.getByRole('button', { name: 'Fermer les détails' }).tap();
     await nav.getByRole('button', { name: 'Recruter', exact: true }).tap();
+    assert.equal(await page.locator('.bottom-bar').evaluate((el) => getComputedStyle(el).backgroundColor),
+      'rgba(0, 0, 0, 0)', 'No dark sheet behind the illustrated cards');
     if (viewport.height > 500) assert.ok(await page.getByRole('tab', { name: 'Construire des bâtiments' }).isVisible());
     assert.equal(await page.locator('.recruit-card > .pack-paper').count(), 0,
       'Recruitment uses the new desktop illustration frames');

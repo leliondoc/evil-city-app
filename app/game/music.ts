@@ -44,22 +44,31 @@ export class GameMusic {
 
   unlock(context: AudioContext) {
     if (this.disposed || this.failed || this.muted || this.volume === 0) return;
-    if (!this.element) {
+    const element = this.prepare();
+    if (!this.source) {
       this.context = context;
-      this.element = new Audio();
-      this.element.preload = 'none';
       this.gain = context.createGain();
       this.gain.gain.value = this.volume;
       this.envelope = context.createGain();
       this.envelope.gain.value = 0;
-      this.source = context.createMediaElementSource(this.element);
+      this.source = context.createMediaElementSource(element);
       this.source
         .connect(this.envelope)
         .connect(this.gain)
         .connect(context.destination);
+    }
+    this.sync();
+  }
+
+  /** Fetch the menu before a gesture, then reuse that exact element for playback. */
+  private prepare() {
+    if (!this.element) {
+      this.element = new Audio();
+      this.element.preload = this.mode === 'menu' ? 'auto' : 'none';
       this.element.onended = () => this.ended();
       this.element.onplaying = () => {
-        if (this.blocked()) {
+        const context = this.context;
+        if (!context || this.blocked()) {
           this.sync();
           return;
         }
@@ -97,7 +106,7 @@ export class GameMusic {
       };
       this.load();
     }
-    this.sync();
+    return this.element;
   }
 
   configure(muted: boolean, volume: number) {
@@ -112,6 +121,7 @@ export class GameMusic {
     }
     this.muted = muted;
     this.volume = nextVolume;
+    if (this.mode === 'menu' && !this.blocked()) this.prepare();
     this.sync();
   }
 

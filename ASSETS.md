@@ -20,9 +20,9 @@ La licence indiquée sur la page officielle autorise l’usage personnel et comm
 
 ## Illustration du menu principal
 
-Les fonds `public/menu/evil-city-nightfall.png` (paysage) et `public/menu/evil-city-nightfall-portrait.png` (téléphone) ont été créés puis retouchés avec l’outil **imagegen intégré**, le 12 septembre 2026. À la demande de l’utilisateur, tous les personnages et leurs équipements ont été retirés des deux formats. La rue pavée, le village, les lanternes, les bannières et le château sous la lune constituent désormais le décor. Les formes de bois incohérentes du premier plan et la clôture derrière l’ancienne archère ont été retirées ou remplacées par une maçonnerie cohérente. L’entrée principale du château reste ouverte.
+Les fonds `public/menu/evil-city-nightfall.webp` (paysage) et `public/menu/evil-city-nightfall-portrait.webp` (téléphone) ont été créés puis retouchés avec l’outil **imagegen intégré**, le 12 septembre 2026. À la demande de l’utilisateur, tous les personnages et leurs équipements ont été retirés des deux formats. La rue pavée, le village, les lanternes, les bannières et le château sous la lune constituent désormais le décor. Les formes de bois incohérentes du premier plan et la clôture derrière l’ancienne archère ont été retirées ou remplacées par une maçonnerie cohérente. L’entrée principale du château reste ouverte.
 
-Les sources approuvées sont conservées dans `art-source/menu/`. `scripts/compose-menu-art.py` les copie à l’identique vers les deux fichiers publics, sans ajouter de personnage. L’ancienne source du lancier reste disponible dans `art-source/menu/lancer-generated.png` pour archivage ; elle ne fait pas partie du menu. Le titre, les boutons et les particules sont rendus séparément dans l’interface, sans voile ni filtre sur l’image. Les sprites en jeu et les animations du bestiaire restent les ressources originales. Les consignes exactes sont conservées dans [docs/start-menu-art.md](docs/start-menu-art.md).
+Les sources approuvées sont conservées dans `art-source/menu/`. `scripts/compose-menu-art.py` exporte les sources PNG en WebP, qualité 90 et méthode 6 avec Pillow, sans redimensionnement ni ajout de personnage. Les anciens PNG publics sont retirés. Les façades, supports des torches et arches ont été nettoyés, puis l’éclairage a été assombri avec de la brume et des éclairs discrets selon la nouvelle direction artistique. L’ancienne source du lancier reste disponible dans `art-source/menu/lancer-generated.png` pour archivage ; elle ne fait pas partie du menu. Le titre, les boutons et les particules sont rendus séparément dans l’interface, sans filtre CSS global supplémentaire : l’atmosphère est intégrée à l’illustration. Les sprites en jeu et les animations du bestiaire restent les ressources originales. Les consignes exactes sont conservées dans [docs/start-menu-art.md](docs/start-menu-art.md).
 
 ## Créatures jouables
 
@@ -73,7 +73,7 @@ Les fichiers suivants ont été fournis par l’utilisateur et copiés sans rée
 
 | Fichier fourni | Fichier intégré | Déclenchement |
 | --- | --- | --- |
-| `Action 1.mp3` | `menu-music.mp3` | Menu principal, en boucle, après une interaction autorisant le son. Arrêt en entrant dans la partie. |
+| `Action 1.mp3` | `menu-music.mp3` | Menu principal, préchargé dès l’accueil si le son est activé ; en boucle après la première interaction autorisant le son. Arrêt en entrant dans la partie. |
 | `Action 2.mp3` | `human-theme.mp3` | Départ effectif d’une attaque de gardes de la mairie, y compris les patrouilles contre le racket. Sans boucle. |
 | `Action 5.mp3` | `guild-theme.mp3` | Départ des héros de la guilde, y compris ses défenseurs. Sans boucle. |
 | `Ambience 1.mp3` | `ambiance-music.mp3` | Interlude après deux morceaux ordinaires, avec une pause de 2 à 4 minutes avant et après. Une seule lecture. |
