@@ -4,7 +4,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'art-source' / 'menu'
-OUTPUT = ROOT / 'public' / 'menu'
+OUTPUT = SOURCE / 'exports'
 
 
 def export_menu_art():

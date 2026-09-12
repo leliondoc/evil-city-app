@@ -86,3 +86,43 @@ for (const interruption of ['capture', 'sabotage']) {
     assert.equal(s.workers.length, 2, 'Only the lost workers are replaced');
   });
 }
+
+test('Sabotage displaces living food workers without permanently preventing recruitment after repair', () => {
+  const s = populatedGame();
+  const site = s.sites.find((site) => site.kind === 'food');
+  const delivered = s.economy.delivered.food;
+  const displaced = new Set(s.workers.filter((w) => w.site === site.id).map((w) => w.id));
+  s.economy.stocks = { gold: 0, wood: 0, food: 0 };
+  site.hp = 0;
+  site.repairAt = site.recruitAt = s.elapsed + 90;
+  tick(s, 0.1);
+  assert.equal(s.workers.filter((w) => w.site === site.id).length, 0);
+  assert.equal(site.replacements, 2);
+  assert.equal(s.domain.corpses.length, 0, 'Displaced workers were not killed');
+  tick(s, 89.8);
+  assert.equal(site.hp, 0);
+  assert.equal(s.workers.filter((w) => w.site === site.id).length, 0);
+  assert.equal(s.economy.stocks.food, 0);
+  tick(s, 0.2);
+  assert.equal(site.hp, site.maxHp, 'Other routes fund the ordinary repair');
+  assert.equal(s.workers.filter((w) => w.site === site.id).length, 1);
+  tick(s, 90);
+  assert.equal(s.workers.filter((w) => w.site === site.id).length, 2);
+  assert.equal(site.replacements, 0);
+  assert.ok(s.workers.every((w) => !displaced.has(w.id)));
+  assert.ok(s.economy.delivered.food > delivered, 'Food deliveries actually resume');
+});
+
+test('Workers displaced by capture can return when humans reclaim a route with empty stocks', () => {
+  const s = populatedGame();
+  const site = s.sites.find((site) => site.kind === 'food');
+  s.economy.stocks = { gold: 0, wood: 0, food: 0 };
+  s.lots[site.home].owned = true;
+  tick(s, 0.1);
+  assert.equal(site.replacements, 2);
+  assert.equal(s.workers.filter((w) => w.site === site.id).length, 0);
+  s.lots[site.home].owned = false;
+  tick(s, 60);
+  assert.equal(s.workers.filter((w) => w.site === site.id).length, 2);
+  assert.equal(site.replacements, 0);
+});

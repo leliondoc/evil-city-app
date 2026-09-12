@@ -63,8 +63,29 @@ try {
     );
     await page
       .locator('.selection-panel')
-      .getByRole('button', { name: 'Passer au niveau 2', exact: true })
+      .getByRole('button', { name: /^Niveau 2 · \d+ s$/ })
       .click();
+    assert.ok(
+      await wheel
+        .getByRole('button', { name: 'Voir le manoir, niveau 1', exact: true })
+        .isVisible(),
+      'Starting an upgrade keeps the existing level until construction completes',
+    );
+    await page.getByRole('progressbar', { name: 'Avancement de l’amélioration' }).waitFor();
+    // Exercise the real timed simulation without waiting a minute per viewport.
+    await page.evaluate(async () => {
+      const { tick } = await import('/app/game/engine.ts');
+      const state = window.manorState;
+      const manor = state.lots.find((lot) => lot.kind === 'hq');
+      if (!manor?.upgrading) throw new Error('The upgrade must be queued first');
+      for (let step = 0; step < 1000 && manor.upgrading; step++) tick(state, 0.1);
+      if (manor.upgrading) throw new Error('The manor upgrade did not complete');
+    });
+    await wheel.getByRole('button', { name: 'Reprendre', exact: true }).click();
+    await wheel
+      .getByRole('button', { name: 'Voir le manoir, niveau 2', exact: true })
+      .waitFor();
+    await wheel.getByRole('button', { name: 'Mettre en pause', exact: true }).click();
     assert.ok(
       await wheel
         .getByRole('button', { name: 'Voir le manoir, niveau 2', exact: true })
@@ -157,7 +178,8 @@ try {
     .click();
   await page.getByRole('dialog').waitFor();
   await page.getByRole('button', { name: 'Fermer', exact: true }).click();
-  assert.equal(await page.locator('.command-wheel').count(), 0);
+  assert.equal(await page.locator('.mobile-command-dock .command-wheel').count(), 1,
+    'Mobile keeps the same command wheel in its dedicated dock');
   assert.ok(
     await page
       .getByRole('button', { name: 'Reprendre', exact: true })

@@ -76,7 +76,8 @@ type Motion = { action: Animation; since: number };
 export class Renderer {
   private scene = new PixiScene();
   private draw = this.scene.actors;
-  private pixels = new Map<AssetKey, Uint8ClampedArray>();
+  // Picking only needs opacity; retaining decoded RGBA copies quadruples memory.
+  private alphaMasks = new Map<AssetKey, Uint8Array>();
   private bounds = new Map<
     AssetKey,
     { x: number; y: number; width: number; height: number }
@@ -99,9 +100,11 @@ export class Renderer {
     since: number;
   } | null = null;
   private resizeObserver: ResizeObserver;
+  private pixelRatio = 1;
   private frame = 0;
   private disposed = false;
   private suspended = false;
+  private contextLost = false;
   private initialized = false;
   private width = 0;
   private height = 0;
@@ -151,6 +154,9 @@ export class Renderer {
     canvas.addEventListener('pointerleave', this.pointerLeave);
     canvas.addEventListener('pointerup', this.pointerUp);
     canvas.addEventListener('pointercancel', this.pointerCancel);
+    canvas.addEventListener('lostpointercapture', this.lostPointerCapture);
+    canvas.addEventListener('webglcontextlost', this.webglContextLost);
+    canvas.addEventListener('webglcontextrestored', this.webglContextRestored);
     canvas.addEventListener('contextmenu', this.contextMenu);
     canvas.addEventListener('wheel', this.wheel, { passive: false });
     void this.load();
@@ -202,16 +208,18 @@ export class Renderer {
                     c.height = im.height;
                     const ctx = c.getContext('2d', {
                       willReadFrequently: true,
-                    })!;
+                    });
+                    if (!ctx) throw new Error(`Cannot read sprite ${key}`);
                     // Match the army menu's recoloring once, when loading the marker.
                     if (key === 'ui-sword')
                       ctx.filter = 'sepia(0.85) saturate(1.8) hue-rotate(315deg)';
                     ctx.drawImage(im, 0, 0);
                     this.scene.textures.add(key, key === 'ui-sword' ? c : im);
-                    this.pixels.set(
-                      key,
-                      ctx.getImageData(0, 0, c.width, c.height).data,
-                    );
+                    const rgba = ctx.getImageData(0, 0, c.width, c.height).data;
+                    const alpha = new Uint8Array(c.width * c.height);
+                    for (let i = 0; i < alpha.length; i++)
+                      alpha[i] = rgba[i * 4 + 3];
+                    this.alphaMasks.set(key, alpha);
                     resolve();
                   } catch (error) {
                     reject(error);
@@ -223,7 +231,7 @@ export class Renderer {
           ),
       );
       if (this.disposed) return;
-      this.makeTerrain();
+      if (!this.contextLost) this.makeTerrain();
       this.makeDecorations();
       this.resize();
       this.ready = true;
@@ -241,6 +249,7 @@ export class Renderer {
   }
   private resize() {
     const r = this.canvas.getBoundingClientRect();
+    this.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
     this.uiScale =
       Number(
         getComputedStyle(this.canvas).getPropertyValue('--game-ui-scale'),
@@ -259,6 +268,22 @@ export class Renderer {
     this.scene.resize(r.width, r.height);
     this.recalculate();
   }
+  private webglContextLost = (event: Event) => {
+    // Mobile WebViews may discard GPU resources while backgrounded.
+    event.preventDefault();
+    this.contextLost = true;
+    cancelAnimationFrame(this.frame);
+    this.pointerCancel();
+  };
+  private webglContextRestored = () => {
+    if (this.disposed) return;
+    this.contextLost = false;
+    // Pixi reuploads source images, but RenderTexture pixels have no CPU copy.
+    this.ownership = '';
+    // Wait until Pixi's own context-restoration listeners have reset its systems.
+    if (this.initialized && !this.suspended)
+      this.frame = requestAnimationFrame(this.render);
+  };
   private recalculate() {
     const view = this.viewport;
     this.scale =
@@ -348,8 +373,8 @@ export class Renderer {
       if (h.flip) ix = a.frameWidth - 1 - ix;
       const iy = Math.floor(((y - h.y) / h.h) * source.height);
       if (
-        this.pixels.get(h.key)![
-          ((source.y + iy) * a.width + source.x + ix) * 4 + 3
+        this.alphaMasks.get(h.key)![
+          (source.y + iy) * a.width + source.x + ix
         ] > 55
       )
         return h.selection;
@@ -539,6 +564,13 @@ export class Renderer {
     this.dragging = false;
     this.updateCursor();
   };
+  private lostPointerCapture = (event: PointerEvent) => {
+    if (
+      this.down?.pointerId === event.pointerId ||
+      this.touches.has(event.pointerId)
+    )
+      this.pointerCancel();
+  };
   public cancelGesture() {
     this.pointerCancel();
   }
@@ -646,14 +678,14 @@ export class Renderer {
     const a = ASSETS[key];
     let bounds = this.bounds.get(key);
     if (!bounds) {
-      const pixels = this.pixels.get(key)!;
+      const alpha = this.alphaMasks.get(key)!;
       let left = a.frameWidth,
         right = 0,
         top = a.height,
         bottom = 0;
       for (let y = 0; y < a.height; y++)
         for (let x = 0; x < a.frameWidth; x++) {
-          if (pixels[(y * a.width + x) * 4 + 3] > 40) {
+          if (alpha[y * a.width + x] > 40) {
             left = Math.min(left, x);
             right = Math.max(right, x);
             top = Math.min(top, y);
@@ -746,7 +778,7 @@ export class Renderer {
     const cacheKey = `${hit.key}:${hit.frame}`;
     let bounds = this.markerBounds.get(cacheKey);
     if (!bounds) {
-      const pixels = this.pixels.get(hit.key)!;
+      const alpha = this.alphaMasks.get(hit.key)!;
       let left = source.width,
         top = source.height,
         right = -1,
@@ -754,8 +786,8 @@ export class Renderer {
       for (let y = 0; y < source.height; y++)
         for (let x = 0; x < source.width; x++) {
           if (
-            pixels[
-              ((source.y + y) * ASSETS[hit.key].width + source.x + x) * 4 + 3
+            alpha[
+              (source.y + y) * ASSETS[hit.key].width + source.x + x
             ] > 40
           ) {
             left = Math.min(left, x);
@@ -892,7 +924,11 @@ export class Renderer {
     if (!suspended && this.initialized && !this.disposed) this.render();
   }
   private render = () => {
-    if (this.disposed || this.suspended) return;
+    if (this.disposed || this.suspended || this.contextLost) return;
+    // Display density can change without a ResizeObserver notification (multiple
+    // desktop monitors). Refresh once on the next frame, including after resume.
+    if (this.pixelRatio !== Math.min(window.devicePixelRatio || 1, 2))
+      this.resize();
     this.updateCursor();
     const s = this.getState(),
       t = this.reducedMotion ? 0 : s.elapsed;
@@ -1483,8 +1519,10 @@ export class Renderer {
               y,
               e.kind === 'hero' ? 28 : 21,
               11,
-              selected ? '#ff5b5b' : e.kind === 'hero' ? '#ffc85c' : '#ed886f',
-              (selected ? 2.5 : 2) / this.scale, 0.75);
+              '#ff5b5b',
+              2.5 / this.scale,
+              0.75,
+            );
           const sample = animationFrame(sequence, t - motion.since);
           const hit = this.sprite(
             sample.key,
@@ -2013,15 +2051,25 @@ export class Renderer {
   destroy() {
     if (this.disposed) return;
     this.disposed = true;
-    this.scene.destroy();
-    this.pixels.clear();
+    this.pointerCancel();
     cancelAnimationFrame(this.frame);
+    this.scene.destroy();
+    this.alphaMasks.clear();
     this.resizeObserver.disconnect();
     this.canvas.removeEventListener('pointerdown', this.pointerDown);
     this.canvas.removeEventListener('pointermove', this.pointerMove);
     this.canvas.removeEventListener('pointerleave', this.pointerLeave);
     this.canvas.removeEventListener('pointerup', this.pointerUp);
     this.canvas.removeEventListener('pointercancel', this.pointerCancel);
+    this.canvas.removeEventListener(
+      'lostpointercapture',
+      this.lostPointerCapture,
+    );
+    this.canvas.removeEventListener('webglcontextlost', this.webglContextLost);
+    this.canvas.removeEventListener(
+      'webglcontextrestored',
+      this.webglContextRestored,
+    );
     this.canvas.removeEventListener('contextmenu', this.contextMenu);
     this.canvas.removeEventListener('wheel', this.wheel);
   }

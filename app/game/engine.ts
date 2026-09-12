@@ -55,6 +55,8 @@ export type CreatureKind =
   | 'specter'
   | 'alchemist';
 export type Point = { x: number; y: number };
+const finitePoint = (point: Point) =>
+  Number.isFinite(point.x) && Number.isFinite(point.y);
 export type Resources = {
   gold: number;
   wood: number;
@@ -638,9 +640,7 @@ export function resourceApproach(
 ): Point {
   return site.kind === 'wood'
     ? { x: site.x + 0.75, y: site.y + 0.25 }
-    : site.kind === 'gold'
-      ? { x: site.x - 1, y: site.y }
-      : { x: site.x - 1, y: site.y };
+    : { x: site.x - 1, y: site.y };
 }
 export function suppliesAvailable(
   s: State,
@@ -669,10 +669,8 @@ function spawnWorker(s: State, site: ResourceSite) {
     progress: 0,
   });
 }
-export function raidSupplyReason(s: State, target: Selection) {
+function supplyTargetReason(s: State, target: Selection) {
   if (s.won || s.lost) return 'La partie est terminée.';
-  if (!army(s).length)
-    return 'Recrutez des combattants pour piller les humains.';
   if (target.type === 'resource') {
     const site = s.sites.find((site) => site.id === target.id);
     if (!site || !supplyActive(s, site)) return 'Ce site ne produit plus.';
@@ -681,6 +679,13 @@ export function raidSupplyReason(s: State, target: Selection) {
       return 'Ce paysan a quitté le quartier.';
   } else return 'Choisissez un paysan ou un site de production.';
   return '';
+}
+export function raidSupplyReason(s: State, target: Selection) {
+  const error = supplyTargetReason(s, target);
+  if (error) return error;
+  if (!army(s).length)
+    return 'Recrutez des combattants pour piller les humains.';
+  return armyProvocationReason(s);
 }
 export function raidSupply(s: State, target: Selection) {
   if (target.type !== 'resource' && target.type !== 'worker')
@@ -691,13 +696,15 @@ export function raidSupply(s: State, target: Selection) {
     target.type === 'resource'
       ? resourceApproach(s.sites.find((site) => site.id === target.id)!)
       : s.workers.find((w) => w.id === target.id)!;
-  for (const u of army(s))
+  for (const u of army(s)) {
+    if (provocationReason(s, u)) continue;
     assign(
       u,
       point,
       target.type === 'resource' ? 'sabotage' : 'hunt',
       target.id,
     );
+  }
   markAttackOrder(s, { type: target.type, id: target.id });
   announce(
     s,
@@ -789,10 +796,13 @@ function advanceEconomy(s: State, dt: number) {
 function cleanupSupplies(s: State) {
   for (const w of s.workers) {
     const site = s.sites[w.site];
+    // Route closures displace existing workers too. Keep their replacement
+    // allowance so a repaired food route cannot remain starved of recruitment.
+    if (w.hp <= 0 || s.lots[site.home].owned || site.hp <= 0)
+      site.replacements = Math.min(2, site.replacements + 1);
     if (w.hp <= 0) {
       leaveCorpse(s, w, 'human');
       creditResource(s, site.kind, w.cargo || 4);
-      site.replacements = Math.min(2, site.replacements + 1);
       site.recruitAt = Math.max(site.recruitAt, s.elapsed + 40);
       announce(
         s,
@@ -1058,6 +1068,7 @@ const PATH_MIN_X = -14;
 const PATH_MAX_X = 47;
 const PATH_MAX_Y = 36;
 const PATH_WIDTH = PATH_MAX_X - PATH_MIN_X + 1;
+const MAX_SIGHT_STEPS = Math.ceil(Math.hypot(PATH_WIDTH, PATH_MAX_Y + 1) * 4);
 export function navigationTarget(point: Point): Point {
   let x = Math.min(PATH_MAX_X, Math.max(PATH_MIN_X, Math.floor(point.x)));
   let y = Math.min(PATH_MAX_Y, Math.max(0, Math.floor(point.y)));
@@ -1093,6 +1104,9 @@ function crossesGate(
   );
 }
 export function findPath(from: Point, to: Point): Point[] {
+  // NaN would index the predecessor array with an invalid key and make path
+  // reconstruction loop forever. Reject malformed input before quantizing it.
+  if (!finitePoint(from) || !finitePoint(to)) return [];
   const sx = Math.min(PATH_MAX_X, Math.max(PATH_MIN_X, Math.floor(from.x))),
     sy = Math.min(PATH_MAX_Y, Math.max(0, Math.floor(from.y)));
   const destination = navigationTarget(to),
@@ -1352,14 +1366,25 @@ export function army(s: State) {
       !['tower', 'collect-loot', 'deliver-loot'].includes(u.task),
   );
 }
-export function attackReason(s: State, id: number) {
+function armyProvocationReason(s: State): string {
+  const fighters = army(s);
+  return fighters.length && fighters.every((u) => provocationReason(s, u))
+    ? provocationReason(s, fighters[0])
+    : '';
+}
+function attackTargetReason(s: State, id: number) {
   if (s.won || s.lost) return 'La partie est terminée.';
   const l = s.lots[id];
   if (!l || l.owned || l.kind === 'empty')
     return 'Choisissez un bâtiment ennemi.';
   if (!adjacent(s, l)) return 'Prenez d’abord une parcelle voisine.';
-  if (army(s).length === 0) return 'Recrutez des combattants avant d’attaquer.';
   return '';
+}
+export function attackReason(s: State, id: number) {
+  const error = attackTargetReason(s, id);
+  if (error) return error;
+  if (!army(s).length) return 'Recrutez des combattants avant d’attaquer.';
+  return armyProvocationReason(s);
 }
 export function attack(s: State, id: number) {
   const error = attackReason(s, id);
@@ -1378,8 +1403,8 @@ export function retreat(s: State) {
   announce(s, 'Repli au manoir. Les blessés s’y rétabliront.');
 }
 export function moveUnit(s: State, id: number, point: Point) {
-  if (s.won || s.lost) return;
-  const u = s.units.find((v) => v.id === id);
+  if (s.won || s.lost || !finitePoint(point)) return;
+  const u = s.units.find((v) => v.id === id && v.hp > 0);
   if (!u) return;
   if (provocationReason(s, u)) return;
   assign(u, point, 'move', null);
@@ -1438,7 +1463,7 @@ export function commandUnit(
       `${CREATURES[unit.kind].name} intercepte ${enemyDefinition(enemy).name.toLowerCase()}.`,
     );
   } else if (lot && !lot.owned && lot.kind !== 'empty') {
-    const error = attackReason(s, lot.id);
+    const error = attackTargetReason(s, lot.id);
     if (error) return error;
     assign(unit, entrance(lot), 'attack', lot.id);
     markAttackOrder(s, { type: 'lot', id: lot.id });
@@ -1447,7 +1472,7 @@ export function commandUnit(
       `${CREATURES[unit.kind].name} attaque ${BUILDINGS[lot.kind].name.toLowerCase()}.`,
     );
   } else if (target?.type === 'worker' || target?.type === 'resource') {
-    const error = raidSupplyReason(s, target);
+    const error = supplyTargetReason(s, target);
     if (error) return error;
     const destination =
       target.type === 'resource'
@@ -1465,6 +1490,7 @@ export function commandUnit(
       `${CREATURES[unit.kind].name} part couper le ravitaillement humain.`,
     );
   } else {
+    if (!finitePoint(point)) return 'Cette destination est invalide.';
     moveUnit(s, id, point);
   }
   return '';
@@ -1505,7 +1531,7 @@ export function commandUnits(
   if (!ordered) return error;
   announce(
     s,
-    `Ordre donné à ${ordered} créatures.${ordered < living.length ? ' Les gobelins restent à leur tâche : ils ne combattent pas.' : ''}`,
+    `Ordre donné à ${ordered} créatures.${ordered < living.length && error ? ` ${error}` : ''}`,
   );
   return '';
 }
@@ -1601,6 +1627,8 @@ export function gather(
   const site = s.sites.find((v) => v.id === siteId);
   if (!u || !site)
     return 'Choisissez un gobelin et une source de bois, d’or ou de vivres.';
+  const locked = provocationReason(s, u);
+  if (locked) return locked;
   if (site.hp <= 0) return 'Ce site est détruit : attendez sa réparation.';
   const point = gatheringApproach(site, u);
   if (!findPath(u, point).length && distanceBetween(u, point) >= 1)
@@ -1782,6 +1810,13 @@ function nearest<T extends Point & { hp: number }>(
   return closest;
 }
 type Walker = Unit | Enemy | HumanWorker;
+function remainingPathDistance(actor: Walker) {
+  return actor.path.reduce(
+    (total, point, i) =>
+      total + distanceBetween(i ? actor.path[i - 1] : actor, point),
+    0,
+  );
+}
 function inStreet(point: Point) {
   const x = Math.floor(point.x),
     y = Math.floor(point.y);
@@ -1801,9 +1836,15 @@ function trafficDistance(
   // Courtyards stay free: units must be able to assemble at a building entrance.
   if (!inStreet(actor) && !inStreet(destination)) return distance;
   const ownArmy = s.units.some((unit) => unit.id === actor.id);
+  const allies = ownArmy ? s.units : s.enemies;
+  const allyCount = allies.length + (ownArmy ? 0 : s.workers.length);
   const goal = actor.path.at(-1);
+  let actorRemaining: number | undefined;
   let allowed = distance;
-  for (const other of [...s.units, ...s.enemies, ...s.workers]) {
+  // Opposing factions do not block traffic. Iterate allies directly, without
+  // rebuilding the actor list or scanning the army again for every neighbor.
+  for (let i = 0; i < allyCount; i++) {
+    const other = i < allies.length ? allies[i] : s.workers[i - allies.length];
     if (other.id === actor.id || other.hp <= 0 || !inStreet(other)) continue;
     const forward = (other.x - actor.x) * dx + (other.y - actor.y) * dy;
     const sideways = Math.abs(
@@ -1816,42 +1857,32 @@ function trafficDistance(
         : 1.15;
     if (forward < -0.02 || forward > allowed + gap || sideways >= gap * 0.8)
       continue;
-    const friendly = ownArmy === s.units.some((unit) => unit.id === other.id);
-    // Combat handles opponents; civilian traffic must never blockade construction.
-    if (!friendly) continue;
     // The marching file opens into combat positions around an engaged ally.
     if ('fighting' in other && other.fighting) continue;
     const next = other.path.find(
       (point) => distanceBetween(other, point) > 0.02,
     );
     if (!next) continue;
-    if (friendly && next) {
-      const length = distanceBetween(other, next);
-      const alignment =
-        ((next.x - other.x) * dx + (next.y - other.y) * dy) / length;
-      const otherGoal = other.path.at(-1);
-      const sameDestination =
-        goal && otherGoal && distanceBetween(goal, otherGoal) < 0.1;
-      if (sameDestination) {
-        const remaining = (walker: Walker) =>
-          walker.path.reduce(
-            (total, p, i) =>
-              total + distanceBetween(i ? walker.path[i - 1] : walker, p),
-            0,
-          );
-        const difference = remaining(actor) - remaining(other);
-        if (
-          difference < -0.02 ||
-          (Math.abs(difference) <= 0.02 && actor.id < other.id)
-        )
-          continue;
-      }
-      // Only follow the same convoy; crossing routes must remain open.
-      if (alignment < -0.5) continue;
-      if (Math.abs(alignment) < 0.5 && !sameDestination) continue;
+    const length = distanceBetween(other, next);
+    const alignment =
+      ((next.x - other.x) * dx + (next.y - other.y) * dy) / length;
+    const otherGoal = other.path.at(-1);
+    const sameDestination =
+      goal && otherGoal && distanceBetween(goal, otherGoal) < 0.1;
+    if (sameDestination) {
+      actorRemaining ??= remainingPathDistance(actor);
+      const difference = actorRemaining - remainingPathDistance(other);
+      if (
+        difference < -0.02 ||
+        (Math.abs(difference) <= 0.02 && actor.id < other.id)
+      )
+        continue;
     }
+    // Only follow the same convoy; crossing routes must remain open.
+    if (alignment < -0.5) continue;
+    if (Math.abs(alignment) < 0.5 && !sameDestination) continue;
     // Let one member lead out when a group starts at exactly the same spot.
-    if (friendly && Math.abs(forward) < 0.02 && actor.id < other.id) continue;
+    if (Math.abs(forward) < 0.02 && actor.id < other.id) continue;
     allowed = Math.min(
       allowed,
       Math.max(0, forward - Math.sqrt(gap * gap - sideways * sideways)),
@@ -1905,7 +1936,10 @@ export function defend(s: State, id = 6): string {
   if (!s.lots[id]?.owned) return 'Choisissez un bâtiment à vous.';
   if (!army(s).length)
     return 'Recrutez des combattants pour défendre le quartier.';
-  for (const u of army(s)) assign(u, entrance(s.lots[id]), 'move', null);
+  const locked = armyProvocationReason(s);
+  if (locked) return locked;
+  for (const u of army(s))
+    if (!provocationReason(s, u)) assign(u, entrance(s.lots[id]), 'move', null);
   announce(
     s,
     `Votre armée se rassemble devant ${BUILDINGS[s.lots[id].kind].name.toLowerCase()}.`,
@@ -1918,6 +1952,8 @@ export function intercept(s: State, id: number): string {
   if (!enemy) return 'Cet ennemi a déjà été vaincu.';
   if (!army(s).length)
     return 'Recrutez des combattants pour intercepter cet ennemi.';
+  const locked = armyProvocationReason(s);
+  if (locked) return locked;
   for (const u of army(s)) {
     if (provocationReason(s, u)) continue;
     assign(u, enemy, 'defend', id);
@@ -2171,7 +2207,11 @@ function loseLot(s: State, lot: Lot) {
   );
 }
 export function clearShot(from: Point, to: Point) {
+  if (!finitePoint(from) || !finitePoint(to)) return false;
   const steps = Math.ceil(distanceBetween(from, to) * 4);
+  // No valid sight line is longer than the world's diagonal. Also bound scans
+  // when finite but enormous inputs overflow the computed distance.
+  if (steps > MAX_SIGHT_STEPS) return false;
   for (let i = 1; i < steps; i++)
     if (
       buildingBlocked(

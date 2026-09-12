@@ -31,7 +31,7 @@ try {
     selection: window.packRenderer.selection,
     resources: window.packState.resources,
     units: window.packState.units.map(({ id, task, target, path }) => ({ id, task, target, path })),
-    lots: window.packState.lots.map(({ id, kind, construction, rallyPoint }) => ({ id, kind, construction, rallyPoint })),
+    lots: window.packState.lots.map(({ id, kind, construction, upgrading }) => ({ id, kind, construction, upgrading })),
   }));
   const buildButton = page.getByRole('button', { name: 'Grotte gobeline', exact: true });
   const cancelPlacement = async (valid) => {

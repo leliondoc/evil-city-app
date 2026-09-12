@@ -11,7 +11,7 @@ import {
   tick,
 } from '../app/game/engine.ts';
 import { restUnit, advanceSpecialUnit } from '../app/game/domain.ts';
-import { towerInfluence, TOWER_RANGE } from '../app/game/strategy.ts';
+import { towerInfluence, towerOrder, TOWER_RANGE } from '../app/game/strategy.ts';
 function setup() {
   const s = establishedGame();
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
@@ -163,5 +163,24 @@ test('Tower overlays expose the real gameplay radii of the stationed creature', 
       towerInfluence(s, t).map((r) => r.radius),
       radii,
     );
+  }
+});
+
+test('A stationed soldier can leave its tower to attack a building or supply route even when no roaming army exists', () => {
+  const s = setup();
+  const u = unit(s, 'skeleton');
+  s.units = [u];
+  const tower = s.strategy.towers[0];
+  tower.owned = true;
+  for (const [target, destination, task] of [
+    [{ type: 'lot', id: 0 }, entrance(s.lots[0]), 'attack'],
+    [{ type: 'resource', id: s.sites[0].id }, s.sites[0], 'sabotage'],
+  ]) {
+    Object.assign(u, { x: tower.x, y: tower.y, path: [], task: 'idle' });
+    assert.equal(towerOrder(s, tower.id, u.id), '');
+    assert.equal(commandUnit(s, u.id, target, destination), '');
+    assert.equal(u.task, task);
+    assert.equal(u.target, target.id);
+    assert.ok(u.path.length);
   }
 });

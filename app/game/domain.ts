@@ -20,12 +20,12 @@ import {
 } from './engine.ts';
 
 export const BRIBE_GOLD = 100;
-export const BRIBE_DELAY = 45;
+const BRIBE_DELAY = 45;
 export const REMAINS_CAP = 6;
-export const RITUAL_REMAINS = 2;
-export const RITUAL_MANA = 12;
-export const DEATH_SECONDS = 1.4;
-export interface Death extends Point {
+const RITUAL_REMAINS = 2;
+const RITUAL_MANA = 12;
+const DEATH_SECONDS = 1.4;
+interface Death extends Point {
   at: number;
 }
 export interface Corpse extends Point {

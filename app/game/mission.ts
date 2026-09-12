@@ -11,7 +11,7 @@ import {
 } from './engine.ts';
 import { manorLevel, upgradeBenefit } from './progression.ts';
 
-export type MissionAction =
+type MissionAction =
   | { type: 'recruit'; kind: CreatureKind }
   | { type: 'inspect'; lotId: number; buildKind?: BuildingKind };
 export type MissionHint = {

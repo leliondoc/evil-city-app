@@ -1,6 +1,6 @@
 import type { State } from './engine';
 
-export type ParticleKind = 'fx-impact' | 'fx-dust-large' | 'fx-explosion';
+type ParticleKind = 'fx-impact' | 'fx-dust-large' | 'fx-explosion';
 export type Particle = {
   key: ParticleKind;
   x: number;

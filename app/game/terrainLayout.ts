@@ -164,7 +164,7 @@ export const HIGHLANDS: GroundPatch[] = [
     stairs: [{ tx: 1, ty: 1, side: 'right' }],
   },
 ];
-export function patchHasTile(p: GroundPatch, tx: number, ty: number) {
+function patchHasTile(p: GroundPatch, tx: number, ty: number) {
   return (
     tx >= 0 &&
     ty >= 0 &&

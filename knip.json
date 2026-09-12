@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["scripts/**/*.mjs", "tests/**/*.{mjs,tsx}", "app/**/*.css"],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "scripts/**/*.mjs",
+    "tests/**/*.{mjs,tsx}",
+    "app/**/*.css"
+  ],
+  "paths": {
+    "/app/*": ["./app/*"],
+    "/tests/*": ["./tests/*"]
+  },
+  "ignoreUnresolved": [
+    "/@react-refresh",
+    "/node_modules/.vite/deps/react.js",
+    "/node_modules/.vite/deps/react-dom_client.js"
+  ]
+}

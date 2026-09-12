@@ -6,14 +6,14 @@ import {
   type Unit,
 } from './engine.ts';
 
-export const SHIELD = {
+const SHIELD = {
   threshold: 0.3,
   duration: 10,
   reduction: 0.4,
   cooldown: 30,
   radius: 4,
 } as const;
-export const GUARD_SHIELD = {
+const GUARD_SHIELD = {
   ...SHIELD,
   threshold: 0.2,
   duration: 6,
@@ -27,7 +27,7 @@ export const shieldActive = (
 ) => enemy.hp > 0 && (enemy.shieldUntil ?? 0) > elapsed;
 export const shieldMultiplier = (enemy: Enemy, elapsed: number) =>
   shieldActive(enemy, elapsed) ? 1 - shieldSettings(enemy).reduction : 1;
-export function provoker(s: State, u: Unit) {
+function provoker(s: State, u: Unit) {
   return (u.provokedUntil ?? 0) > s.elapsed
     ? s.enemies.find((e) => e.id === u.provokedBy && shieldActive(e, s.elapsed))
     : undefined;

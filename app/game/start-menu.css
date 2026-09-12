@@ -709,6 +709,33 @@
     min-height: 40px;
   }
 }
+.start-load-error {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: max(24px, env(safe-area-inset-top)) 24px;
+  text-align: center;
+  color: #f9e6bc;
+  background: var(--creation-card-gradient);
+}
+.start-load-error h1 {
+  font-size: clamp(24px, 5vw, 40px);
+}
+.start-load-error button {
+  min-height: 48px;
+  padding: 10px 24px;
+  border: 1px solid #dbc791;
+  border-radius: 6px;
+  background: #74518d;
+  cursor: pointer;
+}
+.start-load-error button:focus-visible {
+  outline: 3px solid #f9e6bc;
+  outline-offset: 4px;
+}
 @media (prefers-reduced-motion: reduce) {
   .start-motes {
     display: none;

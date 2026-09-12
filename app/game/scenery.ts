@@ -2,7 +2,7 @@ import { ASSETS, type AssetKey } from './art.ts';
 import type { Lot } from './engine';
 import { ISLAND_BRIDGES, inIslandClearing } from './islandRoutes.ts';
 import { HIGHLANDS, onPatch, onGround, onCliff } from './terrainLayout.ts';
-export { GROUND_PATCHES, HIGHLANDS } from './terrainLayout.ts';
+export { HIGHLANDS } from './terrainLayout.ts';
 export type Decoration = { key: AssetKey; x: number; y: number; scale: number };
 export const BRIDGES = ISLAND_BRIDGES;
 export const BRIDGE = BRIDGES[0];

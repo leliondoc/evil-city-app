@@ -6,19 +6,6 @@ export const BUILDING_TIER: Partial<Record<BuildingKind, number>> = {
   crypt: 2,
   forge: 3,
 };
-export const MANOR_TIERS = [
-  { level: 1, description: 'Grotte, cantine et gobelins lanciers à pied.' },
-  {
-    level: 2,
-    description:
-      'Crypte : squelettes, spectres et alchimistes. Recherche des chevaucheurs de cochons à la grotte.',
-  },
-  {
-    level: 3,
-    description: 'Hutte des Trolls : trolls, minotaures et recherches de feu.',
-  },
-] as const;
-
 export function manorLevel(s: State): number {
   return Math.max(
     0,

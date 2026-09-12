@@ -289,11 +289,14 @@ export default function Game({
     const visibility = () =>
       audio.setPaused(document.hidden || controls.current.paused);
     window.addEventListener('pointerdown', unlock);
+    // Touch activation is committed on release in WebKit, before click fires.
+    window.addEventListener('click', unlock);
     window.addEventListener('keydown', unlock);
     document.addEventListener('visibilitychange', visibility);
     visibility();
     return () => {
       window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('click', unlock);
       window.removeEventListener('keydown', unlock);
       document.removeEventListener('visibilitychange', visibility);
       audio.dispose();
@@ -504,6 +507,9 @@ export default function Game({
       if (
         !active ||
         modal ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
         target.isContentEditable ||
         target.closest('input,textarea,select,[role=dialog]')
       )
@@ -542,7 +548,7 @@ export default function Game({
       };
       const direction =
         movement[event.key] ?? movement[event.key.toLowerCase()];
-      if (direction && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (direction) {
         event.preventDefault();
         held.set(event.code || event.key.toLowerCase(), direction);
         if (!frame) frame = requestAnimationFrame(move);

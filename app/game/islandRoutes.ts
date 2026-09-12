@@ -21,7 +21,7 @@ export const ISLAND_BRIDGES = [
   { left: -272, right: -208, top: 736, bottom: 864 },
 ];
 /** Approach the northeast pasture through its southern ramp, never the cliff. */
-export const PASTURE_PATH = [
+const PASTURE_PATH = [
   { x: 31.5, y: 10.5 },
   { x: 33.5, y: 10.5 },
   { x: 33.5, y: 7.5 },

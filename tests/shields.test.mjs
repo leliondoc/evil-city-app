@@ -4,7 +4,13 @@ import {
   createGame,
   tick,
   commandUnit,
+  commandUnits,
   moveUnit,
+  attack,
+  defend,
+  intercept,
+  raidSupply,
+  gather,
   retreat,
   HEROES,
   ENEMIES,
@@ -147,6 +153,65 @@ test('Killing the protector immediately releases commands, without waiting for t
   assert.equal(provocationReason(s, u), '');
   moveUnit(s, u.id, { x: 6, y: 30 });
   assert.equal(u.task, 'move');
+});
+
+test('Global attack, defense and raid commands cannot override a provoked army or announce an accepted attack', () => {
+  const { s, u, monk } = rescue();
+  const before = structuredClone(u);
+  for (const order of [
+    () => attack(s, 0),
+    () => defend(s),
+    () => intercept(s, monk.id),
+    () => raidSupply(s, { type: 'resource', id: s.sites[0].id }),
+  ]) {
+    assert.match(order(), /Provoqué/);
+    assert.deepEqual(u, before);
+    assert.equal(s.attackOrder, undefined);
+  }
+});
+
+test('Global defense and raids still command free soldiers while preserving their provoked ally', () => {
+  for (const order of ['defend', 'raid']) {
+    const { s, u } = rescue();
+    const free = {
+      ...u,
+      id: s.nextId++,
+      x: 10,
+      path: [],
+      task: 'idle',
+      target: null,
+      focusTarget: undefined,
+      provokedBy: undefined,
+      provokedUntil: undefined,
+    };
+    s.units.push(free);
+    const before = structuredClone(u);
+    assert.equal(order === 'defend' ? defend(s) : raidSupply(s, { type: 'resource', id: s.sites[0].id }), '');
+    assert.deepEqual(u, before);
+    assert.equal(free.task, order === 'defend' ? 'move' : 'sabotage');
+  }
+});
+
+test('Harvesting cannot withdraw a provoked goblin, and mixed group feedback explains the actual lock', () => {
+  const { s, u } = rescue();
+  u.kind = 'goblin';
+  s.strategy.research.push('embers');
+  const before = structuredClone(u);
+  assert.match(gather(s, u.id, s.sites[0].id), /Provoqué/);
+  assert.deepEqual(u, before);
+  const free = {
+    ...u,
+    id: s.nextId++,
+    kind: 'troll',
+    provokedBy: undefined,
+    provokedUntil: undefined,
+    path: [],
+  };
+  s.units.push(free);
+  assert.equal(commandUnits(s, [u.id, free.id], null, { x: 11, y: 21 }), '');
+  assert.match(s.notice, /Provoqué/);
+  assert.doesNotMatch(s.notice, /ne combattent pas/);
+  assert.deepEqual(u, before);
 });
 test('Ordinary guards and distant knights do not taunt for another wounded soldier', () => {
   for (const role of ['guard', 'warrior']) {

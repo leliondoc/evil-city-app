@@ -6,11 +6,11 @@ Les deux décors ont été retouchés avec **l’outil imagegen intégré**, en 
 
 ## Fichiers archivés
 
-- Paysage : [evil-city-nightfall.webp](../public/menu/evil-city-nightfall.webp), 1672 × 941, **228 028 octets**.
-- Portrait : [evil-city-nightfall-portrait.webp](../public/menu/evil-city-nightfall-portrait.webp), 948 × 1660, **219 228 octets**.
+- Paysage : [evil-city-nightfall.webp](../art-source/menu/exports/evil-city-nightfall.webp), 1672 × 941, **228 028 octets**.
+- Portrait : [evil-city-nightfall-portrait.webp](../art-source/menu/exports/evil-city-nightfall-portrait.webp), 948 × 1660, **219 228 octets**.
 - Sources PNG finales : [landscape.png](../art-source/menu/landscape.png) et [portrait.png](../art-source/menu/portrait.png).
 - Export : `python scripts/compose-menu-art.py`, avec Pillow. WebP qualité 90, méthode 6, dimensions conservées, sans recomposition.
-- Les PNG publics précédents pesaient respectivement 2 324 103 et 2 300 004 octets. Les exports finaux représentent **90,2 % et 90,5 % de moins** ; seuls les WebP sont distribués.
+- Les PNG publics précédents pesaient respectivement 2 324 103 et 2 300 004 octets. Les exports finaux représentent **90,2 % et 90,5 % de moins** ; ces exports restent désormais hors du build distribué.
 - Le composant `picture` et les préchargements ont été retirés. Les tests navigateur vérifient désormais zéro requête d’artwork sur les quatre formats du menu.
 - L’ancienne source `art-source/menu/lancer-generated.png` est archivée et n’est pas affichée.
 

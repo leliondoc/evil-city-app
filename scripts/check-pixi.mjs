@@ -124,7 +124,7 @@ try {
   const colors = await page.evaluate(() => {
     const { scene } = pixiTest.renderer;
     const { pixels } = scene.renderer.extract.pixels({ target: scene.stage });
-    const expected = ['fff1af', '9ed779', 'ef7972', 'bed27c', '293333'];
+    const expected = ['74518d', '9ed779', 'ef7972', 'bed27c', '293333'];
     return Object.fromEntries(
       expected.map((color) => {
         const rgb = [0, 2, 4].map((i) => parseInt(color.slice(i, i + 2), 16));
@@ -287,10 +287,17 @@ try {
   assert.equal(await page.evaluate(() => pixiTest.commands.length), count);
   const enemySelection = await page.evaluate(() => {
     const { scene } = pixiTest.renderer;
-    const { pixels } = scene.renderer.extract.pixels({ target: scene.stage });
+    const circle = scene.actors.container.children.find((node) =>
+      node.visible && node.context?.instructions.some((instruction) =>
+        instruction.action === 'stroke' && instruction.data.style.color === 0xff5b5b),
+    );
+    // The selection ring is translucent, so its composited RGB depends on the
+    // terrain beneath it. Inspect its rendered pixels independently of that ground.
+    const pixels = circle
+      ? scene.renderer.extract.pixels({ target: circle }).pixels : [];
     let red = 0;
     for (let i = 0; i < pixels.length; i += 4)
-      if (pixels[i] === 255 && pixels[i + 1] === 91 && pixels[i + 2] === 91)
+      if (pixels[i + 3] > 0 && pixels[i] > 150 && pixels[i + 1] < 100 && pixels[i + 2] < 100)
         red++;
     const corners = scene.actors.container.children.filter(
       (n) =>

@@ -1,181 +1,86 @@
 # Evil City
 
-Prototype 0.4 de gestion, de conquête et de défense en 2D, en vue du dessus.
+Jeu de stratégie solo en temps réel, jouable dans le navigateur. Développez votre domaine dans le quartier des Tilleuls, recrutez vos créatures et prenez la mairie et la guilde tout en protégeant le manoir.
 
-[Jouer dans le navigateur](https://leliondoc.github.io/evil-city-app/)
+## Lancer le projet
 
-Application solo React et Vite, en TypeScript 7.0.2, avec un rendu PixiJS 8.20.1 sur WebGL. Elle est publiée automatiquement avec GitHub Pages à chaque modification de la branche `main`. Le jeu fonctionne entièrement dans le navigateur et ne demande ni compte ni service serveur.
+Node.js 24 recommandé ; minimum 22.13. Les versions des dépendances sont verrouillées dans `package-lock.json`.
 
-L’interface montre une prochaine étape à la fois ; la liste complète reste accessible dans « Objectifs ». Le parcours précise la revendication de la friche et la conquête d’une propriété avant la forge. Un repère contextuel désigne la cible sur la carte ; « Voir la cible » la sélectionne et la recentre. La marche de l’armée, la conquête et les travaux affichent leur progression. « Préparer la forge » ouvre son emplacement sans dépenser de ressources : le bouton « Construire ici » lance le chantier.
+```sh
+npm ci
+npm run dev
+```
 
-Les terrains du domaine partagent l’herbe du manoir, dès leur capture ; une reprise humaine restaure leur herbe d’origine. Des fanions à crâne ou à bouclier identifient les bâtiments. Les unités du joueur utilisent un cercle de sélection violet, de la même couleur que les fanions de sa faction. Les arbres et arbustes restent à l’écart des clôtures, feuillage compris. Le panneau de sélection conserve une marge de 12 pixels d’interface à droite de « Vos créatures », y compris lorsque l’interface est agrandie. Le repère « Construire ici » utilise le pointeur du pack. Les détails des commandes se déplient au clic. Les bulles de vie quotidienne s’affichent à la sélection ou au survol ; la faim et les missions spéciales restent signalées. Les barres de vie des ennemis apparaissent pendant le combat, en cas de blessure, à la sélection ou au survol.
+Ouvrir `http://127.0.0.1:3000/`. Le serveur de développement reste limité à la machine locale. Les scènes préparées sous `/tests/*-preview.html` servent aux contrôles de développement et ne sont pas distribuées.
 
-La scène locale `/tests/mission-preview.html` permet d’essayer directement la première conquête. `scripts/check-mission.mjs` vérifie le parcours jusqu’à la forge, le redémarrage et les commandes tactiles ; `tests/mission.test.mjs` vérifie la progression dans la simulation et le changement d’herbe. Lancer les tests avec `npm test`. Les contrôles navigateur acceptent `PLAYWRIGHT_PACKAGE` et `PLAYWRIGHT_CHANNEL=chromium`.
+## Contrôles avant publication
 
-## Jouer
+```sh
+npm test
+npm run lint
+npm run check:unused
+npm run build
+npx playwright install chromium webkit
+npm run test:browser
+```
 
-Le HUD tactile réserve une seule rangée de 48 px aux ressources et aux gobelins. Le bouton « État du quartier » ouvre le temps, l’emprise et les informations des deux camps dans un seul panneau ; une pastille signale les menaces. La vitesse et les boutons de zoom sont accessibles dans les paramètres, avec le recentrage et le pincement directement sur la carte. Les notifications bleues sont centrées et limitées à deux lignes : un appui ouvre le texte complet. Le volet de sélection « Détails » est ouvert dès le début d’une partie et après un redémarrage, séparément du guide. Il est limité à 320 px de large et 42 % de la hauteur de l’écran. Le guide « Les Tilleuls » reste en haut à gauche sous les ressources, avec l’objectif courant et un bouton pour déplier conseils et objectifs. Le recentrage est placé à droite, les notifications s’adaptent pour éviter le guide. Les modes Explorer, Groupe et Ordre occupent une seule rangée de 44 px ; la navigation du bas est également compacte et la roue conserve sa géométrie. Les cibles tactiles gardent au moins 44 × 44 px.
+- `npm test` vérifie la simulation, les ordres, l’économie, les combats, les ressources, la progression et les règles audio, sans navigateur.
+- `npm run lint` lance Oxlint avec vérification des types. TypeScript reste strict ; variables et paramètres inutilisés sont également interdits.
+- `npm run check:unused` vérifie les fichiers, exports et dépendances avec Knip. Les scripts et fixtures sont des points d’entrée explicites. Les trois exceptions de résolution correspondent aux modules virtuels Vite employés par le test de cycle de vie Pixi.
+- `npm run build` produit `dist/`, avec des chemins relatifs et une cible explicite Safari 16.4, Chrome/Edge 111, Firefox 128.
+- `npm run test:browser` sert uniquement `dist/` sous `/portable/`, sur un port local libre. Il bloque les requêtes externes et contrôle Chromium et WebKit : menu, démarrage, carte, recrutement, raccourcis, reprise et récupération après un module manquant, sur ordinateur, téléphone et tablette. Ses captures sont écrites dans un répertoire temporaire.
 
-Sur mobile et tablette, l’interface reprend le menu circulaire du manoir, les boutons violets et les cartes illustrées de la version ordinateur. Les volets se ferment par une simple croix de 44 × 44 px. Les cartes de bâtiments et de recrutement s’affichent sans grand fond sombre derrière elles ; les tablettes conservent le menu circulaire à côté. Les boutons tactiles font au moins 44 pixels. « Explorer », « Groupe » et « Ordre » gardent leurs gestes dédiés ; pendant un placement, « Annuler » rend la main et les commandes latérales s’effacent pour dégager la carte. Les unités proches n’interceptent plus un placement sur leur parcelle. Les six formats de `scripts/check-mobile.mjs` vérifient les gestes, la rotation, le recrutement, la construction et la récolte.
+GitHub Actions exécute ces contrôles avant de publier `dist/` sur GitHub Pages. Sur Linux, installer les dépendances système des navigateurs avec `npx playwright install --with-deps chromium webkit`. `npm audit` vérifie séparément les avis de sécurité disponibles à la date de lancement.
 
-Le menu principal affiche les particules animées sur le même dégradé que les cartes de création : `#443A50` vers `#20323B` à 70 %. Le violet principal du jeu reste `#74518D`. Les illustrations sont temporairement désactivées : aucun artwork ni préchargement d’image du menu ne part sur le réseau. Le titre « Evil City » conserve la police Agenda Fantasy et ses dégradés dorés, avec deux lignes espacées pour la lisibilité. La devise est « Le mal ne fait pas de quartier. » ; le bouton « Jouer » conserve son cadre ornemental sans contour de sélection extérieur. « Jouer » lance la simulation ; le bestiaire animé, l’aide et les réglages audio sont disponibles dès l’accueil. Le logo du jeu sur ordinateur, ou « Menu principal · Garder la partie » dans les paramètres, ramène au menu en suspendant la simulation, le rendu et le son. « Reprendre » conserve la même partie tant que l’onglet reste ouvert. Les volumes sont partagés entre le menu et le jeu et mémorisés localement. La musique du menu utilise `menu-music.mp3`, préchargée dès l’accueil lorsque le son est activé. Le premier clic, toucher ou geste clavier réutilise le même lecteur déjà préparé et autorise le son selon les règles du navigateur. Le mode muet ne déclenche aucun téléchargement audio. Les départs de gardes et de héros déclenchent `human-theme.mp3` et `guild-theme.mp3` sans boucle, tandis que `dark-theme.mp3` accompagne le premier passage au-dessus de 60 % du territoire. `ambiance-music.mp3` intervient ponctuellement entre les longues pauses de la playlist ; `building-upgrade.mp3` signale la fin d’une amélioration. Les pistes interrompues reprennent leur position et les musiques ne se superposent pas. `scripts/check-start-menu.mjs` vérifie les commandes, les dialogues, la pause/reprise et les formats ordinateur, téléphone et paysage.
+Pour un contrôle navigateur de développement, garder le serveur local ouvert puis lancer le script concerné :
 
-Les musiques entrent progressivement en 2,5 secondes et s’effacent sur leurs 6 dernières secondes. Une attaque laisse la piste en cours descendre pendant 1,2 seconde avant de lancer doucement son thème ; le retour à l’ambiance reprend la position interrompue avec un fondu. Les réglages de volume et les clics ne réinitialisent pas ces transitions. Les longues pauses de la playlist et les thèmes sans boucle sont conservés. `scripts/check-music-fades.mjs` mesure les fondus sur les MP3 réels et vérifie les interruptions, la pause, la reprise et la libération du lecteur.
+```sh
+node scripts/check-mobile.mjs
+node scripts/check-pixi.mjs
+node scripts/check-pixi-lifecycle.mjs
+node scripts/check-mission.mjs
+node scripts/check-menu-music.mjs
+```
 
-Vous commencez sans ouvrier, avec 35 or et 24 vivres, sans bois ni essence. Recrutez votre premier gobelin : les gobelins alimentent ensuite les réserves par leurs livraisons. La progression est Grotte → Cantine → Crypte → Forge : la tanière initiale débloque la cantine, puis chaque bâtiment terminé permet le suivant. Construisez une cantine, revendiquez la friche centrale et bâtissez une crypte pour recruter les premiers squelettes. Conquérez une maison pour y installer la forge (180 or, 75 bois), puis recrutez des trolls (90 or, 30 vivres). Améliorer le manoir accélère la production d’essence. Pour gagner, contrôlez la mairie et la guilde et éliminez les ennemis encore dans les rues. La destruction du manoir entraîne la défaite.
+Les anciens contrôles dédiés acceptent `PLAYWRIGHT_CHANNEL` pour choisir Chrome ou Chromium et `PLAYWRIGHT_PACKAGE` pour un environnement externe. Le contrôle du build utilise le Playwright verrouillé du projet ; `PLAYWRIGHT_BROWSERS=chromium` ou `webkit` limite son exécution à un moteur.
 
-La garde se mobilise à **5 parcelles sur 9 (56 %)** ou à **9 minutes**, avec **25 secondes de préavis**. Elle reprend les propriétés et leur production avant de s’attaquer au manoir. La guilde envoie ses héros contre le manoir à **6 parcelles sur 9 (67 %)** ou à **8 minutes**, avec **35 secondes de préavis**. Sur ordinateur, deux colonnes à gauche de la carte séparent les Humains du domaine du joueur. Le bloc rouge Tiny Swords ouvre le manoir, les combattants, les gobelins et l’emprise ; il permet de sélectionner ses unités et d’ouvrir les sources de récolte. Sur mobile et tablette, les onglets Humains / Mon domaine partagent le même emplacement compact.
+## Interface et commandes
 
-Les humains peuvent financer leur premier niveau à **6 minutes**, puis un niveau toutes les **2 minutes**, jusqu’au niveau 6, en dépensant **25 or, 20 bois et 15 vivres** livrés par leurs paysans : les garnisons frappent plus fort et les nouvelles vagues sont plus solides, plus nombreuses et plus fréquentes. Une mobilisation continue même si votre territoire diminue. Capturer la mairie ou la guilde coupe ses renforts ; les ennemis déjà sortis restent actifs. Si les gardes reprennent le bâtiment, la mobilisation recommence avec un préavis.
+Le menu utilise des particules et le dégradé commun aux cartes : `#443A50` vers `#20323B`. Le violet principal est `#74518D`. Les artworks sont archivés dans `art-source/menu/` et ne sont plus livrés au navigateur. Le titre conserve Agenda Fantasy et ses dégradés dorés ; la devise est « Le mal ne fait pas de quartier. »
 
-Les combattants interceptent les ennemis proches. Sélectionnez un ennemi pour l’intercepter avec l’armée, ou une propriété pour y rassembler vos combattants. « Défendre le manoir » et le repli donnent priorité au déplacement. Les bâtiments se réparent lentement hors de danger. Les maisons conquises peuvent être transformées ; elles ne produisent pas d’or automatiquement. Une crypte débloque les squelettes ; une forge et une crypte permettent de recruter le minotaure.
+Sur ordinateur : clic pour sélectionner, glisser ou ZQSD pour déplacer la carte, molette pour zoomer, Shift + clic/glisser pour composer un groupe. Les flèches déplacent la carte lorsqu’elle a le focus. Clic droit annule un placement en cours ou donne un ordre contextuel. Espace met en pause, R rappelle l’armée, H ouvre l’aide, 1 à 7 choisit l’option de l’onglet actif. Ctrl, Commande et Alt restent réservés aux raccourcis du système et du navigateur.
 
-Trois routes humaines relient une bergerie, un gisement d’or et un camp de bûcherons à leur bâtiment de livraison. Chaque paysan récolte pendant 6 secondes, transporte 10 ressources et les ajoute aux stocks seulement à son retour. Les vagues de gardes coûtent 8 or et 4 vivres par unité ; celles des héros, 16 or et 8 vivres par unité. Une vague sans ressources attend son ravitaillement.
+Sur téléphone et tablette : glisser pour explorer, pincer pour zoomer, Groupe pour sélectionner plusieurs unités et Ordre pour indiquer une cible. Le guide compact « Les Tilleuls » reste séparé du sélecteur, sous les ressources. Les détails s’ouvrent au début ; la croix ferme le volet. La navigation du bas et la roue du manoir donnent accès aux constructions, créatures, réglages et à la pause.
 
-Sélectionnez un paysan pour l’attaquer, ou un site pour le saboter avec l’armée. Éliminer un paysan fait perdre sa livraison et retarde son remplacement d’au moins 40 secondes. Le remplaçant coûte 8 or + 5 vivres si les stocks le permettent ; sinon sa prise en charge évite de bloquer définitivement la production. Les remplacements restent espacés de 20 secondes, dans la limite de 6 paysans et 2 par site actif. Le panneau affiche les remplacements en attente. Saboter un site rapporte 15 ressources et l’arrête pendant au moins 90 secondes ; le réparer coûte 10 or + 10 bois. Capturer le bâtiment de livraison coupe la route tant que vous le contrôlez. Le panneau « Ravitaillement humain » donne accès aux sites, aux paysans et aux stocks.
+Le menu et le jeu partagent les réglages audio. La lecture est tentée à l’ouverture du menu puis au premier geste si le navigateur exige une interaction. Les musiques entrent progressivement, s’effacent en fin de piste et conservent leurs longues pauses. Les mobilisations humaines et héroïques utilisent leurs thèmes sans boucle. La musique sombre accompagne le premier passage au-dessus de 60 % du territoire. Les sources et réglages sont détaillés dans [ASSETS.md](ASSETS.md).
 
-La guilde réunit quatre classes humaines : chevalier, lancier, archère et moine. Au premier coup reçu par la guilde, ses quatre défenseurs quittent leurs postes et poursuivent les assaillants à mort, sans limite de distance ni rappel à la capture du bâtiment. Cette garnison ne sort qu’une fois et remplace les anciens dégâts automatiques du bâtiment. Un héros attaqué garde également la mémoire de ses agresseurs et passe au suivant lorsque sa cible meurt. L’archère lance des projectiles bloqués par les bâtiments ; le moine soigne ses alliés et n’endommage pas le manoir. Chaque classe a ses animations de repos, déplacement et attaque ou soin. Le chaman reste dans le catalogue des créatures.
+## Simulation et architecture
 
-Les gobelins construisent et récoltent réellement : départ vers la source visible, travail sur place, chargement de 30 puis retour au manoir. Le stock augmente uniquement au dépôt. Un ordre sur le gisement, ou le bouton du site, affecte un gobelin à l’or ou aux vivres avec le même cycle. Les cargaisons interrompues restent transportées jusqu’au retour ; la mort du porteur les perd. Les repas et le repos attendent la fin du trajet, les ordres du joueur restent prioritaires. Les créatures ont des besoins alimentaires et des coûts de logement. Le retour au manoir soigne les blessés. Les bâtiments peuvent atteindre trois niveaux.
+Vous commencez sans ouvrier : recrutez un gobelin, établissez vos récoltes et suivez les objectifs. Les sept créatures recrutables sont le gobelin, le gobelin lancier, le troll, le squelette, le minotaure, le spectre et l’alchimiste. Le bestiaire présente leurs animations ainsi que les unités humaines et le chevaucheur déverrouillable.
 
-Glisser : déplacer la carte. Shift + glisser gauche : sélection par rectangle. Molette : zoom. Clic : sélectionner. Clic droit : annuler le placement d’un bâtiment en cours, sinon déplacer, attaquer ou hanter selon la créature. L’annulation fonctionne aussi sur un emplacement interdit et conserve la sélection et les ordres des unités. Espace : pause. 1 à 7 : option de l’onglet actif. R : repli. H : aide. Le bestiaire présente les animations de repos, marche et attaque.
+Les livraisons alimentent réellement les stocks ; les constructions, recherches et améliorations prennent du temps. La mairie et la guilde financent leurs renforts avec les ressources des paysans. Les paysans tués ou déplacés par la fermeture d’une route peuvent être remplacés après les délais prévus, même quand leur disparition a épuisé les stocks nécessaires au recrutement. La provocation bloque les ordres des unités concernées ; une garnison peut quitter sa tour sur un ordre individuel.
 
-## Hantises, dépouilles et vie du domaine
-
-- **Spectre** : la crypte permet son recrutement (60 or, 30 essence, 1 place). Un clic droit sur un bâtiment humain l’y envoie ; après 3 s à l’entrée, les livraisons et départs de renforts s’arrêtent pendant 30 s. La hantise ajoute 18 de suspicion et le spectre doit attendre 60 s à compter de son déclenchement avant d’en préparer une autre. Le rappel, la mort du spectre ou la conquête du bâtiment met fin au maléfice. La guilde envoie un moine, s’il n’y en a pas déjà un. À son arrivée devant le portail, il interrompt la hantise et provoque le spectre dans la rue : chacun rejoint le duel à pied puis attaque avec son animation du pack. Le moine riposte avant de soigner : 6 dégâts/s contre les vivants, doublés contre les squelettes et spectres (+10 % par niveau supplémentaire). Dans le duel, il inflige donc 12 dégâts/s au niveau 1 et le spectre riposte à 12 dégâts/s ; le combat finit à la mort d’un adversaire, ou sur un ordre de fuite. Dès que le spectre le frappe, le moine le poursuit sans limite de distance, jusqu’à la mort de son adversaire ou à la sienne. L’exorcisme relance les 60 s de récupération. Le spectre ne combat que son exorciste, ne conquiert pas et ne mange pas.
-- **Dépouilles** : les gobelins disponibles récupèrent automatiquement les corps hors du danger et les transportent à la crypte. Les chantiers restent prioritaires sur les gobelins encore libres ; la collecte peut être désactivée dans la crypte. Les paysans sans cargaison récupèrent les morts humains proches et les ramènent chez eux. Un corps au sol disparaît après 100 s ; un transport interrompu le laisse au sol pour 60 s. Réserve maximale : 6. Deux dépouilles et 12 essence lancent un rituel de 12 s pour un squelette, avec une place réservée et 45 s entre les rituels. Les squelettes et spectres ne fournissent aucune dépouille. Si la crypte du rituel est perdue, le squelette arrive au manoir.
-- **Pot-de-vin** : sélectionnez la mairie humaine et envoyez une bourse de 100 or avec un gobelin libre. Seule la livraison retarde la prochaine patrouille de 45 s et réduit la suspicion de 15 ; les gardes déjà dehors et la guilde restent actifs. Le courrier dispose de 120 s. Sa mort, son rappel ou la conquête de la mairie fait perdre la bourse. Une expédition toutes les 120 s au maximum.
-- **Vie quotidienne** : au calme, les créatures vivantes rejoignent la cantine pour manger et la tanière pour se reposer. Les morts-vivants se reconstituent à la crypte. Les pauses durent 4 s ; le repos soigne de 4 PV/s. La consommation alimentaire reste celle du bilan de vivres, sans deuxième prélèvement au repas. Les bulles indiquent faim, repas, sommeil, régénération et missions. Les ordres explicites et les combats interrompent les pauses ; un chantier ou un assaut n’est pas abandonné pour manger.
-
-La suspicion monte avec les hantises (+18), les sabotages de sites (+10), les conquêtes par combat (+8) et les morts (+2). Elle baisse lentement au calme. À 60, elle déclenche la garde avec le préavis habituel, même avant le seuil de territoire ou de temps.
-
-## Graphismes
-
-Tiny Swords, par Pixel Frog : pack gratuit et pack Enemy acheté par l’utilisateur. Les illustrations générées de la première version ont été retirées du jeu. Les sprites originaux sont animés à 10 images par seconde, avec filtrage des pixels désactivé. La pause et la vitesse de simulation s’appliquent aux animations de la carte. Le bestiaire possède sa propre lecture et respecte la préférence de réduction des animations.
-
-Le décor utilise les collines, falaises, arbres, buissons, rochers, moutons et nuages du pack. Les fiches, commandes, icônes de ressources et le petit ruban du titre utilisent ses éléments d’interface, assemblés par morceaux pour préserver les coins.
-
-Voir ASSETS.md pour la provenance et les réglages.
-
-## Limites
-
-- Quartier fictif de neuf parcelles, sans import de carte réelle.
-- Six créatures recrutables : gobelin, troll, squelette, minotaure, spectre (sprite du voleur) et alchimiste (Hex Shaman). Le catalogue animé présente les 22 créatures du pack Enemy et les 4 héros humains. Les 16 autres créatures du pack ne sont pas encore recrutables ni dotées de comportements en jeu.
-- Combat continu avec défenseurs fixes. Les dégâts ne sont pas encore synchronisés sur l’image précise de chaque frappe.
-- Les gobelins utilisent leur cycle de repos pendant le chantier ; le pack ne fournit pas de cycle de construction pour ce personnage.
-- Mobilisation adverse par paliers de temps et d’expansion, financée par une économie humaine simplifiée. Pas de sous-sol ni de relief influant sur le déplacement.
-- Une première guilde et quatre classes humaines. Aucun sorcier humain supplémentaire n’est intégré.
-- Partie solo en mémoire, sans sauvegarde persistante, son ou multijoueur.
-
-## Développement et validation
-
-### Téléphones et tablettes
-
-L’interface tactile affiche la carte sur toute la largeur, en portrait comme en paysage. La barre du bas ouvre les volets Détails, Bâtir et Recruter ; Carte les referme. Les quatre ressources restent visibles. Glisser un doigt déplace la carte, pincer à deux doigts zoome autour du geste. Groupe active la sélection par rectangle et les ajouts/retraits au toucher. Après sélection, Ordre permet de toucher une destination ou une cible, puis revient à Explorer quand l’ordre est accepté. Les boutons de zoom restent disponibles. Les zones de sécurité autour des encoches sont prises en compte. Les contrôles souris et Shift restent disponibles sur ordinateur.
-
-La vérification navigateur `node scripts/check-mobile.mjs` utilise Playwright et Chrome : installer Playwright pour le développement, ou indiquer son package existant avec `PLAYWRIGHT_PACKAGE`. Elle vérifie 390 × 844, 320 × 568, 844 × 390 et le bureau 1280 × 800, et écrit ses captures dans un dossier temporaire. Lancer le serveur local avant ce contrôle.
-
-Node.js 24 et npm (Node 22.13 ou supérieur reste compatible). Installation : `npm install`. La version jouable est vérifiée directement sur GitHub Pages après publication. Production et types : `npm run build`. Tests : `npm test`. Lint : `npm run lint`. Ces trois contrôles doivent réussir avant le déploiement GitHub Pages.
-
-Vérification visuelle locale des nouvelles mécaniques : lancer `npm run dev`, puis ouvrir `/tests/domain-preview.html`. Cette partie préparée utilise l’interface réelle avec une crypte, des dépouilles, un spectre et un moine ; elle n’est pas incluse dans le site de production. Les scénarios automatisés correspondants se trouvent dans `tests/domain.test.mjs`.
-
-- `app/game/engine.ts` : simulation indépendante du rendu.
-- `app/game/renderer.ts` : caméra, profondeur, animation et sélection sur l’alpha de la frame affichée.
-- `app/game/pixiScene.ts` : scène WebGL, textures et objets Pixi réutilisés entre les images, libérés à la fermeture de la vue.
-- `app/game/terrainRenderer.ts` : décor statique assemblé dans une texture GPU, reconstruite quand les propriétés changent de camp. Canvas 2D sert uniquement à lire l’alpha des sprites au chargement et à préparer certains éléments d’interface ; la carte est dessinée par Pixi.
-- `app/game/art.ts` et `assets.json` : correspondance des sprites et séquences.
-- `app/game/Sprite.tsx` : aperçu animé dans les panneaux et le bestiaire.
-- `app/game/Game.tsx` : interface et commandes.
-- `app/game/gameStore.ts` : simulation mutable pour la carte et instantanés stables pour React, synchronisés après les commandes et chaque pas de simulation.
-- `public/tiny-swords/` : ressources graphiques intégrées au jeu.
-
-Les tests couvrent la progression depuis zéro ressource jusqu’à la forge et la défense du premier raid, ainsi qu’une victoire après mobilisation humaine. Ils vérifient les livraisons, pénuries, sabotages, réparations, soins, projectiles, animations, déplacements, sélections, conquêtes et états de fin. Les nouveaux scénarios couvrent les hantises et exorcismes, livraisons et pertes de bourses, concurrence autour des dépouilles, rituels, repas, repos et invariance de la simulation accélérée. L’équilibrage reste celui d’un premier quartier de prototype.
-
-Sélection : un clic sélectionne une unité ; glisser avec le bouton gauche déplace la carte. Shift + glisser gauche trace immédiatement un rectangle pour sélectionner un groupe ou compléter la sélection. Shift + clic ajoute ou retire une unité. Avec des combattants sélectionnés, un clic sur une unité ou un bâtiment ennemi leur donne l’ordre d’attaquer ; Shift + clic permet d’inspecter la cible. Le clic droit commande aussi les unités sélectionnées. Les gobelins d’un groupe mixte ne participent aux attaques qu’après la recherche Armes enflammées.
-
-Un ennemi désigné par un ordre individuel, de groupe ou d’interception reste prioritaire : les combattants le poursuivent et le frappent sans se détourner vers un adversaire plus proche. Un nouvel ordre remplace cette priorité ; la mort ou la disparition de la cible rétablit le choix automatique. Les déplacements continuent de respecter la portée, les murs et les passages.
-
-La carte conserve les cercles de sélection jaunes et les barres de PV simples d’origine. Les barres Tiny Swords restent dans les panneaux de sélection. `node scripts/check-pixi.mjs` vérifie les pixels des barres et du cercle, la flèche d’attaque, les clics individuels et groupés, le redimensionnement et la libération de la vue. Comme les autres contrôles navigateur, il exige le serveur local et Playwright ; `PLAYWRIGHT_CHANNEL=chromium` permet d’utiliser son Chromium au lieu de Chrome. Cette option est également disponible pour `check-display-scaling.mjs`.
-
-## Résurrection, combos et tours de quartier
-
-Les paysans ramènent physiquement les dépouilles humaines. Un moine rejoint le bâtiment de dépôt, puis canalise 10 secondes : 25 or et 15 vivres des stocks humains rendent au combattant 60 % de ses PV. Chaque combattant ne revient qu’une fois. Les dépouilles déposées attendent au maximum 120 secondes (six places). Une menace proche, des dégâts ou une hantise interrompent le rituel ; conquérir le dépôt le supprime. La guilde peut envoyer un moine de secours pour 15 or et 10 vivres, avec 90 secondes entre deux envois. Les paysans enterrés ne sont pas ressuscités.
-
-L’alchimiste, représenté exclusivement par le Hex Shaman original du pack Enemy, se recrute à la crypte pour 100 or, 35 essence et 15 vivres. Trois recherches permanentes composent les combos :
-
-- Forge : **Armes enflammées**, 120 or, 50 bois, 20 essence. Arme aussi les gobelins (4 dégâts/s physiques), ajoute 3 dégâts/s de feu aux frappes et une brûlure de 3 secondes (2 dégâts/s).
-- Crypte : **Solvant alchimique**, 90 or, 35 essence. Les attaques de l’alchimiste marquent leur cible 8 secondes : seuls les dégâts de feu sont doublés.
-- Forge : **Braises contagieuses**, 150 or, 40 bois, 60 essence, après les armes enflammées. La mort d’un ennemi embrasé propage une brûlure de 4 secondes aux voisins visibles à moins de 2,8 cases. Le solvant amplifie également cette brûlure.
-
-Le premier niveau conserve uniquement la Tour du pont, à l’ouest, sélectionnable sur la carte. Tenir sa porte sans ennemi proche pendant 8 secondes la capture. Son rôle dépend de la créature affectée :
-
-- **Gobelin — racket** : prélève 30 % d’une cargaison humaine proche, une fois par trajet, avec un stockage de 30 par ressource. Un autre gobelin libre doit rapporter le butin au manoir ; sa mort ou un nouvel ordre perd sa cargaison. Le racket augmente la suspicion.
-- **Squelette — guet** : combat à la porte et appelle les défenseurs disponibles dans un rayon de 8 cases lorsqu’un ennemi approche.
-- **Spectre — fausse alerte** : pour 15 essence, détourne pendant 12 secondes les patrouilles proches qui ne combattent pas déjà ; les moines restent concentrés. Récupération de 60 secondes.
-
-Une tour sans garnison peut être reprise en 8 secondes par les humains proches, ce qui perd son butin. Les effets exigent que l’occupant soit réellement arrivé. Un ordre de groupe affecte une seule créature à la tour.
-
-Les jardins utilisent les couleurs d’origine des terrains du pack, sans recoloration brun rouge. Les textes de carte ont un contour sombre, le bâtiment choisi apparaît en transparence sous le pointeur et les notifications utilisent le parchemin Tiny Swords en haut au centre, adapté au mobile.
-
-La scène locale `/tests/strategy-preview.html` permet d’examiner les sprites, recherches, tours et notifications. Les 10 tests de `tests/strategy.test.mjs` vérifient dépenses, combos, captures, transports, interruptions et résurrection complète dans la simulation.
-
-Les combattants proches se placent face à face sur un axe horizontal adapté aux sprites. Ils passent par le portail avant de s’écarter dans la rue et restent limités par les murs et leur vitesse de déplacement. La scène locale /tests/combat-preview.html présente les trois gabarits de mêlée contre un chevalier.
-
-Les gobelins sont limités à 6, vivants et recrutements en attente inclus. Une mort libère une place ; les tanières ne relèvent pas cette limite. Le bandeau supérieur affiche le compteur sur 6 et indique ceux au bois et ceux aux chantiers ; son infobulle détaille les autres missions et les recrutements en attente. Un clic sélectionne tous les gobelins. Les débits de récolte affichés avec ≈ sont des estimations (environ 54/min par ouvrier actif), dépendantes des trajets et interruptions. Le compteur indique les ouvriers au bois, à l’or, aux vivres et aux chantiers sur ordinateur ; sur écran tactile, il conserve un décompte compact sur 6. Les quatre stocks du joueur sont plafonnés à 1 000 chacun : production, pillage, conquêtes et livraisons de tours respectent cette limite. Le surplus est perdu, les gains flottants de récolte correspondent uniquement au chargement accepté au dépôt et la production reprend après une dépense. Le plafond est affiché près de chaque stock, y compris sur mobile.
-
-Chaque carte de recrutement affiche une barre de progression pendant la production, avec le temps avant la prochaine unité et le nombre en préparation. Elle suit la pause et la vitesse de simulation, respecte les durées de 6 secondes, 15 secondes pour le minotaure et 12 secondes pour le rituel de la crypte, puis disparaît quand il ne reste aucune unité de ce type en préparation.
-
-### Départ sans ouvriers
-
-Chaque partie commence avec zéro gobelin et zéro paysan. Le joueur dispose de 35 or et 24 vivres, sans bois ni essence : il doit recruter son premier gobelin (15 or, 4 vivres, 6 secondes), puis financer les suivants. La limite reste de 6, recrutements inclus. Les humains produisent un paysan toutes les 20 secondes si leurs stocks couvrent 8 or et 5 vivres, avec 6 au maximum et 2 par site. Un paysan tué impose au moins 40 secondes avant remplacement sur son site. Ce remplacement est assuré même sans stocks, tant que la route reste active ; les nouveaux paysans du début de partie restent payants.
-
-### Récoltes et interface tactile
-
-L’or, le bois et les vivres ordinaires proviennent des trajets des gobelins : rejoindre la source, récolter 4 secondes, rapporter 30 ressources au manoir. Aucun bâtiment ne crédite ces trois stocks automatiquement. Les ouvriers libres se répartissent selon les stocks, puis réévaluent leur mission après chaque livraison ; un ordre de récolte explicite conserve le site choisi. Le pillage et le racket restent des gains liés aux actions. Seule l’essence conserve sa production magique. La cantine réduit la consommation de 20 % par niveau (maximum 60 %) et permet les repas.
-
-Les boutons de navigation, modes tactiles et fermeture ainsi que les cadres des cartes de construction et de recrutement utilisent les skins originaux Tiny Swords. Les compteurs de ressources ouvrent leur source pour y envoyer un gobelin. `scripts/check-mobile.mjs` vérifie les téléphones 320×568, 390×844 et 844×390, les tablettes 768×1024, 1024×768 et 1180×820, puis la rotation : menus, recrutement et progression, placement tactile, sources de récolte, sélection de groupe, ordres, déplacement et pincement. Ces essais utilisent l’émulation tactile Chromium ; ils ne remplacent pas un essai matériel Safari/iOS.
-
-### Grands écrans
-
-L’interface adapte automatiquement son échelle à la largeur et à la hauteur utiles de la fenêtre : 120 % en 1920×1080, 160 % en 2560×1440, jusqu’à 200 % en 3840×2160. Les textes, boutons, panneaux, fenêtres, notifications et libellés de carte grandissent ensemble. Les écrans tactiles et les petites fenêtres conservent leur disposition compacte ; un écran large mais peu haut limite l’agrandissement selon sa hauteur. Le redimensionnement est pris en compte sans recharger la partie. `scripts/check-display-scaling.mjs` contrôle les tailles, la sélection sur la carte, les fenêtres et les panneaux contextuels sur cinq formats.
-
-Les trajets de récolte des gobelins sont 50 % plus rapides que leur déplacement ordinaire. Les ressources initiales permettent de commander deux gobelins, toujours manuellement ; chaque chargement reste de 30 et n’est crédité qu’au retour. `scripts/check-faction-hud.mjs` contrôle les deux camps, les actions de sélection et les panneaux sur ordinateur et écran tactile.
-Sur ordinateur, la carte se prolonge derrière l’interface. Les grandes bandes opaques sont remplacées par des cartes translucides autour des informations utiles ; les espaces vides laissent passer les clics vers la carte. Le quartier se centre sur l’écran entier, avec un zoom calculé sur le canvas, sans décalage lié aux panneaux latéraux. `scripts/check-floating-hud.mjs` vérifie le fond vivant, les clics dans les espaces libres et la précision des sélections après déplacement/recentrage.
-
-### Effets sonores
-
-Les paramètres proposent le volume des effets, une coupure du son et un bouton de test. Les préférences sont mémorisées dans ce navigateur. Le son démarre après une interaction, s’arrête pendant la pause ou lorsque l’onglet est masqué, et accompagne les récoltes actives, livraisons, combats, recrutements terminés et bâtiments terminés. Les actions hors champ sont silencieuses ; les sons simultanés sont plafonnés à quatre, avec un délai entre effets similaires. Les 11 effets TomMusic utilisés sont inclus dans la version publiée. Voir `ASSETS.md` pour leur provenance et les conditions de l’auteur.
-
-Les recrues apparaissent à leur bâtiment de production : gobelins à la tanière (ou au manoir avant sa construction), trolls et minotaures à la forge, squelettes, spectres et alchimistes à la crypte. Sélectionner un bâtiment compatible avant de recruter privilégie celui-ci ; la file conserve ce bâtiment. Si celui-ci est perdu, une autre production compatible prend le relais, puis le manoir en dernier recours.
-
-Un clic droit sur la carte avec un bâtiment de recrutement sélectionné définit son point de ralliement. Le drapeau et son lien sont visibles à la sélection ; les nouvelles recrues y marchent automatiquement. Le panneau permet de supprimer ce point. Les unités déjà présentes conservent leurs ordres.
-
-« Mettre au lit » envoie une créature vivante blessée à la tanière ; les squelettes et spectres utilisent « Régénérer à la crypte ». Le groupe dispose de « Soigner les blessés ». Un clic droit avec une unité sur le bâtiment de soins compatible donne aussi cet ordre. Les soins manuels durent jusqu’aux PV maximum à 4 PV/s, une fois arrivé et hors de danger ; un nouvel ordre les interrompt. Les chantiers n’interrompent plus automatiquement un gobelin soigné manuellement.
-
-Sélectionner une tour affiche sa portée réelle depuis sa porte : racket du gobelin à 3,5 cases ; détection du squelette à 3 et appel des défenseurs à 8 ; fausse alerte du spectre à 14 (sur activation). Sans garnison, la zone de capture/reprise de 3 cases est affichée.
-
-Les gobelins bâtisseurs et lanciers à pied se recrutent à la grotte dès le début. Les lanciers coûtent 75 or et 20 vivres. « Chevaucheurs de cochons », disponible au manoir niveau 2, se recherche à la grotte ou dans la fiche du lancier : 150 or, 40 bois et 50 vivres, 180 secondes. La recherche augmente de 50 % la vitesse des lanciers existants et futurs et leurs dégâts contre les archères et moines. Les gobelins récoltent les porcs du pâturage, tandis que les humains gardent les moutons.
-
-### Paliers du manoir
-
-Le manoir dirige la progression technologique. Ses améliorations coûtent 80 or / 35 bois pour le niveau 2, puis 160 or / 70 bois pour le niveau 3 et sont immédiates.
-
-| Manoir | Déblocages |
+| Fichier | Responsabilité |
 | --- | --- |
-| Niveau 1 | Grotte, cantine, gobelins bâtisseurs et lanciers à pied |
-| Niveau 2 | Crypte (cantine terminée requise) : squelettes, spectres, alchimistes et solvant ; recherche des cochons à la grotte |
-| Niveau 3 | Hutte des Trolls (crypte terminée requise) : trolls, minotaures, armes enflammées et braises contagieuses |
+| `app/App.tsx` | Menu, chargement différé, récupération après erreur |
+| `app/game/Game.tsx` | Interface React et commandes du joueur |
+| `app/game/gameStore.ts` | Simulation et snapshots consommés par React |
+| `app/game/engine.ts` | État, navigation, économie et ordres sans dépendance au DOM |
+| `app/game/combat.ts`, `domain.ts`, `strategy.ts`, `shields.ts` | Combat et mécaniques spécialisées |
+| `app/game/progression.ts`, `mission.ts` | Déblocages, coûts, durées et objectifs |
+| `app/game/renderer.ts` | Caméra, entrées tactiles/souris, sélection sur l’alpha et animation |
+| `app/game/pixiScene.ts`, `terrainRenderer.ts` | Scène WebGL, textures et terrain mis en cache |
+| `app/game/audio.ts`, `music.ts`, `musicPlaylist.ts` | Effets, réglages et transitions musicales |
+| `components/ui/` | Les cinq composants Base UI réellement utilisés |
 
-Le niveau des autres bâtiments ne peut pas dépasser celui du manoir. Chaque fiche présente l’effet actuel, le gain du prochain niveau, son coût et les prérequis manquants. Les grottes ajoutent 6 places par niveau ; la meilleure cantine réduit la consommation de 20/40/60 % ; chaque crypte produit 24/48/72 essence par minute ; la meilleure hutte donne +0/+15/+30 % de dégâts à l’armée. Le manoir produit 10,8/21,6/32,4 essence par minute et une guilde conquise 18/36/54. Les maisons, auberges et mairies ne proposent plus d’amélioration sans effet.
+Le moteur reçoit explicitement le temps de simulation. Le rendu Pixi réutilise ses objets et reconstruit le terrain après une perte du contexte WebGL. Les masques de sélection ne conservent que l’alpha ; la densité d’affichage est limitée à 2 et réévaluée lors d’un changement d’écran. Les sprites multirangs utilisent le même découpage dans le bestiaire et sur la carte.
 
-Le tutoriel suit une conquête avec deux lanciers au palier 1, puis le manoir 2, la friche centrale et la crypte, avant le manoir 3 et la hutte des trolls. Les stocks de départ et les durées de recherche restent inchangés.
+## Limites et portabilité
 
-Les unités sélectionnées affichent leur portrait fixe, y compris les gardes, héros, paysans et chevaucheurs. Les animations restent sur la carte et dans le bestiaire. Les surtitres de sélection ont été supprimés ; les groupes de statistiques reviennent ensemble à la ligne.
+« Reprendre » garde la partie tant que cette page existe. Il n’y a pas encore de sauvegarde persistante de partie, de multijoueur, d’application iOS, d’exécutable Steam, ni de prise en charge complète des manettes. Les réglages audio sont les seules préférences enregistrées localement.
 
-À 20 % de PV, les gardes lèvent leur bouclier pendant 6 secondes : 25 % de dégâts reçus en moins, sans attaque, mouvement ni provocation. Le Chevalier de l’Aube dispose d’un bouclier renforcé : 10 secondes à −40 %, déclenché à 30 % de PV. Il protège aussi les soldats alliés à 30 % de PV dans un rayon de quatre cases : leurs assaillants proches sont provoqués et doivent le cibler pendant la posture. La mort du chevalier libère immédiatement leurs ordres. Réactivation possible 30 secondes après le déclenchement. Les durées suivent le temps de simulation, donc la pause et la vitesse de partie.
+Le quartier et certains trajets sont encore liés à la carte actuelle. L’ajout de cartes demandera une définition de carte indépendante du moteur. Une migration des tâches vers des unions discriminées et une séparation progressive des gros modules restent des améliorations d’architecture à traiter avec leurs propres tests.
 
-Les bâtiments humains suivent les six niveaux financés par leur économie. La mairie passe de 900 à 1 800 PV et la guilde de 550 à 1 200 PV ; tavernes et maisons se fortifient aussi. Les niveaux 3 et 5 changent les modèles : casernes, pas de tir, citadelle et tours de mairie issus du pack. Une fortification conserve la proportion de dégâts et attend la fin d’un assaut ou d’une hantise. Une propriété conquise repart au niveau joueur 1 ; une reprise humaine restaure ses défenses au niveau de la ville. Les fiches indiquent les PV et le niveau humain.
+Les tests WebKit automatisés ne remplacent pas une validation sur iPhone/iPad, WKWebView, interruptions audio réelles, Steam Deck et matériel peu puissant. Les licences des assets doivent également couvrir chaque distribution : notamment Agenda Fantasy Demo et les MP3 fournis par l’utilisateur.
 
-Le cadrage est recalculé après chargement des ressources et au recentrage. Le raccourci du manoir place le centre visible du sprite au centre de l’écran, même après déplacement et zoom. Aucune position de caméra n’est conservée dans le navigateur. `scripts/check-camera-selection.mjs` vérifie un premier lancement sans ressources de test, le rechargement et les centrages, notamment en 2554 × 1295. Les tours partagent le titre des autres bâtiments. Les paliers du manoir sont trois cartes avec bâtiments, portraits de créatures et états Acquis, Suivant ou Verrouillé ; le bouton d’amélioration, son gain et son coût restent au-dessus. Les actions principales partagent les boutons encadrés des onglets Construire et Recruter.
-
-Sur ordinateur, un menu circulaire en bas à droite reprend les textures et icônes du pack UI, sans cadres carrés derrière les icônes ni anneaux décoratifs supplémentaires. Son centre affiche le niveau du manoir et permet de le sélectionner ; trois boutons en arc au-dessus sélectionnent l’armée (hors gobelins bâtisseurs), ouvrent le bestiaire et le guide. La pause se trouve en bas à gauche et le bouton des paramètres sous le cercle ; les deux boutons ont le même diamètre. Les cartes des bâtiments et des créatures partagent le même format portrait et sont centrées entre la horde et ce menu. Les boutons ronds reprennent leur dégradé violet–bleu avec un fond à 85 % d’opacité. Les sept cartes de recrutement utilisent un format portrait et tiennent sur une rangée dès 1440 pixels ; sur les écrans étroits, la molette, le geste tactile et les grandes flèches permettent de défiler. Sur mobile et tablette, le même menu circulaire accompagne les panneaux flottants ; les raccourcis et les cartes reprennent les éléments de la version ordinateur. Le bestiaire affiche les unités directement sur le fond du menu, sans panneaux colorés ni tuiles d’herbe ; le compteur des gobelins garde son texte à pleine opacité sans fond individuel.
+Voir [l’audit du 12 septembre 2026](docs/audit-2026-09-12.md), [l’analyse iOS et Steam](docs/audit-portability.md) et [la provenance des ressources](ASSETS.md).

@@ -11,28 +11,75 @@ export type AudioSettings = {
 };
 export type AudioStatus = 'idle' | 'loading' | 'ready' | 'error';
 const SETTINGS_KEY = 'evil-city-audio-v1';
+const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
+  muted: false,
+  volume: 0.35,
+  musicVolume: 0.2,
+};
+let sessionSettings = { ...DEFAULT_AUDIO_SETTINGS };
+let storedSettings: string | null | undefined;
+let settingsPending = false;
+
+function validatedAudioSettings(value: unknown): AudioSettings | null {
+  if (value === null || typeof value !== 'object') return null;
+  const saved = value as Partial<AudioSettings>;
+  if (
+    typeof saved.muted !== 'boolean' ||
+    typeof saved.volume !== 'number' ||
+    !Number.isFinite(saved.volume)
+  )
+    return null;
+  return {
+    muted: saved.muted,
+    volume: Math.max(0, Math.min(1, saved.volume)),
+    musicVolume:
+      typeof saved.musicVolume === 'number' &&
+      Number.isFinite(saved.musicVolume)
+        ? Math.max(0, Math.min(1, saved.musicVolume))
+        : DEFAULT_AUDIO_SETTINGS.musicVolume,
+  };
+}
+
 export function saveAudioSettings(settings: AudioSettings) {
+  sessionSettings = validatedAudioSettings(settings) ?? {
+    ...DEFAULT_AUDIO_SETTINGS,
+  };
+  const serialized = JSON.stringify(sessionSettings);
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem(SETTINGS_KEY, serialized);
+    storedSettings = serialized;
+    settingsPending = false;
   } catch {
-    /* Audio settings still work when browser storage is unavailable. */
+    // Preserve the player's choice across menu/game remounts even if writes fail.
+    settingsPending = true;
   }
 }
 export function readAudioSettings(): AudioSettings {
+  let stored: string | null;
   try {
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null');
-    if (typeof saved?.muted === 'boolean' && Number.isFinite(saved?.volume))
-      return {
-        muted: saved.muted,
-        volume: Math.max(0, Math.min(1, saved.volume)),
-        musicVolume: Number.isFinite(saved.musicVolume)
-          ? Math.max(0, Math.min(1, saved.musicVolume))
-          : 0.2,
-      };
+    stored = localStorage.getItem(SETTINGS_KEY);
   } catch {
-    /* Storage may be unavailable in private browsing. */
+    return { ...sessionSettings };
   }
-  return { muted: false, volume: 0.35, musicVolume: 0.2 };
+  // A failed write can leave an older, still readable value. Keep the session
+  // choice until another save succeeds or storage actually changes externally.
+  if (
+    settingsPending &&
+    (storedSettings === undefined || stored === storedSettings)
+  ) {
+    storedSettings = stored;
+    return { ...sessionSettings };
+  }
+  storedSettings = stored;
+  settingsPending = false;
+  try {
+    sessionSettings = validatedAudioSettings(JSON.parse(stored ?? 'null')) ?? {
+      ...DEFAULT_AUDIO_SETTINGS,
+    };
+  } catch {
+    sessionSettings = { ...DEFAULT_AUDIO_SETTINGS };
+  }
+  return { ...sessionSettings };
 }
 
 export class GameAudio {

@@ -4,6 +4,7 @@ import {
   ASSETS,
   animationFrame,
   animationSequence,
+  spriteFrame,
   type AssetKey,
   type Animation,
 } from './art';
@@ -51,8 +52,9 @@ export function Sprite({
   const ref = useRef<HTMLCanvasElement>(null);
   const sequenceKey = (providedSequence ?? (creature ? animationSequence(creature, action, mounted) : [asset!])).join(',');
   useEffect(() => {
-    const canvas = ref.current!,
-      ctx = canvas.getContext('2d')!;
+    const canvas = ref.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx || !sequenceKey) return;
     const sequence = sequenceKey.split(',') as AssetKey[];
     const images = new Map<AssetKey, HTMLImageElement>();
     let frame = 0,
@@ -87,8 +89,8 @@ export function Sprite({
               sequence,
               reduced ? 0 : (performance.now() - start) / 1000,
             ),
-            a = ASSETS[sample.key],
-            im = images.get(sample.key)!;
+            im = images.get(sample.key)!,
+            source = spriteFrame(sample.key, sample.frame);
           ctx.clearRect(0, 0, 256, 256);
           ctx.imageSmoothingEnabled = false;
           if (ground) {
@@ -100,23 +102,23 @@ export function Sprite({
           // Creature strips include generous margins for weapons and effects.
           const scale =
             creature || figure
-              ? 256 / (a.height * 0.85)
-              : Math.min(236 / a.frameWidth, 236 / a.height);
+              ? 256 / (source.height * 0.85)
+              : Math.min(236 / source.width, 236 / source.height);
           ctx.drawImage(
             im,
-            sample.frame * a.frameWidth,
-            0,
-            a.frameWidth,
-            a.height,
-            128 - (a.frameWidth * scale) / 2,
-            128 - (a.height * scale) / 2,
-            a.frameWidth * scale,
-            a.height * scale,
+            source.x,
+            source.y,
+            source.width,
+            source.height,
+            128 - (source.width * scale) / 2,
+            128 - (source.height * scale) / 2,
+            source.width * scale,
+            source.height * scale,
           );
           if (flankingTowers) {
             const tower = images.get('tower-blue')!;
             for (const side of [-1, 1])
-              ctx.drawImage(tower, 128 + side * 82 - 24, 128 + a.height * scale / 2 - 100, 48, 96);
+              ctx.drawImage(tower, 128 + side * 82 - 24, 128 + source.height * scale / 2 - 100, 48, 96);
           }
           if (!reduced && sequence.some((key) => ASSETS[key].frames > 1))
             frame = window.setTimeout(draw, 100);
