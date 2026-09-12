@@ -1,7 +1,8 @@
 import type { Point, State } from './engine';
 import { SoundEvents, type SoundCue, type SoundKind } from './audioEvents';
 import { GameMusic } from './music';
-import { SOUND_DEFS, effectCalibration } from './audioCatalog';
+import { MusicEvents } from './musicEvents';
+import { SOUND_DEFS, effectCalibration, soundClipPath } from './audioCatalog';
 
 export type AudioSettings = {
   muted: boolean;
@@ -10,6 +11,13 @@ export type AudioSettings = {
 };
 export type AudioStatus = 'idle' | 'loading' | 'ready' | 'error';
 const SETTINGS_KEY = 'evil-city-audio-v1';
+export function saveAudioSettings(settings: AudioSettings) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    /* Audio settings still work when browser storage is unavailable. */
+  }
+}
 export function readAudioSettings(): AudioSettings {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null');
@@ -29,6 +37,7 @@ export function readAudioSettings(): AudioSettings {
 
 export class GameAudio {
   private music = new GameMusic(import.meta.env.BASE_URL);
+  private musicEvents = new MusicEvents();
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
   private buffers = new Map<string, AudioBuffer>();
@@ -85,7 +94,7 @@ export class GameAudio {
         [...new Set(Object.values(SOUND_DEFS).flatMap((def) => def.clips))].map(
           async (name) => {
             const response = await fetch(
-              `${import.meta.env.BASE_URL}audio/tommusic/${name}.wav`,
+              `${import.meta.env.BASE_URL}${soundClipPath(name)}`,
             );
             if (!response.ok) throw new Error('Audio unavailable');
             const buffer = await context.decodeAudioData(
@@ -127,11 +136,7 @@ export class GameAudio {
   configure(settings: AudioSettings) {
     this.settings = settings;
     this.music.configure(settings.muted, settings.musicVolume);
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    } catch {
-      /* optional */
-    }
+    saveAudioSettings(settings);
     if (this.master && this.context)
       this.master.gain.setTargetAtTime(
         settings.muted ? 0 : settings.volume,
@@ -152,6 +157,8 @@ export class GameAudio {
 
   update(s: State) {
     // Consume events even while muted so turning sound back on never replays them.
+    const theme = this.musicEvents.update(s);
+    if (theme) this.music.playTheme(theme);
     const cues = this.events.update(s);
     cues.sort(
       (a, b) => SOUND_DEFS[b.kind].priority - SOUND_DEFS[a.kind].priority,

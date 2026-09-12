@@ -10,13 +10,19 @@ Le dossier Tiny Swords (Free Pack) a été fourni par l’utilisateur dans Downl
 
 Les archives complètes et les fichiers Aseprite restent hors du site distribué. Les PNG des packs sont copiés sans modification de leur dessin.
 
-Les cartes de construction et de recrutement de la barre du bas conservent leur fond sombre sur ordinateur et leur parchemin sur mobile. Les fiches de sélection conservent leur fond sombre. Les messages centraux emploient le ruban jaune de `SmallRibbons.png` ; le titre de carte conserve le ruban bleu de `BigRibbons.png`. Le centre des rubans est répété sans étirer sa texture. Les quatre coins de `Cursor_04.png` encadrent les parcelles et les sprites sélectionnés. Les PV utilisent les cadres et remplissages rouges séparés `SmallBar_*` sur la carte et `BigBar_*` dans les fiches, avec un remplissage proportionnel aux PV restants.
+Les cartes de construction et de recrutement de la barre du bas conservent le même fond sombre sur ordinateur, tablette et mobile. Les fiches de sélection conservent leur fond sombre. Les messages centraux emploient le ruban jaune de `SmallRibbons.png` ; le titre de carte conserve le ruban bleu de `BigRibbons.png`. Le centre des rubans est répété sans étirer sa texture. Les quatre coins de `Cursor_04.png` encadrent les parcelles et les sprites sélectionnés. Les PV utilisent les cadres et remplissages rouges séparés `SmallBar_*` sur la carte et `BigBar_*` dans les fiches, avec un remplissage proportionnel aux PV restants.
 
 Le logo `public/evil-city-logo.png` provient de `eclogo.png`, fourni par l’utilisateur. Son fond a été retiré avec l’outil imagegen intégré, avec cette consigne : « Retirer uniquement le fond blanc, fournir un PNG à transparence réelle, conserver le dessin, les couleurs et les proportions du logo, nettoyer les contours sans halo blanc et garder une petite marge transparente. » Il est affiché à 40 px sur ordinateur et 30 px sur petit écran.
 
 Direction typographique retenue pour le futur logo : **Agenda Fantasy**, parmi les deux références fournies (Fantasy Magist et Agenda Fantasy), pour ses lettres anguleuses adaptées à l’ambiance d’Evil City. Elle est également utilisée pour « Les Tilleuls », centré dans le ruban bleu. La version Demo de 177Studio est intégrée dans `public/fonts/AgendaFantasy-Demo.otf` ; [source de l’auteur](https://www.dafont.com/agenda-fantasy.font), licence conservée dans `public/fonts/AgendaFantasy-License.txt`. Cette version est réservée à l’usage personnel ; un usage commercial nécessite la licence correspondante de [177Studio](https://177studio.com/product/agenda-fantasy-font/).
 
 La licence indiquée sur la page officielle autorise l’usage personnel et commercial ainsi que la modification. Elle interdit la redistribution, la revente et le reconditionnement des ressources comme pack, y compris après modification. Ces ressources sont réservées à leur intégration dans le jeu ; ne pas les redistribuer séparément. Le crédit, facultatif selon l’auteur, figure dans le guide.
+
+## Illustration du menu principal
+
+Retouches de détail : la bannière violette au crâne est complète en haut à droite ; la caisse de bois du coin inférieur droit est retirée des deux fonds en conservant les chaînes au premier plan. Le troll au crâne conique et le casque à nasal de l’archère suivent les références complémentaires fournies par l’utilisateur. Le chevalier a été remplacé par un lancier jaune partagé entre les deux formats, avec une lance droite et des yeux simples assortis à ceux de l’archère. La maçonnerie et les pierres du premier plan sont simplifiées ; le fini numérique net remplace la texture marbrée apparue pendant les retouches.
+
+Les fonds `public/menu/evil-city-nightfall.png` (paysage) et `public/menu/evil-city-nightfall-portrait.png` (téléphone) ont été créés puis retouchés avec l’outil **imagegen intégré**, le 12 septembre 2026. La référence de composition a été fournie par l’utilisateur. La version révisée conserve le troll, le gobelin et le spectre à gauche ; le lancier, l’archère et le moine humains à droite reprennent les portraits et sprites du jeu. Le même personnage RGBA `public/menu/evil-city-lancer.png` est composé dans les deux fonds par `scripts/compose-menu-art.py`, après un détourage local explicitement autorisé. Les sources sont conservées dans `art-source/menu/`. Un seul château subsiste en haut à droite, sous la lune. Le logo rouge à cornes a été retiré du menu principal. Le titre, les boutons et les particules sont rendus séparément dans l’interface ; les sprites en jeu et les animations du bestiaire sont conservés. Les consignes exactes sont conservées dans [docs/start-menu-art.md](docs/start-menu-art.md).
 
 ## Créatures jouables
 
@@ -60,6 +66,21 @@ L’alchimiste emploie les séquences Idle, Walk et Attack du Hex Shaman origina
 Les jardins conservent les couleurs originales du pack, sans modification de palette. Les notices du haut utilisent le parchemin enroulé `ui-banner.png` et la pause le ruban bleu `ui-ribbons.png`, avec leurs bordures et ornements originaux. Les rampes de terrain emploient leurs deux moitiés (128 × 128 pixels) et les surfaces de sol contiguës partagent une même palette. L’aperçu de construction réutilise le sprite final avec une opacité réduite.
 
 La réaction des moutons humains utilise les six images originales de `Resources/Sheep/HappySheep_Bouncing.png` (Tiny Swords Update 010), copiées sans retouche par `scripts/import-sheep-pack.py` vers `sheep-hit.png`. Elle accompagne la récolte de viande des bergers ainsi que les dégâts de sabotage, puis revient au cycle normal. Elle suit le temps de simulation et respecte la réduction des animations.
+
+## Musiques et effet fournis le 12 septembre 2026
+
+Les fichiers suivants ont été fournis par l’utilisateur et copiés sans réencodage dans `public/audio/`, avec les noms demandés. Aucune attribution à AlkaKrab ou TomMusic n’est déduite pour ces fichiers.
+
+| Fichier fourni | Fichier intégré | Déclenchement |
+| --- | --- | --- |
+| `Action 1.mp3` | `menu-music.mp3` | Menu principal, en boucle, après une interaction autorisant le son. Arrêt en entrant dans la partie. |
+| `Action 2.mp3` | `human-theme.mp3` | Départ effectif d’une attaque de gardes de la mairie, y compris les patrouilles contre le racket. Sans boucle. |
+| `Action 5.mp3` | `guild-theme.mp3` | Départ des héros de la guilde, y compris ses défenseurs. Sans boucle. |
+| `Ambience 1.mp3` | `ambiance-music.mp3` | Interlude après deux morceaux ordinaires, avec une pause de 2 à 4 minutes avant et après. Une seule lecture. |
+| `Dark 1.mp3` | `dark-theme.mp3` | Premier passage strictement au-dessus de 60 % des parcelles, une fois par partie. Attend la fin d’un thème d’attaque en cours. |
+| `Fx 2.mp3` | `building-upgrade.mp3` | Fin effective de l’amélioration d’un bâtiment joueur. Son global du canal Effets, calibré avec les bruitages existants. |
+
+Une seule piste musicale joue à la fois. Un renfort ne redémarre pas le thème déjà en cours. Après un thème, la piste d’ambiance interrompue retrouve sa position, ou le silence musical reprend son décompte. Les événements survenus pendant que le son est coupé ne sont pas rejoués à la réactivation. La pause, le retour au menu, l’onglet masqué et les volumes restent respectés. `scripts/check-theme-audio.mjs` vérifie la lecture réelle et ces transitions dans le navigateur ; `scripts/check-music.mjs` couvre la playlist et les interludes.
 
 ## Musique AlkaKrab
 

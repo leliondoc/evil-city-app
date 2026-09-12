@@ -1,4 +1,5 @@
 import { MusicPlaylist, musicBreakDuration } from './musicPlaylist';
+import type { MusicTheme } from './musicEvents';
 
 /** Stream one track at a time; keep music independent of simulation speed. */
 export class GameMusic {
@@ -16,9 +17,18 @@ export class GameMusic {
   private volume = 0.2;
   private disposed = false;
   private failed = false;
+  private theme: MusicTheme | null = null;
+  private darkDue = false;
+  private ambientPosition = 0;
+  private ambience = false;
+  private ambienceDue = false;
+  private finishedTracks = 0;
   private hidden = () => this.sync();
 
-  constructor(private baseUrl: string) {
+  constructor(
+    private baseUrl: string,
+    private mode: 'game' | 'menu' = 'game',
+  ) {
     document.addEventListener('visibilitychange', this.hidden);
   }
 
@@ -33,7 +43,24 @@ export class GameMusic {
       this.source = context.createMediaElementSource(this.element);
       this.source.connect(this.gain).connect(context.destination);
       this.element.onended = () => {
+        if (this.theme) {
+          if (this.darkDue) {
+            this.darkDue = false;
+            this.theme = 'dark';
+            this.load();
+            this.sync();
+            return;
+          }
+          this.theme = null;
+          this.load();
+          if (this.element) this.element.currentTime = this.ambientPosition;
+          this.sync();
+          return;
+        }
+        if (this.mode === 'menu') return;
         if (this.breakRemaining !== null) return;
+        if (this.ambience) this.ambience = false;
+        else this.ambienceDue = ++this.finishedTracks % 2 === 0;
         this.element?.pause();
         this.breakRemaining = musicBreakDuration();
         this.sync();
@@ -47,6 +74,13 @@ export class GameMusic {
       };
       // Stop retrying on every click if the optional music files are absent.
       this.element.onerror = () => {
+        if (this.theme) {
+          this.theme = null;
+          this.load();
+          if (this.element) this.element.currentTime = this.ambientPosition;
+          this.sync();
+          return;
+        }
         this.failed = true;
       };
       this.load();
@@ -65,11 +99,47 @@ export class GameMusic {
     this.sync();
   }
 
+  /** One cue per arriving party; never layer music or restart the current theme. */
+  playTheme(theme: MusicTheme) {
+    if (
+      this.mode !== 'game' ||
+      this.disposed ||
+      this.failed ||
+      !this.element ||
+      this.muted ||
+      this.paused ||
+      this.volume === 0 ||
+      document.hidden ||
+      this.theme === theme
+    )
+      return;
+    if (theme === 'dark' && this.theme) {
+      this.darkDue = true;
+      return;
+    }
+    if (!this.theme) {
+      this.ambientPosition = this.element.currentTime;
+      this.suspendBreak();
+    }
+    this.theme = theme;
+    this.load();
+    this.sync();
+  }
+
   private load() {
     if (!this.element || !this.context || !this.gain) return;
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
     this.gain.gain.setValueAtTime(0, this.context.currentTime);
-    this.element.src = `${this.baseUrl}audio/alkakrab/spooky-${this.index}.mp3`;
+    this.element.loop = this.mode === 'menu';
+    this.element.src = `${this.baseUrl}audio/${
+      this.mode === 'menu'
+        ? 'menu-music.mp3'
+        : this.theme
+          ? `${this.theme}-theme.mp3`
+          : this.ambience
+            ? 'ambiance-music.mp3'
+            : `alkakrab/spooky-${this.index}.mp3`
+    }`;
   }
 
   private sync() {
@@ -86,14 +156,17 @@ export class GameMusic {
       this.suspendBreak();
       return;
     }
-    if (this.breakRemaining !== null) {
+    if (this.breakRemaining !== null && !this.theme) {
       if (this.breakTimer === null) {
         this.breakStarted = performance.now();
         this.breakTimer = setTimeout(() => {
           this.breakTimer = null;
           this.breakRemaining = null;
           if (this.disposed) return;
-          this.index = this.playlist.next();
+          if (this.ambienceDue) {
+            this.ambience = true;
+            this.ambienceDue = false;
+          } else this.index = this.playlist.next();
           this.load();
           this.sync();
         }, this.breakRemaining);

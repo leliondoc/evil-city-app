@@ -1,5 +1,7 @@
 'use client';
 
+import '../globals.css';
+import './mobile-ui.css';
 import { restReason, restUnit, restUnits } from './domain';
 
 import {
@@ -14,7 +16,6 @@ import {
   Sparkles,
   Users,
   Pause,
-  BookOpen,
   Plus,
   Minus,
   Crosshair,
@@ -29,6 +30,7 @@ import {
   LockKeyhole,
   Volume2,
   VolumeX,
+  House,
 } from 'lucide-react';
 import {
   GameButton as Button,
@@ -174,7 +176,15 @@ function clock(seconds: number) {
     .padStart(2, '0')}`;
 }
 
-export default function Game({ initialState }: { initialState?: State } = {}) {
+export default function Game({
+  initialState,
+  active = true,
+  onReturnToMenu,
+}: {
+  initialState?: State;
+  active?: boolean;
+  onReturnToMenu?: () => void;
+} = {}) {
   const [gameStore] = useState(() => createGameStore(initialState));
   const s = useSyncExternalStore(gameStore.subscribe, gameStore.getSnapshot);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -239,10 +249,27 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   const [feedback, setFeedback] = useState('');
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const victoryShown = useRef(false);
-  const controls = useRef({ paused: false, speed: 1, ready: false });
+  const controls = useRef({ paused: !active, speed: 1, ready: false, active });
   useLayoutEffect(() => {
-    controls.current = { paused: paused || modal !== null, speed, ready };
-  }, [paused, modal, speed, ready]);
+    controls.current = {
+      paused: !active || paused || modal !== null,
+      speed,
+      ready,
+      active,
+    };
+  }, [active, paused, modal, speed, ready]);
+
+  useEffect(() => {
+    if (active) {
+      canvasRef.current?.focus({ preventScroll: true });
+    }
+  }, [active]);
+
+  useEffect(() => {
+    const syncAudio = () => setAudioSettings(readAudioSettings());
+    window.addEventListener('evil-city-menu-audio', syncAudio);
+    return () => window.removeEventListener('evil-city-menu-audio', syncAudio);
+  }, []);
 
   useEffect(() => {
     const audio = new GameAudio(
@@ -252,7 +279,9 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     );
     audioRef.current = audio;
     audio.update(gameStore.getState());
-    const unlock = () => audio.unlock();
+    const unlock = () => {
+      if (controls.current.active) audio.unlock();
+    };
     const visibility = () =>
       audio.setPaused(document.hidden || controls.current.paused);
     window.addEventListener('pointerdown', unlock);
@@ -271,9 +300,11 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     audioRef.current?.configure(audioSettings);
   }, [audioSettings]);
   useEffect(() => {
-    audioRef.current?.setPaused(paused || modal !== null || document.hidden);
-    audioRef.current?.setMusicPaused(paused);
-  }, [paused, modal]);
+    audioRef.current?.setPaused(
+      !active || paused || modal !== null || document.hidden,
+    );
+    audioRef.current?.setMusicPaused(!active || paused);
+  }, [active, paused, modal]);
 
   const notify = useCallback((message: string) => {
     setFeedback(message);
@@ -317,6 +348,17 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   );
   const command = useCallback(
     (point: Point, target: Selection | null) => {
+      if (pendingRef.current) {
+        pendingRef.current = null;
+        setPendingBuild(null);
+        setFeedback('');
+        setTouchMode('inspect');
+        if (rendererRef.current) {
+          rendererRef.current.buildKind = null;
+          rendererRef.current.cancelGesture();
+        }
+        return;
+      }
       const selected = selectionRef.current;
       if (selected.type === 'unit' || selected.type === 'units') {
         setPendingBuild(null);
@@ -374,11 +416,12 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     };
   }, [select, command, gameStore]);
   useEffect(() => {
-    const suspend = () => rendererRef.current?.setSuspended(modal !== null || document.hidden);
+    const suspend = () =>
+      rendererRef.current?.setSuspended(!active || modal !== null || document.hidden);
     suspend();
     document.addEventListener('visibilitychange', suspend);
     return () => document.removeEventListener('visibilitychange', suspend);
-  }, [modal, ready]);
+  }, [active, modal, ready]);
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.selection = selection;
@@ -455,6 +498,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     const keydown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (
+        !active ||
         modal ||
         target.isContentEditable ||
         target.closest('input,textarea,select,[role=dialog]')
@@ -511,7 +555,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       window.removeEventListener('blur', stop);
       document.removeEventListener('visibilitychange', stop);
     };
-  }, [modal, tab, chooseBuild, chooseRecruit, run]);
+  }, [active, modal, tab, chooseBuild, chooseRecruit, run]);
 
   const group = s.units.filter(
     (u) => u.hp > 0 && selectedUnitIds(selection).includes(u.id),
@@ -584,10 +628,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
   };
   const message = feedback || (s.noticeUntil > s.elapsed ? s.notice : '');
   const sheetNotice =
-    compact && message ? (
+    compact && feedback ? (
       <output className="touch-sheet-notice" aria-live="polite">
-        <PanelSkin kind="paper" />
-        <span>{message}</span>
+        <PanelSkin kind="notice-ribbon" />
+        <span>{feedback}</span>
       </output>
     ) : null;
   const chooseTouchMode = (mode: 'inspect' | 'select' | 'command') => {
@@ -707,21 +751,69 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
     </>
   );
 
+  const commandWheel = (
+    <CommandWheel
+      level={manorLevel(s)}
+      paused={paused}
+      onManor={() => {
+        const manor = s.lots.find((lot) => lot.kind === 'hq');
+        if (!manor) return;
+        setPendingBuild(null);
+        select({ type: 'lot', id: manor.id });
+        rendererRef.current?.focusLot(manor.id);
+        if (compact) setMobilePanel('details');
+      }}
+      onArmy={() => {
+        const ids = s.units.filter((unit) => unit.hp > 0 && unit.kind !== 'goblin').map((unit) => unit.id);
+        if (!ids.length) {
+          setFeedback('Recrutez des combattants pour former votre armée.');
+          return;
+        }
+        setPendingBuild(null);
+        select(unitSelection(ids));
+        setMobilePanel(null);
+        setTouchMode('inspect');
+      }}
+      onBestiary={() => setModal('bestiary')}
+      onGuide={() => setModal('guide')}
+      onSettings={() => setModal('settings')}
+      onPause={() => setPaused((value) => !value)}
+    />
+  );
+
   return (
     <main
       className="game-shell"
       data-compact={compact}
       data-panel={mobilePanel ?? 'map'}
+      data-placing={!!pendingBuild}
     >
       <header className="topbar">
         <div className="brand">
-          <img
-            className="brand-mark"
-            src={`${import.meta.env.BASE_URL}evil-city-logo.png`}
-            width={40}
-            height={40}
-            alt="Evil City"
-          />
+          {onReturnToMenu ? (
+            <button
+              className="brand-home"
+              aria-label="Retour au menu principal"
+              title="Menu principal · Partie mise en pause"
+              onClick={onReturnToMenu}
+            >
+              <img
+                className="brand-mark"
+                src={`${import.meta.env.BASE_URL}evil-city-logo.png`}
+                width={40}
+                height={40}
+                alt=""
+              />
+            </button>
+          ) : (
+            <img
+              className="brand-mark"
+              src={`${import.meta.env.BASE_URL}evil-city-logo.png`}
+              width={40}
+              height={40}
+              alt="Evil City"
+            />
+          )}
         </div>
         <div className="resources" aria-label="Vos ressources">
           {(
@@ -828,40 +920,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           >
             ×{speed}
           </Button>
-          {compact && <>
-          <Button
-            className="icon-btn"
-            title={paused ? 'Reprendre (Espace)' : 'Pause (Espace)'}
-            aria-label={paused ? 'Reprendre' : 'Mettre en pause'}
-            onClick={() => setPaused((p) => !p)}
-          >
-            {paused ? <PackIcon asset="ui-play" /> : <Pause size={17} />}
-          </Button>
-          <Button
-            className="icon-btn optional-action"
-            title="Bestiaire"
-            aria-label="Ouvrir le bestiaire"
-            onClick={() => setModal('bestiary')}
-          >
-            <BookOpen size={17} />
-          </Button>
-          <Button
-            className="icon-btn"
-            title="Comment jouer (H)"
-            aria-label="Comment jouer"
-            onClick={() => setModal('guide')}
-          >
-            <PackIcon asset="ui-info" />
-          </Button>
-          <Button
-            className="icon-btn"
-            title="Paramètres de partie"
-            aria-label="Ouvrir les paramètres"
-            onClick={() => setModal('settings')}
-          >
-            <PackIcon asset="ui-settings" />
-          </Button>
-          </>}
         </div>
       </header>
 
@@ -879,7 +937,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           >
             {compact && (
               <Button
-                className="mobile-sheet-close touch-pack"
+                className="mobile-sheet-close primary-btn"
                 onClick={() => setMobilePanel(null)}
               >
                 Fermer les détails <PackIcon asset="ui-close" />
@@ -1382,7 +1440,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             <>
               <div className="touch-toolbar" aria-label="Commandes tactiles">
                 <Button
-                  className="touch-pack"
+                  className="primary-btn"
                   aria-pressed={touchMode === 'inspect'}
                   onPointerDown={(e) => {
                     if (e.pointerType === 'touch') {
@@ -1392,10 +1450,10 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   }}
                   onClick={() => chooseTouchMode('inspect')}
                 >
-                  Explorer
+                  {pendingBuild ? 'Annuler' : 'Explorer'}
                 </Button>
                 <Button
-                  className="touch-pack"
+                  className="primary-btn"
                   aria-pressed={touchMode === 'select'}
                   onPointerDown={(e) => {
                     if (e.pointerType === 'touch') {
@@ -1408,7 +1466,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                   Groupe
                 </Button>
                 <Button
-                  className="touch-pack"
+                  className="primary-btn"
                   aria-pressed={touchMode === 'command'}
                   disabled={!group.length || s.won || s.lost}
                   onPointerDown={(e) => {
@@ -1426,7 +1484,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 </Button>
               </div>
               <Button
-                className="touch-selection touch-pack"
+                className="touch-selection"
                 onClick={() => setMobilePanel('details')}
                 aria-label="Voir les détails de la sélection"
               >
@@ -1507,7 +1565,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
       <footer className="bottom-bar">
         {compact && (
           <Button
-            className="mobile-sheet-close touch-pack"
+            className="mobile-sheet-close primary-btn"
             onClick={() => setMobilePanel(null)}
           >
             Retour à la carte <PackIcon asset="ui-close" />
@@ -1582,6 +1640,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
           onValueChange={(value) => {
             setTab(String(value));
             setPendingBuild(null);
+            if (compact) setMobilePanel(value === 'build' ? 'build' : 'recruit');
           }}
         >
           <TabsList variant="line" aria-label="Construction et recrutement">
@@ -1601,7 +1660,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="build">
-            <CreationCards>
+            <CreationCards layout={compact ? 'grid' : 'scroll'}>
               {BUILD_OPTIONS.map((kind, i) => {
                 const b = BUILDINGS[kind];
                 const locked = buildUnlockReason(s, kind);
@@ -1616,7 +1675,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                     title={reason || b.short}
                     aria-label={`${b.name}${reason ? `. ${reason}` : ''}`}
                   >
-                    {compact && <PanelSkin kind="paper" />}
                     <Sprite asset={buildingArt(kind)} />
                     <div>
                       <strong>{b.name}</strong>
@@ -1634,7 +1692,7 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </CreationCards>
           </TabsContent>
           <TabsContent value="recruit">
-            <CreationCards>
+            <CreationCards layout={compact ? 'grid' : 'scroll'}>
               {RECRUIT_OPTIONS.map((kind, i) => {
                 const c = CREATURES[kind],
                   reason = recruitReason(s, kind);
@@ -1667,7 +1725,6 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                       title={reason || `Recruter : ${c.name}`}
                       aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
                     >
-                      {compact && <PanelSkin kind="paper" />}
                       <CreaturePortrait kind={kind} />
                       <div>
                         <strong>{c.name}</strong>
@@ -1709,39 +1766,14 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             </CreationCards>
           </TabsContent>
         </Tabs>
-        {!compact && (
-          <CommandWheel
-            level={manorLevel(s)}
-            paused={paused}
-            onManor={() => {
-              const manor = s.lots.find((lot) => lot.kind === 'hq');
-              if (!manor) return;
-              setPendingBuild(null);
-              select({ type: 'lot', id: manor.id });
-              rendererRef.current?.focusLot(manor.id);
-            }}
-            onArmy={() => {
-              const ids = s.units.filter((unit) => unit.hp > 0 && unit.kind !== 'goblin').map((unit) => unit.id);
-              if (!ids.length) {
-                setFeedback('Recrutez des combattants pour former votre armée.');
-                return;
-              }
-              setPendingBuild(null);
-              select(unitSelection(ids));
-              setTouchMode('inspect');
-            }}
-            onBestiary={() => setModal('bestiary')}
-            onGuide={() => setModal('guide')}
-            onSettings={() => setModal('settings')}
-            onPause={() => setPaused((value) => !value)}
-          />
-        )}
+        {!compact && commandWheel}
       </footer>
 
+      {compact && <div className="mobile-command-dock">{commandWheel}</div>}
       {compact && (
         <nav className="mobile-nav" aria-label="Navigation du jeu">
           <Button
-            className="touch-pack"
+            className="primary-btn"
             aria-pressed={mobilePanel === null}
             onClick={() => {
               setMobilePanel(null);
@@ -1753,35 +1785,35 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
             Carte
           </Button>
           <Button
-            className="touch-pack"
+            className="primary-btn"
             aria-pressed={mobilePanel === 'details'}
             onClick={() =>
               setMobilePanel(mobilePanel === 'details' ? null : 'details')
             }
           >
-            <Flag size={19} />
+            <PackIcon asset="ui-info" />
             Détails
           </Button>
           <Button
-            className="touch-pack"
+            className="primary-btn"
             aria-pressed={mobilePanel === 'build'}
             onClick={() => {
               setMobilePanel(mobilePanel === 'build' ? null : 'build');
               setTab('build');
             }}
           >
-            <Hammer size={19} />
+            <PackIcon asset="hq-purple" />
             Bâtir
           </Button>
           <Button
-            className="touch-pack"
+            className="primary-btn"
             aria-pressed={mobilePanel === 'recruit'}
             onClick={() => {
               setMobilePanel(mobilePanel === 'recruit' ? null : 'recruit');
               setTab('recruit');
             }}
           >
-            <PackIcon asset="ui-sword" />
+            <PackIcon asset="goblin-avatar" />
             Recruter
           </Button>
         </nav>
@@ -1939,6 +1971,17 @@ export default function Game({ initialState }: { initialState?: State } = {}) {
                 >
                   <PackIcon asset="ui-back" /> Recommencer la partie
                 </Button>
+                {onReturnToMenu && (
+                  <Button
+                    className="subtle-btn"
+                    onClick={() => {
+                      setModal(null);
+                      onReturnToMenu();
+                    }}
+                  >
+                    <House size={16} /> Menu principal · Garder la partie
+                  </Button>
+                )}
               </div>
               <Button className="primary-btn" onClick={() => setModal(null)}>
                 <PackIcon asset="ui-back" /> Retour au quartier

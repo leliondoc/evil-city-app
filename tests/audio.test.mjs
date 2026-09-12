@@ -2,16 +2,24 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { establishedGame } from './established-fixture.mjs';
 import { SoundEvents } from '../app/game/audioEvents.ts';
-import { recruit, tick, resourceGain } from '../app/game/engine.ts';
-import { effectCalibration, SOUND_DEFS } from '../app/game/audioCatalog.ts';
+import {
+  recruit,
+  tick,
+  resourceGain,
+  upgrade,
+  createGame,
+} from '../app/game/engine.ts';
+import {
+  effectCalibration,
+  SOUND_DEFS,
+  soundClipPath,
+} from '../app/game/audioCatalog.ts';
 import { existsSync } from 'node:fs';
 
 test('All configured effects exist and calibration limits peaks and silent amplification', () => {
   for (const clip of new Set(Object.values(SOUND_DEFS).flatMap((d) => d.clips)))
     assert.ok(
-      existsSync(
-        new URL(`../public/audio/tommusic/${clip}.wav`, import.meta.url),
-      ),
+      existsSync(new URL(`../public/${soundClipPath(clip)}`, import.meta.url)),
       clip,
     );
   assert.equal(effectCalibration([new Float32Array(100)]), 1);
@@ -208,6 +216,33 @@ test('A building sounds on completion, not when the construction starts', () => 
   assert.deepEqual(audio.update(s), []);
 });
 
+test('The supplied upgrade effect follows the completed player upgrade, never the purchase or human upgrades', () => {
+  const state = createGame();
+  state.resources = { gold: 1000, food: 1000, wood: 1000, mana: 1000 };
+  const events = new SoundEvents();
+  events.update(state);
+  assert.equal(upgrade(state, 6), '');
+  tick(state, 0.1);
+  assert.equal(
+    events.update(state).filter((cue) => cue.kind === 'upgrade').length,
+    0,
+  );
+  tick(state, state.lots[6].upgrading.remaining + 0.1);
+  const completed = events.update(state);
+  assert.equal(state.lots[6].level, 2);
+  assert.deepEqual(
+    completed.filter((cue) => cue.kind === 'upgrade'),
+    [{ kind: 'upgrade' }],
+  );
+  assert.equal(completed.filter((cue) => cue.kind === 'complete').length, 0);
+  state.lots[2].level++;
+  tick(state, 0.1);
+  assert.equal(
+    events.update(state).filter((cue) => cue.kind === 'upgrade').length,
+    0,
+  );
+});
+
 test('Recruitment confirmation follows actual production and resets between games', () => {
   const s = establishedGame(),
     audio = new SoundEvents();
@@ -246,8 +281,15 @@ test('Actual living and undead unit deaths emit one death cue each, without repl
     events.update(s);
     s.units[0].hp = 0;
     tick(s, 0.1);
-    assert.equal(events.update(s).filter((cue) => cue.kind === 'death').length, 1, kind);
+    assert.equal(
+      events.update(s).filter((cue) => cue.kind === 'death').length,
+      1,
+      kind,
+    );
     tick(s, 0.1);
-    assert.equal(events.update(s).filter((cue) => cue.kind === 'death').length, 0);
+    assert.equal(
+      events.update(s).filter((cue) => cue.kind === 'death').length,
+      0,
+    );
   }
 });

@@ -55,6 +55,7 @@ import {
 const CELL = 32,
   SIZE = 32 * CELL,
   MARGIN = 512;
+const FACTION_PURPLE = '#74518d';
 const noise = (x: number, y: number) => {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
   return n - Math.floor(n);
@@ -330,6 +331,12 @@ export class Renderer {
     };
   }
   private hit(p: Point): Selection | null {
+    const w = this.toWorld(p);
+    const lot = this.getState().lots.find(
+      (l) => w.x >= l.x && w.x < l.x + 8 && w.y >= l.y && w.y < l.y + 8,
+    );
+    // Placement targets the parcel, even when an actor stands under the cursor.
+    if (this.buildKind) return lot ? { type: 'lot', id: lot.id } : null;
     const x = (p.x - this.origin.x) / this.scale,
       y = (p.y - this.origin.y) / this.scale;
     for (let i = this.hits.length - 1; i >= 0; i--) {
@@ -347,10 +354,6 @@ export class Renderer {
       )
         return h.selection;
     }
-    const w = this.toWorld(p),
-      lot = this.getState().lots.find(
-        (l) => w.x >= l.x && w.x < l.x + 8 && w.y >= l.y && w.y < l.y + 8,
-      );
     return lot ? { type: 'lot', id: lot.id } : null;
   }
   private pointerDown = (e: PointerEvent) => {
@@ -462,6 +465,7 @@ export class Renderer {
       let hit = this.hit(p);
       if (
         e.pointerType === 'touch' &&
+        !this.buildKind &&
         hit?.type !== 'unit' &&
         hit?.type !== 'enemy'
       ) {
@@ -865,7 +869,7 @@ export class Renderer {
       { x: x + 15, y: y - (owned ? 22 : 12) },
       { x: x + 1, y: y - (owned ? 14 : 22) },
     ];
-    this.draw.polygon(cloth, owned ? '#74518d' : '#497c9c', '#302e3b', 1.5);
+    this.draw.polygon(cloth, owned ? FACTION_PURPLE : '#497c9c', '#302e3b', 1.5);
     this.draw.line(
       [
         { x: x + 3, y: y - 44 },
@@ -1353,7 +1357,7 @@ export class Renderer {
             scale =
               u.kind === 'troll' ? 0.52 : u.kind === 'minotaur' ? 0.62 : 0.72;
           if (selected)
-            this.draw.ellipse(x, y, 25, 12, '#fff1af', 2 / this.scale, 0.75);
+            this.draw.ellipse(x, y, 25, 12, FACTION_PURPLE, 2 / this.scale, 1);
           const hit = this.sprite(
             sample.key,
             x,

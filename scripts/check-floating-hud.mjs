@@ -60,12 +60,20 @@ try {
       .getByRole('button', { name: 'Recentrer le quartier', exact: true })
       .click();
     const point = await page.evaluate(() => {
-      const r = document.querySelector('.world-canvas').getBoundingClientRect(),
+      const canvas = document.querySelector('.world-canvas');
+      const r = canvas.getBoundingClientRect(),
         scale = Math.max(0.1, Math.min(r.width / 1120, r.height / 1174));
-      return {
+      const center = {
         x: Math.round(r.x + (r.width - 1024 * scale) / 2) + 512 * scale,
         y: Math.round(r.y + (r.height - 1024 * scale) / 2) + 512 * scale,
       };
+      // The floating selection card may cover the parcel center on narrow screens.
+      // Pick an exposed part of the same central parcel through the real canvas.
+      for (const [dx, dy] of [[0, 0], [64, 0], [-64, 0], [0, 64], [0, -64]]) {
+        const point = { x: center.x + dx * scale, y: center.y + dy * scale };
+        if (document.elementFromPoint(point.x, point.y) === canvas) return point;
+      }
+      throw Error('The central parcel has no visible canvas target');
     });
     await page.mouse.click(point.x, point.y);
     assert.match(await page.locator('.selection-name').innerText(), /Cantine/);

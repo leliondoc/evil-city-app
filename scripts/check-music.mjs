@@ -29,6 +29,8 @@ try {
     };
   });
   await page.goto(process.env.GAME_URL || 'http://127.0.0.1:3000');
+  await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await page.locator('.world-canvas[data-ready=true]').waitFor();
   await page.locator('.loading-art').waitFor({ state: 'hidden' });
   assert.equal(tracks.length, 0, 'Music is not fetched before interaction');
   await page
@@ -103,6 +105,7 @@ try {
     .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })
     .click();
   const played = [await page.evaluate(() => window.musicElement.src)];
+  let interludes = 0;
   for (let index = 2; index <= 9; index++) {
     const previous = played.at(-1);
     await page.evaluate(() =>
@@ -165,6 +168,25 @@ try {
         window.musicElement.currentTime > 0.05,
       previous,
     );
+    if (
+      (await page.evaluate(() => window.musicElement.src)).endsWith(
+        '/ambiance-music.mp3',
+      )
+    ) {
+      interludes++;
+      assert.equal(await page.evaluate(() => window.musicElement.loop), false);
+      await page.evaluate(() =>
+        window.musicElement.dispatchEvent(new Event('ended')),
+      );
+      await page.clock.fastForward(119_000);
+      assert.equal(await page.evaluate(() => window.musicElement.paused), true);
+      await page.clock.fastForward(121_000);
+      await page.waitForFunction(
+        () =>
+          window.musicElement.src.includes('/alkakrab/') &&
+          window.musicElement.currentTime > 0.05,
+      );
+    }
     played.push(await page.evaluate(() => window.musicElement.src));
   }
   assert.equal(
@@ -173,6 +195,11 @@ try {
     'All tracks play before any repeat',
   );
   assert.notEqual(played[7], played[8], 'No repeat at the round boundary');
+  assert.equal(
+    interludes,
+    4,
+    'An occasional ambience interlude follows every two ordinary tracks',
+  );
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('evil-city-audio-v1')),
   );
@@ -180,6 +207,8 @@ try {
   // A second page has no migration fixture, preserving the actual saved settings.
   const second = await page.context().newPage();
   await second.goto(page.url());
+  await second.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await second.locator('.world-canvas[data-ready=true]').waitFor();
   await second.locator('.loading-art').waitFor({ state: 'hidden' });
   await second
     .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })

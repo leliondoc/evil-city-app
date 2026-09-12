@@ -12,6 +12,7 @@ export type SoundKind =
   | 'build'
   | 'deposit'
   | 'complete'
+  | 'upgrade'
   | 'spawn'
   | 'spawn-soldier'
   | 'spawn-undead'
@@ -107,10 +108,9 @@ export class SoundEvents {
         if (!old) continue;
         if (old.hp > 0 && lot.hp <= 0) cues.push({ kind: 'destroy', point });
         else if (old.owned !== lot.owned) cues.push({ kind: 'capture', point });
-        else if (
-          (old.building && !lot.construction && old.planned === lot.kind) ||
-          (lot.owned && lot.level > old.level)
-        )
+        else if (lot.owned && lot.level > old.level)
+          cues.push({ kind: 'upgrade' });
+        else if (old.building && !lot.construction && old.planned === lot.kind)
           cues.push({ kind: 'complete', point });
         else if (lot.hp > 0 && lot.hp < old.hp)
           periodic(`building-hit-${lot.id}`, 'heavy', point, 1.1);

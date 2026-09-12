@@ -32,6 +32,8 @@ try {
     page.on('pageerror', (error) => errors.push(error.message));
     if (viewport.width === 320 || viewport.width === 768) {
       await page.goto('http://127.0.0.1:3000/');
+      await page.getByRole('button', { name: 'Jouer', exact: true }).tap();
+      await page.locator('.world-canvas[data-ready=true]').waitFor();
       await page.locator('.loading-art').waitFor({ state: 'hidden' });
       await page
         .getByRole('button', { name: 'Mettre en pause', exact: true })
@@ -90,16 +92,26 @@ try {
         box.width >= 44 && box.height >= 44,
         'Navigation targets fit a finger',
       );
-      assert.equal(
-        await button.locator('.pack-button').count(),
-        2,
-        'Original pack button skins',
-      );
+      assert.ok(await button.evaluate((element) => element.classList.contains('primary-btn')),
+        'Navigation shares the desktop faction button');
+    }
+    const wheel = page.getByRole('navigation', { name: 'Commandes du domaine' });
+    assert.ok(await wheel.isVisible(), 'The desktop domain wheel is available on touch');
+    for (const button of await wheel.getByRole('button').all()) {
+      const box = await button.boundingBox();
+      assert.ok(box.width >= 44 && box.height >= 44, 'Wheel actions fit a finger');
+      assert.ok(await button.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+      }), 'Each wheel action is unobstructed');
     }
     await nav.getByRole('button', { name: 'Détails', exact: true }).tap();
     assert.equal(await page.locator('.sidebar').isVisible(), true);
     await page.getByRole('button', { name: 'Fermer les détails' }).tap();
     await nav.getByRole('button', { name: 'Recruter', exact: true }).tap();
+    if (viewport.height > 500) assert.ok(await page.getByRole('tab', { name: 'Construire des bâtiments' }).isVisible());
+    assert.equal(await page.locator('.recruit-card > .pack-paper').count(), 0,
+      'Recruitment uses the new desktop illustration frames');
     assert.equal(
       await page
         .getByRole('button', { name: 'Recruter Spectre', exact: true })
@@ -112,10 +124,11 @@ try {
     await nav.getByRole('button', { name: 'Carte', exact: true }).tap();
     await page.getByRole('button', { name: 'Groupe', exact: true }).tap();
     const cdp = await context.newCDPSession(page);
-    const start = { x: canvas.x + 2, y: canvas.y + 2, id: 1 };
+    const header = await page.locator('.topbar').boundingBox();
+    const start = { x: canvas.x + 2, y: header.y + header.height + 4, id: 1 };
     const end = {
       x: canvas.x + canvas.width - 2,
-      y: canvas.y + canvas.height - 110,
+      y: canvas.y + canvas.height - 2,
       id: 1,
     };
     await cdp.send('Input.dispatchTouchEvent', {
@@ -247,7 +260,7 @@ try {
       .getByRole('button', { name: 'Recentrer le quartier', exact: true })
       .tap();
     await nav.getByRole('button', { name: 'Bâtir', exact: true }).tap();
-    await page.getByRole('button', { name: /^Tanière gobeline/ }).tap();
+    await page.getByRole('button', { name: /^Grotte gobeline/ }).tap();
     assert.equal(await page.locator('.bottom-bar').isVisible(), false);
     assert.match(await page.locator('.touch-hint').innerText(), /parcelle/);
     const placement = await page.evaluate(async () => {
@@ -267,11 +280,19 @@ try {
           (lot.x + 4) * 32 * scale,
         y:
           rect.y +
-          Math.round((rect.height - 1024 * scale) / 2 + 14) +
+          Math.round((rect.height - 1024 * scale) / 2) +
           (lot.y + 4) * 32 * scale,
       };
     });
     await page.touchscreen.tap(placement.x, placement.y);
+    if (!await page.evaluate(async () => (await import('/tests/domain-preview.tsx')).state.lots[4].construction)) {
+      await page.screenshot({ path: join(output, `${viewport.width}-placement-error.png`) });
+      console.log(output, placement, await page.evaluate(async (point) => {
+        const { state } = await import('/tests/domain-preview.tsx');
+        return { notice: state.notice, feedback: document.querySelector('.touch-hint')?.textContent,
+          target: document.elementFromPoint(point.x, point.y)?.outerHTML.slice(0, 250) };
+      }, placement));
+    }
     assert.equal(
       await page.evaluate(
         async () =>
@@ -337,6 +358,7 @@ try {
     await page.screenshot({
       path: join(output, `${viewport.width}-rotated-details.png`),
     });
+    await page.getByRole('button', { name: 'Fermer les détails', exact: true }).tap();
     await page
       .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })
       .tap();
@@ -361,6 +383,8 @@ try {
   });
   const page = await desktop.newPage();
   await page.goto('http://127.0.0.1:3000/');
+  await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await page.locator('.world-canvas[data-ready=true]').waitFor();
   await page.locator('.loading-art').waitFor({ state: 'hidden' });
   assert.equal(
     await page.locator('main').getAttribute('data-compact'),

@@ -1,0 +1,326 @@
+/* Touch layout of the same floating HUD, faction buttons and illustrated cards. */
+.game-shell[data-compact='true'] {
+  --touch-header-height: calc(92px + env(safe-area-inset-top, 0px));
+  --mobile-nav-height: calc(74px + env(safe-area-inset-bottom, 0px));
+  --touch-edge: 8px;
+  padding: 0;
+  overflow: hidden;
+}
+.game-shell[data-compact='true'] .world-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 0;
+}
+.game-shell[data-compact='true'] .topbar {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px 44px;
+  grid-template-rows: 44px 44px;
+  gap: 0 8px;
+  padding: env(safe-area-inset-top, 0px) max(8px, env(safe-area-inset-right, 0px)) 4px max(8px, env(safe-area-inset-left, 0px));
+  background: #17252be8;
+  border: 0;
+  box-shadow: 0 1px 0 #a1956844;
+}
+.game-shell[data-compact='true'] .resources { grid-column: 1 / -1; grid-row: 1; }
+.game-shell[data-compact='true'] .resource { min-height: 44px; }
+.game-shell[data-compact='true'] .session-status {
+  grid-column: 1;
+  grid-row: 2;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  font-size: 12px;
+}
+.game-shell[data-compact='true'] .session-status-label { display: none; }
+.game-shell[data-compact='true'] .goblin-counter { grid-column: 2; grid-row: 2; justify-content: center; }
+.game-shell[data-compact='true'] .goblin-counter img { width: 30px; height: 36px; }
+.game-shell[data-compact='true'] .top-actions { grid-column: 3; grid-row: 2; }
+.game-shell[data-compact='true'] .speed-btn { width: 44px; height: 44px !important; background: #443a50 !important; }
+
+.game-shell[data-compact='true'] .mobile-nav {
+  position: fixed;
+  inset: auto max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
+  height: 74px;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0 8px;
+  background: transparent;
+  border: 0;
+  filter: drop-shadow(0 3px 4px #07182099);
+}
+.game-shell[data-compact='true'] .mobile-nav .primary-btn {
+  width: 100%;
+  height: 62px;
+  min-height: 44px;
+  padding: 4px !important;
+  gap: 1px;
+  font-size: 12px;
+  line-height: 16px;
+  margin: 0;
+}
+.game-shell[data-compact='true'] .mobile-nav :is(.pack-icon, svg) { width: 30px; height: 30px; }
+.game-shell[data-compact='true'] .mobile-nav .primary-btn[aria-pressed='true'],
+.game-shell[data-compact='true'] .touch-toolbar .primary-btn[aria-pressed='true'] {
+  background: var(--faction-purple-dark) !important;
+  box-shadow: inset 0 0 0 2px #e6c997, inset 0 -4px #0003;
+  color: #fff0bd;
+}
+.mobile-command-dock {
+  position: fixed;
+  right: max(8px, env(safe-area-inset-right, 0px));
+  bottom: calc(var(--mobile-nav-height) + 4px);
+  z-index: 12;
+  pointer-events: none;
+}
+.mobile-command-dock .command-wheel { width: 180px; height: 200px; }
+.mobile-command-dock .command-wheel-manor { left: 66px; top: 59px; width: 104px; height: 104px; }
+.mobile-command-dock .command-wheel-castle.pack-icon { width: 76px; height: 65px; top: 0; }
+.mobile-command-dock .command-wheel-name { bottom: 21px; font-size: 15px; }
+.mobile-command-dock .command-wheel-level { min-width: 56px; height: 26px; font-size: 19px; }
+.mobile-command-dock .command-wheel-level .pack-icon { width: 21px; height: 21px; }
+.mobile-command-dock .command-wheel-action { width: 46px; height: 46px; }
+.mobile-command-dock .command-wheel-action > .pack-icon { width: 33px; height: 33px; }
+.mobile-command-dock .wheel-army { left: 8px; top: 40px; }
+.mobile-command-dock .wheel-bestiary { left: 55px; top: 2px; }
+.mobile-command-dock .wheel-bestiary > .pack-icon { width: 56px; height: 56px; }
+.mobile-command-dock .wheel-guide { left: 115px; right: auto; top: 7px; }
+.mobile-command-dock .wheel-pause { left: 8px; top: 99px; }
+.mobile-command-dock .wheel-settings { left: 43px; top: 151px; }
+.mobile-command-dock .command-wheel-tooltip { display: none; }
+
+.game-shell[data-compact='true'] .touch-toolbar {
+  position: fixed;
+  inset: auto auto calc(var(--mobile-nav-height) + 4px) max(8px, env(safe-area-inset-left, 0px));
+  width: min(170px, calc(100vw - 200px));
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+  z-index: 12;
+}
+.game-shell[data-compact='true'] .touch-toolbar .primary-btn {
+  min-height: 44px;
+  height: 44px;
+  padding: 6px 10px !important;
+  font-size: 12px;
+  margin: 0;
+}
+.game-shell[data-compact='true'] .touch-selection {
+  position: fixed;
+  inset: auto auto calc(var(--mobile-nav-height) + 156px) max(8px, env(safe-area-inset-left, 0px));
+  width: min(170px, calc(100vw - 200px));
+  min-height: 44px;
+  height: 44px;
+  display: block;
+  padding: 6px;
+  background: #192b31ed;
+  border: 1px solid #a1956888;
+  border-radius: 5px;
+  color: #f4e6c7;
+  font-size: 12px;
+  z-index: 12;
+}
+.game-shell[data-compact='true'] .world-wrap .map-controls {
+  position: fixed;
+  inset: calc(var(--touch-header-height) + 8px) auto auto max(8px, env(safe-area-inset-left, 0px));
+  display: grid;
+  gap: 4px;
+  z-index: 11;
+}
+.game-shell[data-compact='true'] .map-controls .icon-btn {
+  background: #192b31df;
+  border: 1px solid #a1956866;
+  border-radius: 5px;
+}
+.game-shell[data-compact='true'] .district-menu {
+  position: fixed;
+  top: calc(var(--touch-header-height) + 8px);
+  right: max(8px, env(safe-area-inset-right, 0px));
+  width: 224px;
+  gap: 6px;
+  z-index: 11;
+}
+.game-shell[data-compact='true'] .district-camp-tabs { gap: 4px; }
+.game-shell[data-compact='true'] .district-camp-tabs .primary-btn { padding: 6px 8px !important; margin: 0; }
+.game-shell[data-compact='true'] .district-group { padding: 5px; border: 1px solid #a1956844; border-radius: 5px; background: #192b31de; }
+.game-shell[data-compact='true'] .district-shortcut { flex-shrink: 0; }
+.game-shell[data-compact='true'] .touch-hint {
+  position: fixed;
+  top: auto;
+  bottom: calc(var(--mobile-nav-height) + 211px);
+  left: 8px;
+  right: 8px;
+  border: 1px solid #a1956866;
+  border-radius: 5px;
+  z-index: 12;
+}
+.game-shell[data-compact='true'] .game-notifications { top: calc(var(--touch-header-height) + 112px); }
+.game-shell[data-compact='true'] .game-notifications :is(.toast-message, .paused-label) { font-size: 14px; min-height: 50px; padding: 10px 32px 13px; }
+
+/* One scrollable sheet at a time; all cards share the desktop art and frames. */
+.game-shell[data-compact='true'] :is(.sidebar, .bottom-bar) {
+  position: fixed;
+  top: auto;
+  bottom: calc(var(--mobile-nav-height) + 4px);
+  left: max(8px, env(safe-area-inset-left, 0px));
+  right: max(8px, env(safe-area-inset-right, 0px));
+  width: auto;
+  max-height: min(68dvh, calc(100dvh - var(--touch-header-height) - var(--mobile-nav-height) - 16px));
+  padding: 0 12px 14px;
+  margin: 0;
+  gap: 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #a89973 #192b31;
+  scrollbar-width: thin;
+  scroll-padding-top: 64px;
+  background: #192b31f5;
+  border: 1px solid #a1956888;
+  border-radius: 7px;
+  box-shadow: 0 5px 24px #07182077;
+}
+.game-shell[data-compact='true'][data-panel='build'] .bottom-bar,
+.game-shell[data-compact='true'][data-panel='recruit'] .bottom-bar { display: flex; flex-direction: column; }
+.game-shell[data-compact='true'] .mobile-sheet-close.primary-btn {
+  position: sticky;
+  top: 0;
+  order: -2;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 48px;
+  min-height: 48px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 12px !important;
+  border-radius: 0 0 4px 4px !important;
+}
+.game-shell[data-compact='true'] .touch-sheet-notice { order: -1; margin: 0; padding: 14px 28px 18px; color: #fff3d9; font: 15px/1.4 Georgia, serif; }
+.game-shell[data-compact='true'] .build-tabs { flex: 0 0 auto; order: 0; min-width: 0; gap: 12px; }
+.game-shell[data-compact='true'] .build-tabs > [role='tablist'] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  height: auto;
+  min-height: 56px;
+  gap: 6px;
+}
+.game-shell[data-compact='true'] .build-tabs [role='tab'] {
+  width: 100%;
+  min-width: 0;
+  height: 56px;
+  padding: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: normal;
+}
+.game-shell[data-compact='true'] .build-tabs [role='tab'] > .pack-icon { width: 36px; height: 36px; }
+.game-shell[data-compact='true'] .build-tabs > [role='tabpanel'] { height: auto; min-height: 0; margin: 0; overflow: visible; }
+.game-shell[data-compact='true'] .card-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  height: auto;
+  padding: 0;
+  overflow: visible;
+  scroll-snap-type: none;
+}
+.game-shell[data-compact='true'] .creation-scroll-controls { display: none; }
+.game-shell[data-compact='true'] .recruit-option { width: 100%; min-width: 0; max-width: none; }
+.game-shell[data-compact='true'] .card-row > .building-card,
+.game-shell[data-compact='true'] .recruit-option > .recruit-card {
+  width: 100%;
+  height: 214px;
+  min-height: 214px;
+  padding: 8px 6px 30px;
+  color: #f3e6cf;
+}
+.game-shell[data-compact='true'] :is(.building-card, .recruit-card) > div { grid-template-rows: 36px 36px 20px; gap: 3px; }
+.game-shell[data-compact='true'] .build-card strong { color: #f3e6cf; font-size: 14px; line-height: 18px; }
+.game-shell[data-compact='true'] .build-card small { color: #c4cec6; font-size: 12px; line-height: 18px; }
+.game-shell[data-compact='true'] .build-card .recruit-blocker { color: #e9bb9c; }
+.game-shell[data-compact='true'] .build-card .card-cost { color: #e3ddc7; font-size: 12px; }
+.game-shell[data-compact='true'] .build-card .cost-missing { color: #ffb4a0; }
+.game-shell[data-compact='true'] .recruit-progress-label { font-size: 10px; }
+.game-shell[data-compact='true'][data-panel='recruit'] .army-overview {
+  display: grid;
+  order: 1;
+  flex: 0 0 auto;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #a1956855;
+  border-radius: 6px;
+  background: #192b31de;
+}
+.game-shell[data-compact='true'] .army-title { margin: 0; flex: none; }
+.game-shell[data-compact='true'] .army-faces { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.game-shell[data-compact='true'] .army-face { width: 100%; min-width: 0; height: 52px; }
+.game-shell[data-compact='true'] .army-face img { width: 40px; height: 40px; }
+.game-shell[data-compact='true']:not([data-panel='map']) :is(.touch-toolbar, .touch-selection, .touch-hint, .map-controls, .district-menu) { display: none; }
+.game-shell[data-compact='true'][data-placing='true'] :is(.mobile-command-dock, .touch-selection, .district-menu) { display: none; }
+@media (max-width: 699px) {
+  .game-shell[data-compact='true']:not([data-panel='map']) .mobile-command-dock { display: none; }
+}
+
+/* Tablets keep a side panel and the full-size domain wheel visible together. */
+@media (min-width: 700px) {
+  .game-shell[data-compact='true'] { --touch-header-height: calc(52px + env(safe-area-inset-top, 0px)); }
+  .game-shell[data-compact='true'] .topbar { grid-template-columns: minmax(280px, 1fr) auto 78px 44px; grid-template-rows: 48px; gap: 10px; }
+  .game-shell[data-compact='true'] .resources { grid-column: 1; }
+  .game-shell[data-compact='true'] .session-status { grid-column: 2; grid-row: 1; flex-direction: column; gap: 2px; }
+  .game-shell[data-compact='true'] .goblin-counter { grid-column: 3; grid-row: 1; }
+  .game-shell[data-compact='true'] .top-actions { grid-column: 4; grid-row: 1; }
+  .game-shell[data-compact='true'] .resource strong .resource-cap { display: inline; margin-left: 3px; }
+  .game-shell[data-compact='true'] .mobile-nav { right: auto; width: min(580px, calc(100vw - 260px)); }
+  .game-shell[data-compact='true'] .mobile-nav .primary-btn { flex-direction: row; gap: 8px; font-size: 14px; }
+  .mobile-command-dock { bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+  .mobile-command-dock .command-wheel { width: 240px; height: 260px; }
+  .mobile-command-dock .command-wheel-manor { left: 70px; top: 66px; width: 130px; height: 130px; }
+  .mobile-command-dock .command-wheel-castle.pack-icon { width: 92px; height: 81px; top: 3px; }
+  .mobile-command-dock .command-wheel-name { bottom: 24px; font-size: 17px; }
+  .mobile-command-dock .command-wheel-action { width: 52px; height: 52px; }
+  .mobile-command-dock .wheel-army { left: 44px; top: 8px; }
+  .mobile-command-dock .wheel-bestiary { left: 104px; top: 0; }
+  .mobile-command-dock .wheel-guide { left: 167px; top: 16px; }
+  .mobile-command-dock .wheel-pause { left: 10px; top: 155px; }
+  .mobile-command-dock .wheel-settings { left: 64px; top: 210px; }
+  .game-shell[data-compact='true'] :is(.sidebar, .bottom-bar) { right: auto; width: min(580px, calc(100vw - 260px)); max-height: calc(100dvh - var(--touch-header-height) - var(--mobile-nav-height) - 20px); }
+  .game-shell[data-compact='true'] .sidebar { max-width: 420px; }
+  .game-shell[data-compact='true'] .card-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .game-shell[data-compact='true'] .touch-toolbar { width: 300px; grid-template-columns: repeat(3, 1fr); }
+  .game-shell[data-compact='true'] .touch-selection { bottom: calc(var(--mobile-nav-height) + 58px); width: 300px; }
+  .game-shell[data-compact='true'] .world-wrap .map-controls { display: flex; }
+  .game-shell[data-compact='true'] .touch-hint { left: 160px; right: 250px; bottom: calc(var(--mobile-nav-height) + 8px); }
+  .game-shell[data-compact='true'] .game-notifications { top: calc(var(--touch-header-height) + 8px); width: min(400px, calc(100vw - 480px)); }
+}
+@media (min-width: 700px) and (max-width: 820px) {
+  .game-shell[data-compact='true'] .card-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-height: 500px) and (min-width: 700px) {
+  .game-shell[data-compact='true'] { --mobile-nav-height: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  .game-shell[data-compact='true'] .mobile-nav { height: 60px; }
+  .game-shell[data-compact='true'] .mobile-nav .primary-btn { height: 48px; }
+  .game-shell[data-compact='true'] .district-menu { width: 224px; }
+  .game-shell[data-compact='true'] .build-tabs > [role='tablist'] { display: none; }
+  .game-shell[data-compact='true'] :is(.building-card, .recruit-card) > :is(img, canvas:not(.pack-skin)) { width: 56px !important; height: 56px !important; }
+  .game-shell[data-compact='true'] .card-row > .building-card,
+  .game-shell[data-compact='true'] .recruit-option > .recruit-card { height: 184px; min-height: 184px; }
+  .mobile-command-dock .command-wheel { width: 240px; height: 200px; }
+  .mobile-command-dock .command-wheel-manor { left: 110px; top: 54px; width: 104px; height: 104px; }
+  .mobile-command-dock .command-wheel-castle.pack-icon { width: 76px; height: 65px; top: 0; }
+  .mobile-command-dock .command-wheel-name { bottom: 21px; font-size: 15px; }
+  .mobile-command-dock .command-wheel-action { width: 46px; height: 46px; }
+  .mobile-command-dock .wheel-army { left: 4px; top: 40px; }
+  .mobile-command-dock .wheel-bestiary { left: 53px; top: 0; }
+  .mobile-command-dock .wheel-guide { left: 107px; top: 0; }
+  .mobile-command-dock .wheel-pause { left: 44px; top: 106px; }
+  .mobile-command-dock .wheel-settings { left: 98px; top: 162px; }
+  .game-shell[data-compact='true'] .touch-selection { bottom: calc(var(--mobile-nav-height) + 55px); }
+  .game-shell[data-compact='true'] .touch-hint { bottom: auto; top: calc(var(--touch-header-height) + 60px); left: 8px; right: 250px; }
+}

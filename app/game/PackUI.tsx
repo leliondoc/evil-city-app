@@ -3,14 +3,23 @@ import { paintPanel, paintHealthBar, type PanelKind } from './panelSkin';
 import { Button as BaseButton } from '@/components/ui/button';
 import { ASSETS, type AssetKey } from './art';
 
+// Swap only the red enamel; preserve the original gold edging and pixel bevels.
+const greenButtonPalette = new Map<number, readonly [number, number, number]>([
+  [0xf65555, [112, 172, 88]],
+  [0xba4954, [72, 121, 67]],
+  [0xfca07e, [179, 215, 124]],
+]);
+
 /** Paint separated pack tiles at a fixed pixel scale, including on resize. */
 export function PanelSkin({
   kind = 'paper',
   asset,
+  tone,
   className = '',
 }: {
   kind?: PanelKind;
   asset?: AssetKey;
+  tone?: 'green';
   className?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -35,6 +44,15 @@ export function PanelSkin({
         0,
       );
       paintPanel(ctx, image, kind, width, height);
+      if (kind === 'button' && tone === 'green') {
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < pixels.data.length; i += 4) {
+          const rgb = (pixels.data[i] << 16) | (pixels.data[i + 1] << 8) | pixels.data[i + 2];
+          const green = greenButtonPalette.get(rgb);
+          if (green) pixels.data.set(green, i);
+        }
+        ctx.putImageData(pixels, 0, 0);
+      }
     };
     image.onload = draw;
     image.src =
@@ -55,7 +73,7 @@ export function PanelSkin({
       observer.disconnect();
       image.onload = null;
     };
-  }, [kind, asset]);
+  }, [kind, asset, tone]);
   return (
     <canvas
       ref={ref}

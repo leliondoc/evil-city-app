@@ -17,6 +17,7 @@ import {
   isStreet,
   makeScenery,
   sceneryFits,
+  sceneryClearsLots,
 } from '../app/game/scenery.ts';
 import {
   GROUND_PATCHES,
@@ -122,6 +123,36 @@ test('Scenery rejects roots in water, foam on grass, cliff faces and streets', (
   assert.ok(scenery.filter((d) => d.key.startsWith('tree-')).length >= 30);
   assert.ok(scenery.filter((d) => d.key.startsWith('water-rock-')).length >= 4);
 });
+test('Bushes keep their full foliage away from existing and future parcel fences', () => {
+  const lots = createGame().lots;
+  for (const lot of lots) {
+    for (const key of ['bush-1', 'bush-2', 'bush-3', 'bush-4']) {
+      assert.equal(
+        sceneryClearsLots({ key, x: (lot.x + 7) * 32, y: (lot.y + 2) * 32, scale: 0.65 }, [lot]),
+        false,
+        'The former decorative shrub position sits on the right fence',
+      );
+      assert.equal(
+        sceneryClearsLots({ key, x: lot.x * 32 - 40, y: (lot.y + 2) * 32, scale: 0.7 }, [lot]),
+        false,
+        'A root outside the yard is insufficient when the foliage crosses its fence',
+      );
+    }
+  }
+  const bushes = makeScenery(lots).filter(d => d.key.startsWith('bush-'));
+  assert.ok(bushes.length > 0, 'Keep the natural shrubs outside the fenced parcels');
+  for (const bush of bushes)
+    for (const lot of lots) {
+      const left = bush.x - 64 * bush.scale;
+      const right = bush.x + 64 * bush.scale;
+      const top = bush.y - 128 * 0.67 * bush.scale;
+      const bottom = top + 128 * bush.scale;
+      assert.ok(right <= lot.x * 32 - 8 || left >= (lot.x + 8) * 32 + 8 ||
+        bottom <= lot.y * 32 - 8 || top >= (lot.y + 8) * 32 + 8,
+        'Every retained shrub leaves the entire fence clear');
+    }
+});
+
 test('Wood and gold occupy dry islands and all supply sites remain reachable', () => {
   const s = createGame();
   for (const site of s.sites) {

@@ -90,8 +90,8 @@ export function sceneryClearsLots(d: Decoration, lots: Lot[]) {
   return lots.every((lot) => {
     const pennant = factionPennantPosition(lot);
     if (overlaps(pennant.x - 14, pennant.y - 63, 56, 75)) return false;
-    if (!d.key.startsWith('tree-')) return true;
-    // Reserve the whole fenced yard, including the canopy and a small margin.
+    if (!d.key.startsWith('tree-') && !d.key.startsWith('bush-')) return true;
+    // Reserve the whole fenced yard, including all foliage and a small margin.
     // This also protects future fences on currently empty parcels.
     return !overlaps(lot.x * 32 - 8, lot.y * 32 - 8, 272, 272);
   });
@@ -99,15 +99,6 @@ export function sceneryClearsLots(d: Decoration, lots: Lot[]) {
 
 export function makeScenery(lots: Lot[]): Decoration[] {
   const decorations: Decoration[] = [];
-  for (const lot of lots) {
-    const n = lot.id;
-    decorations.push({
-      x: (lot.x + 7) * 32,
-      y: (lot.y + 2) * 32,
-      key: `bush-${(n % 4) + 1}` as AssetKey,
-      scale: 0.65,
-    });
-  }
   // Small groves frame clearings; species and spacing belong to each grove.
   const groves = [
     [172, -82, 1],

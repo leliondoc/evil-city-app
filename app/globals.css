@@ -3218,6 +3218,8 @@ svg {
   flex-direction: column;
   flex: 0 0 285px;
   width: 285px;
+  /* Leave 12px after the 240px army panel, beyond the 220px mission rail. */
+  margin-left: 32px;
   min-height: 0;
   /* Match the ribbon's visible top: 16px inset + its 20/128 transparent gutter. */
   padding: calc(16px + 47px * 20 / 128) 8px 0;
@@ -3241,7 +3243,7 @@ svg {
   .game-shell[data-compact='false'] .selection-column { flex-basis: 310px; width: 310px; }
 }
 @media (max-width: 1100px) {
-  .game-shell[data-compact='false'] .selection-column { flex-basis: 230px; width: 230px; }
+  .game-shell[data-compact='false'] .selection-column { flex-basis: 230px; width: 230px; margin-left: 22px; }
 }
 .game-shell[data-compact='false'] .district-menu {
   left: auto;
@@ -3708,10 +3710,10 @@ svg {
 /* Pair the two matchups so the decorations stay secondary to the unit profile. */
 .combat-matchups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0; text-align: left; }
 .combat-matchups > div { display: grid; grid-template-rows: 32px auto; align-content: start; gap: 5px; min-width: 0; }
-.combat-matchups dt { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: center; align-self: center; width: 112px; height: 30px; max-width: 100%; font: 700 11px/1 'Trebuchet MS', sans-serif; }
+.combat-matchups dt { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: center; align-self: center; width: 96px; height: 26px; max-width: 100%; padding: 0 8px; color: #fff1d2; font: 700 11px/1 'Trebuchet MS', sans-serif; }
 .combat-matchups dd { margin: 0; padding: 0 3px; color: #d0ddd1; font: 12px/1.45 'Trebuchet MS', sans-serif; overflow-wrap: break-word; }
-.combat-matchups .combat-strength-label { padding-left: 30px; padding-right: 22px; color: #473723; }
-.combat-matchups .combat-weakness-label { width: 96px; height: 26px; color: #fff1d2; text-shadow: 0 1px #763337; }
+.combat-matchups .combat-strength-label { text-shadow: 0 1px #35582f; }
+.combat-matchups .combat-weakness-label { text-shadow: 0 1px #763337; }
 .combat-details .combat-advice { display: flex; align-items: flex-start; gap: 9px; padding-top: 10px; border-top: 1px solid #a8916233; color: #bbc8c1; font-size: 12px; line-height: 1.6; }
 .combat-details .combat-advice .pack-icon { width: 20px; height: 20px; flex: 0 0 20px; object-fit: contain; margin: 1px 0 0; }
 

@@ -53,6 +53,12 @@ export const SOUND_DEFS: Record<SoundKind, SoundDefinition> = {
   build: { clips: ['chop-4'], gain: 0.23, cooldown: 0.6, priority: 1 },
   deposit: { clips: ['deposit'], gain: 0.18, cooldown: 0.6, priority: 1 },
   complete: { clips: ['rubble'], gain: 0.28, cooldown: 0.9, priority: 3 },
+  upgrade: {
+    clips: ['building-upgrade.mp3'],
+    gain: 0.3,
+    cooldown: 0.9,
+    priority: 3,
+  },
   capture: { clips: ['capture'], gain: 0.3, cooldown: 1, priority: 3 },
   spawn: { clips: ['complete'], gain: 0.22, cooldown: 0.7, priority: 3 },
   'spawn-soldier': { clips: ['equip'], gain: 0.3, cooldown: 0.7, priority: 3 },
@@ -85,6 +91,10 @@ export const SOUND_DEFS: Record<SoundKind, SoundDefinition> = {
     priority: 0,
   },
 };
+
+export function soundClipPath(clip: string): string {
+  return clip.endsWith('.mp3') ? `audio/${clip}` : `audio/tommusic/${clip}.wav`;
+}
 
 /** Match active signal levels without boosting silence or allowing high peaks. */
 export function effectCalibration(channels: readonly Float32Array[]): number {

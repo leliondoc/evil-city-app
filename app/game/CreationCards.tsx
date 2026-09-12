@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { PackIcon } from './PackUI';
 
-export function CreationCards({ children }: { children: ReactNode }) {
+export function CreationCards({ children, layout = 'scroll' }: { children: ReactNode; layout?: 'grid' | 'scroll' }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
   useLayoutEffect(() => {
@@ -53,7 +53,7 @@ export function CreationCards({ children }: { children: ReactNode }) {
           </button>
         </div>
       )}
-      <div ref={rowRef} className="card-row" aria-label="Options disponibles, défilement horizontal">
+      <div ref={rowRef} className="card-row" aria-label={layout === 'grid' ? 'Options disponibles' : 'Options disponibles, défilement horizontal'}>
         {children}
       </div>
     </div>
