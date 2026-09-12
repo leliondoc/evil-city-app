@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import {
   BookOpen,
   ChevronRight,
@@ -55,43 +61,47 @@ export function StartMenu({
     };
   }, []);
 
-  useEffect(() => {
-    musicRef.current?.configure(settings.muted, settings.musicVolume);
-  }, [settings]);
-
-  const unlockMusic = (next = settings) => {
-    if (next.muted || next.musicVolume === 0) return;
+  const unlockMusic = useCallback((next: AudioSettings) => {
+    musicRef.current?.configure(next.muted, next.musicVolume);
+    if (next.muted || next.musicVolume === 0 || document.hidden) return;
     try {
       contextRef.current ??= new AudioContext();
       void contextRef.current.resume().catch(() => {});
-      musicRef.current?.configure(next.muted, next.musicVolume);
       musicRef.current?.unlock(contextRef.current);
     } catch {
       // Music is optional; browsers without Web Audio can still enter the game.
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Re-entering the menu has already been activated by the return button.
+    // Also try after a reload; blocked autoplay is retried by the next gesture.
+    const startMusic = () => unlockMusic(settings);
+    startMusic();
+    document.addEventListener('visibilitychange', startMusic);
+    return () => document.removeEventListener('visibilitychange', startMusic);
+  }, [settings, unlockMusic]);
 
   const configure = (next: AudioSettings) => {
     setSettings(next);
     saveAudioSettings(next);
     window.dispatchEvent(new Event('evil-city-menu-audio'));
-    musicRef.current?.configure(next.muted, next.musicVolume);
     unlockMusic(next);
   };
 
   const openPanel = (next: MenuPanel, trigger: HTMLButtonElement) => {
     panelTrigger.current = trigger;
     setPanel(next);
-    unlockMusic();
+    unlockMusic(settings);
   };
 
   return (
     <main
       className="start-menu"
       aria-label="Menu principal d’Evil City"
-      onPointerDownCapture={() => unlockMusic()}
-      onClickCapture={() => unlockMusic()}
-      onKeyDownCapture={() => unlockMusic()}
+      onPointerDownCapture={() => unlockMusic(settings)}
+      onClickCapture={() => unlockMusic(settings)}
+      onKeyDownCapture={() => unlockMusic(settings)}
     >
       <div className="start-motes" aria-hidden="true">
         {Array.from({ length: 16 }, (_, i) => (

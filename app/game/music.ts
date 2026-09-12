@@ -33,13 +33,13 @@ export class GameMusic {
   private ambience = false;
   private ambienceDue = false;
   private finishedTracks = 0;
-  private hidden = () => this.sync();
+  private syncPlayback = () => this.sync();
 
   constructor(
     private baseUrl: string,
     private mode: 'game' | 'menu' = 'game',
   ) {
-    document.addEventListener('visibilitychange', this.hidden);
+    document.addEventListener('visibilitychange', this.syncPlayback);
   }
 
   unlock(context: AudioContext) {
@@ -47,6 +47,7 @@ export class GameMusic {
     const element = this.prepare();
     if (!this.source) {
       this.context = context;
+      context.addEventListener('statechange', this.syncPlayback);
       this.gain = context.createGain();
       this.gain.gain.value = this.volume;
       this.envelope = context.createGain();
@@ -181,7 +182,8 @@ export class GameMusic {
       this.paused ||
       this.muted ||
       this.volume === 0 ||
-      document.hidden
+      document.hidden ||
+      (this.context !== null && this.context.state !== 'running')
     );
   }
 
@@ -394,7 +396,8 @@ export class GameMusic {
     this.pendingTheme = null;
     this.cancelTransitionTimer();
     this.suspendBreak();
-    document.removeEventListener('visibilitychange', this.hidden);
+    document.removeEventListener('visibilitychange', this.syncPlayback);
+    this.context?.removeEventListener('statechange', this.syncPlayback);
     if (this.element) {
       this.element.onended = null;
       this.element.onplaying = null;

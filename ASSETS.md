@@ -75,7 +75,7 @@ Les fichiers suivants ont été fournis par l’utilisateur et copiés sans rée
 
 | Fichier fourni | Fichier intégré | Déclenchement |
 | --- | --- | --- |
-| `Action 1.mp3` | `menu-music.mp3` | Menu principal, préchargé dès l’accueil si le son est activé ; en boucle après la première interaction autorisant le son. Arrêt en entrant dans la partie. |
+| `Action 1.mp3` | `menu-music.mp3` | Menu principal, préchargé dès l’accueil si le son est activé ; lecture en boucle tentée à chaque ouverture, retour du jeu et rafraîchissement. Si le navigateur bloque la lecture automatique, le premier clic ou toucher la lance. Arrêt en entrant dans la partie. |
 | `Action 2.mp3` | `human-theme.mp3` | Départ effectif d’une attaque de gardes de la mairie, y compris les patrouilles contre le racket. Sans boucle. |
 | `Action 5.mp3` | `guild-theme.mp3` | Départ des héros de la guilde, y compris ses défenseurs. Sans boucle. |
 | `Ambience 1.mp3` | `ambiance-music.mp3` | Interlude après deux morceaux ordinaires, avec une pause de 2 à 4 minutes avant et après. Une seule lecture. |
@@ -83,6 +83,8 @@ Les fichiers suivants ont été fournis par l’utilisateur et copiés sans rée
 | `Fx 2.mp3` | `building-upgrade.mp3` | Fin effective de l’amélioration d’un bâtiment joueur. Son global du canal Effets, calibré avec les bruitages existants. |
 
 Une seule piste musicale joue à la fois. Un renfort ne redémarre pas le thème déjà en cours. Après un thème, la piste d’ambiance interrompue retrouve sa position, ou le silence musical reprend son décompte. Les événements survenus pendant que le son est coupé ne sont pas rejoués à la réactivation. La pause, le retour au menu, l’onglet masqué et les volumes restent respectés. `scripts/check-theme-audio.mjs` vérifie la lecture réelle et ces transitions dans le navigateur ; `scripts/check-music.mjs` couvre la playlist et les interludes.
+
+Le retour au menu relance sa musique sans clic supplémentaire, même si la partie était en pause. Le lecteur suit aussi les suspensions et reprises du contexte audio : la piste et le fondu attendent que la sortie soit active. `scripts/check-menu-music.mjs` vérifie sur ordinateur, téléphone et tablette les allers-retours menu/partie, le rafraîchissement avec lecture automatique autorisée ou bloquée, les interruptions, la sourdine mémorisée et l’absence de pistes superposées.
 
 ## Musique AlkaKrab
 
