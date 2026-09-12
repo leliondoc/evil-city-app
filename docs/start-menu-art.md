@@ -1,15 +1,17 @@
-# Artwork du menu Evil City
+# Archives de l’artwork du menu Evil City
+
+**État actuel : les illustrations sont désactivées à la demande de l’utilisateur.** Le menu affiche uniquement ses particules sur le dégradé des cartes de création (`#443A50` vers `#20323B`), partagé par la variable CSS `--creation-card-gradient`. Aucun fichier d’artwork n’est demandé ni préchargé. Le violet principal reste `#74518D`. Les sources et exports ci-dessous sont conservés pour une éventuelle reprise.
 
 Les deux décors ont été retouchés avec **l’outil imagegen intégré**, en mode édition, le 12 septembre 2026.
 
-## Fichiers livrés
+## Fichiers archivés
 
 - Paysage : [evil-city-nightfall.webp](../public/menu/evil-city-nightfall.webp), 1672 × 941, **228 028 octets**.
 - Portrait : [evil-city-nightfall-portrait.webp](../public/menu/evil-city-nightfall-portrait.webp), 948 × 1660, **219 228 octets**.
 - Sources PNG finales : [landscape.png](../art-source/menu/landscape.png) et [portrait.png](../art-source/menu/portrait.png).
 - Export : `python scripts/compose-menu-art.py`, avec Pillow. WebP qualité 90, méthode 6, dimensions conservées, sans recomposition.
 - Les PNG publics précédents pesaient respectivement 2 324 103 et 2 300 004 octets. Les exports finaux représentent **90,2 % et 90,5 % de moins** ; seuls les WebP sont distribués.
-- Le HTML précharge uniquement le format correspondant au rapport de l’écran. Le `picture` réutilise exactement cette URL, avec décodage asynchrone et priorité haute. Les tests navigateur vérifient une seule requête d’artwork au chargement.
+- Le composant `picture` et les préchargements ont été retirés. Les tests navigateur vérifient désormais zéro requête d’artwork sur les quatre formats du menu.
 - L’ancienne source `art-source/menu/lancer-generated.png` est archivée et n’est pas affichée.
 
 ## Direction artistique finale

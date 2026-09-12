@@ -7,23 +7,14 @@
   min-height: 600px;
   overflow: hidden;
   color: #f4e8d0;
-  background: #101b29;
+  background: var(--creation-card-gradient);
 }
-.start-scenery,
 .start-motes {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-}
-.start-art {
-  display: contents;
-}
-.start-scenery {
-  z-index: -3;
-  object-fit: cover;
-  object-position: center 56%;
 }
 .start-content {
   display: flex;
@@ -525,14 +516,9 @@
   display: grid;
   place-items: center;
   height: 100dvh;
-  background: #101b29;
+  background: var(--creation-card-gradient);
   color: #e4c993;
   font-family: Georgia, serif;
-}
-@media (min-aspect-ratio: 2/1) {
-  .start-scenery {
-    object-position: center 65%;
-  }
 }
 @media (max-width: 700px) {
   .start-menu {
@@ -564,9 +550,6 @@
   }
   .start-tagline > span {
     width: 20px;
-  }
-  .start-scenery {
-    object-position: 65% 60%;
   }
   .start-play {
     width: 288px;

@@ -42,10 +42,7 @@ try {
         .getByRole('button', { name: 'Mettre en pause', exact: true })
         .tap();
       assert.match(await page.locator('.goblin-counter').innerText(), /0\/6/);
-      await page
-        .getByRole('navigation', { name: 'Navigation du jeu' })
-        .getByRole('button', { name: 'Détails', exact: true })
-        .tap();
+      await page.getByRole('button', { name: 'Ouvrir le guide et les objectifs', exact: true }).tap();
       await page
         .getByRole('button', {
           name: 'Recruter mon premier gobelin',
@@ -61,7 +58,7 @@ try {
           .isDisabled(),
       );
       await page
-        .getByRole('button', { name: 'Fermer les détails', exact: true })
+        .getByRole('button', { name: 'Réduire le guide et les objectifs', exact: true })
         .tap();
       await page.getByRole('button', { name: 'Reprendre', exact: true }).tap();
       await page.waitForFunction(
@@ -79,12 +76,27 @@ try {
     );
     assert.equal(await page.locator('.sidebar').isVisible(), true,
       'Touch players can understand their selection immediately');
+    assert.equal(await page.locator('.sidebar .mission-card').count(), 0,
+      'The tutorial is separate from the selection');
+    const guide = page.getByRole('complementary', { name: 'Guide du quartier' });
+    const guideBox = await guide.boundingBox();
+    assert.ok(guideBox.x <= 10 && guideBox.y >= 48 && guideBox.height <= 110,
+      'The compact map name and objective sit just below the resources');
+    const selectionBox = await page.locator('.sidebar').boundingBox();
+    assert.ok(selectionBox.width <= 320 && selectionBox.height <= viewport.height * 0.43,
+      'The selection leaves room for the map');
     const closeDetails = page.getByRole('button', { name: 'Fermer les détails', exact: true });
     const closeBox = await closeDetails.boundingBox();
     assert.equal(closeBox.width, 44, 'The close action is a small touch target');
     assert.equal(await closeDetails.innerText(), '', 'Only the cross is visible');
     await page.screenshot({ path: join(output, `${viewport.width}-initial-details.png`) });
     await closeDetails.tap();
+    await page.getByRole('button', { name: 'Ouvrir le guide et les objectifs', exact: true }).tap();
+    assert.equal(await page.locator('.sidebar').isVisible(), false,
+      'Opening objectives never opens the selection');
+    assert.ok(await guide.locator('.quest-list').isVisible(), 'The expanded guide exposes the objectives');
+    await page.screenshot({ path: join(output, `${viewport.width}-expanded-guide.png`) });
+    await page.getByRole('button', { name: 'Réduire le guide et les objectifs', exact: true }).tap();
     assert.equal(await page.locator('.bottom-bar').isVisible(), false);
     assert.equal(await page.locator('.resource.mana').isVisible(), true);
     assert.ok(
@@ -106,7 +118,7 @@ try {
       assert.ok(box.width >= 44 && box.height >= 44, 'Compact controls retain usable touch targets');
     }
     const freeMap = await page.evaluate(() => {
-      const selectors = '.topbar, .mobile-nav, .touch-toolbar, .command-wheel button, .map-controls button, .game-notifications > *';
+      const selectors = '.topbar, .mobile-mission, .mobile-nav, .touch-toolbar, .command-wheel button, .map-controls button, .game-notifications > *';
       const boxes = [...document.querySelectorAll(selectors)].filter((el) => el.getClientRects().length).map((el) => el.getBoundingClientRect());
       let free = 0;
       for (let y = 10; y < innerHeight; y += 20)
@@ -114,7 +126,8 @@ try {
           if (!boxes.some((box) => x >= box.left && x < box.right && y >= box.top && y < box.bottom)) free++;
       return free / (Math.floor(innerWidth / 20) * Math.floor(innerHeight / 20));
     });
-    assert.ok(freeMap >= 0.6, `The HUD leaves the majority of the map unobstructed (${Math.round(freeMap * 100)}%)`);
+    const minimumFreeMap = viewport.width < 400 && viewport.height < 600 ? 0.5 : 0.6;
+    assert.ok(freeMap >= minimumFreeMap, `The HUD and persistent guide leave the majority of the map unobstructed (${Math.round(freeMap * 100)}%)`);
     const notice = page.getByRole('button', { name: /^Lire la notification/ });
     if (await notice.count()) {
       const box = await notice.boundingBox();
@@ -435,6 +448,17 @@ try {
     );
     await dialog.getByRole('button', { name: 'Fermer', exact: true }).tap();
     await dialog.waitFor({ state: 'hidden' });
+    await page.setViewportSize(viewport);
+    await page.goto('http://127.0.0.1:3000/tests/mission-preview.html');
+    await page.locator('.world-canvas[data-ready=true]').waitFor();
+    await page.getByRole('button', { name: 'Fermer les détails', exact: true }).tap();
+    await page.getByRole('button', { name: 'Ouvrir le guide et les objectifs', exact: true }).tap();
+    await page.getByRole('button', { name: 'Voir la cible', exact: true }).tap();
+    assert.equal(await page.locator('.sidebar').isVisible(), true,
+      'An objective shortcut opens its target in the separate selection');
+    assert.match(await page.locator('.selection-name').innerText(), /Maison/);
+    assert.equal(await page.locator('.mobile-mission').getAttribute('data-expanded'), 'false',
+      'Following an objective folds the guide and leaves the selected target readable');
     assert.deepEqual(errors, []);
     console.log(
       `Touch ${viewport.width}x${viewport.height}: layout, pack UI, gestures, recruitment, construction, gathering and rotation OK`,

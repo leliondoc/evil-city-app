@@ -32,6 +32,7 @@ import {
   VolumeX,
   House,
   Hand,
+  ChevronDown,
 } from 'lucide-react';
 import {
   GameButton as Button,
@@ -213,6 +214,7 @@ export default function Game({
   const [mobilePanel, setMobilePanel] = useState<
     'details' | 'build' | 'recruit' | null
   >('details');
+  const [missionExpanded, setMissionExpanded] = useState(false);
   const [touchMode, setTouchMode] = useState<'inspect' | 'select' | 'command'>(
     'inspect',
   );
@@ -615,6 +617,7 @@ export default function Game({
       return;
     }
     // Inspect first: choosing the objective never spends construction resources.
+    setMissionExpanded(false);
     setPendingBuild(action.buildKind ?? null);
     setSelection({ type: 'lot', id: action.lotId });
     setTouchMode('inspect');
@@ -651,6 +654,7 @@ export default function Game({
     setModal(null);
     setMobilePanel('details');
     setTouchMode('inspect');
+    setMissionExpanded(false);
     victoryShown.current = false;
     rendererRef.current?.resetView();
   };
@@ -683,9 +687,26 @@ export default function Game({
     <>
       <div className="map-caption mission-map-caption">
         <RibbonSkin />
-        <h2>Les Tilleuls</h2>
+        {compact ? (
+          <button
+            type="button"
+            className="mobile-mission-toggle"
+            aria-label={missionExpanded ? 'Réduire le guide et les objectifs' : 'Ouvrir le guide et les objectifs'}
+            aria-expanded={missionExpanded}
+            aria-controls="mobile-mission-content"
+            onClick={() => setMissionExpanded((value) => !value)}
+          >
+            <span>Les Tilleuls</span>
+            <small>{objectives.filter((o) => o.done).length}/{objectives.length}</small>
+            <ChevronDown size={16} />
+          </button>
+        ) : <h2>Les Tilleuls</h2>}
       </div>
-      <section className="mission-card" aria-label="Mission et objectifs">
+      <section
+        className="mission-card"
+        aria-label="Mission et objectifs"
+        id={compact ? 'mobile-mission-content' : undefined}
+      >
         <PanelSkin kind="notice" />
         <p className="eyebrow">Chapitre I · Premiers méfaits</p>
         <div
@@ -723,7 +744,7 @@ export default function Game({
             <p className="objective-reason">{hint.reason}</p>
           )}
         </div>
-        <details className="objectives-disclosure">
+        <details className="objectives-disclosure" open={compact ? missionExpanded : undefined}>
           <summary>
             Objectifs{' '}
             <span>
@@ -926,16 +947,18 @@ export default function Game({
       </header>
 
       <div className="game-body">
-        {!compact && (
-          <aside className="mission-sidebar" aria-label="Mission et objectifs">
-            {missionCard}
-          </aside>
-        )}
+        <aside
+          className={compact ? 'mobile-mission' : 'mission-sidebar'}
+          aria-label="Guide du quartier"
+          data-expanded={missionExpanded}
+        >
+          {missionCard}
+        </aside>
         <div className="selection-column">
           <aside
             ref={sidebarRef}
             className="sidebar"
-            aria-label={compact ? 'Objectifs et sélection' : 'Sélection'}
+            aria-label="Sélection"
           >
             {compact && (
               <button
@@ -948,7 +971,6 @@ export default function Game({
               </button>
             )}
             {sheetNotice}
-            {compact && missionCard}
             {selection.type === 'units' ? (
               <section
                 className="selection-panel"

@@ -46,18 +46,25 @@ try {
     });
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(base);
-    await page.locator('.start-scenery').evaluate(async (img) => {
-      await img.decode();
-    });
+    await page.locator('.start-menu').waitFor();
     await page.evaluate(() => document.fonts.ready);
     assert.equal(
       artworkRequests.length,
-      1,
-      'Only the matching portrait or landscape is downloaded',
+      0,
+      'The menu never downloads its archived artwork',
     );
-    assert.ok(
-      artworkRequests[0].includes('.webp'),
-      'Menu art uses the compressed export',
+    assert.equal(await page.locator('.start-art, .start-scenery').count(), 0);
+    assert.equal(
+      await page.locator('.start-motes i').count(),
+      16,
+      'The animated particles remain on the gradient',
+    );
+    assert.match(
+      await page
+        .locator('.start-menu')
+        .evaluate((el) => getComputedStyle(el).backgroundImage),
+      /linear-gradient\(rgb\(68, 58, 80\), rgb\(32, 50, 59\) 70%\)/,
+      'The menu reuses the exact purple-to-blue creation-card gradient',
     );
     assert.equal(
       await page.getByText('Un quartier tranquille. Pour l’instant.').count(),
@@ -288,7 +295,7 @@ try {
     if (request.url().includes('/audio/')) mutedRequests.push(request.url());
   });
   await mutedPage.goto(base);
-  await mutedPage.locator('.start-scenery').evaluate((img) => img.decode());
+  await mutedPage.locator('.start-menu').waitFor();
   assert.equal(
     mutedRequests.length,
     0,

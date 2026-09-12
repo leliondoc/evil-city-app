@@ -93,21 +93,6 @@ export function StartMenu({
       onClickCapture={() => unlockMusic()}
       onKeyDownCapture={() => unlockMusic()}
     >
-      <picture className="start-art">
-        <source
-          media="(max-aspect-ratio: 3/4)"
-          type="image/webp"
-          srcSet={`${import.meta.env.BASE_URL}menu/evil-city-nightfall-portrait.webp?v=storm-1`}
-        />
-        <img
-          className="start-scenery"
-          src={`${import.meta.env.BASE_URL}menu/evil-city-nightfall.webp?v=storm-1`}
-          alt="La brume enveloppe un village nocturne désert, éclairé de lanternes, sous un château et un ciel d’orage."
-          fetchPriority="high"
-          decoding="async"
-          loading="eager"
-        />
-      </picture>
       <div className="start-motes" aria-hidden="true">
         {Array.from({ length: 16 }, (_, i) => (
           <i

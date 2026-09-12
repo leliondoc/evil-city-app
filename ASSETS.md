@@ -18,7 +18,9 @@ Direction typographique retenue pour le futur logo : **Agenda Fantasy**, parmi l
 
 La licence indiquée sur la page officielle autorise l’usage personnel et commercial ainsi que la modification. Elle interdit la redistribution, la revente et le reconditionnement des ressources comme pack, y compris après modification. Ces ressources sont réservées à leur intégration dans le jeu ; ne pas les redistribuer séparément. Le crédit, facultatif selon l’auteur, figure dans le guide.
 
-## Illustration du menu principal
+## Illustration du menu principal (archivée)
+
+Les artworks ne sont actuellement ni affichés ni préchargés. Le menu utilise les particules animées sur le dégradé CSS commun aux cartes de création : `#443A50` vers `#20323B` à 70 %. Le violet de faction est `#74518D`. Les fichiers ci-dessous sont conservés pour une reprise ultérieure.
 
 Les fonds `public/menu/evil-city-nightfall.webp` (paysage) et `public/menu/evil-city-nightfall-portrait.webp` (téléphone) ont été créés puis retouchés avec l’outil **imagegen intégré**, le 12 septembre 2026. À la demande de l’utilisateur, tous les personnages et leurs équipements ont été retirés des deux formats. La rue pavée, le village, les lanternes, les bannières et le château sous la lune constituent désormais le décor. Les formes de bois incohérentes du premier plan et la clôture derrière l’ancienne archère ont été retirées ou remplacées par une maçonnerie cohérente. L’entrée principale du château reste ouverte.
 

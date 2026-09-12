@@ -111,7 +111,7 @@
 .game-shell[data-compact='true'] .touch-toolbar :is(.pack-icon, svg) { width: 19px; height: 19px; }
 .game-shell[data-compact='true'] .world-wrap .map-controls {
   position: fixed;
-  inset: calc(var(--touch-header-height) + 8px) auto auto max(8px, env(safe-area-inset-left, 0px));
+  inset: calc(var(--touch-header-height) + 8px) max(8px, env(safe-area-inset-right, 0px)) auto auto;
   display: grid;
   gap: 4px;
   z-index: 11;
@@ -148,7 +148,7 @@
 .district-overview .district-group h3 { display: none; }
 .district-overview .district-shortcut { min-width: 44px; min-height: 44px; width: 56px; height: 50px; flex: 1; margin: 0; padding: 4px !important; }
 .district-overview .district-icon { width: 30px; height: 30px; }
-.game-shell[data-compact='true'] .game-notifications { top: calc(var(--touch-header-height) + 8px); left: 50%; width: min(320px, calc(100vw - 128px)); }
+.game-shell[data-compact='true'] .game-notifications { top: calc(var(--touch-header-height) + 124px); left: 50%; width: min(320px, calc(100vw - 128px)); }
 .game-shell[data-compact='true'] .game-notifications .toast-message,
 .game-shell[data-compact='true'] .game-notifications .paused-label { font-size: 12px; line-height: 15px; min-height: 44px; padding: 7px 24px 10px; }
 .game-shell[data-compact='true'] .game-notifications .paused-label { width: 120px; min-height: 32px; padding: 5px 20px 8px; }
@@ -323,4 +323,55 @@
   .mobile-command-dock .wheel-guide { left: 107px; top: 0; }
   .mobile-command-dock .wheel-pause { left: 44px; top: 106px; }
   .mobile-command-dock .wheel-settings { left: 98px; top: 162px; }
+}
+
+/* Keep the small objective guide apart from the current selection. */
+.mobile-mission {
+  position: fixed;
+  top: calc(var(--touch-header-height) + 8px);
+  left: max(8px, env(safe-area-inset-left, 0px));
+  width: min(232px, calc(100vw - 80px));
+  z-index: 13;
+  pointer-events: none;
+}
+.game-shell[data-compact='true'] .mobile-mission .mission-map-caption { position: relative; inset: auto; width: 100%; height: 44px; margin: 0 0 3px; padding: 0; }
+.mobile-mission-toggle { width: 100%; min-height: 44px; padding: 4px 22px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #fff0bd; cursor: pointer; pointer-events: auto; }
+.mobile-mission-toggle > span { font: 20px 'Agenda Fantasy', Georgia, serif; }
+.mobile-mission-toggle > small { font-size: 10px; }
+.mobile-mission-toggle[aria-expanded='true'] > svg { transform: rotate(180deg); }
+.mobile-mission-toggle:focus-visible { outline: 2px solid #ffe4a9; outline-offset: -2px; }
+.mobile-mission .mission-card { margin: 0; padding: 14px; max-height: min(230px, calc(58dvh - var(--touch-header-height) - var(--mobile-nav-height) - 80px)); overflow: auto; overscroll-behavior: contain; pointer-events: auto; scrollbar-width: thin; }
+.mobile-mission .current-objective { margin: 0; }
+.mobile-mission .current-objective h2 { margin: 0; font: 700 12px/17px 'Trebuchet MS', sans-serif; }
+.mobile-mission .mission-card > .eyebrow,
+.mobile-mission .objective-kicker,
+.mobile-mission .objectives-disclosure > summary { display: none; }
+.mobile-mission:not([data-expanded='true']) .current-objective > :not(h2),
+.mobile-mission:not([data-expanded='true']) .objectives-disclosure { display: none; }
+.mobile-mission:not([data-expanded='true']) .objective-action { display: none !important; }
+.mobile-mission[data-expanded='true'] .objective-detail { font-size: 12px; line-height: 17px; margin: 8px 0; }
+.mobile-mission .objective-action { min-height: 44px; font-size: 12px; }
+.mobile-mission .quest { font-size: 12px; line-height: 16px; }
+.mobile-mission .objectives-disclosure { margin-top: 10px; }
+.game-shell[data-compact='true'][data-placing='true'] .mobile-mission { display: none; }
+.game-shell[data-compact='true'] .sidebar {
+  right: auto;
+  width: min(320px, calc(100vw - 16px));
+  max-height: 42dvh;
+  padding: 0 10px 10px;
+  gap: 6px;
+  scroll-padding-top: 44px;
+}
+.game-shell[data-compact='true'] .sidebar .mobile-sheet-close { margin-bottom: -44px; }
+.game-shell[data-compact='true'] .sidebar .selection-panel { padding: 12px 0 0; scroll-margin-top: 44px; }
+.game-shell[data-compact='true'] .sidebar .selection-name { margin-top: 0; padding-right: 34px; font-size: 18px; line-height: 22px; }
+.game-shell[data-compact='true'] .sidebar .selection-art { width: 88px; height: 88px; margin: 6px auto; }
+.game-shell[data-compact='true'] .sidebar .selection-art .sprite-preview { width: 88px; height: 88px; }
+.game-shell[data-compact='true'] .sidebar :is(.selection-text, .reason, .selection-stats, .building-health) { font-size: 12px; line-height: 17px; }
+@media (min-width: 700px) {
+  .game-shell[data-compact='true'] .game-notifications { top: calc(var(--touch-header-height) + 8px); width: min(320px, calc(100vw - 512px)); }
+}
+@media (max-height: 500px) and (min-width: 700px) {
+  .mobile-mission .mission-card { max-height: calc(100dvh - var(--touch-header-height) - var(--mobile-nav-height) - 74px); }
+  .game-shell[data-compact='true'] .sidebar { left: auto; right: 260px; width: min(320px, calc(100vw - 512px)); }
 }
