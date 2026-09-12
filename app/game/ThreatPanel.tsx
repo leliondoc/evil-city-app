@@ -8,7 +8,7 @@ import {
 import { ASSETS, type AssetKey } from './art';
 import { SupplyPanel } from './SupplyPanel';
 import { isHaunted } from './domain';
-import { GameButton, ResourceIcon } from './PackUI';
+import { GameButton, PackIcon, ResourceIcon } from './PackUI';
 import { unitSelection } from './selection';
 import {
   army,
@@ -53,6 +53,7 @@ export function ThreatPanel({
 }) {
   const [active, setActive] = useState<string | null>(null);
   const [camp, setCamp] = useState<'human' | 'evil'>('evil');
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const workers = goblinWorkforce(s);
   const fighters = army(s);
   const goblins = s.units.filter((u) => u.kind === 'goblin' && u.hp > 0);
@@ -60,6 +61,7 @@ export function ThreatPanel({
   const percent = Math.round(territory(s) * 100);
   const select = (selection: Selection) => {
     setActive(null);
+    setOverviewOpen(false);
     onSelect(selection);
   };
   const factions: MenuEntry[] = (['guard', 'hero'] as const).map((kind) => {
@@ -213,6 +215,7 @@ export function ThreatPanel({
             onClick={() => {
               onDefend();
               setActive(null);
+              setOverviewOpen(false);
             }}
           >
             <img src={ASSETS['ui-shield'].src} alt="" /> Défendre le manoir
@@ -327,8 +330,8 @@ export function ThreatPanel({
     },
     { id: 'evil' as const, label: 'Mon domaine', entries: playerEntries },
   ];
-  return (
-    <aside className="district-menu" aria-label="Menu du quartier">
+  const menu = (
+    <>
       {compact && (
         <div className="district-camp-tabs" aria-label="Choisir un camp">
           {groups.map((group) => (
@@ -357,24 +360,15 @@ export function ThreatPanel({
             key={group.id}
           >
             <h3>{group.label}</h3>
-            {group.entries.map((entry) => (
-              <Popover
-                key={entry.id}
-                open={active === entry.id}
-                onOpenChange={(open) =>
-                  setActive((current) =>
-                    open ? entry.id : current === entry.id ? null : current,
-                  )
-                }
-              >
-                <PopoverTrigger
-                  className={`district-shortcut ${entry.alert || ''}`}
+            {group.entries.map((entry) =>
+              compact ? (
+                <button
+                  key={entry.id}
+                  className={`district-shortcut primary-btn pack-action ${entry.alert || ''}`}
+                  data-tone={group.id === 'evil' ? 'purple' : 'blue'}
                   aria-label={`${entry.label}. ${entry.summary} Ouvrir les détails.`}
-                  title={`${entry.label} · ${entry.summary}`}
+                  onClick={() => setActive(entry.id)}
                 >
-                  {group.id !== 'evil' && (
-                    <img className="district-button-skin" src={ASSETS['ui-menu-button'].src} alt="" />
-                  )}
                   <img
                     className="district-icon"
                     src={ASSETS[entry.icon].src}
@@ -385,31 +379,140 @@ export function ThreatPanel({
                       {entry.badge}
                     </span>
                   )}
-                </PopoverTrigger>
-                <PopoverContent
-                  className="district-popover"
-                  data-camp={group.id}
-                  side={compact ? 'bottom' : 'left'}
-                  align="start"
-                  sideOffset={10}
+                </button>
+              ) : (
+                <Popover
+                  key={entry.id}
+                  open={active === entry.id}
+                  onOpenChange={(open) =>
+                    setActive((current) =>
+                      open ? entry.id : current === entry.id ? null : current,
+                    )
+                  }
                 >
-                  <div className="district-heading">
-                    <img src={ASSETS[entry.icon].src} alt="" />
-                    <PopoverTitle>{entry.label}</PopoverTitle>
-                    <button
-                      className="district-close"
-                      aria-label="Fermer les détails du quartier"
-                      onClick={() => setActive(null)}
-                    >
-                      <img src={ASSETS['ui-close'].src} alt="" />
-                    </button>
-                  </div>
-                  {entry.content}
-                </PopoverContent>
-              </Popover>
-            ))}
+                  <PopoverTrigger
+                    className={`district-shortcut ${entry.alert || ''}`}
+                    data-tone={group.id === 'evil' ? 'purple' : 'blue'}
+                    aria-label={`${entry.label}. ${entry.summary} Ouvrir les détails.`}
+                    title={`${entry.label} · ${entry.summary}`}
+                  >
+                    {group.id !== 'evil' && (
+                      <img
+                        className="district-button-skin"
+                        src={ASSETS['ui-menu-button'].src}
+                        alt=""
+                      />
+                    )}
+                    <img
+                      className="district-icon"
+                      src={ASSETS[entry.icon].src}
+                      alt=""
+                    />
+                    {entry.badge && (
+                      <span className="district-badge" aria-hidden="true">
+                        {entry.badge}
+                      </span>
+                    )}
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="district-popover"
+                    data-camp={group.id}
+                    side={compact ? 'bottom' : 'left'}
+                    align="start"
+                    sideOffset={10}
+                  >
+                    <div className="district-heading">
+                      <img src={ASSETS[entry.icon].src} alt="" />
+                      <PopoverTitle>{entry.label}</PopoverTitle>
+                      <button
+                        className="district-close"
+                        aria-label="Fermer les détails du quartier"
+                        onClick={() => setActive(null)}
+                      >
+                        <img src={ASSETS['ui-close'].src} alt="" />
+                      </button>
+                    </div>
+                    {entry.content}
+                  </PopoverContent>
+                </Popover>
+              ),
+            )}
           </section>
         ))}
+    </>
+  );
+  const threatened =
+    factions.some((entry) => entry.alert) || home.hp < home.maxHp;
+  const activeEntry = [...entries, ...playerEntries].find(
+    (entry) => entry.id === active,
+  );
+  return (
+    <aside className="district-menu" aria-label="Menu du quartier">
+      {compact ? (
+        <Popover
+          open={overviewOpen}
+          onOpenChange={(open) => {
+            setOverviewOpen(open);
+            if (!open) setActive(null);
+          }}
+        >
+          <PopoverTrigger
+            className="district-overview-toggle primary-btn pack-action"
+            data-tone="purple"
+            aria-label={`État du quartier${threatened ? ' : menace en cours' : ''}`}
+            title="État du quartier"
+          >
+            <PackIcon asset="ui-info" />
+            {threatened && (
+              <span className="district-alert-dot" aria-hidden="true" />
+            )}
+          </PopoverTrigger>
+          <PopoverContent
+            className="district-overview"
+            side="bottom"
+            align="end"
+            sideOffset={8}
+          >
+            <div className="district-overview-heading">
+              {activeEntry && (
+                <button
+                  className="district-close"
+                  aria-label="Retour au résumé du quartier"
+                  onClick={() => setActive(null)}
+                >
+                  <PackIcon asset="ui-back" />
+                </button>
+              )}
+              <PopoverTitle>
+                {activeEntry?.label ?? 'État du quartier'}
+              </PopoverTitle>
+              <button
+                className="district-close"
+                aria-label="Fermer le résumé du quartier"
+                onClick={() => setOverviewOpen(false)}
+              >
+                <PackIcon asset="ui-close" />
+              </button>
+            </div>
+            {activeEntry ? (
+              activeEntry.content
+            ) : (
+              <>
+                <p className="district-overview-status">
+                  <span>
+                    {percent} % · {s.lots.filter((lot) => lot.owned).length}/9
+                    parcelles
+                  </span>
+                  <time>{clock(s.elapsed)}</time>
+                </p>
+                {menu}
+              </>
+            )}
+          </PopoverContent>
+        </Popover>
+      ) : (
+        menu
+      )}
     </aside>
   );
 }

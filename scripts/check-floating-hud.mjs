@@ -69,14 +69,63 @@ try {
       };
       // The floating selection card may cover the parcel center on narrow screens.
       // Pick an exposed part of the same central parcel through the real canvas.
-      for (const [dx, dy] of [[0, 0], [64, 0], [-64, 0], [0, 64], [0, -64]]) {
+      for (const [dx, dy] of [
+        [0, 0],
+        [64, 0],
+        [-64, 0],
+        [0, 64],
+        [0, -64],
+      ]) {
         const point = { x: center.x + dx * scale, y: center.y + dy * scale };
-        if (document.elementFromPoint(point.x, point.y) === canvas) return point;
+        if (document.elementFromPoint(point.x, point.y) === canvas)
+          return point;
       }
       throw Error('The central parcel has no visible canvas target');
     });
     await page.mouse.click(point.x, point.y);
     assert.match(await page.locator('.selection-name').innerText(), /Cantine/);
+    for (const name of [
+      'Recruter des créatures',
+      'Construire des bâtiments',
+      'Recruter des créatures',
+    ]) {
+      await page.getByRole('tab', { name, exact: true }).click();
+      const frame = await page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            requestAnimationFrame(() =>
+              resolve(
+                [...document.querySelectorAll('.creation-tab')].map((el) => ({
+                  selected: el.getAttribute('aria-selected') === 'true',
+                  outline: getComputedStyle(el).outlineStyle,
+                  width: getComputedStyle(el).outlineWidth,
+                  color: getComputedStyle(el).outlineColor,
+                })),
+              ),
+            );
+          }),
+      );
+      assert.equal(frame.filter((tab) => tab.selected).length, 1);
+      const selected = frame.find((tab) => tab.selected);
+      assert.equal(
+        selected.outline,
+        'solid',
+        'Selection is visible on the first frame after a click',
+      );
+      // Desktop UI zoom rounds the computed outline width to device pixels.
+      assert.ok(parseFloat(selected.width) >= 2);
+      assert.equal(selected.color, 'rgb(255, 228, 161)');
+      await page
+        .getByRole('button', { name: 'Recentrer le quartier', exact: true })
+        .click();
+      assert.equal(
+        await page
+          .getByRole('tab', { name, exact: true })
+          .evaluate((el) => getComputedStyle(el).outlineWidth),
+        selected.width,
+        'The selected tab keeps its frame when focus leaves it',
+      );
+    }
     console.log(
       `${width}x${height}: live backdrop, transparent gaps, pan/recenter and exact map selection OK`,
     );

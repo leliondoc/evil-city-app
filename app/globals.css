@@ -608,8 +608,11 @@ svg {
   --creation-fill: var(--faction-purple);
   --creation-selected: var(--faction-purple-dark);
 }
-.build-tabs [data-slot='tabs-trigger'].creation-tab[data-active] {
+.build-tabs [data-slot='tabs-trigger'].creation-tab[aria-selected='true'] {
   background: var(--creation-selected);
+  /* Selection stays visible after pointer input and when focus moves to a card. */
+  outline: 3px solid #ffe4a1;
+  outline-offset: 3px;
 }
 /* Keep the map viewport stable across tabs and recruitment progress updates. */
 .game-shell[data-compact='false'] .build-tabs > [role='tabpanel'] {

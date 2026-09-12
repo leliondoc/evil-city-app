@@ -600,6 +600,7 @@ export interface ResourceSite extends Point {
   maxHp: number;
   repairAt: number;
   recruitAt: number;
+  replacements: number;
 }
 function resourceHit(s: State, site: ResourceSite) {
   // Let the six original reaction frames finish before another harvesting blow.
@@ -721,10 +722,10 @@ function advanceEconomy(s: State, dt: number) {
     }
   }
   const living = s.workers.filter((w) => w.hp > 0);
+  const canPayWorker = suppliesAvailable(s, { gold: 8, food: 5 });
   if (
     living.length < HUMAN_WORKER_CAP &&
-    s.elapsed >= s.economy.workerReadyAt &&
-    suppliesAvailable(s, { gold: 8, food: 5 })
+    s.elapsed >= s.economy.workerReadyAt
   ) {
     const count = (site: ResourceSite) =>
       living.filter((w) => w.site === site.id).length;
@@ -733,11 +734,16 @@ function advanceEconomy(s: State, dt: number) {
         (site) =>
           supplyActive(s, site) &&
           s.elapsed >= site.recruitAt &&
-          count(site) < 2,
+          count(site) < 2 &&
+          (site.replacements > 0 || canPayWorker) &&
+          !s.workers.some((w) => w.site === site.id && w.hp <= 0),
       )
       .sort((a, b) => count(a) - count(b) || a.id - b.id)[0];
     if (site) {
-      spendSupplies(s, { gold: 8, food: 5 });
+      // A casualty must not permanently stop the very income needed to replace it.
+      // New population still costs supplies; only a lost worker can get relief.
+      if (canPayWorker) spendSupplies(s, { gold: 8, food: 5 });
+      if (site.replacements > 0) site.replacements--;
       spawnWorker(s, site);
       s.economy.workerReadyAt = s.elapsed + HUMAN_WORKER_SECONDS;
     }
@@ -786,10 +792,11 @@ function cleanupSupplies(s: State) {
     if (w.hp <= 0) {
       leaveCorpse(s, w, 'human');
       creditResource(s, site.kind, w.cargo || 4);
-      site.recruitAt = s.elapsed + 40;
+      site.replacements = Math.min(2, site.replacements + 1);
+      site.recruitAt = Math.max(site.recruitAt, s.elapsed + 40);
       announce(
         s,
-        `${SUPPLIES[site.kind].worker} éliminé. Livraison perdue ; remplacement dans au moins 40 s.`,
+        `${SUPPLIES[site.kind].worker} éliminé. Livraison perdue ; remplacement prévu après au moins 40 s si la route reste active.`,
       );
     }
   }
@@ -896,6 +903,7 @@ export function createGame(): State {
       maxHp: site.hp,
       repairAt: 0,
       recruitAt: 0,
+      replacements: 0,
     })),
     elapsed: 0,
     nextId: 1,

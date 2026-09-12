@@ -50,7 +50,7 @@
   font-family: 'Agenda Fantasy', Georgia, serif;
   font-size: clamp(98px, 16.1vh, 176px);
   font-weight: 400;
-  line-height: 0.79;
+  line-height: 1.12;
   letter-spacing: 5px;
   transform: rotate(-3deg);
   filter: drop-shadow(0 9px 0 #261526) drop-shadow(0 14px 12px #0d102c99);
@@ -228,6 +228,12 @@
 .start-play:hover {
   transform: translateY(-3px);
   filter: drop-shadow(0 8px 0 #18111c) drop-shadow(0 0 22px #eab25b4d);
+}
+.start-play:focus-visible {
+  outline: none;
+}
+.start-play:focus-visible::before {
+  filter: brightness(1.2);
 }
 .start-play:active {
   transform: translateY(3px);

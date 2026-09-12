@@ -85,6 +85,53 @@ try {
     const canvas = await page.locator('canvas.world-canvas').boundingBox();
     assert.ok(canvas.width >= viewport.width * 0.95);
     assert.ok(canvas.height >= viewport.height * 0.5);
+    assert.ok((await page.locator('.topbar').boundingBox()).height <= 48,
+      'The mobile header fits one row');
+    assert.equal((await page.locator('.touch-toolbar').boundingBox()).height, 44,
+      'Touch modes share one small row');
+    assert.equal(await page.locator('.touch-selection').count(), 0,
+      'The redundant terrain/selection panel does not cover the map');
+    for (const button of await page.locator('.resources, .touch-toolbar').getByRole('button').all()) {
+      const box = await button.boundingBox();
+      assert.ok(box.width >= 44 && box.height >= 44, 'Compact controls retain usable touch targets');
+    }
+    const freeMap = await page.evaluate(() => {
+      const selectors = '.topbar, .mobile-nav, .touch-toolbar, .command-wheel button, .map-controls button, .game-notifications > *';
+      const boxes = [...document.querySelectorAll(selectors)].filter((el) => el.getClientRects().length).map((el) => el.getBoundingClientRect());
+      let free = 0;
+      for (let y = 10; y < innerHeight; y += 20)
+        for (let x = 10; x < innerWidth; x += 20)
+          if (!boxes.some((box) => x >= box.left && x < box.right && y >= box.top && y < box.bottom)) free++;
+      return free / (Math.floor(innerWidth / 20) * Math.floor(innerHeight / 20));
+    });
+    assert.ok(freeMap >= 0.6, `The HUD leaves the majority of the map unobstructed (${Math.round(freeMap * 100)}%)`);
+    const notice = page.getByRole('button', { name: /^Lire la notification/ });
+    if (await notice.count()) {
+      const box = await notice.boundingBox();
+      assert.ok(box.height <= 48 && Math.abs(box.x + box.width / 2 - viewport.width / 2) < 1,
+        'Notifications stay small and centered');
+      const fullText = (await notice.getAttribute('aria-label')).replace('Lire la notification : ', '');
+      await notice.tap();
+      await page.getByRole('heading', { name: 'Notification du quartier', exact: true }).waitFor();
+      assert.equal(await page.locator('.notice-detail').textContent(), fullText,
+        'Reading a shortened notification preserves the entire message');
+      await page.getByRole('button', { name: 'Fermer', exact: true }).tap();
+    }
+    await page.getByRole('button', { name: /^État du quartier/ }).tap();
+    const summary = page.locator('.district-overview');
+    await summary.waitFor();
+    assert.ok((await summary.locator('time').innerText()).length >= 5, 'Session time remains available');
+    await summary.getByRole('button', { name: 'Humains', exact: true }).tap();
+    await summary.getByRole('button', { name: /^Garde\./ }).tap();
+    await summary.getByRole('heading', { name: 'Garde', exact: true }).waitFor();
+    const summaryBox = await summary.boundingBox();
+    assert.ok(summaryBox.x >= 0 && summaryBox.x + summaryBox.width <= viewport.width && summaryBox.y >= 0 && summaryBox.y + summaryBox.height <= viewport.height,
+      'The district details stay within the screen');
+    assert.equal(await page.locator('.district-popover').count(), 0,
+      'Touch details reuse one panel instead of stacking popovers');
+    await summary.getByRole('button', { name: 'Retour au résumé du quartier', exact: true }).tap();
+    await summary.getByRole('button', { name: 'Fermer le résumé du quartier', exact: true }).tap();
+    await summary.waitFor({ state: 'hidden' });
     const nav = page.getByRole('navigation', { name: 'Navigation du jeu' });
     for (const button of await nav.getByRole('button').all()) {
       const box = await button.boundingBox();
@@ -179,11 +226,11 @@ try {
         output,
         await page.locator('.touch-toolbar').innerText(),
         await page.locator('.toast-message').allTextContents(),
-        await page.locator('.touch-selection').innerText(),
+        await page.locator('.touch-selection-status').innerText(),
       );
       throw error;
     }
-    const selected = await page.locator('.touch-selection').textContent();
+    const selected = await page.locator('.touch-selection-status').textContent();
     const center = {
       x: canvas.x + canvas.width / 2,
       y: canvas.y + canvas.height / 2,
@@ -201,7 +248,7 @@ try {
       touchPoints: [],
     });
     assert.equal(
-      await page.locator('.touch-selection').textContent(),
+      await page.locator('.touch-selection-status').textContent(),
       selected,
       'Dragging the map preserves the selection',
     );
@@ -224,7 +271,7 @@ try {
       touchPoints: [],
     });
     assert.equal(
-      await page.locator('.touch-selection').textContent(),
+      await page.locator('.touch-selection-status').textContent(),
       selected,
       'Pinching does not select or issue an order',
     );
@@ -262,7 +309,7 @@ try {
     await nav.getByRole('button', { name: 'Bâtir', exact: true }).tap();
     await page.getByRole('button', { name: /^Grotte gobeline/ }).tap();
     assert.equal(await page.locator('.bottom-bar').isVisible(), false);
-    assert.match(await page.locator('.touch-hint').innerText(), /parcelle/);
+    assert.match(await page.locator('.touch-mode-hint').innerText(), /parcelle/);
     const placement = await page.evaluate(async () => {
       const { state } = await import('/tests/domain-preview.tsx');
       const rect = document
@@ -289,7 +336,7 @@ try {
       await page.screenshot({ path: join(output, `${viewport.width}-placement-error.png`) });
       console.log(output, placement, await page.evaluate(async (point) => {
         const { state } = await import('/tests/domain-preview.tsx');
-        return { notice: state.notice, feedback: document.querySelector('.touch-hint')?.textContent,
+        return { notice: state.notice, feedback: document.querySelector('.touch-mode-hint')?.textContent,
           target: document.elementFromPoint(point.x, point.y)?.outerHTML.slice(0, 250) };
       }, placement));
     }

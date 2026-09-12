@@ -95,12 +95,12 @@ export function StartMenu({
       <picture className="start-art">
         <source
           media="(max-aspect-ratio: 3/4)"
-          srcSet={`${import.meta.env.BASE_URL}menu/evil-city-nightfall-portrait.png?v=lancer-1`}
+          srcSet={`${import.meta.env.BASE_URL}menu/evil-city-nightfall-portrait.png?v=village-1`}
         />
         <img
           className="start-scenery"
-          src={`${import.meta.env.BASE_URL}menu/evil-city-nightfall.png?v=lancer-1`}
-          alt="Troll, gobelin et spectre face à un lancier, une archère et un moine, dans un village nocturne dominé par un seul château."
+          src={`${import.meta.env.BASE_URL}menu/evil-city-nightfall.png?v=village-1`}
+          alt="Une rue pavée déserte, éclairée de lanternes, traverse un village nocturne dominé par un château sous la lune."
           fetchPriority="high"
         />
       </picture>
@@ -142,12 +142,12 @@ export function StartMenu({
       <div className="start-content">
         <header className="start-brand">
           <h1 className="start-title" aria-label="Evil City">
-            <span data-text="EVIL">EVIL</span>
-            <span data-text="CITY">CITY</span>
+            <span data-text="Evil">Evil</span>
+            <span data-text="City">City</span>
           </h1>
           <p className="start-tagline">
             <span />
-            Le mal a trouvé son quartier.
+            Le mal ne fait pas de quartier.
             <span />
           </p>
         </header>

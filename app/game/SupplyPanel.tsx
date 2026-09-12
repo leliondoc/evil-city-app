@@ -44,8 +44,10 @@ export function SupplyPanel({
         <p>
           Les humains recrutent un paysan toutes les 20 secondes, si leurs
           stocks permettent de payer 8 or et 5 vivres, jusqu’à 6 paysans (2 par
-          site). Les livraisons financent leurs troupes. Une amélioration coûte
-          25 or, 20 bois et 15 vivres ; les raids puisent dans les mêmes stocks.
+          site). Les paysans tués sont remplacés après au moins 40 secondes,
+          même si les stocks sont vides. Les livraisons financent leurs troupes.
+          Une amélioration coûte 25 or, 20 bois et 15 vivres ; les raids puisent
+          dans les mêmes stocks.
         </p>
         <div className="supply-sites">
           {s.sites.map((site) => (
@@ -63,9 +65,11 @@ export function SupplyPanel({
                       ? 'Livraisons suspendues : bâtiment hanté'
                       : site.hp <= 0
                         ? `Sabotée · réparation dans ≥ ${Math.ceil(Math.max(0, site.repairAt - s.elapsed))} s`
-                        : s.workers.some((w) => w.site === site.id)
-                          ? 'Production active'
-                          : 'Paysan manquant'}
+                        : site.replacements > 0
+                          ? `${site.replacements} remplacement${site.replacements > 1 ? 's' : ''} · ≥ ${Math.max(0, Math.ceil(Math.max(site.recruitAt, s.economy.workerReadyAt) - s.elapsed))} s`
+                          : s.workers.some((w) => w.site === site.id)
+                            ? 'Production active'
+                            : 'Paysan manquant'}
                 </small>
               </span>
               <b>
@@ -114,13 +118,13 @@ export function SupplySelection({
     <section className="selection-panel" aria-label="Détails du ravitaillement">
       <h3 className="selection-name">{worker ? def.worker : def.name}</h3>
       <div className="selection-art">
-        {worker ? <SelectionPortrait asset="worker-avatar" label={def.worker} /> : <Sprite
-          asset={
-            site.kind === 'food'
-                ? 'pig-idle'
-                : (def.art as AssetKey)
-          }
-        />}
+        {worker ? (
+          <SelectionPortrait asset="worker-avatar" label={def.worker} />
+        ) : (
+          <Sprite
+            asset={site.kind === 'food' ? 'pig-idle' : (def.art as AssetKey)}
+          />
+        )}
       </div>
       <p className="selection-text">
         {worker
@@ -193,8 +197,9 @@ export function SupplySelection({
             </button>
           ))}
       <p className="reason">
-        Réparation : 10 or + 10 bois. Remplacement : 8 or + 5 vivres. Sans
-        stocks, les humains doivent attendre.
+        Réparation : 10 or + 10 bois. Un paysan tué est remplacé après au moins
+        40 s si la route reste active. Coût : 8 or + 5 vivres, pris en charge si
+        les stocks sont insuffisants.
       </p>
     </section>
   );

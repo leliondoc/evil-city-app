@@ -31,6 +31,7 @@ import {
   Volume2,
   VolumeX,
   House,
+  Hand,
 } from 'lucide-react';
 import {
   GameButton as Button,
@@ -242,8 +243,9 @@ export default function Game({
   }, []);
   const [bestiaryAction, setBestiaryAction] = useState<Animation>('idle');
   const [modal, setModal] = useState<
-    'guide' | 'bestiary' | 'settings' | 'restart' | 'victory' | 'defeat' | null
+    'guide' | 'bestiary' | 'settings' | 'restart' | 'victory' | 'defeat' | 'notice' | null
   >(null);
+  const [noticeDetail, setNoticeDetail] = useState('');
   const [ready, setReady] = useState(false);
   const [artError, setArtError] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -1450,6 +1452,7 @@ export default function Game({
                   }}
                   onClick={() => chooseTouchMode('inspect')}
                 >
+                  {pendingBuild ? <PackIcon asset="ui-close" /> : <Hand size={18} aria-hidden="true" />}
                   {pendingBuild ? 'Annuler' : 'Explorer'}
                 </Button>
                 <Button
@@ -1463,6 +1466,7 @@ export default function Game({
                   }}
                   onClick={() => chooseTouchMode('select')}
                 >
+                  <Users size={18} aria-hidden="true" />
                   Groupe
                 </Button>
                 <Button
@@ -1480,13 +1484,14 @@ export default function Game({
                   }}
                   onClick={() => chooseTouchMode('command')}
                 >
+                  <Flag size={18} aria-hidden="true" />
                   Ordre
                 </Button>
               </div>
-              <Button
-                className="touch-selection"
-                onClick={() => setMobilePanel('details')}
-                aria-label="Voir les détails de la sélection"
+              <output
+                className="touch-selection-status sr-only"
+                id="touch-selection-status"
+                aria-live="polite"
               >
                 {selectedUnit
                   ? CREATURES[selectedUnit.kind].name
@@ -1497,9 +1502,9 @@ export default function Game({
                       : selectedEnemy
                         ? enemyDef?.name
                         : 'Sélectionner un élément'}
-              </Button>
+              </output>
               {(touchMode !== 'inspect' || pendingBuild) && (
-                <output className="touch-hint">
+                <output className="touch-mode-hint sr-only">
                   {pendingBuild
                     ? 'Touchez une parcelle pour construire'
                     : touchMode === 'command'
@@ -1536,14 +1541,26 @@ export default function Game({
             </Button>
           </div>
           {(message || paused) && (
-            <div className="game-notifications">
-              {paused && (
+            <div className="game-notifications" aria-live={compact ? 'polite' : undefined}>
+              {paused && (!compact || !message) && (
                 <div className="paused-label">
                   <PanelSkin kind="notice-ribbon" />
-                  <span>Le mal prend une pause.</span>
+                  <span>{compact ? 'En pause' : 'Le mal prend une pause.'}</span>
                 </div>
               )}
-              {message && (
+              {message && compact ? (
+                <button
+                  className="toast-message notice-action"
+                  aria-label={`Lire la notification : ${message}`}
+                  onClick={() => {
+                    setNoticeDetail(message);
+                    setModal('notice');
+                  }}
+                >
+                  <PanelSkin kind="notice-ribbon" />
+                  <span>{message}</span>
+                </button>
+              ) : message && (
                 <output className="toast-message" aria-live="polite">
                   <PanelSkin kind="notice-ribbon" />
                   <span>{message}</span>
@@ -1787,6 +1804,7 @@ export default function Game({
           <Button
             className="primary-btn"
             aria-pressed={mobilePanel === 'details'}
+            aria-describedby="touch-selection-status"
             onClick={() =>
               setMobilePanel(mobilePanel === 'details' ? null : 'details')
             }
@@ -1833,6 +1851,12 @@ export default function Game({
           >
             <PackIcon asset="ui-close" />
           </Button>
+          {modal === 'notice' && (
+            <>
+              <DialogTitle>Notification du quartier</DialogTitle>
+              <DialogDescription className="notice-detail">{noticeDetail}</DialogDescription>
+            </>
+          )}
           {modal === 'settings' && (
             <>
               <DialogTitle>Paramètres de partie</DialogTitle>
@@ -1949,6 +1973,13 @@ export default function Game({
                     </Button>
                   ))}
                 </fieldset>
+                {compact && (
+                  <fieldset className="settings-map-controls" aria-label="Vue de la carte">
+                    <legend>Vue de la carte</legend>
+                    <Button className="subtle-btn" aria-label="Zoom arrière" onClick={() => rendererRef.current?.zoomBy(0.85)}><Minus size={17} /> Zoom</Button>
+                    <Button className="subtle-btn" aria-label="Zoom avant" onClick={() => rendererRef.current?.zoomBy(1.18)}><Plus size={17} /> Zoom</Button>
+                  </fieldset>
+                )}
                 <Button
                   className="subtle-btn"
                   aria-pressed={paused}
