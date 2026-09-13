@@ -1689,7 +1689,6 @@ export class Renderer {
       if (particle.key === 'upgrade') {
         const progress = (particleTime - particle.at) / 2;
         const x = particle.x * CELL, y = particle.y * CELL;
-        this.draw.ellipse(x, y, 70 + progress * 35, 24 + progress * 12, '#ffe09a', 3 / this.scale, 1 - progress);
         this.label(x, y - 135 - progress * 24, `Niveau ${particle.level} !`, '#ffe09a');
         continue;
       }
