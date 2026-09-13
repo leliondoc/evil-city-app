@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useState, type ReactNode } from 'react';
 import { StartMenu } from './game/StartMenu';
 import type { CampaignMapId } from './game/campaign';
+import { LandscapeGate, useLandscapeRequired } from './game/LandscapeGate';
 
 const Game = lazy(() => import('./game/Game'));
 
@@ -34,10 +35,12 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(true);
   const [initialMap, setInitialMap] = useState<CampaignMapId>('refuge');
   const [gameSession, setGameSession] = useState(0);
+  const portrait = useLandscapeRequired();
 
   return (
     <>
       {hasGame && (
+        <LandscapeGate blocked={!menuOpen && portrait} onBack={() => setMenuOpen(true)}>
         <div hidden={menuOpen}>
           <GameBoundary key={gameSession}>
             <Suspense
@@ -49,16 +52,18 @@ export default function App() {
             >
               <Game
                 initialMap={initialMap}
-                active={!menuOpen}
+                active={!menuOpen && !portrait}
                 onReturnToMenu={() => setMenuOpen(true)}
               />
             </Suspense>
           </GameBoundary>
         </div>
+        </LandscapeGate>
       )}
       {menuOpen && (
         <StartMenu
           hasGame={hasGame}
+          portrait={portrait}
           onPlay={(mapId) => {
             setInitialMap(mapId);
             setGameSession((value) => value + 1);

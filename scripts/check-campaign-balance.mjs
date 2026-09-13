@@ -1,78 +1,56 @@
-// A deterministic, ordinary-order playthrough of the final teaching map.
 import assert from 'node:assert/strict';
 import {
   createGame,
   tick,
   recruit,
-  upgrade,
-  build,
-  attack,
-  army,
   recruitReason,
+  build,
   buildReason,
 } from '../app/game/engine.ts';
-import { mission } from '../app/game/mission.ts';
-const s = createGame('tilleuls');
-const stages = [];
-let last;
-for (let step = 0; step < 9000 && !s.won && !s.lost; step++) {
-  if (step % 10 === 0) {
-    const current = mission(s).current?.id;
-    if (current !== last) {
-      stages.push({
-        step: current,
-        seconds: Math.round(s.elapsed),
-        units: s.units.length,
-      });
-      last = current;
-    }
-    if (current === 'manor3') upgrade(s, 6);
-    if (s.lots[3].level < 2 && s.resources.gold > 100) upgrade(s, 3);
-    const forgeLot = s.lots.find(
-      (l) =>
-        l.owned &&
-        ['house', 'tavern', 'empty'].includes(l.kind) &&
-        !buildReason(s, l.id, 'forge'),
-    );
-    if (current === 'forge' && forgeLot) build(s, forgeLot.id, 'forge');
-    for (const kind of ['troll', 'minotaur', 'skeleton']) {
-      const count =
-        s.units.filter((u) => u.kind === kind).length +
-        s.recruits.filter((r) => r.kind === kind).length;
-      const goal = kind === 'troll' ? 3 : kind === 'minotaur' ? 1 : 5;
+
+// Selecting Les Tilleuls must preserve the same simulation as the original initializer.
+const classic = createGame();
+const selected = createGame('tilleuls');
+const simulation = (state) => {
+  const copy = { ...state };
+  delete copy.campaign;
+  return copy;
+};
+assert.deepEqual(simulation(selected), classic);
+for (let step = 0; step < 8000 && !classic.lost && !classic.won; step++) {
+  for (const state of [classic, selected]) {
+    if (step % 10 === 0) {
       if (
-        count < goal &&
-        !recruitReason(s, kind) &&
-        (current === 'troll' || current === 'guild' || current === 'victory')
+        state.units.filter((u) => u.kind === 'goblin').length +
+          state.recruits.filter((u) => u.kind === 'goblin').length <
+          2 &&
+        !recruitReason(state, 'goblin')
       )
-        recruit(s, kind);
+        recruit(state, 'goblin');
+      if (!buildReason(state, 7, 'canteen')) build(state, 7, 'canteen');
+      if (
+        state.units.filter((u) => u.kind === 'spear-goblin').length +
+          state.recruits.filter((u) => u.kind === 'spear-goblin').length <
+          4 &&
+        !recruitReason(state, 'spear-goblin')
+      )
+        recruit(state, 'spear-goblin');
     }
-    let target;
-    if (
-      current === 'forge' &&
-      !forgeLot &&
-      !s.lots.some((l) => l.construction?.kind === 'forge')
-    )
-      target = s.lots[5].owned ? undefined : 5;
-    if (current === 'guild' && army(s).length >= 8) target = 0;
-    if (current === 'victory' && army(s).length >= 6)
-      target = s.lots[2].owned ? undefined : 2;
-    if (
-      target !== undefined &&
-      !army(s).some((u) => u.task === 'attack' && u.target === target)
-    )
-      attack(s, target);
+    tick(state, 0.1);
   }
-  tick(s, 0.1);
+  if (step % 100 === 0) assert.deepEqual(simulation(selected), classic);
 }
-console.log(
-  JSON.stringify(
-    { won: s.won, lost: s.lost, elapsed: Math.round(s.elapsed), stages },
-    null,
-    2,
-  ),
-);
+assert.deepEqual(simulation(selected), classic);
 assert.ok(
-  s.won,
-  'The final map can be won without altering stocks, health or time rules',
+  selected.mobilization.hero.waves > 0 && selected.mobilization.guard.waves > 0,
+  'Both original sources of pressure remain active',
+);
+console.log(
+  JSON.stringify({
+    sameSimulation: true,
+    seconds: Math.round(selected.elapsed),
+    humanLevel: selected.economy.level,
+    guardWaves: selected.mobilization.guard.waves,
+    heroWaves: selected.mobilization.hero.waves,
+  }),
 );

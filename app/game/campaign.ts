@@ -1,6 +1,6 @@
 import type { BuildingKind, CreatureKind, Resources, State } from './engine.ts';
 
-export type CampaignMapId = 'refuge' | 'faubourg' | 'tilleuls';
+export type CampaignMapId = 'refuge' | 'faubourg' | 'remparts' | 'tilleuls';
 type ObjectiveId =
   | 'goblin'
   | 'canteen'
@@ -34,7 +34,7 @@ type CampaignMap = {
   resources: Resources;
   units: CreatureKind[];
   objectives: { id: ObjectiveId; label: string }[];
-  ground: 'terrain-1' | 'terrain-3' | 'terrain-4';
+  ground?: 'terrain-1' | 'terrain-3' | 'terrain-4';
 };
 
 /** Each scenario owns its settlement layout, starting army, economy and victory rules.
@@ -81,8 +81,8 @@ export const CAMPAIGN_MAPS: Record<CampaignMapId, CampaignMap> = {
     briefing:
       'Votre camp est établi aux portes d’un bourg humain. Ses habitants défendent leurs maisons, mais la garde reste sur place pendant cet entraînement. Prenez la maison au sud-est, puis la mairie à l’est.',
     success:
-      'Le faubourg est conquis. Les squelettes renforcent votre armée sans consommer de vivres. Dans les Tilleuls, la garde et la guilde réagiront à votre expansion.',
-    next: 'tilleuls',
+      'Le faubourg est conquis. Les squelettes renforcent votre armée sans consommer de vivres. Aux Remparts, la garde et la guilde réagiront à votre expansion.',
+    next: 'remparts',
     lots: [
       'empty',
       'tavern',
@@ -107,15 +107,16 @@ export const CAMPAIGN_MAPS: Record<CampaignMapId, CampaignMap> = {
       { id: 'victory', label: 'Conquérir la mairie du faubourg' },
     ],
   },
-  tilleuls: {
-    id: 'tilleuls',
+  remparts: {
+    id: 'remparts',
     chapter: 3,
-    name: 'Les Tilleuls',
+    name: 'Les Remparts',
     subtitle: 'Choisir sa stratégie',
     briefing:
-      'Vous occupez une enclave dans le quartier. Les humains vous surveillent : votre expansion, vos méfaits ou le temps mobilisent la garde et la guilde. Renforcez l’armée, choisissez vos spécialistes et coupez les renforts à leur source.',
+      'Votre camp dispose déjà d’une cantine, d’une crypte et d’une petite armée. Apprenez à choisir vos spécialistes et vos recherches, puis affrontez la garde et la guilde avant de prendre la mairie.',
     success:
-      'Les trois quartiers sont maîtrisés. La mairie et la guilde sont neutralisées, et les rues sont à vous.',
+      'Les Remparts sont conquis. Vous connaissez les principales mécaniques. Les Tilleuls vous attendent avec les règles et la difficulté de la partie classique.',
+    next: 'tilleuls',
     lots: [
       'guild',
       'tavern',
@@ -152,13 +153,47 @@ export const CAMPAIGN_MAPS: Record<CampaignMapId, CampaignMap> = {
       { id: 'victory', label: 'Prendre la mairie et sécuriser les rues' },
     ],
   },
+  tilleuls: {
+    id: 'tilleuls',
+    chapter: 4,
+    name: 'Les Tilleuls',
+    subtitle: 'La partie classique',
+    briefing:
+      'Le quartier d’origine, avec ses règles et sa difficulté : un manoir niveau 1, 35 or, 24 vivres et aucune troupe. Développez votre domaine, affrontez la garde et la guilde, puis conquérez le quartier à votre façon.',
+    success:
+      'La mairie et la guilde sont neutralisées, et les rues sont à vous.',
+    lots: [
+      'guild',
+      'tavern',
+      'hall',
+      'den',
+      'empty',
+      'house',
+      'hq',
+      'empty',
+      'house',
+    ],
+    owned: [3, 6, 7],
+    manor: 1,
+    fortification: 1,
+    resources: { gold: 35, wood: 0, food: 24, mana: 0 },
+    units: [],
+    objectives: [
+      {
+        id: 'victory',
+        label: 'Conquérir la mairie et la guilde, puis sécuriser les rues',
+      },
+    ],
+  },
 };
 
 export const RALLY_POINT = { x: 16, y: 30.5 };
 export const campaignMap = (s: State) =>
   s.campaign ? CAMPAIGN_MAPS[s.campaign.mapId] : undefined;
-export const advancedCampaign = (s: State) =>
+export const classicCampaign = (s: State) =>
   !s.campaign || s.campaign.mapId === 'tilleuls';
+export const advancedCampaign = (s: State) =>
+  classicCampaign(s) || s.campaign?.mapId === 'remparts';
 const built = (s: State, kind: BuildingKind) =>
   s.lots.some((l) => l.owned && l.hp > 0 && !l.construction && l.kind === kind);
 const manor = (s: State) =>
@@ -166,7 +201,7 @@ const manor = (s: State) =>
 
 export function campaignObjectives(s: State) {
   const map = campaignMap(s);
-  if (!map) return [];
+  if (!map || classicCampaign(s)) return [];
   const checks: Record<ObjectiveId, boolean> = {
     goblin: s.units.some((u) => u.kind === 'goblin' && u.hp > 0),
     canteen: built(s, 'canteen'),
@@ -195,7 +230,7 @@ export function campaignObjectives(s: State) {
     guild: built(s, 'guild'),
     victory:
       built(s, 'hall') &&
-      (map.id !== 'tilleuls' || built(s, 'guild')) &&
+      (map.id !== 'remparts' || built(s, 'guild')) &&
       !s.enemies.length &&
       !s.projectiles.length,
   };
@@ -210,7 +245,7 @@ export function campaignObjectives(s: State) {
 /** Milestones and discoveries survive casualties, rebuilding and temporary loss of a building. */
 export function advanceCampaign(s: State) {
   const c = s.campaign;
-  if (!c || s.lost) return;
+  if (!c || s.lost || classicCampaign(s)) return;
   for (const o of campaignObjectives(s))
     if (o.done && !c.completed.includes(o.id)) c.completed.push(o.id);
   const creature = (kind: CreatureKind, condition = true) => {
@@ -227,7 +262,7 @@ export function advanceCampaign(s: State) {
     building('crypt', manor(s) >= 2);
     creature('skeleton', built(s, 'crypt'));
   }
-  if (c.mapId === 'tilleuls') {
+  if (c.mapId === 'remparts') {
     creature('specter', manor(s) >= 3);
     building('forge', manor(s) >= 3);
     creature('troll', built(s, 'forge'));
@@ -237,17 +272,17 @@ export function advanceCampaign(s: State) {
 }
 
 export const campaignCreatureReason = (s: State, kind: CreatureKind) =>
-  !s.campaign || s.campaign.creatures.includes(kind)
+  classicCampaign(s) || s.campaign?.creatures.includes(kind)
     ? ''
     : 'Cette créature se découvre à une prochaine étape de la campagne.';
 export const campaignBuildingReason = (s: State, kind: BuildingKind) =>
-  !s.campaign || s.campaign.buildings.includes(kind)
+  classicCampaign(s) || s.campaign?.buildings.includes(kind)
     ? ''
     : 'Ce bâtiment se découvre à une prochaine étape de la campagne.';
 
 export function campaignUpgradeReason(s: State, level: number) {
   const map = campaignMap(s);
-  return map && level > map.chapter
+  return map && !classicCampaign(s) && level > map.chapter
     ? `Le niveau ${level} du manoir se découvre dans le chapitre ${level}.`
     : '';
 }

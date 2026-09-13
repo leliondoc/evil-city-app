@@ -33,6 +33,7 @@ import { GameMusic } from './music';
 import type { Animation } from './art';
 import type { CampaignMapId } from './campaign';
 import { CampaignSelect } from './CampaignSelect';
+import { LandscapeGate } from './LandscapeGate';
 
 type MenuPanel = 'bestiary' | 'settings' | 'guide' | null;
 
@@ -40,10 +41,12 @@ export function StartMenu({
   hasGame,
   onPlay,
   onResume,
+  portrait,
 }: {
   hasGame: boolean;
   onPlay: (map: CampaignMapId) => void;
   onResume: () => void;
+  portrait: boolean;
 }) {
   const [panel, setPanel] = useState<MenuPanel>(null);
   const [showMap, setShowMap] = useState(false);
@@ -102,6 +105,7 @@ export function StartMenu({
   };
 
   return (
+    <LandscapeGate blocked={showMap && portrait} onBack={() => setShowMap(false)}>
     <main
       className="start-menu"
       data-screen={showMap ? 'map' : 'title'}
@@ -386,5 +390,6 @@ export function StartMenu({
         </DialogContent>
       </Dialog>
     </main>
+    </LandscapeGate>
   );
 }

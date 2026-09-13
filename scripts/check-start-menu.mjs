@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 // Run against the dev server with PLAYWRIGHT_PACKAGE pointing to Playwright if needed.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -205,6 +206,7 @@ try {
         await play.focus();
         await page.keyboard.press('Enter');
       } else await play.tap();
+      await requireLandscape(page);
       await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
       await page
         .locator('.world-canvas[data-ready=true]')

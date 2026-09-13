@@ -2,6 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createGame,
+  CREATURES,
+  BUILD_OPTIONS,
+  buildMenuReason,
+  PRESSURE,
   tick,
   recruit,
   build,
@@ -32,19 +36,19 @@ const until = (s, condition, seconds = 180) => {
   );
 };
 
-test('Three distinct settlements expose 3, 4 and 5 objectives, with chapter-specific starting camps', () => {
+test('Three teaching settlements precede the original district and its optional guide', () => {
   const maps = Object.values(CAMPAIGN_MAPS).map((map) => createGame(map.id));
   assert.deepEqual(
     maps.map((s) => mission(s).objectives.length),
-    [3, 4, 5],
+    [3, 4, 5, 11],
   );
   assert.equal(
     new Set(maps.map((s) => s.lots.map((l) => l.kind).join(','))).size,
-    3,
+    4,
   );
   assert.deepEqual(
     maps.map((s) => s.lots[6].level),
-    [1, 1, 2],
+    [1, 1, 2, 1],
   );
   assert.equal(
     maps[0].lots.some((l) => l.kind === 'guild' || l.kind === 'hall'),
@@ -137,8 +141,8 @@ test('Lessons stay completed and unlocked cards persist after casualties or buil
   assert.deepEqual(s, before, 'Reading guidance has no side effects');
 });
 
-test('The last map reveals specialists in stages and cannot finish just by buying advanced buildings', () => {
-  const s = createGame('tilleuls');
+test('The Remparts lesson reveals specialists in stages and cannot finish just by buying advanced buildings', () => {
+  const s = createGame('remparts');
   assert.ok(recruit(s, 'specter'));
   assert.ok(!s.campaign.buildings.includes('forge'));
   s.lots[6].level = 3;
@@ -158,6 +162,54 @@ test('The last map reveals specialists in stages and cannot finish just by buyin
   s.projectiles = [];
   tick(s, 0.1);
   assert.equal(s.won, true);
+});
+
+test('Les Tilleuls preserves the original starting state, unlock rules and pressure', () => {
+  const s = createGame('tilleuls');
+  const original = createGame();
+  const { campaign, ...simulation } = s;
+  assert.equal(campaign.mapId, 'tilleuls');
+  assert.deepEqual(simulation, original);
+  assert.deepEqual(s.resources, { gold: 35, wood: 0, food: 24, mana: 0 });
+  assert.equal(s.units.length, 0);
+  assert.equal(s.lots[6].level, 1);
+  assert.equal(s.lots[4].owned, false);
+  assert.equal(s.lots[4].kind, 'empty');
+  assert.equal(s.lots[7].kind, 'empty');
+  assert.equal(
+    CAMPAIGN_MAPS.tilleuls.ground,
+    undefined,
+    'Keep the original terrain patches',
+  );
+  assert.equal(PRESSURE.guard.time, 540);
+  assert.equal(PRESSURE.hero.time, 480);
+  assert.equal(PRESSURE.firstUpgradeAt, 360);
+  for (const state of [s, original]) {
+    state.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
+    state.lots[6].level = 3;
+    Object.assign(state.lots[5], { owned: true, kind: 'forge' });
+    Object.assign(state.lots[4], { owned: true, kind: 'crypt' });
+    Object.assign(state.lots[7], { owned: true, kind: 'canteen' });
+  }
+  advanceCampaign(s);
+  for (const kind of Object.keys(CREATURES))
+    assert.equal(recruitReason(s, kind), recruitReason(original, kind));
+  for (const kind of BUILD_OPTIONS)
+    assert.equal(buildMenuReason(s, kind), buildMenuReason(original, kind));
+  assert.equal(
+    recruitReason(s, 'minotaur'),
+    '',
+    'No tutorial requirement to recruit a troll first',
+  );
+});
+
+test('The classic district can be won without completing the tutorial checklist', () => {
+  const s = createGame('tilleuls');
+  s.lots[0].owned = s.lots[2].owned = true;
+  tick(s, 0.1);
+  assert.equal(s.won, true);
+  assert.equal(s.lots[6].level, 1);
+  assert.equal(s.units.length, 0);
 });
 
 test('Soldiers wait after arrival, retaliate in range and accept a new attack; Hold remains indefinite', () => {
@@ -254,7 +306,6 @@ test('Taking victory targets out of order never grants victory after they are lo
   s.lots[0].owned = false;
   s.lots[6].level = 3;
   Object.assign(s.lots[8], { owned: true, kind: 'forge' });
-  s.units.push({ ...s.units[3], id: s.nextId++, kind: 'troll' });
   tick(s, 0.1);
   assert.equal(s.won, false);
   assert.equal(

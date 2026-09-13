@@ -8,19 +8,20 @@ Les retours du joueur décrivent trois difficultés liées : trop d’informatio
 | --- | --- | --- | --- |
 | 1. Le Refuge | Recruter un bâtisseur ; construire une cantine ; recruter et déplacer deux lanciers au drapeau | Gobelin seul au départ, puis cantine/grotte et lanciers | Domaine abandonné, aucun ennemi ni raid |
 | 2. Le Faubourg | Conquérir une maison ; manoir 2 ; crypte et premier squelette ; mairie | Squelette sans consommation de vivres, transformation d’une maison conquise | Bâtiments qui défendent leur entrée, fortifications réduites, aucun raid chronométré |
-| 3. Les Tilleuls | Manoir 3 ; terrain et hutte des trolls ; premier troll ; guilde ; mairie et rues sécurisées | Spectre au manoir 3 ; troll et alchimiste à la hutte ; minotaure après le premier troll ; recherches et tours | Garde, guilde, livraisons et renforts du jeu complet |
+| 3. Les Remparts | Manoir 3 ; terrain et hutte des trolls ; premier troll ; guilde ; mairie et rues sécurisées | Spectre au manoir 3 ; troll et alchimiste à la hutte ; minotaure après le premier troll ; recherches et tours | Garde, guilde, livraisons et renforts du jeu complet |
+| 4. Les Tilleuls | Conquérir la mairie et la guilde, puis sécuriser les rues ; guide classique facultatif | Règles et prérequis d’origine, sans verrou de découverte du tutoriel | Départ classique : 35 or, 24 vivres, aucun ouvrier, manoir 1 ; mêmes tours, économie, renforts et difficulté |
 
-Les implantations diffèrent : le refuge ne contient aucun bâtiment humain ; le faubourg possède une mairie à l’est et aucune guilde ; les Tilleuls disposent d’une guilde au nord-ouest et d’une mairie au nord-est. Les trois scènes réutilisent la grille de rues et les chemins vers les ressources, avec des sols distincts. Il ne s’agit pas encore d’un générateur de terrains libres.
+Les implantations diffèrent : le refuge ne contient aucun bâtiment humain ; le faubourg possède une mairie à l’est et aucune guilde ; les Tilleuls disposent d’une guilde au nord-ouest et d’une mairie au nord-est. Les quatre scènes réutilisent la grille de rues et les chemins vers les ressources. Les Tilleuls gardent aussi leurs sols d’origine. Il ne s’agit pas encore d’un générateur de terrains libres.
 
-Chaque chapitre fournit ses propres ressources et troupes pour éviter de refaire l’ouverture ou d’arriver sans moyens depuis une victoire coûteuse. La carte de campagne apparaît après « Jouer » et permet de lancer librement les trois quartiers dès la première visite, notamment Les Tilleuls pour les tests. Le Refuge est conseillé pour débuter. Le menu permet de reprendre la partie ou de revenir à la carte ; choisir puis lancer un quartier remplace la partie en cours. La progression reste conservée sur l’appareil, tandis que la partie elle-même reste en mémoire dans l’onglet.
+Les trois chapitres d’apprentissage fournissent chacun leur camp. Les Tilleuls repartent strictement de leur ouverture classique, sans bonus hérité des tutoriels. La carte de campagne apparaît après « Jouer » et permet de lancer librement les quatre quartiers dès la première visite, notamment Les Tilleuls pour les tests. Le Refuge est conseillé pour débuter. Le menu permet de reprendre la partie ou de revenir à la carte ; choisir puis lancer un quartier remplace la partie en cours. La progression reste conservée sur l’appareil, tandis que la partie elle-même reste en mémoire dans l’onglet.
 
 ## Réponse aux retours
 
 | Retour | Solution |
 | --- | --- |
 | Onze objectifs et trop de fenêtres | Un objectif courant ; listes courtes de 3, 4 et 5 objectifs ; détails fermés au lancement |
-| Toutes les cartes immédiatement visibles | Découvertes progressives dans les menus, portraits de population et raccourcis ; restrictions également vérifiées par le moteur |
-| Trop de statistiques avant de comprendre une unité | Forces et faiblesses dans un volet replié ; recherches, hantises et rituels présentés dans le dernier chapitre |
+| Toutes les cartes immédiatement visibles | Découvertes progressives dans les trois tutoriels, y compris pour les raccourcis et le moteur ; catalogue classique aux Tilleuls |
+| Trop de statistiques avant de comprendre une unité | Forces et faiblesses dans un volet replié ; recherches, hantises et rituels présentés aux Remparts ; jeu classique complet aux Tilleuls |
 | Pourquoi vivre avec les humains sans hostilité ? | Contexte explicite dans le choix du chapitre et le guide : refuge isolé, bourg défendu localement, puis enclave surveillée avec réactions humaines |
 | Panneau « aucune sélection » encombrant | Aucun panneau vide, détails refermables sur ordinateur comme sur tactile |
 | Déplacement tactile qui désélectionne | Toucher une unité puis une rue donne un déplacement ; toucher un ennemi ordonne l’attaque ; bouton explicite de désélection |
@@ -33,11 +34,14 @@ Le délai commence après l’arrivée ou la fin du combat : un trajet de plus d
 
 Pour les actions avancées, Company of Heroes sur mobile offre une roue par appui long sur l’escouade ([documentation de Feral](https://www.feralinteractive.com/en/faqs/companyofheroes/1.0.2/ios/)). Evil City utilise le toucher contextuel pour les déplacements fréquents et conserve ses boutons pour les ordres supplémentaires.
 
+La carte des quartiers et les batailles se jouent désormais en paysage sur appareil tactile. Le portrait affiche une invitation à tourner l’appareil et met la simulation en pause sans perdre la sélection ni la partie. Le plein écran avec verrouillage paysage reste optionnel selon les capacités du navigateur ([documentation MDN](https://developer.mozilla.org/en-US/docs/Web/API/ScreenOrientation/lock)). Sur PC, les commandes sont intégrées au panneau de population avec des boutons compacts.
+
 ## Vérifications
 
-- Tests de simulation des trois scénarios, des restrictions, des objectifs, des pertes et des délais d’automatisation.
+- Tests de simulation des quatre scénarios, des restrictions, des objectifs, des pertes et des délais d’automatisation.
 - Parcours complets du Refuge et du Faubourg avec leurs ressources initiales et les vrais temps de construction.
-- Parcours automatisé des Tilleuls via les commandes ordinaires, sans modifier stocks ou points de vie ; victoire obtenue en environ 219 secondes de simulation. Cette exécution valide la faisabilité, pas la durée d’une première partie humaine.
+- Parcours automatisé des Remparts via les commandes ordinaires, sans modifier stocks ou points de vie ; victoire obtenue en environ 219 secondes de simulation. Cette exécution valide la faisabilité, pas la durée d’une première partie humaine.
+- Comparaison des Tilleuls avec l’initialisation classique : état initial et simulation identiques avec les mêmes ordres, jusqu’aux vagues de garde et de héros. La victoire ne dépend plus des cinq objectifs avancés.
 - Contrôles navigateur en 1440×900, 390×844, 768×1024, 844×390 et 1024×768 : démarrage, guide, construction, rassemblement, victoire, chapitre suivant, déplacement tactile direct et taille du texte. Glissement et pincement contrôlés avec de vrais événements tactiles Chromium.
 - Contrôle du build sous Chromium et WebKit, avec ressources locales, reprise et récupération après une erreur de chargement.
 

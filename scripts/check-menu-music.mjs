@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 // Exercise real menu playback across remounts, reloads and browser autoplay rules.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -89,6 +90,7 @@ for (const scenario of [
     await audible(page, true);
 
     await press(page.getByRole('button', { name: 'Jouer', exact: true }));
+    await requireLandscape(page);
     await press(page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }));
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     if (scenario.touch)

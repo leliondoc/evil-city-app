@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 // Verify the game's included effects locally or against GAME_URL after deployment.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -43,6 +44,7 @@ try {
     });
     await page.goto(url);
     await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+    await requireLandscape(page);
     await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     await page.locator('.loading-art').waitFor({ state: 'hidden' });
@@ -82,6 +84,7 @@ try {
     assert.deepEqual(saved, { muted: true, volume: 0.25, musicVolume: 0.2 });
     await page.reload();
     await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+    await requireLandscape(page);
     await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     await page.locator('.loading-art').waitFor({ state: 'hidden' });
@@ -120,6 +123,7 @@ try {
   );
   await page.goto(url);
   await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await requireLandscape(page);
   await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
   await page.locator('.world-canvas[data-ready=true]').waitFor();
   await page.locator('.loading-art').waitFor({ state: 'hidden' });

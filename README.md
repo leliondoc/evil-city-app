@@ -1,6 +1,6 @@
 # Evil City
 
-Jeu de stratégie solo en temps réel, jouable dans le navigateur. Une campagne de trois quartiers introduit progressivement la construction, le commandement et la conquête : Le Refuge (3 objectifs), Le Faubourg (4), puis Les Tilleuls (5).
+Jeu de stratégie solo en temps réel, jouable dans le navigateur. Trois chapitres apprennent progressivement les mécaniques : Le Refuge (3 objectifs), Le Faubourg (4) et Les Remparts (5). La quatrième destination, Les Tilleuls, conserve la partie classique avec ses règles et sa difficulté d’origine.
 
 ## Lancer le projet
 
@@ -42,6 +42,7 @@ node scripts/check-mission.mjs
 node scripts/check-menu-music.mjs
 node scripts/check-map-selection.mjs
 node scripts/check-campaign.mjs
+node --experimental-strip-types scripts/check-remparts-balance.mjs
 node --experimental-strip-types scripts/check-campaign-balance.mjs
 ```
 
@@ -53,7 +54,7 @@ Le menu utilise des particules et le dégradé commun aux cartes : `#443A50` ver
 
 Sur ordinateur : clic pour sélectionner, glisser ou ZQSD pour déplacer la carte, molette pour zoomer, Shift + clic/glisser pour composer un groupe. Les flèches déplacent la carte lorsqu’elle a le focus. Clic droit annule un placement en cours ou donne un ordre contextuel. Espace met en pause, R rappelle l’armée, H ouvre l’aide, 1 à 7 choisit l’option de l’onglet actif. Ctrl, Commande et Alt restent réservés aux raccourcis du système et du navigateur.
 
-Sur téléphone et tablette : toucher une unité puis une rue libre la déplace ; toucher un ennemi donne un ordre d’attaque aux combattants sélectionnés. Glisser explore la carte et pincer zoome, sans modifier les ordres. Groupe compose une sélection, Ordre permet une commande contextuelle et Désélectionner libère la sélection. Le guide compact reste sous les ressources ; son contenu déplié défile sur les écrans courts. Les détails sont fermés au démarrage et possèdent une croix sur tous les écrans. La navigation du bas et la roue du manoir donnent accès aux constructions, créatures, réglages et à la pause.
+Sur téléphone et tablette, la carte des quartiers et le jeu exigent le paysage. En portrait, un écran demande de tourner l’appareil et suspend la simulation, puis la partie reprend dans son état précédent. Le plein écran avec verrouillage paysage est proposé lorsque le navigateur le permet. Pour jouer : toucher une unité puis une rue libre la déplace ; toucher un ennemi donne un ordre d’attaque aux combattants sélectionnés. Glisser explore la carte et pincer zoome, sans modifier les ordres. Groupe compose une sélection, Ordre permet une commande contextuelle et Désélectionner libère la sélection. Le guide compact reste sous les ressources ; son contenu déplié défile sur les écrans courts. Sur PC, les commandes Armée, Ordre et Tenir sont intégrées sous les portraits, sans barre flottante sur la carte. Les détails sont fermés au démarrage et possèdent une croix sur tous les écrans. La navigation du bas et la roue du manoir donnent accès aux constructions, créatures, réglages et à la pause.
 
 Les combattants conservent la priorité d’un ordre pendant toute son exécution, puis 30 secondes après sa fin. Un nouvel ordre relance cette priorité. Tenir maintient la position sans limite, avec riposte à portée ; un nouvel ordre la libère. Les repas et le repos reprennent automatiquement après le délai. La taille de l’interface est réglable de 80 à 130 % ; sur tactile, la taille du texte change tout en conservant des commandes d’au moins 44 pixels.
 
@@ -61,7 +62,7 @@ Le menu et le jeu partagent les réglages audio. La lecture est tentée à l’o
 
 ## Simulation et architecture
 
-Le Refuge commence sans ouvrier et sans attaque humaine. Il apprend à recruter un gobelin, bâtir une cantine, puis réunir deux lanciers au drapeau. Le Faubourg fournit un camp établi et enseigne la conquête, le manoir niveau 2 et les squelettes, sans raids chronométrés. Les Tilleuls ajoutent les recherches, les spécialistes, les trolls et les réactions humaines. Chaque quartier a sa disposition de bâtiments, son armée de départ, ses ressources et sa victoire. Les cartes de création se révèlent au fil des étapes ; les mêmes restrictions s’appliquent aux commandes du moteur et aux raccourcis. Les objectifs déjà validés restent acquis après une perte, tandis que la victoire exige toujours le contrôle effectif de ses cibles. Voir [les choix de conception](docs/onboarding-3-chapitres.md).
+Le Refuge commence sans ouvrier et sans attaque humaine. Il apprend à recruter un gobelin, bâtir une cantine, puis réunir deux lanciers au drapeau. Le Faubourg fournit un camp établi et enseigne la conquête, le manoir niveau 2 et les squelettes, sans raids chronométrés. Les Remparts ajoutent les recherches, les spécialistes, les trolls et les réactions humaines. Les Tilleuls conservent le départ classique : 35 or, 24 vivres, aucun ouvrier, manoir niveau 1, friche centrale à revendiquer et terrain initial. Chaque quartier a sa disposition de bâtiments, son armée de départ, ses ressources et sa victoire. Dans les trois chapitres d’apprentissage, les cartes de création se révèlent au fil des étapes ; les mêmes restrictions s’appliquent aux commandes du moteur et aux raccourcis. Les objectifs d’apprentissage déjà validés restent acquis après une perte. Les Tilleuls utilisent les prérequis et les conditions de victoire classiques, sans obligation de terminer la liste du guide. Voir [les choix de conception](docs/onboarding-3-chapitres.md).
 
 Les livraisons alimentent réellement les stocks ; les constructions, recherches et améliorations prennent du temps. La mairie et la guilde financent leurs renforts avec les ressources des paysans. Les paysans tués ou déplacés par la fermeture d’une route peuvent être remplacés après les délais prévus, même quand leur disparition a épuisé les stocks nécessaires au recrutement. La provocation bloque les ordres des unités concernées ; une garnison peut quitter sa tour sur un ordre individuel.
 
@@ -73,7 +74,7 @@ Les livraisons alimentent réellement les stocks ; les constructions, recherches
 | `app/game/engine.ts` | État, navigation, économie et ordres sans dépendance au DOM |
 | `app/game/combat.ts`, `domain.ts`, `strategy.ts`, `shields.ts` | Combat et mécaniques spécialisées |
 | `app/game/progression.ts`, `mission.ts` | Déblocages, coûts, durées et objectifs |
-| `app/game/campaign.ts`, `preferences.ts` | Trois scénarios, découvertes progressives, progression et taille de l’interface |
+| `app/game/campaign.ts`, `preferences.ts` | Quatre destinations, découvertes progressives, progression et taille de l’interface |
 | `app/game/renderer.ts` | Caméra, entrées tactiles/souris, sélection sur l’alpha et animation |
 | `app/game/pixiScene.ts`, `terrainRenderer.ts` | Scène WebGL, textures et terrain mis en cache |
 | `app/game/audio.ts`, `music.ts`, `musicPlaylist.ts` | Effets, réglages et transitions musicales |
@@ -83,9 +84,9 @@ Le moteur reçoit explicitement le temps de simulation. Le rendu Pixi réutilise
 
 ## Limites et portabilité
 
-« Reprendre » garde la partie tant que cette page existe. Les trois quartiers sont accessibles dès la première visite depuis la carte qui suit « Jouer ». Le Refuge est conseillé pour débuter ; Les Tilleuls peuvent être lancés directement. La progression, la taille de l’interface et les réglages audio sont enregistrés localement quand le navigateur le permet. Chaque chapitre repart de son camp prédéfini, sans transfert de troupes ni de stocks. Il n’y a pas encore de sauvegarde persistante de partie, de multijoueur, d’application iOS, d’exécutable Steam, ni de prise en charge complète des manettes.
+« Reprendre » garde la partie tant que cette page existe. Les quatre quartiers sont accessibles dès la première visite depuis la carte qui suit « Jouer ». Le Refuge est conseillé pour débuter ; Les Tilleuls peuvent être lancés directement. La progression, la taille de l’interface et les réglages audio sont enregistrés localement quand le navigateur le permet. Chaque chapitre repart de son camp prédéfini, sans transfert de troupes ni de stocks. Il n’y a pas encore de sauvegarde persistante de partie, de multijoueur, d’application iOS, d’exécutable Steam, ni de prise en charge complète des manettes.
 
-Les trois quartiers partagent la grille de rues et les accès aux ressources ; leurs implantations et scénarios sont définis séparément. Des géographies arbitraires nécessiteraient encore de généraliser la navigation et les ponts. Le moteur sans paramètre conserve le scénario libre historique pour les fixtures de régression ; le jeu démarre avec le quartier choisi sur la carte. Une migration des tâches vers des unions discriminées et une séparation progressive des gros modules restent des améliorations d’architecture à traiter avec leurs propres tests.
+Les quatre quartiers partagent la grille de rues et les accès aux ressources ; leurs implantations et scénarios sont définis séparément. Des géographies arbitraires nécessiteraient encore de généraliser la navigation et les ponts. Le moteur sans paramètre conserve le scénario libre historique pour les fixtures de régression ; le jeu démarre avec le quartier choisi sur la carte. Une migration des tâches vers des unions discriminées et une séparation progressive des gros modules restent des améliorations d’architecture à traiter avec leurs propres tests.
 
 Les tests WebKit automatisés ne remplacent pas une validation sur iPhone/iPad, WKWebView, interruptions audio réelles, Steam Deck et matériel peu puissant. Les licences des assets doivent également couvrir chaque distribution : notamment Agenda Fantasy Demo et les MP3 fournis par l’utilisateur.
 

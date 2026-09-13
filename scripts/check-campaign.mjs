@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 import assert from 'node:assert/strict';
 import { chromium, webkit } from 'playwright';
 import { mkdtemp } from 'node:fs/promises';
@@ -47,6 +48,7 @@ try {
     await page.screenshot({ path: `${output}/menu-${viewport.width}.png` });
     await page.getByRole('button', { name: 'Jouer', exact: true }).click();
     assert.equal(await page.locator('.atlas-node:disabled').count(), 0);
+    await requireLandscape(page);
     await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     assert.equal(await page.locator('.selection-column').isVisible(), false);

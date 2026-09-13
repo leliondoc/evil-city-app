@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)(
@@ -62,6 +63,7 @@ try {
   });
   await page.getByRole('button', { name: 'Fermer', exact: true }).click();
   await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await requireLandscape(page);
   await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
   await page.locator('.world-canvas[data-ready=true]').waitFor();
   assert.equal(

@@ -1,5 +1,5 @@
 import { streetCenter } from './streets.ts';
-import { CAMPAIGN_MAPS, advanceCampaign, advancedCampaign, campaignObjectives, campaignCreatureReason, campaignBuildingReason, campaignUpgradeReason, type CampaignMapId, type CampaignProgress } from './campaign.ts';
+import { CAMPAIGN_MAPS, advanceCampaign, advancedCampaign, classicCampaign, campaignObjectives, campaignCreatureReason, campaignBuildingReason, campaignUpgradeReason, type CampaignMapId, type CampaignProgress } from './campaign.ts';
 import { COMBAT, humanMultiplier } from './combat.ts';
 import { BUILDING_TIER, canUpgradeKind, manorRequirement, upgradeDuration, advanceBuildingUpgrades } from './progression.ts';
 import { advanceHumanBuildings, humanBuildingHealth } from './humanBuildings.ts';
@@ -891,6 +891,12 @@ export interface State {
 export const HUMAN_WORKER_CAP = 6;
 export const HUMAN_WORKER_SECONDS = 20;
 export function createGame(mapId?: CampaignMapId): State {
+  // The original district uses the original initializer, without tutorial bonuses.
+  if (mapId === 'tilleuls') {
+    const state = createGame();
+    state.campaign = { mapId, completed: [], creatures: [], buildings: [] };
+    return state;
+  }
   const map = mapId ? CAMPAIGN_MAPS[mapId] : undefined;
   const kinds: BuildingKind[] = map?.lots ?? [
     'guild',
@@ -974,8 +980,8 @@ export function createGame(mapId?: CampaignMapId): State {
     for (const lot of state.lots) if (!lot.owned) lot.hp = lot.maxHp = Math.ceil(lot.maxHp * map.fortification);
     state.campaign = { mapId: map.id, completed: [], creatures: [], buildings: [] };
     state.journal = [map.briefing];
-    state.domain.autoCollect = map.id === 'tilleuls';
-    if (map.id !== 'tilleuls') {
+    state.domain.autoCollect = advancedCampaign(state);
+    if (!advancedCampaign(state)) {
       state.strategy.towers = [];
       state.economy.nextUpgradeAt = Infinity;
     }
@@ -2932,7 +2938,7 @@ function tickStep(s: State, dt: number) {
     );
   s.units = s.units.filter((u) => u.hp > 0);
   advanceCampaign(s);
-  if (s.campaign) {
+  if (s.campaign && !classicCampaign(s)) {
     if (!s.lost && campaignObjectives(s).every(o => o.done)) {
       s.won = true;
       announce(s, CAMPAIGN_MAPS[s.campaign.mapId].success);

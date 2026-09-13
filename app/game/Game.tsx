@@ -72,7 +72,7 @@ import { shieldActive, shieldSettings, provocationReason } from './shields';
 import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
-import { CAMPAIGN_MAPS, campaignMap, advancedCampaign, type CampaignMapId } from './campaign';
+import { CAMPAIGN_MAPS, campaignMap, advancedCampaign, classicCampaign, type CampaignMapId } from './campaign';
 import { completeChapter, readUIScale, saveUIScale } from './preferences';
 import { createGameStore } from './gameStore';
 import { buildingArt, buildingHasTowers, enemyPortrait, type Animation } from './art';
@@ -197,8 +197,8 @@ export default function Game({
   const [gameStore] = useState(() => createGameStore(initialState ?? createGame(initialMap)));
   const s = useSyncExternalStore(gameStore.subscribe, gameStore.getSnapshot);
   const map = campaignMap(s);
-  const buildOptions = BUILD_OPTIONS.filter(kind => !s.campaign || s.campaign.buildings.includes(kind));
-  const recruitOptions = RECRUIT_OPTIONS.filter(kind => !s.campaign || s.campaign.creatures.includes(kind));
+  const buildOptions = BUILD_OPTIONS.filter(kind => classicCampaign(s) || s.campaign?.buildings.includes(kind));
+  const recruitOptions = RECRUIT_OPTIONS.filter(kind => classicCampaign(s) || s.campaign?.creatures.includes(kind));
   const [uiScale, setUIScale] = useState(readUIScale);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -549,8 +549,8 @@ export default function Game({
       if (['1', '2', '3', '4', '5', '6', '7'].includes(event.key)) {
         const i = Number(event.key) - 1;
         const state = gameStore.getState();
-        const buildings = BUILD_OPTIONS.filter(kind => !state.campaign || state.campaign.buildings.includes(kind));
-        const creatures = RECRUIT_OPTIONS.filter(kind => !state.campaign || state.campaign.creatures.includes(kind));
+        const buildings = BUILD_OPTIONS.filter(kind => classicCampaign(state) || state.campaign?.buildings.includes(kind));
+        const creatures = RECRUIT_OPTIONS.filter(kind => classicCampaign(state) || state.campaign?.creatures.includes(kind));
         if (tab === 'build' && buildings[i]) chooseBuild(buildings[i]);
         else if (tab === 'recruit' && creatures[i]) chooseRecruit(creatures[i]);
       }
@@ -1491,16 +1491,7 @@ export default function Game({
             }}
             onDefend={() => run((state) => defend(state))}
           />}
-          {!compact && army(s).length > 0 && <div className="army-command-bar" aria-label="Commandes de l’armée">
-            <Button className="primary-btn" onClick={() => {
-              select(unitSelection(army(s).map(u => u.id)));
-              setMobilePanel(null);
-              setTouchMode('inspect');
-            }}><Users size={17} /> Armée</Button>
-            <Button className="primary-btn" disabled={!group.length || s.won || s.lost} aria-pressed={touchMode === 'command'} onClick={() => chooseTouchMode('command')}><Flag size={17} /> Déplacer / attaquer</Button>
-            <Button className="primary-btn" disabled={!group.length || s.won || s.lost} onClick={() => { run(state => holdUnits(state, group.map(u => u.id))); setTouchMode('inspect'); }}><Shield size={17} /> Tenir</Button>
-          </div>}
-          {touchMode === 'command' && <output className="order-instruction" aria-live="polite">{compact ? 'Touchez' : 'Cliquez sur'} une destination ou une cible. {hint.rallyPoint ? 'Rejoignez le drapeau doré.' : ''}</output>}
+          {compact && touchMode === 'command' && <output className="order-instruction" aria-live="polite">{compact ? 'Touchez' : 'Cliquez sur'} une destination ou une cible. {hint.rallyPoint ? 'Rejoignez le drapeau doré.' : ''}</output>}
           {compact && (
             <>
               <div className="touch-toolbar" aria-label="Commandes tactiles">
@@ -1702,6 +1693,18 @@ export default function Game({
               );
             })}
           </div>
+          <div className="army-footer">
+          {!compact && army(s).length > 0 && <div className="army-command-bar" aria-label="Commandes de l’armée">
+            <button className="army-command" onClick={() => {
+              select(unitSelection(army(s).map(u => u.id)));
+              setMobilePanel(null);
+              setTouchMode('inspect');
+            }}><Users size={14} /> Armée</button>
+            <button className="army-command" disabled={!group.length || s.won || s.lost} aria-label="Déplacer / attaquer" title="Déplacer / attaquer la sélection" aria-pressed={touchMode === 'command'} onClick={() => chooseTouchMode('command')}><Flag size={14} /> Ordre</button>
+            <button className="army-command" disabled={!group.length || s.won || s.lost} onClick={() => { run(state => holdUnits(state, group.map(u => u.id))); setTouchMode('inspect'); }}><Shield size={14} /> Tenir</button>
+          </div>}
+
+            {!compact && touchMode === 'command' ? <output className="army-order-hint" aria-live="polite">Cliquez sur une destination ou une cible.</output> : (!army(s).length || s.recruits.length > 0 || s.resources.food < 20) && <>
           <p className="army-note">
             {s.recruits.length ? (
               `${s.recruits.length} créature${s.recruits.length > 1 ? 's' : ''} en route…`
@@ -1716,6 +1719,8 @@ export default function Game({
               'Une armée commence par un bon repas.'
             )}
           </p>
+            </>}
+          </div>
         </section>
         <Tabs
           className="build-tabs"
@@ -1905,7 +1910,7 @@ export default function Game({
       )}
 
       <Dialog
-        open={modal !== null}
+        open={active && modal !== null}
         onOpenChange={(open) => {
           if (!open) setModal(null);
         }}
@@ -2100,13 +2105,13 @@ export default function Game({
                 dans les rues. Protégez votre manoir : sa destruction met fin à
                 la partie.</>}
               </DialogDescription>
-              {map && <div className="chapter-guide">
+              {map && !classicCampaign(s) && <div className="chapter-guide">
                 <ol>{map.objectives.map(objective => <li key={objective.id}>{objective.label}</li>)}</ol>
                 <p>Les cartes apparaissent au fil de vos découvertes. Les boutons du guide vous conduisent à la prochaine action.</p>
                 <p>{compact ? 'Touchez une unité ou Armée, puis directement une rue pour déplacer la sélection. Touchez un ennemi pour attaquer. Glissez pour explorer, pincez pour zoomer. Désélectionner libère la sélection. Groupe permet de la composer.' : 'Cliquez sur Armée, puis Déplacer / attaquer et une destination. Vous pouvez aussi utiliser le clic droit et Shift pour composer un groupe.'} Les ordres restent prioritaires pendant leur exécution, puis 30 secondes après leur fin. Tenir maintient la position jusqu’au prochain ordre.</p>
                 <p>Fermez les détails avec la croix. La taille de l’interface se règle dans les paramètres.</p>
               </div>}
-              {!map && <><div className="guide-steps">
+              {classicCampaign(s) && <><div className="guide-steps">
                 <div className="guide-step">
                   <b>01</b>
                   <div>
@@ -2357,10 +2362,10 @@ export default function Game({
             </>
           )}
           {modal === 'chapters' && <>
-            <DialogTitle>Les trois quartiers</DialogTitle>
+            <DialogTitle>Les quatre quartiers</DialogTitle>
             <DialogDescription>Tous les quartiers sont accessibles. Chaque chapitre commence avec son propre camp. Le lancer remplace la partie en cours.</DialogDescription>
             <div className="chapter-picker">{Object.values(CAMPAIGN_MAPS).map(chapter => <button key={chapter.id} onClick={() => reset(chapter.id)}>
-              <strong>{chapter.chapter}. {chapter.name}</strong><span>{chapter.subtitle} · {chapter.objectives.length} objectifs</span><small>{chapter.briefing}</small>
+              <strong>{chapter.chapter}. {chapter.name}</strong><span>{chapter.subtitle}{chapter.id !== 'tilleuls' && ` · ${chapter.objectives.length} objectifs`}</span><small>{chapter.briefing}</small>
             </button>)}</div>
           </>}
         </DialogContent>

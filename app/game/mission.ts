@@ -10,7 +10,7 @@ import {
   type State,
 } from './engine.ts';
 import { manorLevel, upgradeBenefit } from './progression.ts';
-import { campaignMap, campaignObjectives, RALLY_POINT } from './campaign.ts';
+import { classicCampaign, campaignMap, campaignObjectives, RALLY_POINT } from './campaign.ts';
 
 type MissionAction =
   | { type: 'rally' }
@@ -44,7 +44,7 @@ export function mission(s: State) {
   const crypt = hasBuilding(s, 'crypt');
   const fighters = army(s);
   const map = campaignMap(s);
-  const objectives = map ? campaignObjectives(s) : [
+  const objectives = !classicCampaign(s) ? campaignObjectives(s) : [
     {
       id: 'goblin',
       label: 'Recruter un premier gobelin',

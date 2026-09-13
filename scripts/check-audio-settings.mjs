@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 // Exercise settings through the real menu/game UI, including refused browser storage.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -107,6 +108,7 @@ try {
     });
     await press(page.getByRole('button', { name: 'Fermer', exact: true }));
     await press(page.getByRole('button', { name: 'Jouer', exact: true }));
+    await requireLandscape(page);
     await press(page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }));
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     if (scenario.width < 800 && await page.getByRole('button', { name: 'Fermer les détails', exact: true }).isVisible())

@@ -3,6 +3,7 @@ import { chromium, webkit } from 'playwright';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { requireLandscape } from './landscape-navigation.mjs';
 
 const engine = process.env.CAMPAIGN_BROWSER || 'chromium';
 const browser = await { chromium, webkit }[engine].launch({ headless: true });
@@ -40,16 +41,27 @@ try {
       'The map appears after the title menu',
     );
     await press(page.getByRole('button', { name: 'Jouer', exact: true }));
+    const startsPortrait = viewport.width < viewport.height;
+    if (startsPortrait) {
+      await page
+        .getByRole('heading', { name: 'Tournez votre appareil', exact: true })
+        .waitFor();
+      assert.equal(await page.locator('.campaign-atlas').isVisible(), false);
+      await page.screenshot({
+        path: join(output, `rotate-${viewport.width}.png`),
+      });
+      await requireLandscape(page);
+    }
     assert.equal(
       await page.locator('.world-canvas').count(),
       0,
       'Choosing a map does not start the simulation',
     );
-    assert.equal(await page.locator('.atlas-node').count(), 3);
+    assert.equal(await page.locator('.atlas-node').count(), 4);
     assert.equal(
       await page.locator('.atlas-node:disabled').count(),
       0,
-      'Every chapter is accessible on a fresh profile',
+      'Every district is accessible on a fresh profile',
     );
     assert.equal(
       await page.evaluate(
@@ -100,8 +112,43 @@ try {
     );
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     await page
-      .locator('.current-objective[data-objective=manor3]')
+      .locator('.current-objective[data-objective=goblin]')
       .waitFor({ state: 'attached' });
+    assert.equal(
+      await page.locator('.army-face').count(),
+      7,
+      'The classic roster is visible without tutorial discovery gates',
+    );
+    if (startsPortrait) {
+      await page.setViewportSize(viewport);
+      await page
+        .getByRole('heading', { name: 'Tournez votre appareil', exact: true })
+        .waitFor()
+        .catch(async (error) => {
+          console.error({
+            viewport,
+            actual: page.viewportSize(),
+            state: await page.evaluate(() => ({
+              w: innerWidth,
+              h: innerHeight,
+              coarse: matchMedia('(pointer: coarse)').matches,
+              portrait: matchMedia('(orientation: portrait)').matches,
+              overlays: document.querySelectorAll('.landscape-prompt').length,
+              body: document.body.innerText.slice(0, 240),
+            })),
+          });
+          throw error;
+        });
+      const time = await page.locator('.session-status time').textContent();
+      await page.waitForTimeout(1300);
+      assert.equal(
+        await page.locator('.session-status time').textContent(),
+        time,
+        'Portrait mode pauses the simulation',
+      );
+      await requireLandscape(page);
+      await page.locator('.world-canvas[data-ready=true]').waitFor();
+    }
     const returnToMenu = async () => {
       await press(
         page.getByRole('button', {
@@ -126,7 +173,7 @@ try {
     await press(page.getByRole('button', { name: 'Reprendre', exact: true }));
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     assert.equal(
-      await page.locator('.current-objective[data-objective=manor3]').count(),
+      await page.locator('.current-objective[data-objective=goblin]').count(),
       1,
       'Backing out of the map keeps the current game',
     );
@@ -150,6 +197,52 @@ try {
       1,
       'Replacing a game disposes its old renderer',
     );
+    if (viewport.width === 1440) {
+      assert.equal(
+        await page.locator('.army-command-bar').evaluate((bar) => {
+          const r = bar.getBoundingClientRect(),
+            panel = bar.closest('.army-overview').getBoundingClientRect();
+          return (
+            r.height <= 34 &&
+            r.top >= panel.top &&
+            r.bottom <= panel.bottom &&
+            r.left >= panel.left &&
+            r.right <= panel.right
+          );
+        }),
+        true,
+        'Compact PC commands stay inside the population panel',
+      );
+      await page
+        .locator('.army-command-bar')
+        .getByRole('button', { name: 'Armée', exact: true })
+        .click();
+      await page
+        .locator('.army-command-bar')
+        .getByRole('button', { name: 'Déplacer / attaquer', exact: true })
+        .click();
+      await page.locator('.army-order-hint').waitFor();
+      await page
+        .locator('.army-command-bar')
+        .getByRole('button', { name: 'Tenir', exact: true })
+        .click();
+      await page.screenshot({ path: join(output, 'pc-army-controls.png') });
+    }
+    await returnToMenu();
+    await press(
+      page.getByRole('button', { name: 'Carte des quartiers', exact: true }),
+    );
+    await press(page.getByRole('button', { name: /^Les Remparts/ }));
+    await press(
+      page.getByRole('button', {
+        name: 'Entrer dans le quartier',
+        exact: true,
+      }),
+    );
+    await page.locator('.world-canvas[data-ready=true]').waitFor();
+    await page
+      .locator('.current-objective[data-objective=manor3]')
+      .waitFor({ state: 'attached' });
     assert.deepEqual(errors, []);
     console.log(
       `${engine} ${viewport.width}×${viewport.height}: direct Tilleuls, all maps active, map layout, resume and new chapter OK`,

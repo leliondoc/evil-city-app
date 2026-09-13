@@ -20,6 +20,9 @@ test('Chapter progress is monotonic and malformed preferences use defaults', () 
     assert.equal(completeChapter('refuge'), 2);
     assert.equal(completeChapter('faubourg'), 3);
     assert.equal(completeChapter('refuge'), 3);
+    assert.equal(completeChapter('remparts'), 4);
+    assert.equal(completeChapter('tilleuls'), 4);
+    assert.equal(completeChapter('refuge'), 4);
     saveUIScale(1.3);
     assert.equal(readUIScale(), 1.3);
     for (const value of ['NaN', '99', '0', 'null', '{}', 'Infinity', '-1']) {

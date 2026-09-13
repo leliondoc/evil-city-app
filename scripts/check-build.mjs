@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 // Test the distributed game under a nested URL, with every external request blocked.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -105,6 +106,7 @@ try {
         });
         await page.goto(url);
         await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+        await requireLandscape(page);
         await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page.locator('.world-canvas[data-ready=true]').waitFor();
         await closeDetails(page);
@@ -227,6 +229,7 @@ try {
         );
         await page.goto(url);
         await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+        await requireLandscape(page);
         await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page
           .getByRole('alert')
@@ -240,6 +243,7 @@ try {
             .click(),
         ]);
         await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+        await requireLandscape(page);
         await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page
           .locator('.world-canvas[data-ready=true]')

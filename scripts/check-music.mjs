@@ -1,3 +1,4 @@
+import { requireLandscape } from './landscape-navigation.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)(
@@ -30,6 +31,7 @@ try {
   });
   await page.goto(process.env.GAME_URL || 'http://127.0.0.1:3000');
   await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await requireLandscape(page);
   await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
   await page.locator('.world-canvas[data-ready=true]').waitFor();
   await page.locator('.loading-art').waitFor({ state: 'hidden' });
@@ -209,6 +211,7 @@ try {
   const second = await page.context().newPage();
   await second.goto(page.url());
   await second.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await requireLandscape(second);
   await second.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
   await second.locator('.world-canvas[data-ready=true]').waitFor();
   await second.locator('.loading-art').waitFor({ state: 'hidden' });

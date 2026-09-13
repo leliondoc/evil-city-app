@@ -26,7 +26,7 @@ Renderer.prototype.setSuspended = function (...args) {
 };
 const id = new URLSearchParams(location.search).get('map');
 const map: CampaignMapId =
-  id === 'faubourg' || id === 'tilleuls' ? id : 'refuge';
+  id === 'faubourg' || id === 'remparts' || id === 'tilleuls' ? id : 'refuge';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Game initialState={createGame(map)} />

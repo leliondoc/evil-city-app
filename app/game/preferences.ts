@@ -3,7 +3,11 @@ import { CAMPAIGN_MAPS, type CampaignMapId } from './campaign.ts';
 export function readUnlockedChapter(): number {
   try {
     const value = Number(localStorage.getItem('evil-city-campaign-v1'));
-    return Number.isInteger(value) && value >= 1 && value <= 3 ? value : 1;
+    return Number.isInteger(value) &&
+      value >= 1 &&
+      value <= Object.keys(CAMPAIGN_MAPS).length
+      ? value
+      : 1;
   } catch {
     return 1;
   }
@@ -11,7 +15,7 @@ export function readUnlockedChapter(): number {
 export function completeChapter(id: CampaignMapId) {
   const unlocked = Math.max(
     readUnlockedChapter(),
-    Math.min(3, CAMPAIGN_MAPS[id].chapter + 1),
+    Math.min(Object.keys(CAMPAIGN_MAPS).length, CAMPAIGN_MAPS[id].chapter + 1),
   );
   try {
     localStorage.setItem('evil-city-campaign-v1', String(unlocked));

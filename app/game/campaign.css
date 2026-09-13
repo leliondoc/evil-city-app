@@ -43,21 +43,33 @@
   color: #efdfbd;
 }
 .army-command-bar {
-  position: fixed;
-  top: 62px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
-  gap: 6px;
-  z-index: 11;
-  zoom: var(--game-ui-scale);
+  gap: 4px;
+  align-items: center;
 }
-.army-command-bar .primary-btn {
-  min-height: 44px;
-  width: auto;
-  margin: 0;
-  font-size: 12px;
-  padding-inline: 12px;
+.army-command {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 4px 7px;
+  border: 1px solid #ad9c7166;
+  border-radius: 4px;
+  background: #243b3f;
+  color: #f0dfba;
+  font-size: 11px;
+  cursor: pointer;
+}
+.army-command:hover:not(:disabled), .army-command[aria-pressed='true'] {
+  background: #655073;
+  border-color: #dcc59c;
+}
+.army-command:disabled { opacity: .5; cursor: default; }
+.army-order-hint { display: block; margin-top: 6px; color: #e4d1a9; font-size: 11px; line-height: 1.4; }
+.army-footer .army-note { margin-top: 5px; }
+.army-footer { min-width: 0; }
+.army-command:focus-visible { outline: 2px solid #ffe4a1; outline-offset: 2px;
 }
 .game-shell[data-compact='false'][data-commanding='true']
   .bottom-bar

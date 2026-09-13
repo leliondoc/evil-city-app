@@ -6,12 +6,14 @@ import { CAMPAIGN_MAPS, type CampaignMapId } from './campaign';
 const landmarks: Record<CampaignMapId, AssetKey> = {
   refuge: 'hq-purple',
   faubourg: 'tavern-blue',
+  remparts: 'human-fortress-blue',
   tilleuls: 'human-citadel-yellow',
 };
 const descriptions: Record<CampaignMapId, string> = {
   refuge: 'Pour débuter',
   faubourg: 'Premières conquêtes',
-  tilleuls: 'Bataille complète',
+  remparts: 'Tactiques avancées',
+  tilleuls: 'Règles d’origine',
 };
 
 export function CampaignSelect({
@@ -41,7 +43,7 @@ export function CampaignSelect({
           Commencez au Refuge ou partez directement à la conquête des Tilleuls.
         </span>
       </header>
-      <div className="campaign-atlas" aria-label="Carte des trois quartiers">
+      <div className="campaign-atlas" aria-label="Carte des quatre quartiers">
         <svg
           className="atlas-land"
           viewBox="0 0 1000 420"
@@ -135,15 +137,15 @@ export function CampaignSelect({
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <path d="M200 270C280 315 370 165 500 195S655 50 800 120" />
+          <path d="M160 275C220 320 305 145 390 170S515 320 620 275S735 80 840 130" />
         </svg>
         <svg
           className="atlas-route atlas-route-tall"
-          viewBox="0 0 400 440"
+          viewBox="0 0 400 500"
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <path d="M100 323C170 370 320 275 260 220S100 170 172 112" />
+          <path d="M100 374C155 410 310 310 260 275S65 235 112 176S285 125 260 88" />
         </svg>
         <span className="atlas-caption" aria-hidden="true">
           Les terres du mauvais voisin
@@ -152,7 +154,7 @@ export function CampaignSelect({
           <button
             key={chapter.id}
             className={`atlas-node atlas-node-${chapter.id}`}
-            aria-label={`${chapter.name} · ${descriptions[chapter.id]} · ${chapter.objectives.length} objectifs`}
+            aria-label={`${chapter.name} · ${descriptions[chapter.id]}${chapter.id === 'tilleuls' ? '' : ` · ${chapter.objectives.length} objectifs`}`}
             aria-pressed={selected === chapter.id}
             onClick={() => setSelected(chapter.id)}
           >
@@ -175,8 +177,11 @@ export function CampaignSelect({
       <div className="campaign-departure">
         <div className="campaign-brief" aria-live="polite">
           <p>
-            <Flag size={14} /> {map.objectives.length} objectifs <span>·</span>{' '}
-            {map.subtitle}
+            <Flag size={14} />{' '}
+            {map.id === 'tilleuls'
+              ? 'Règles et difficulté d’origine'
+              : `${map.objectives.length} objectifs`}{' '}
+            <span>·</span> {map.subtitle}
           </p>
           <h2>{map.name}</h2>
           <div>{map.briefing}</div>
@@ -190,7 +195,7 @@ export function CampaignSelect({
           <p>
             {hasGame
               ? 'Remplace la partie en cours.'
-              : 'Les trois quartiers sont accessibles.'}
+              : 'Les quatre quartiers sont accessibles.'}
           </p>
         </div>
       </div>
