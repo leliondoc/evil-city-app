@@ -97,7 +97,7 @@ test('Human specializations apply both to opportunistic attacks and retaliation'
       ['lancer', 'spear-goblin', true, 15],
       ['lancer', 'spear-goblin', false, 10],
       ['lancer', 'troll', false, 11.9],
-      ['lancer', 'minotaur', false, 11.2],
+      ['lancer', 'imp', false, 7.5],
       ['lancer', 'skeleton', false, 9],
       ['warrior', 'skeleton', false, 14.58],
       ['warrior', 'spear-goblin', false, 16.2],
@@ -172,8 +172,8 @@ test('An isolated lancer cannot hold off seven attacking skeletons, even at leve
   }
 });
 
-test('Minotaur sweep is limited to two nearby guards and does not hit heroes or distant guards', () => {
-  const { s, unit, enemy } = arena(['minotaur'], 'guard');
+test('Imp burst hits at most four nearby targets including heroes and respects its cooldown', () => {
+  const { s, unit, enemy } = arena(['imp'], 'guard');
   const others = [0.2, 0.4, 0.6, 5].map((offset) => ({
     ...structuredClone(enemy),
     id: s.nextId++,
@@ -188,14 +188,18 @@ test('Minotaur sweep is limited to two nearby guards and does not hit heroes or 
   };
   s.enemies.push(...others, hero);
   hitEnemy(s, unit, enemy, armyDamage(s, unit), 0.1);
-  assert.ok(Math.abs(55 - enemy.hp - 3.8) < 1e-8);
+  assert.ok(Math.abs(55 - enemy.hp - 19.8) < 1e-8);
   for (const guard of others.slice(0, 2))
-    assert.ok(Math.abs(55 - guard.hp - 1.52) < 1e-8);
-  for (const other of [...others.slice(2), hero]) assert.equal(other.hp, 55);
+    assert.equal(guard.hp, 37);
+  for (const other of others.slice(2)) assert.equal(other.hp, 55);
+  assert.equal(hero.hp, 37);
+  const hp = others[0].hp;
+  hitEnemy(s, unit, enemy, armyDamage(s, unit), 0.1);
+  assert.equal(others[0].hp, hp, 'No second burst before cooldown');
 });
 
-test('Minotaur siege bonus applies to buildings, not to all targets', () => {
-  const { s, unit } = arena(['minotaur']);
+test('Imp is a protector rather than a siege specialist', () => {
+  const { s, unit } = arena(['imp']);
   s.enemies = [];
   const lot = s.lots.find((l) => !l.owned && l.kind === 'house');
   lot.garrisonReleased = true; // Isolate siege damage after the street defenders have fallen.
@@ -206,7 +210,7 @@ test('Minotaur siege bonus applies to buildings, not to all targets', () => {
   });
   const hp = lot.hp;
   tick(s, 0.1);
-  assert.ok(Math.abs(hp - lot.hp - 6.65) < 1e-8);
+  assert.ok(Math.abs(hp - lot.hp - 1.8) < 1e-8);
 });
 
 test('Solvent changes fire only, expires, and amplifies both burning and weapon fire', () => {

@@ -35,7 +35,7 @@ test('Construction menu and placement report the same exact resource shortfall, 
 test('Completed buildings unlock the next tier; money alone cannot bypass progression', () => {
   const s = createGame();
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
-  assert.deepEqual(BUILD_OPTIONS, ['den', 'canteen', 'crypt', 'forge']);
+  assert.deepEqual(BUILD_OPTIONS, ['den', 'canteen', 'crypt', 'forge', 'sanctum']);
   assert.equal(buildUnlockReason(s, 'canteen'), ''); // Starting den is already complete.
   assert.ok(buildUnlockReason(s, 'crypt'));
   assert.ok(buildUnlockReason(s, 'forge'));

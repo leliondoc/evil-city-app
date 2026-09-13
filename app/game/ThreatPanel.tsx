@@ -238,7 +238,7 @@ export function ThreatPanel({
     {
       id: 'army',
       label: 'Votre horde',
-      icon: 'minotaur-avatar',
+      icon: 'imp-avatar',
       badge: String(fighters.length),
       summary: `${fighters.length} combattants. Population ${population(s)} sur ${capacity(s)}.`,
       content: (

@@ -2,14 +2,14 @@ import type { CreatureKind, Enemy, HeroRole, Unit } from './engine.ts';
 
 export function armorPercent(actor: Pick<Unit, 'kind'> | Pick<Enemy, 'kind' | 'role'>): number {
   if (actor.kind === 'hero') return actor.role === 'warrior' ? 25 : actor.role === 'lancer' ? 15 : 0;
-  return actor.kind === 'troll' ? 15 : actor.kind === 'minotaur' ? 20 : actor.kind === 'skeleton' ? 10 : 0;
+  return actor.kind === 'imp' ? 25 : actor.kind === 'troll' ? 15 : actor.kind === 'skeleton' ? 10 : 0;
 }
 export function physicalDamage(damage: number, actor: Pick<Unit, 'kind'> | Pick<Enemy, 'kind' | 'role'>): number {
   return damage * (1 - armorPercent(actor) / 100);
 }
 
 /** Matchup bonuses affect direct attacks; fire keeps its own solvent multiplier. */
-export const COMBAT = {
+const COMBAT = {
   spearVsGuard: 1.35,
   riderVsSupport: 1.5,
   trollVsKnight: 1.6,
@@ -17,11 +17,6 @@ export const COMBAT = {
   lancerVsMounted: 1.5,
   lancerVsLarge: 1.4,
   archerVsAlchemist: 1.3,
-  minotaurVsBuilding: 1.75,
-  sweepFraction: 0.4,
-  sweepTargets: 2,
-  sweepRadius: 1.8,
-  sweepReach: 2.6,
   solvent: 2,
   solventVsFrontline: 2.5,
 } as const;
@@ -55,7 +50,7 @@ export function humanMultiplier(
     return COMBAT.knightVsLight;
   if (enemy.role === 'lancer') {
     if (mounted) return COMBAT.lancerVsMounted;
-    if (kind === 'troll' || kind === 'minotaur') return COMBAT.lancerVsLarge;
+    if (kind === 'troll') return COMBAT.lancerVsLarge;
   }
   if (enemy.role === 'archer' && kind === 'alchemist')
     return COMBAT.archerVsAlchemist;
@@ -116,11 +111,10 @@ export function creatureCombatProfile(
         weakness: 'Lanciers soutenus par des Archères',
         effect: `${bonus(COMBAT.trollVsKnight)} de dégâts contre les chevaliers. Sa lenteur l’expose aux tirs.`,
       };
-    case 'minotaur':
+    case 'imp':
       return {
-        strength: 'Bâtiments et Gardes regroupés',
-        weakness: 'Lanciers soutenus par des Archères',
-        effect: `${bonus(COMBAT.minotaurVsBuilding)} de dégâts aux bâtiments. Chaque attaque balaie jusqu’à ${COMBAT.sweepTargets} gardes supplémentaires proches à ${COMBAT.sweepFraction * 100} % des dégâts directs. Occupe 3 places.`,
+        strength: 'Protection des alliés et ennemis en armure', weakness: 'Magie et tirs concentrés',
+        effect: '280 PV · résistance physique 25 %. Griffes magiques. Toutes les 8 s : braises de 18 dégâts sur 4 ennemis maximum à 1,8 case, provocation de 4 s des combattants et récupération de 18 PV. Occupe 3 places.',
       };
     case 'alchemist':
       return {
@@ -141,7 +135,7 @@ export function creatureCombatProfile(
 export const HUMAN_COMBAT: Record<HeroRole | 'guard', CombatProfile> = {
   guard: {
     strength: 'Ouvriers isolés et reprise des propriétés',
-    weakness: 'Gobelins lanciers, Squelettes en nombre et Minotaures',
+    weakness: 'Gobelins lanciers, Squelettes en nombre et Imps',
     effect:
       'À 20 % de PV : bouclier pendant 6 s, −25 % de dégâts reçus, sans attaquer ni se déplacer. Aucune provocation. Réactivation après 30 s.',
   },
@@ -151,9 +145,9 @@ export const HUMAN_COMBAT: Record<HeroRole | 'guard', CombatProfile> = {
     effect: `${bonus(COMBAT.knightVsLight)} contre les squelettes et lanciers à pied. Bouclier 10 s à 30 % de PV : −40 % de dégâts reçus, immobile, sans attaquer. Protège aussi un soldat proche à 30 % de PV : attire ses assaillants pendant 10 s. Portée 4 cases ; réactivation après 30 s.`,
   },
   lancer: {
-    strength: 'Gobelins sur cochon, Trolls et Minotaures',
+    strength: 'Gobelins sur cochon, Trolls et Imps',
     weakness: 'Squelettes en nombre ; Alchimistes soutenus par le feu',
-    effect: `${bonus(COMBAT.lancerVsMounted)} de dégâts contre les montures ; ${bonus(COMBAT.lancerVsLarge)} contre les trolls et minotaures. Portée 2,3 cases, moins de PV que le chevalier.`,
+    effect: `${bonus(COMBAT.lancerVsMounted)} de dégâts contre les montures ; ${bonus(COMBAT.lancerVsLarge)} contre les trolls. Portée 2,3 cases, moins de PV que le chevalier.`,
   },
   archer: {
     strength: 'Alchimistes et combattants lents à distance',

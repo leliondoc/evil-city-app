@@ -7,7 +7,7 @@ import type { AssetKey } from './art';
 const TIERS: { level: number; name: string; building: AssetKey; units: [CreatureKind, string][]; research?: string }[] = [
   { level: 1, name: 'Grotte et cantine', building: 'cave', units: [['goblin', 'Gobelin bâtisseur'], ['spear-goblin', 'Gobelin lancier']] },
   { level: 2, name: 'Crypte', building: 'crypt-purple', units: [['skeleton', 'Squelette'], ['specter', 'Spectre'], ['alchemist', 'Alchimiste']], research: 'Chevaucheurs de cochons · recherche à la grotte' },
-  { level: 3, name: 'Hutte des trolls', building: 'troll-house', units: [['troll', 'Troll'], ['minotaur', 'Minotaure']], research: 'Recherches de feu' },
+  { level: 3, name: 'Hutte des trolls · Tour des braises', building: 'troll-house', units: [['troll', 'Troll'], ['imp', 'Imp']], research: 'Recherches de feu' },
 ];
 
 export function ManorProgression({ level }: { level: number }) {

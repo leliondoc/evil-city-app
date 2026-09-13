@@ -20,7 +20,7 @@ import {
   type Cost,
   type Resources,
 } from './engine.ts';
-import { COMBAT, creatureMultiplier, fireMultiplier, physicalDamage } from './combat.ts';
+import { creatureMultiplier, fireMultiplier, physicalDamage } from './combat.ts';
 import { manorRequirement } from './progression.ts';
 import { advancedCampaign } from './campaign.ts';
 
@@ -195,20 +195,22 @@ export function hitEnemy(
   )
     rememberAggressor(s, enemy, u);
   const directDamage = damage * creatureMultiplier(u.kind, unitIsMounted(s, u), enemy);
-  enemy.hp = Math.max(0, enemy.hp - (u.kind === 'alchemist' ? directDamage : physicalDamage(directDamage, enemy)) * shieldMultiplier(enemy, s.elapsed) * dt);
-  // Only nearby militia receive the sweep: heroes are not collateral targets.
-  // Do not recurse through hitEnemy, which would multiply sweeps and fire procs.
-  if (u.kind === 'minotaur' && damage > 0) {
-    const guards = s.enemies.filter((other) =>
-      other.id !== enemy.id && other.hp > 0 && other.kind === 'guard' &&
-      distance(enemy, other) <= COMBAT.sweepRadius &&
-      distance(u, other) <= COMBAT.sweepReach && clearShot(u, other),
-    ).sort((a, b) => distance(enemy, a) - distance(enemy, b) || a.id - b.id)
-      .slice(0, COMBAT.sweepTargets);
-    for (const guard of guards) {
-      rememberAggressor(s, guard, u);
-      guard.hp = Math.max(0, guard.hp - physicalDamage(directDamage * COMBAT.sweepFraction, guard) * shieldMultiplier(guard, s.elapsed) * dt);
+  enemy.hp = Math.max(0, enemy.hp - (u.kind === 'alchemist' || u.kind === 'imp' ? directDamage : physicalDamage(directDamage, enemy)) * shieldMultiplier(enemy, s.elapsed) * dt);
+  if (u.kind === 'imp' && damage > 0 && s.elapsed >= (u.impBurstReadyAt ?? 0)) {
+    u.impBurstReadyAt = s.elapsed + 8;
+    u.impBurstAt = s.elapsed;
+    const targets = s.enemies.filter(other => other.hp > 0 && distance(enemy, other) <= 1.8 && clearShot(u, other))
+      .sort((a, b) => distance(enemy, a) - distance(enemy, b) || a.id - b.id).slice(0, 4);
+    for (const target of targets) {
+      rememberAggressor(s, target, u);
+      target.hp = Math.max(0, target.hp - 18 * shieldMultiplier(target, s.elapsed));
+      if (target.role !== 'monk') {
+        target.impTauntedBy = u.id;
+        target.impTauntedUntil = s.elapsed + 4;
+        target.path = [];
+      }
     }
+    if (targets.length) u.hp = Math.min(CREATURES.imp.hp, u.hp + 18);
   }
   if (u.kind === 'alchemist') {
     if (hasResearch(s, 'solvent')) enemy.solventUntil = s.elapsed + 8;
@@ -373,7 +375,7 @@ export function strategyUnit(s: State, u: Unit, dt: number) {
   );
   if (
     threat &&
-    (u.kind === 'skeleton' || u.kind === 'troll' || u.kind === 'minotaur')
+    (u.kind === 'skeleton' || u.kind === 'troll' || u.kind === 'imp')
   ) {
     u.fighting = true;
     u.facing = threat.x >= u.x ? 1 : -1;

@@ -109,7 +109,7 @@ test('Invalid orders never debit resources or change ownership', () => {
   const s = createGame(),
     before = structuredClone(s.resources);
   assert.ok(build(s, 0, 'forge'));
-  assert.ok(recruit(s, 'minotaur'));
+  assert.ok(recruit(s, 'imp'));
   assert.ok(attack(s, 2));
   assert.ok(claim(s, 0));
   assert.deepEqual(s.resources, before);
@@ -205,7 +205,7 @@ test('Upgrades change production and cannot exceed level three', () => {
   assert.equal(s.lots[6].level, 3);
 });
 
-test('Skeleton and minotaur progression is reachable from a developed domain', () => {
+test('Skeleton and imp progression is reachable from a developed domain', () => {
   const s = createGame();
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
   s.lots[5].owned = true;
@@ -215,12 +215,12 @@ test('Skeleton and minotaur progression is reachable from a developed domain', (
   assert.equal(build(s, 4, 'crypt'), '');
   until(s, () => s.lots[4].kind === 'crypt');
   assert.equal(upgradeAndFinish(s, 6), '');
-  assert.equal(build(s, 7, 'forge'), '');
-  until(s, () => s.lots[7].kind === 'forge');
+  assert.equal(build(s, 7, 'sanctum'), '');
+  until(s, () => s.lots[7].kind === 'sanctum');
   assert.equal(recruit(s, 'skeleton'), '');
-  assert.equal(recruit(s, 'minotaur'), '');
+  assert.equal(recruit(s, 'imp'), '');
   advance(s, 16);
   assert.ok(s.units.some((u) => u.kind === 'skeleton'));
-  assert.ok(s.units.some((u) => u.kind === 'minotaur'));
+  assert.ok(s.units.some((u) => u.kind === 'imp'));
   assert.equal(population(s), 4);
 });

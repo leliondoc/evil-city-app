@@ -159,7 +159,8 @@ test('The catalog contains all playable creatures and every human role; producti
   assert.equal(rider.mounted, true);
   assert.equal(BESTIARY_HUMANS.length, 8);
   assert.ok(BESTIARY_CREATURES.some((e) => e.id === 'alchemist'));
-  assert.ok(!BESTIARY_CREATURES.some((e) => e.id === 'imp'));
+  assert.ok(BESTIARY_CREATURES.some((e) => e.id === 'imp'));
+  assert.ok(!BESTIARY_CREATURES.some((e) => e.id === 'minotaur'));
   for (const e of BESTIARY_HUMANS)
     for (const sequence of Object.values(e.actions))
       for (const key of sequence) assert.ok(ASSETS[key], key);

@@ -1,17 +1,108 @@
 {
-  "guard-shield": { "src": "/tiny-swords/guard-shield.png", "width": 1152, "height": 192, "frameWidth": 192, "frames": 6, "anchor": 0.67 },
-  "hero-warrior-shield": { "src": "/tiny-swords/hero-warrior-shield.png", "width": 1152, "height": 192, "frameWidth": 192, "frames": 6, "anchor": 0.67 },
-  "guard-avatar": { "src": "/tiny-swords/guard-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
-  "hero-warrior-avatar": { "src": "/tiny-swords/hero-warrior-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
-  "hero-lancer-avatar": { "src": "/tiny-swords/hero-lancer-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
-  "hero-archer-avatar": { "src": "/tiny-swords/hero-archer-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
-  "hero-monk-avatar": { "src": "/tiny-swords/hero-monk-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
-  "worker-avatar": { "src": "/tiny-swords/worker-avatar.png", "width": 256, "height": 256, "frameWidth": 256, "frames": 1, "anchor": 0.5 },
-  "human-fortress-blue": { "src": "/tiny-swords/human-fortress-blue.png", "width": 320, "height": 256, "frameWidth": 320, "frames": 1, "anchor": 0.94 },
-  "human-barracks-blue": { "src": "/tiny-swords/human-barracks-blue.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },
-  "human-archery-blue": { "src": "/tiny-swords/human-archery-blue.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },
-  "human-barracks-yellow": { "src": "/tiny-swords/human-barracks-yellow.png", "width": 192, "height": 256, "frameWidth": 192, "frames": 1, "anchor": 0.94 },
-  "human-citadel-yellow": { "src": "/tiny-swords/human-citadel-yellow.png", "width": 320, "height": 256, "frameWidth": 320, "frames": 1, "anchor": 0.94 },
+  "guard-shield": {
+    "src": "/tiny-swords/guard-shield.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "hero-warrior-shield": {
+    "src": "/tiny-swords/hero-warrior-shield.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "guard-avatar": {
+    "src": "/tiny-swords/guard-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "hero-warrior-avatar": {
+    "src": "/tiny-swords/hero-warrior-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "hero-lancer-avatar": {
+    "src": "/tiny-swords/hero-lancer-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "hero-archer-avatar": {
+    "src": "/tiny-swords/hero-archer-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "hero-monk-avatar": {
+    "src": "/tiny-swords/hero-monk-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "worker-avatar": {
+    "src": "/tiny-swords/worker-avatar.png",
+    "width": 256,
+    "height": 256,
+    "frameWidth": 256,
+    "frames": 1,
+    "anchor": 0.5
+  },
+  "human-fortress-blue": {
+    "src": "/tiny-swords/human-fortress-blue.png",
+    "width": 320,
+    "height": 256,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "human-barracks-blue": {
+    "src": "/tiny-swords/human-barracks-blue.png",
+    "width": 192,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "human-archery-blue": {
+    "src": "/tiny-swords/human-archery-blue.png",
+    "width": 192,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "human-barracks-yellow": {
+    "src": "/tiny-swords/human-barracks-yellow.png",
+    "width": 192,
+    "height": 256,
+    "frameWidth": 192,
+    "frames": 1,
+    "anchor": 0.94
+  },
+  "human-citadel-yellow": {
+    "src": "/tiny-swords/human-citadel-yellow.png",
+    "width": 320,
+    "height": 256,
+    "frameWidth": 320,
+    "frames": 1,
+    "anchor": 0.94
+  },
   "goblin-idle": {
     "src": "/tiny-swords/goblin-idle.png",
     "width": 1536,
@@ -1941,5 +2032,69 @@
     "frames": 1,
     "anchor": 0.5
   },
-  "ui-swords": { "src": "/tiny-swords/ui-swords.png", "width": 448, "height": 640, "frameWidth": 448, "frameHeight": 128, "frames": 5, "anchor": 0.5 }
+  "ui-swords": {
+    "src": "/tiny-swords/ui-swords.png",
+    "width": 448,
+    "height": 640,
+    "frameWidth": 448,
+    "frameHeight": 128,
+    "frames": 5,
+    "anchor": 0.5
+  },
+  "imp-idle": {
+    "src": "/tiny-swords/bestiary-imp-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "imp-walk": {
+    "src": "/tiny-swords/bestiary-imp-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "imp-attack": {
+    "src": "/tiny-swords/bestiary-imp-attack-1.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "imp-sanctum": {
+    "src": "/tiny-swords/imp-sanctum.png",
+    "width": 128,
+    "height": 256,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 1
+  },
+  "imp-attack-start": {
+    "src": "/tiny-swords/bestiary-imp-attack-0.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "imp-attack-loop": {
+    "src": "/tiny-swords/bestiary-imp-attack-1.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "imp-attack-end": {
+    "src": "/tiny-swords/bestiary-imp-attack-2.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  }
 }

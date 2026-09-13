@@ -9,7 +9,7 @@ export type Particle = {
   scale: number;
   level?: number;
 };
-type Sample = { hp: number; owned?: boolean; building?: boolean; level?: number };
+type Sample = { hp: number; owned?: boolean; building?: boolean; level?: number; ruins?: boolean; burstAt?: number };
 
 /** Presentation-only feedback, driven by simulation time and actual state changes. */
 export class ParticleFeedback {
@@ -60,14 +60,17 @@ export class ParticleFeedback {
         const old = this.previous.get(id);
         if (old && unit.hp > 0 && unit.hp < old.hp)
           emit(id, 'fx-impact', unit.x, unit.y - 0.65, 0.42);
-        next.set(id, { hp: unit.hp });
+        const burstAt = 'impBurstAt' in unit ? unit.impBurstAt : undefined;
+        if (old && burstAt !== undefined && old.burstAt !== burstAt)
+          emit(id, 'fx-explosion', unit.x, unit.y - 0.5, 0.7);
+        next.set(id, { hp: unit.hp, burstAt });
       }
     for (const lot of s.lots) {
       const id = `lot-${lot.id}`;
       const old = this.previous.get(id);
       if (old) {
-        if (lot.hp <= 0 && old.hp > 0)
-          emit(id, 'fx-explosion', lot.x + 4, lot.y + 4.5, 0.9);
+        if ((!old.ruins && lot.ruins) || (lot.hp <= 0 && old.hp > 0))
+          emit(id, 'fx-explosion', lot.x + 4, lot.y + 4.5, 1.5);
         else if (old.owned !== lot.owned || (old.building && !lot.construction))
           emit(id, 'fx-dust-large', lot.x + 4, lot.y + 5.5, 1.6);
         else if (lot.hp < old.hp)
@@ -78,6 +81,7 @@ export class ParticleFeedback {
         emit(id, 'fx-dust-large', lot.x + 4, lot.y + 5.5, 1.6);
       }
       next.set(id, {
+        ruins: !!lot.ruins,
         level: lot.level,
         hp: lot.hp,
         owned: lot.owned,

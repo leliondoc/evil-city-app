@@ -1,6 +1,7 @@
 import {
   assign,
   clearShot,
+  entrance,
   type State,
   type Enemy,
   type Unit,
@@ -79,6 +80,7 @@ export function advanceShields(s: State) {
     e.moving = e.fighting = false;
     e.healTarget = null;
     for (const u of attackers) {
+      if (u.task === 'attack' && u.target !== null) u.interruptedSiegeTarget = u.target;
       u.provokedBy = e.id;
       u.provokedUntil = e.shieldUntil;
       assign(u, e, 'defend', e.id);
@@ -92,6 +94,12 @@ export function advanceShields(s: State) {
         assign(u, e, 'defend', e.id);
       u.focusTarget = e.id;
     } else {
+      const lot = s.lots.find(l => l.id === u.interruptedSiegeTarget);
+      if (lot && !lot.owned && lot.kind !== 'empty' && u.task === 'defend') {
+        assign(u, entrance(lot), 'attack', lot.id);
+        delete u.focusTarget;
+      }
+      delete u.interruptedSiegeTarget;
       delete u.provokedBy;
       delete u.provokedUntil;
     }

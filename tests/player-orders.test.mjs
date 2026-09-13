@@ -43,10 +43,11 @@ function unit(s, kind = 'troll') {
 }
 test('Recruitment remembers the matching production building for every creature', () => {
   const s = setup();
+  Object.assign(s.lots[8], { owned: true, kind: 'sanctum', hp: 200 });
   for (const [kind, id] of [
     ['goblin', 3],
     ['troll', 4],
-    ['minotaur', 4],
+    ['imp', 8],
     ['skeleton', 7],
     ['specter', 7],
     ['alchemist', 7],

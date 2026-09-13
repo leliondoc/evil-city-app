@@ -44,6 +44,7 @@ export function spriteFrame(key: AssetKey, frame: number) {
   };
 }
 export function buildingArt(kind: BuildingKind, owned = true, level = 1, id = 0): AssetKey {
+  if (kind === 'sanctum') return 'imp-sanctum';
   if (!owned) {
     const tier = humanBuildingTier(level);
     if (kind === 'hall' && tier >= 2) return 'human-fortress-blue';
@@ -87,6 +88,8 @@ export function animationSequence(
   action: Animation,
   mounted = false,
 ): AssetKey[] {
+  if (kind === 'imp' && action === 'attack')
+    return ['imp-attack-start', 'imp-attack-loop', 'imp-attack-end'];
   if (kind === 'spear-goblin' && mounted)
     return [`pig-rider-${action}` as AssetKey];
   if (kind === 'troll' && action === 'attack')
@@ -108,6 +111,8 @@ export function enemyPortrait(enemy: Pick<Enemy, 'kind' | 'role'>): AssetKey {
 }
 
 export function workerArt(worker: HumanWorker, site: ResourceSite): AssetKey {
+  if (worker.rebuilding !== undefined)
+    return worker.path.length ? 'pawn-gold-walk' : 'pawn-gold-work';
   const action =
     worker.phase === 'harvest'
       ? 'work'

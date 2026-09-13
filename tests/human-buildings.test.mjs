@@ -85,14 +85,14 @@ test('After its garrison is defeated, a fortified town hall falls to siege damag
   const hall = s.lots.find(l => l.kind === 'hall');
   hall.garrisonReleased = true;
   s.units = Array.from({ length: 2 }, () => ({
-    id: s.nextId++, kind: 'minotaur', hp: CREATURES.minotaur.hp,
+    id: s.nextId++, kind: 'imp', hp: CREATURES.imp.hp,
     ...entrance(hall), task: 'attack', target: hall.id, path: [], facing: 1,
     fighting: false, idleTime: 0, nextMealAt: Infinity, nextRestAt: Infinity,
   }));
-  for (let i = 0; i < 300 && !hall.owned; i++) tick(s, 0.1);
+  for (let i = 0; i < 700 && !hall.owned; i++) tick(s, 0.1);
   assert.equal(hall.owned, true);
   assert.equal(hall.level, 1);
-  assert.ok(s.elapsed >= 10 && s.elapsed < 30, `Siege lasted ${s.elapsed}s`);
+  assert.ok(s.elapsed >= 40 && s.elapsed < 70, `Siege lasted ${s.elapsed}s`);
   assert.equal(s.units.filter(u => u.hp > 0).length, 2);
 });
 

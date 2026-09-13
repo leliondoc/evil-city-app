@@ -35,11 +35,11 @@ for (let step = 0; step < 9000 && !s.won && !s.lost; step++) {
         !buildReason(s, l.id, 'forge'),
     );
     if (current === 'forge' && forgeLot) build(s, forgeLot.id, 'forge');
-    for (const kind of ['troll', 'minotaur', 'skeleton']) {
+    for (const kind of ['troll', 'imp', 'skeleton']) {
       const count =
         s.units.filter((u) => u.kind === kind).length +
         s.recruits.filter((r) => r.kind === kind).length;
-      const goal = kind === 'troll' ? 3 : kind === 'minotaur' ? 1 : 5;
+      const goal = kind === 'troll' ? 3 : kind === 'imp' ? 1 : 5;
       if (
         count < goal &&
         !recruitReason(s, kind) &&

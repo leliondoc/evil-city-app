@@ -37,7 +37,7 @@ test('Passive armor consistently reduces physical damage for heavy humans and mo
  assert.equal(armorPercent({kind:'hero',role:'warrior'}),25);
  assert.equal(physicalDamage(100,{kind:'hero',role:'warrior'}),75);
  assert.equal(physicalDamage(100,{kind:'hero',role:'lancer'}),85);
- assert.equal(physicalDamage(100,{kind:'minotaur'}),80);
+ assert.equal(physicalDamage(100,{kind:'imp'}),75);
  assert.equal(physicalDamage(100,{kind:'troll'}),85);
  assert.equal(physicalDamage(100,{kind:'skeleton'}),90);
  assert.equal(physicalDamage(100,{kind:'alchemist'}),100);
@@ -46,7 +46,7 @@ test('Every occupied building deploys its defenders into the street once; the to
  for(const kind of ['house','tavern','hall','guild']){
   const s=createGame();const lot=s.lots.find(l=>l.kind===kind&&!l.owned);const p=entrance(lot);
   for(const neighbor of s.lots.filter(l=>Math.abs(l.id-lot.id)===3 || (Math.floor(l.id/3)===Math.floor(lot.id/3) && Math.abs(l.id-lot.id)===1))) neighbor.owned=true;
-  const u=unit(s,'minotaur',p.x,lot.y+8.5);s.economy.stocks={gold:0,food:0,wood:0};
+  const u=unit(s,'imp',p.x,lot.y+8.5);s.economy.stocks={gold:0,food:0,wood:0};
   assert.equal(commandUnit(s,u.id,{type:'lot',id:lot.id},p),'');tick(s,0.1);
   const defenders=s.enemies.filter(e=>e.garrisonLotId===lot.id);assert.ok(defenders.length);
   assert.ok(defenders.every(e=>e.y>=lot.y+8),'The fight begins outside the fence');
@@ -63,7 +63,7 @@ test('Every occupied building deploys its defenders into the street once; the to
 });
 test('A mixed late-game army can defeat the new town-hall garrison and capture its building',()=>{
  const s=createGame();const lot=s.lots.find(l=>l.kind==='hall');const p=entrance(lot);s.lots[5].owned=true;s.resources.food=1000;s.economy.nextUpgradeAt=Infinity;s.economy.workerReadyAt=Infinity;s.workers=[];s.economy.stocks={gold:0,food:0,wood:0};
- for(const [i,kind]of ['troll','troll','minotaur','minotaur','alchemist','alchemist','skeleton','skeleton'].entries()){
+ for(const [i,kind]of ['troll','troll','imp','imp','alchemist','alchemist','skeleton','skeleton'].entries()){
   const u=unit(s,kind,p.x+(i%3-1)*0.6,lot.y+9+(i>3?1:0));assert.equal(commandUnit(s,u.id,{type:'lot',id:lot.id},p),'');
  }
  for(let i=0;i<1200&&!lot.owned&&!s.lost;i++)tick(s,0.1);

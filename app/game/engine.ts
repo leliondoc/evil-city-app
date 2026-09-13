@@ -1,6 +1,6 @@
 import { streetCenter } from './streets.ts';
 import { CAMPAIGN_MAPS, advanceCampaign, advancedCampaign, classicCampaign, campaignObjectives, campaignCreatureReason, campaignBuildingReason, campaignUpgradeReason, type CampaignMapId, type CampaignProgress } from './campaign.ts';
-import { COMBAT, humanMultiplier, physicalDamage } from './combat.ts';
+import { humanMultiplier, physicalDamage } from './combat.ts';
 import { ALCHEMY, throwPotion, healAlly, advanceAlchemy, type AlchemyState } from './alchemy.ts';
 import { BUILDING_TIER, canUpgradeKind, manorRequirement, upgradeDuration, advanceBuildingUpgrades } from './progression.ts';
 import { advanceHumanBuildings, humanBuildingHealth } from './humanBuildings.ts';
@@ -43,6 +43,7 @@ export type BuildingKind =
   | 'den'
   | 'canteen'
   | 'forge'
+  | 'sanctum'
   | 'crypt'
   | 'hall'
   | 'guild'
@@ -54,7 +55,7 @@ export type CreatureKind =
   | 'spear-goblin'
   | 'troll'
   | 'skeleton'
-  | 'minotaur'
+  | 'imp'
   | 'specter'
   | 'alchemist';
 export type Point = { x: number; y: number };
@@ -126,8 +127,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   forge: {
     name: 'Hutte des Trolls',
     description:
-      'Exige le manoir niveau 3 et une crypte terminée. Recrute les trolls et minotaures, accueille les recherches de feu et renforce les dégâts de l’armée de 15 % par niveau supplémentaire.',
-    short: 'Manoir 3 · trolls et minotaures',
+      'Exige le manoir niveau 3 et une crypte terminée. Recrute les trolls, accueille les recherches de feu et renforce les dégâts de l’armée de 15 % par niveau supplémentaire.',
+    short: 'Manoir 3 · trolls',
     art: 3,
     cost: { gold: 180, wood: 75 },
     duration: 24,
@@ -159,10 +160,16 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: {},
     duration: 0,
   },
+  sanctum: {
+    name: 'Tour des braises',
+    description: 'Sanctuaire des imps. Exige le manoir niveau 3 et une crypte. Invoque des protecteurs volants aux griffes magiques et aux braises provocatrices.',
+    short: 'Invoque les imps', art: 4,
+    cost: { gold: 160, wood: 60, mana: 40 }, duration: 22,
+  },
   house: {
     name: 'Maison des Tilleuls',
     description:
-      'Une maison bien tranquille. Une fois conquise, elle peut être transformée.',
+      'Une maison humaine. Votre attaque la réduit en ruines : construisez dessus ou protégez la parcelle pour empêcher sa reconstruction.',
     short: 'Parcelle à transformer',
     art: 6,
     cost: {},
@@ -280,18 +287,11 @@ export const CREATURES: Record<
     size: 37,
     population: 1,
   },
-  minotaur: {
-    name: 'Minotaure',
-    job: 'Colosse de siège',
-    description:
-      'Colosse de siège qui démolit les bâtiments et balaie les gardes regroupés. Les lanciers et les tirs concentrés peuvent l’abattre. Occupe 3 places et réclame 3 fois plus de nourriture.',
-    art: 3,
-    cost: { gold: 220, mana: 60, food: 35 },
-    hp: 350,
-    damage: 38,
-    speed: 1.2,
-    size: 68,
-    population: 3,
+  imp: {
+    name: 'Imp', job: 'Rempart volant',
+    description: 'Protecteur volant : 280 PV et 25 % de résistance physique. Ses griffes magiques ignorent l’armure. Toutes les 8 secondes de combat, ses braises infligent 18 dégâts, attirent les combattants proches pendant 4 secondes et lui rendent 18 PV. Occupe 3 places.',
+    art: 3, cost: { gold: 190, mana: 60, food: 25 },
+    hp: 280, damage: 18, speed: 1.7, size: 48, population: 3,
   },
 };
 export const BUILD_OPTIONS: BuildingKind[] = [
@@ -299,12 +299,14 @@ export const BUILD_OPTIONS: BuildingKind[] = [
   'canteen',
   'crypt',
   'forge',
+  'sanctum',
 ];
 export const BUILD_PREREQUISITES: Partial<Record<BuildingKind, BuildingKind>> =
   {
     canteen: 'den',
     crypt: 'canteen',
     forge: 'crypt',
+    sanctum: 'crypt',
   };
 export function buildUnlockReason(s: State, kind: BuildingKind): string {
   const required = BUILD_PREREQUISITES[kind];
@@ -335,13 +337,14 @@ export const RECRUIT_OPTIONS: CreatureKind[] = [
   'skeleton',
   'spear-goblin',
   'troll',
-  'minotaur',
+  'imp',
   'specter',
   'alchemist',
 ];
 export const BOARD = 32;
 export const STARTS = [2, 12, 22];
 export interface Lot {
+  ruins?: { quiet: number; progress: number; paid: boolean; workerId?: number };
   /** The visible guild defenders have left their posts. */
   garrisonReleased?: boolean;
   garrisonReturnsAt?: number;
@@ -360,6 +363,9 @@ export interface Lot {
   upgrading?: { kind: BuildingKind; targetLevel: number; duration: number; remaining: number };
 }
 export interface Unit extends Point {
+  interruptedSiegeTarget?: number;
+  impBurstReadyAt?: number;
+  impBurstAt?: number;
   potionReadyAt?: number;
   healReadyAt?: number;
   /** A move holds this destination for 30 seconds; a Hold order has no deadline. */
@@ -442,7 +448,7 @@ export const HEROES = {
     speed: 1.25,
     range: 2.3,
     description:
-      'Spécialiste contre les montures, trolls et minotaures. Sa longue lance frappe avant le contact, mais il a moins de vie que le chevalier. Le nombre et le feu alchimique le débordent.',
+      'Spécialiste contre les montures, trolls. Sa longue lance frappe avant le contact, mais il a moins de vie que le chevalier. Le nombre et le feu alchimique le débordent.',
   },
   archer: {
     name: 'Archère de l’Aube',
@@ -479,7 +485,7 @@ export const ENEMIES = {
     damage: 6,
     speed: 1.35,
     description:
-      'Milicien qui reprend vos propriétés et menace les ouvriers isolés. Craint les gobelins lanciers et les squelettes en nombre. Évitez de le regrouper face au minotaure. Ses renforts viennent de la mairie.',
+      'Milicien qui reprend vos propriétés et menace les ouvriers isolés. Craint les gobelins lanciers et les squelettes en nombre. Évitez de le regrouper face à l’imp. Ses renforts viennent de la mairie.',
   },
   hero: {
     name: 'Chevalier de l’Aube',
@@ -491,6 +497,8 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  impTauntedBy?: number;
+  impTauntedUntil?: number;
   /** Patrol sent specifically to evict a tower racketeer. */
   racketTower?: number;
   shieldUntil?: number;
@@ -636,6 +644,7 @@ const SUPPLY_LOCATIONS: (Point & { kind: Supply; home: number; hp: number })[] =
     { kind: 'wood', home: 8, ...ISLAND_SITES.wood, hp: 120 },
   ];
 export interface HumanWorker extends Point {
+  rebuilding?: number;
   taxed?: boolean;
   recovery?: { corpseId: number; returning: boolean };
   moving?: boolean;
@@ -733,6 +742,77 @@ export function raidSupply(s: State, target: Selection) {
   );
   return '';
 }
+export const HUMAN_REBUILD = { quietSeconds: 30, workSeconds: 25, radius: 8, cost: { gold: 20, wood: 15 } };
+
+function releaseRebuilder(s: State, lot: Lot) {
+  const worker = s.workers.find(w => w.id === lot.ruins?.workerId);
+  if (worker) {
+    worker.rebuilding = undefined;
+    worker.phase = worker.cargo > 0 ? 'return' : 'outbound';
+    worker.progress = 0;
+    const site = s.sites[worker.site];
+    worker.path = findPath(worker, worker.cargo > 0 ? entrance(s.lots[site.home]) : resourceApproach(site));
+  }
+  if (lot.ruins) lot.ruins.workerId = undefined;
+}
+
+/** Only razed homes are rebuilt; original empty parcels and player buildings stay untouched. */
+function advanceReconstruction(s: State, dt: number) {
+  for (const lot of s.lots) {
+    const ruins = lot.ruins;
+    if (!ruins) continue;
+    if (lot.kind !== 'empty' || lot.construction) {
+      releaseRebuilder(s, lot);
+      lot.ruins = undefined;
+      continue;
+    }
+    const gate = entrance(lot);
+    let worker = s.workers.find(w => w.id === ruins.workerId && w.hp > 0 && supplyActive(s, s.sites[w.site]));
+    const threatened = s.units.some(u => u.hp > 0 && (
+      distanceBetween(u, gate) <= HUMAN_REBUILD.radius ||
+      (u.target === lot.id && (u.task === 'attack' || u.task === 'build')) ||
+      (worker && distanceBetween(u, worker) <= 5)
+    ));
+    if (threatened || isHaunted(s, lot)) {
+      ruins.quiet = 0;
+      releaseRebuilder(s, lot);
+      continue;
+    }
+    ruins.quiet += dt;
+    if (ruins.quiet < HUMAN_REBUILD.quietSeconds) continue;
+    if (!worker) {
+      releaseRebuilder(s, lot);
+      if (!ruins.paid && !suppliesAvailable(s, HUMAN_REBUILD.cost)) continue;
+      worker = nearest(gate, s.workers.filter(w => w.hp > 0 && w.rebuilding === undefined && !w.recovery && w.cargo === 0 && supplyActive(s, s.sites[w.site])), Infinity);
+      if (!worker) continue;
+      const path = findPath(worker, gate);
+      if (!path.length && distanceBetween(worker, gate) > 0.8) continue;
+      if (!ruins.paid) {
+        spendSupplies(s, HUMAN_REBUILD.cost);
+        ruins.paid = true;
+        announce(s, 'Un paysan part reconstruire une maison abandonnée. Votre présence peut interrompre le chantier.');
+      }
+      ruins.workerId = worker.id;
+      worker.rebuilding = lot.id;
+      worker.path = path;
+    }
+    walk(s, worker, 1.8 * dt);
+    if (worker.path.length || distanceBetween(worker, gate) > 0.8) continue;
+    worker.facing = gate.x >= worker.x ? 1 : -1;
+    ruins.progress = Math.min(1, ruins.progress + dt / HUMAN_REBUILD.workSeconds);
+    if (ruins.progress < 1) continue;
+    releaseRebuilder(s, lot);
+    lot.ruins = undefined;
+    lot.owned = false;
+    lot.kind = 'house';
+    lot.level = humanLevel(s);
+    lot.hp = lot.maxHp = humanBuildingHealth('house', lot.level);
+    // A finished house does not conjure a fresh garrison during the same battle.
+    lot.garrisonReleased = true;
+    announce(s, 'Une maison a été reconstruite : les humains récupèrent sa parcelle.');
+  }
+}
+
 function advanceEconomy(s: State, dt: number) {
   for (const site of s.sites) {
     if (s.lots[site.home].owned) continue;
@@ -779,7 +859,7 @@ function advanceEconomy(s: State, dt: number) {
   for (const w of s.workers) {
     const site = s.sites[w.site];
     if (w.hp <= 0 || !supplyActive(s, site)) continue;
-    if (w.recovery) continue;
+    if (w.recovery || w.rebuilding !== undefined) continue;
     walk(s, w, 1.8 * dt);
     if (w.path.length) continue;
     if (w.phase === 'outbound') {
@@ -1284,6 +1364,8 @@ export function build(s: State, id: number, kind: BuildingKind): string {
   const error = buildReason(s, id, kind);
   if (error) return error;
   pay(s, BUILDINGS[kind].cost);
+  releaseRebuilder(s, s.lots[id]);
+  s.lots[id].ruins = undefined;
   s.lots[id].construction = { kind, progress: 0 };
   announce(s, `Chantier lancé : ${BUILDINGS[kind].name.toLowerCase()}.`);
   allocateWorkers(s);
@@ -1342,7 +1424,7 @@ export function recruitmentSource(
       ? ['den', 'hq']
       : kind === 'spear-goblin'
         ? ['den']
-        : kind === 'troll' || kind === 'minotaur'
+        : kind === 'imp' ? ['sanctum'] : kind === 'troll'
           ? ['forge']
           : ['crypt'];
   const available = s.lots.filter(
@@ -1379,10 +1461,10 @@ export function recruitReason(s: State, kind: CreatureKind) {
   if (kind === 'specter' && !hasBuilding(s, 'crypt'))
     return 'Construisez une crypte pour invoquer un spectre.';
   if (
-    kind === 'minotaur' &&
-    (!hasBuilding(s, 'forge') || !hasBuilding(s, 'crypt'))
+    kind === 'imp' &&
+    !hasBuilding(s, 'sanctum')
   )
-    return 'Le Minotaure exige une hutte des trolls et une crypte.';
+    return 'Construisez une tour des braises pour invoquer un imp.';
   if (!recruitmentSource(s, kind))
     return 'Aucun bâtiment de recrutement opérationnel.';
   if (kind !== 'goblin' && population(s) + CREATURES[kind].population > capacity(s))
@@ -1406,7 +1488,7 @@ export function recruit(
   const error = recruitReason(s, kind);
   if (error) return error;
   pay(s, CREATURES[kind].cost);
-  const duration = kind === 'minotaur' ? 15 : 6;
+  const duration = kind === 'imp' ? 15 : 6;
   const source = recruitmentSource(s, kind, preferredSource)!;
   s.recruits.push({ kind, remaining: duration, duration, source: source.id });
   announce(
@@ -1661,9 +1743,7 @@ export function foodBalance(s: State) {
       total +
       (u.kind === 'skeleton' || u.kind === 'specter'
         ? 0
-        : u.kind === 'minotaur'
-          ? 9
-          : 3),
+        : 3),
     0,
   );
   const consumption = Math.ceil(
@@ -1937,8 +2017,8 @@ function trafficDistance(
       (other.x - actor.x) * dy - (other.y - actor.y) * dx,
     );
     const gap =
-      ('kind' in actor && actor.kind === 'minotaur') ||
-      ('kind' in other && other.kind === 'minotaur')
+      ('kind' in actor && actor.kind === 'imp') ||
+      ('kind' in other && other.kind === 'imp')
         ? 1.6
         : 1.15;
     if (forward < -0.02 || forward > allowed + gap || sideways >= gap * 0.8)
@@ -2302,6 +2382,10 @@ function loseLot(s: State, lot: Lot) {
   }
   const previousName = BUILDINGS[lot.kind].name;
   lot.owned = false;
+  if (lot.ruins) {
+    lot.hp = lot.maxHp;
+    return;
+  }
   lot.kind = lot.humanKind;
   lot.construction = null;
   lot.level = humanLevel(s);
@@ -2406,7 +2490,10 @@ function advanceEnemies(s: State, dt: number) {
       e.pursuitTarget = e.aggressors[0];
       e.path = [];
     }
-    const aggressor = s.units.find((u) => u.id === e.pursuitTarget && u.hp > 0);
+    const taunter = (e.impTauntedUntil ?? 0) > s.elapsed
+      ? s.units.find(u => u.id === e.impTauntedBy && u.hp > 0 && distanceBetween(u, e) <= 6)
+      : undefined;
+    const aggressor = taunter ?? s.units.find((u) => u.id === e.pursuitTarget && u.hp > 0);
     if (e.pursuitTarget !== undefined && !aggressor) {
       e.pursuitTarget = undefined;
       e.path = [];
@@ -2680,8 +2767,8 @@ function separateCombatants(s: State, dt: number) {
             continue;
           }
           const gap =
-            ('kind' in a.actor && a.actor.kind === 'minotaur') ||
-            ('kind' in b.actor && b.actor.kind === 'minotaur')
+            ('kind' in a.actor && a.actor.kind === 'imp') ||
+            ('kind' in b.actor && b.actor.kind === 'imp')
               ? 1.8
               : 1.7;
           // Close the vertical offset while opening a horizontal fighting lane.
@@ -2739,6 +2826,7 @@ function tickStep(s: State, dt: number) {
     (gain) => s.elapsed - gain.at < RESOURCE_GAIN_LIFETIME,
   );
   advanceEconomy(s, dt);
+  advanceReconstruction(s, dt);
   advanceHumanBuildings(s);
   if (humanLevel(s) > s.humanLevelAnnounced) {
     s.humanLevelAnnounced = humanLevel(s);
@@ -2942,9 +3030,10 @@ function tickStep(s: State, dt: number) {
           (u.kind === 'alchemist' ? distanceBetween(u, entrance(lot)) <= ALCHEMY.range && clearShot(u, entrance(lot)) : atEntrance(u, lot)),
       );
       if (attackers.length) {
-        const damage = attackers.reduce((n, u) => n + (u.kind === 'alchemist' ? 0 : armyDamage(s, u) * (u.kind === 'minotaur' ? COMBAT.minotaurVsBuilding : 1)), 0);
+        const damage = attackers.reduce((n, u) => n + (u.kind === 'alchemist' ? 0 : armyDamage(s, u)), 0);
         lot.hp = Math.max(0, lot.hp - damage * dt);
         if (lot.hp <= 0) {
+          const capturedKind = lot.kind;
           lot.owned = true;
           lot.level = 1;
           lot.hp = lot.maxHp;
@@ -2965,7 +3054,9 @@ function tickStep(s: State, dt: number) {
           }
           announce(
             s,
-            `${BUILDINGS[lot.kind].name} rejoint votre domaine. +${Math.floor(loot)} or.`,
+            capturedKind === 'house'
+              ? `Maison rasée. Construisez sur ses ruines ou protégez la parcelle pour empêcher les humains de la reconstruire. +${Math.floor(loot)} or.`
+              : `${BUILDINGS[lot.kind].name} rejoint votre domaine. +${Math.floor(loot)} or.`,
           );
           for (const kind of ['guard', 'hero'] as const) {
             if (lot.kind === PRESSURE[kind].source) {
@@ -2976,6 +3067,10 @@ function tickStep(s: State, dt: number) {
                 `${BUILDINGS[lot.kind].name} neutralisée. Les renforts sont coupés ; éliminez les ennemis encore dans les rues.`,
               );
             }
+          }
+          if (capturedKind === 'house') {
+            lot.kind = 'empty';
+            lot.ruins = { quiet: 0, progress: 0, paid: false };
           }
         }
       }

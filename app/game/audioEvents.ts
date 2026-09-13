@@ -206,7 +206,7 @@ export class SoundEvents {
     }
     for (const unit of s.units) {
       if (unit.hp <= 0) continue;
-      if (unit.kind !== 'specter')
+      if (unit.kind !== 'specter' && unit.kind !== 'imp')
         footsteps(`unit-${unit.id}`, unit, unit.moving);
       const point = { x: unit.x, y: unit.y };
       if (unit.fighting)
@@ -214,9 +214,9 @@ export class SoundEvents {
           `unit-${unit.id}`,
           unit.kind === 'alchemist'
             ? 'fire'
-            : unit.kind === 'specter'
+            : unit.kind === 'specter' || unit.kind === 'imp'
               ? 'magic'
-              : ['troll', 'minotaur'].includes(unit.kind)
+              : unit.kind === 'troll'
                 ? 'heavy'
                 : 'melee',
           point,

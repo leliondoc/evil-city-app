@@ -1029,13 +1029,14 @@ export class Renderer {
       });
     }
     for (const l of s.lots) {
-      const kind = l.construction?.kind || l.kind,
+      const rebuilding = !!l.ruins?.progress;
+      const kind = l.construction?.kind || (rebuilding ? 'house' : l.kind),
         x = (l.x + 4) * CELL,
         y = (l.y + 6.2) * CELL - (l.kind === 'guild' && !l.owned ? 28 : 0),
         key =
-          kind === 'house' && l.owned
+          kind === 'house' && l.owned && !rebuilding
             ? (`house-purple-${(l.id % 2) + 2}` as AssetKey)
-            : buildingArt(kind, l.owned, l.level, l.id),
+            : buildingArt(kind, rebuilding ? false : l.owned, l.level, l.id),
         preferredScale =
           kind === 'hq' || kind === 'hall'
             ? 0.78
@@ -1082,7 +1083,7 @@ export class Renderer {
               placement.y,
               placement.scale,
               frame,
-              l.construction ? 0.55 : 1,
+              l.construction || rebuilding ? 0.55 : 1,
             );
             hit.selection = { type: 'lot', id: l.id };
             this.hits.push(hit);
@@ -1311,7 +1312,7 @@ export class Renderer {
             worker.x * CELL,
             worker.y * CELL,
             0.72,
-            worker.phase !== 'harvest' && worker.moving === false
+            worker.rebuilding === undefined && worker.phase !== 'harvest' && worker.moving === false
               ? 0
               : Math.floor(
                   (worker.phase === 'harvest' ? worker.progress : t) * 10,
@@ -1350,7 +1351,7 @@ export class Renderer {
     for (const u of s.units)
       drawables.push({
         depth: u.y * CELL + 1,
-        sizePriority: u.kind === 'troll' || u.kind === 'minotaur' ? 2 : unitIsMounted(s, u) ? 1 : 0,
+        sizePriority: u.kind === 'troll' ? 2 : unitIsMounted(s, u) ? 1 : 0,
         draw: () => {
           if (u.kind === 'goblin' && !u.path.length && !u.fighting) {
             const lot = u.target === null ? undefined : s.lots[u.target];
@@ -1397,7 +1398,7 @@ export class Renderer {
               t - motion.since,
             ),
             scale =
-              u.kind === 'troll' ? 0.52 : u.kind === 'minotaur' ? 0.62 : 0.72;
+              u.kind === 'troll' ? 0.52 : 0.72;
           if (selected)
             this.draw.ellipse(x, y, 25, 12, FACTION_PURPLE, 2 / this.scale, 1);
           const hit = this.sprite(
@@ -1416,7 +1417,7 @@ export class Renderer {
             y -
             (u.kind === 'spear-goblin'
               ? 96
-              : u.kind === 'troll' || u.kind === 'minotaur'
+              : u.kind === 'troll'
                 ? 84
                 : 58);
           if (
@@ -1783,6 +1784,7 @@ export class Renderer {
         if (l.hp < l.maxHp) this.bar(bar.x, bar.y, l.hp / l.maxHp, 80);
         if (l.construction)
           this.bar(bar.x, bar.y - stackedBar, l.construction.progress, 90);
+        else if (l.ruins) this.bar(bar.x, bar.y, l.ruins.progress, 90);
         else if (l.upgrading)
           this.bar(bar.x, bar.y - stackedBar, 1 - l.upgrading.remaining / l.upgrading.duration, 90);
       }
@@ -1795,7 +1797,7 @@ export class Renderer {
           labelY,
           l.construction
             ? `Chantier · ${Math.floor(l.construction.progress * 100)} %`
-            : l.upgrading ? `Niveau ${l.upgrading.targetLevel} · ${Math.ceil(l.upgrading.remaining)} s` : BUILDINGS[l.kind].name,
+            : l.ruins ? (l.ruins.progress ? `Reconstruction humaine · ${Math.floor(l.ruins.progress * 100)} %` : 'Maison en ruines') : l.upgrading ? `Niveau ${l.upgrading.targetLevel} · ${Math.ceil(l.upgrading.remaining)} s` : BUILDINGS[l.kind].name,
         );
       else if (l.kind === 'hall' && !l.owned)
         this.label(x, labelY, 'La mairie');
@@ -1813,11 +1815,7 @@ export class Renderer {
       const { x, y } = help.rallyPoint;
       const ui = this.uiScale / this.scale;
       this.label(x * CELL, y * CELL - 28 * ui, '⚑ Rassemblement', '#ffe3a1');
-      this.draw.line([
-        { x: (x - 1.6) * CELL, y: y * CELL }, { x: x * CELL, y: (y - 0.6) * CELL },
-        { x: (x + 1.6) * CELL, y: y * CELL }, { x: x * CELL, y: (y + 0.6) * CELL },
-        { x: (x - 1.6) * CELL, y: y * CELL },
-      ], '#ffe3a1', 3 / this.scale);
+
     }
     if (guidance && guidance.kind !== 'recruit') {
       const lot = s.lots[guidance.lotId];

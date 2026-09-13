@@ -267,7 +267,8 @@ export function advanceCampaign(s: State) {
     building('forge', manor(s) >= 3);
     creature('troll', built(s, 'forge'));
     creature('alchemist', built(s, 'forge'));
-    creature('minotaur', c.completed.includes('troll'));
+    building('sanctum', c.completed.includes('troll'));
+    creature('imp', built(s, 'sanctum'));
   }
 }
 

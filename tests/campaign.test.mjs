@@ -153,9 +153,12 @@ test('The Remparts lesson reveals specialists in stages and cannot finish just b
   advanceCampaign(s);
   assert.ok(s.campaign.creatures.includes('troll'));
   assert.ok(s.campaign.creatures.includes('alchemist'));
-  assert.ok(!s.campaign.creatures.includes('minotaur'));
+  assert.ok(!s.campaign.creatures.includes('imp'));
   assert.equal(recruit(s, 'troll'), '');
-  until(s, () => s.campaign.creatures.includes('minotaur'));
+  until(s, () => s.campaign.buildings.includes('sanctum'));
+  Object.assign(s.lots[4], { owned: true, kind: 'sanctum' });
+  advanceCampaign(s);
+  assert.ok(s.campaign.creatures.includes('imp'));
   assert.equal(s.won, false);
   s.lots[0].owned = s.lots[2].owned = true;
   s.enemies = [];
@@ -188,6 +191,7 @@ test('Les Tilleuls preserves the original starting state, unlock rules and press
     state.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
     state.lots[6].level = 3;
     Object.assign(state.lots[5], { owned: true, kind: 'forge' });
+    Object.assign(state.lots[8], { owned: true, kind: 'sanctum' });
     Object.assign(state.lots[4], { owned: true, kind: 'crypt' });
     Object.assign(state.lots[7], { owned: true, kind: 'canteen' });
   }
@@ -197,7 +201,7 @@ test('Les Tilleuls preserves the original starting state, unlock rules and press
   for (const kind of BUILD_OPTIONS)
     assert.equal(buildMenuReason(s, kind), buildMenuReason(original, kind));
   assert.equal(
-    recruitReason(s, 'minotaur'),
+    recruitReason(s, 'imp'),
     '',
     'No tutorial requirement to recruit a troll first',
   );

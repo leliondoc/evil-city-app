@@ -5,6 +5,7 @@ export const BUILDING_TIER: Partial<Record<BuildingKind, number>> = {
   canteen: 1,
   crypt: 2,
   forge: 3,
+  sanctum: 3,
 };
 export function manorLevel(s: State): number {
   return Math.max(

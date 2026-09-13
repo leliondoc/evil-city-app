@@ -1126,12 +1126,14 @@ export default function Game({
                 <p className="selection-text">
                   {enemyDef?.description ||
                     creature?.description ||
+                    (selectedLot?.ruins ? 'Maison en ruines. Construisez ici pour conserver la parcelle. Après 30 secondes sans vos unités, un paysan humain peut lancer une reconstruction de 25 secondes, financée par ses réserves. Revenez interrompre le chantier.' : undefined) ||
                     (selectedLot && !selectedLot.owned && selectedLot.kind !== 'empty' ? humanBuildingDescription(selectedLot.kind, selectedLot.level) : undefined) ||
                     def?.description ||
                     'Sélectionnez une autre créature ou une parcelle.'}
                 </p>
                 {selectedEnemy && (
                   <>
+                    {(selectedEnemy.impTauntedUntil ?? 0) > s.elapsed && <p className="combat-status">Attiré par les braises de l’Imp · {Math.ceil(selectedEnemy.impTauntedUntil! - s.elapsed)} s</p>}
                     <details className="combat-disclosure"><summary>Forces et faiblesses</summary><CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} /></details>
                     {shieldActive(selectedEnemy, s.elapsed) && <p className="combat-status"><Shield size={16} />Bouclier · {Math.ceil(selectedEnemy.shieldUntil! - s.elapsed)} s · −{shieldSettings(selectedEnemy).reduction * 100} % de dégâts reçus</p>}
                     <div className="selection-stats">
@@ -1796,7 +1798,7 @@ export default function Game({
                   next?.duration ??
                   (next?.source !== undefined
                     ? 12
-                    : kind === 'minotaur'
+                    : kind === 'imp'
                       ? 15
                       : 6);
                 const progress = next
@@ -2148,7 +2150,7 @@ export default function Game({
                       18 essence. Une cantine terminée permet d’y construire
                       la crypte : squelettes, spectres et alchimistes rejoignent
                       la horde. Au niveau 3 du manoir, une crypte terminée
-                      débloque la hutte des trolls : trolls, minotaures et
+                      débloque la hutte des trolls, la tour des braises et
                       recherches de feu. Les autres bâtiments ne peuvent pas
                       dépasser le niveau du manoir. Leur fiche indique le gain
                       exact de chaque amélioration.

@@ -96,7 +96,7 @@ test('A troll leaves a nearer opponent to pursue and attack the designated monk'
 });
 
 test('Melee and ranged fighters hit and face their focus target even when another enemy is closer', () => {
-  for (const kind of ['troll', 'skeleton', 'minotaur', 'alchemist', 'goblin']) {
+  for (const kind of ['troll', 'skeleton', 'imp', 'alchemist', 'goblin']) {
     const { s, u, guard, monk } = encounter(kind);
     if (kind === 'goblin') s.strategy.research.push('embers');
     monk.x = kind === 'alchemist' ? 7.2 : 8.8;
