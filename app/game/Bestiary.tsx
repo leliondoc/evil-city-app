@@ -39,9 +39,9 @@ export function Bestiary() {
         <section
           className="bestiary-faction"
           data-faction="court"
-          aria-label="La Cour des monstres"
+          aria-label="La Cour des Monstres"
         >
-          <h3>La Cour des monstres</h3>
+          <h3>La Cour des Monstres</h3>
           <div className="bestiary-grid">
             {creatures.map((entry) => (
               <article className="bestiary-creature" key={entry.id}>

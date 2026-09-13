@@ -245,7 +245,7 @@ export function StartMenu({
           </button>
           {panel === 'bestiary' && (
             <>
-              <DialogTitle>La Cour des monstres et ses ennemis</DialogTitle>
+              <DialogTitle>La Cour des Monstres et ses ennemis</DialogTitle>
               <DialogDescription>
                 Faites connaissance avec les habitants du quartier.
               </DialogDescription>

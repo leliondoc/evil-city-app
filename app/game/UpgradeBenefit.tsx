@@ -4,7 +4,7 @@ import { upgradeBenefit } from './progression';
 export function UpgradeBenefit({ lot }: { lot: Lot }) {
   const n = lot.level;
   const info = lot.kind === 'den'
-    ? { label: 'Capacité de la Cour des monstres', from: `${6 * n}`, to: `${6 * (n + 1)} places` }
+    ? { label: 'Capacité de la Cour des Monstres', from: `${6 * n}`, to: `${6 * (n + 1)} places` }
     : lot.kind === 'canteen'
       ? { label: 'Économie de vivres', from: `${20 * n} %`, to: `${20 * (n + 1)} %`, note: 'Seule la meilleure cantine compte.' }
       : lot.kind === 'forge'

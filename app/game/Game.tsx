@@ -2154,7 +2154,7 @@ export default function Game({
                       Au niveau 2, revendiquez la friche centrale pour 40 or et
                       18 essence. Une cantine terminée permet d’y construire
                       la crypte : squelettes, spectres et alchimistes rejoignent
-                      la Cour des monstres. Au niveau 3 du manoir, une crypte terminée
+                      la Cour des Monstres. Au niveau 3 du manoir, une crypte terminée
                       débloque la hutte des trolls, la tour des braises et
                       recherches de feu. Les autres bâtiments ne peuvent pas
                       dépasser le niveau du manoir. Leur fiche indique le gain

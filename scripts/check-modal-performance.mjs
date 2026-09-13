@@ -16,7 +16,7 @@ try {
   page.on('request', request => requested.add(request.url()));
   await page.goto('http://127.0.0.1:3000');
   await page.getByRole('button', { name: 'Bestiaire', exact: true }).click();
-  await page.getByRole('region', { name: 'La Cour des monstres', exact: true }).waitFor();
+  await page.getByRole('region', { name: 'La Cour des Monstres', exact: true }).waitFor();
   assert.equal(await page.locator('.bestiary-creature').count(), 16);
   assert.equal(await page.locator('.start-animation-tabs, .animation-tabs').count(), 0);
   await page.waitForFunction(() => [...window.spritePaints.keys()].some(canvas => canvas.closest('.bestiary-creature')));

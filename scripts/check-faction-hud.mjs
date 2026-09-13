@@ -76,7 +76,7 @@ try {
         .getByRole('navigation', { name: 'Navigation du jeu' })
         .getByRole('button', { name: 'Carte', exact: true })
         .click();
-    await menu.getByRole('button', { name: /La Cour des monstres\./ }).click();
+    await menu.getByRole('button', { name: /La Cour des Monstres\./ }).click();
     await popup
       .getByRole('button', {
         name: 'Sélectionner les combattants',

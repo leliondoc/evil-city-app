@@ -175,7 +175,7 @@ try {
   assert.equal(await page.locator('.bestiary-creature').count(), 16);
   assert.equal(
     await page
-      .getByRole('region', { name: 'La Cour des monstres', exact: true })
+      .getByRole('region', { name: 'La Cour des Monstres', exact: true })
       .locator('article')
       .count(),
     8,
