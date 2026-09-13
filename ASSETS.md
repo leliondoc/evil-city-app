@@ -28,6 +28,8 @@ Les sources approuvées sont conservées dans `art-source/menu/`. `scripts/compo
 
 ## Créatures jouables
 
+La **Tour des braises** des imps utilise le PNG original `Tiny Swords (Free Pack)/Buildings/Black Buildings/Tower.png`, sans retouche, intégré sous `imp-sanctum.png`. La tour champignon `Enemy Pack/Extra/Gnome Buildings/Gnome Tower.png` est réservée aux gnomes à la demande de l’utilisateur et conservée dans `art-source/gnomes/`, hors du build distribué.
+
 | Rôle        | Personnage original | Séquences                            |
 | ----------- | ------------------- | ------------------------------------ |
 | Bâtisseur   | Torch Goblin        | Idle, Run ; Attack au bestiaire      |
