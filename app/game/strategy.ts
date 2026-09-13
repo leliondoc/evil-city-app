@@ -20,7 +20,7 @@ import {
   type Cost,
   type Resources,
 } from './engine.ts';
-import { COMBAT, creatureMultiplier, fireMultiplier } from './combat.ts';
+import { COMBAT, creatureMultiplier, fireMultiplier, physicalDamage } from './combat.ts';
 import { manorRequirement } from './progression.ts';
 import { advancedCampaign } from './campaign.ts';
 
@@ -195,7 +195,7 @@ export function hitEnemy(
   )
     rememberAggressor(s, enemy, u);
   const directDamage = damage * creatureMultiplier(u.kind, unitIsMounted(s, u), enemy);
-  enemy.hp = Math.max(0, enemy.hp - directDamage * shieldMultiplier(enemy, s.elapsed) * dt);
+  enemy.hp = Math.max(0, enemy.hp - (u.kind === 'alchemist' ? directDamage : physicalDamage(directDamage, enemy)) * shieldMultiplier(enemy, s.elapsed) * dt);
   // Only nearby militia receive the sweep: heroes are not collateral targets.
   // Do not recurse through hitEnemy, which would multiply sweeps and fire procs.
   if (u.kind === 'minotaur' && damage > 0) {
@@ -207,7 +207,7 @@ export function hitEnemy(
       .slice(0, COMBAT.sweepTargets);
     for (const guard of guards) {
       rememberAggressor(s, guard, u);
-      guard.hp = Math.max(0, guard.hp - directDamage * COMBAT.sweepFraction * shieldMultiplier(guard, s.elapsed) * dt);
+      guard.hp = Math.max(0, guard.hp - physicalDamage(directDamage * COMBAT.sweepFraction, guard) * shieldMultiplier(guard, s.elapsed) * dt);
     }
   }
   if (u.kind === 'alchemist') {

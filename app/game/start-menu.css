@@ -748,3 +748,6 @@
     transition: none;
   }
 }
+
+.start-title.victory-wordmark { font-size: 54px; line-height: 1.05; letter-spacing: 2px; margin: 0 auto 18px; filter: drop-shadow(0 3px 0 #261526); }
+.start-title.victory-wordmark span::before { -webkit-text-stroke-width: 4px; }

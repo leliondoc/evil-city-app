@@ -1,6 +1,7 @@
 import { streetCenter } from './streets.ts';
 import { CAMPAIGN_MAPS, advanceCampaign, advancedCampaign, classicCampaign, campaignObjectives, campaignCreatureReason, campaignBuildingReason, campaignUpgradeReason, type CampaignMapId, type CampaignProgress } from './campaign.ts';
-import { COMBAT, humanMultiplier } from './combat.ts';
+import { COMBAT, humanMultiplier, physicalDamage } from './combat.ts';
+import { ALCHEMY, throwPotion, healAlly, advanceAlchemy, type AlchemyState } from './alchemy.ts';
 import { BUILDING_TIER, canUpgradeKind, manorRequirement, upgradeDuration, advanceBuildingUpgrades } from './progression.ts';
 import { advanceHumanBuildings, humanBuildingHealth } from './humanBuildings.ts';
 import { advanceShields, shieldActive, provocationReason } from './shields.ts';
@@ -205,11 +206,11 @@ export const CREATURES: Record<
     name: 'Alchimiste',
     job: 'Maître des mixtures',
     description:
-      'Projette ses mixtures à distance. Son solvant amplifie le feu allié, surtout contre les chevaliers et lanciers. Fragile, il doit rester à couvert des archères.',
+      'Lance des potions explosives à 5,5 cases : dégâts magiques de zone ignorant l’armure. Soigne un allié blessé proche de 25 PV toutes les 8 s. Son solvant amplifie le feu allié. Fragile face aux archères.',
     art: 5,
     cost: { gold: 100, mana: 35, food: 15 },
     hp: 60,
-    damage: 3,
+    damage: 9,
     speed: 1.8,
     size: 38,
     population: 1,
@@ -359,6 +360,8 @@ export interface Lot {
   upgrading?: { kind: BuildingKind; targetLevel: number; duration: number; remaining: number };
 }
 export interface Unit extends Point {
+  potionReadyAt?: number;
+  healReadyAt?: number;
   /** A move holds this destination for 30 seconds; a Hold order has no deadline. */
   holdPosition?: Point;
   /** Infinity during an order, then 30 simulation seconds after it finishes. */
@@ -882,6 +885,7 @@ export interface State {
   lost: boolean;
   enemies: Enemy[];
   projectiles: Projectile[];
+  alchemy?: AlchemyState;
   mobilization: Record<EnemyKind, Mobilization>;
   defeatedEnemies: number;
   humanLevelAnnounced: number;
@@ -2125,6 +2129,33 @@ function releaseGuildDefenders(s: State, lot: Lot, attackers: Unit[]) {
     'Les quatre héros quittent la guilde ! Ils poursuivront ses assaillants jusqu’à la mort.',
   );
 }
+function releaseBuildingDefenders(s: State, lot: Lot, attackers: Unit[]) {
+  if (lot.garrisonReleased || lot.hp <= 0 || lot.owned || lot.kind === 'empty' || !attackers.length) return;
+  if (lot.kind === 'guild') {
+    releaseGuildDefenders(s, lot, attackers);
+    for (const e of s.enemies.filter(e => e.garrisonLotId === lot.id)) {
+      Object.assign(e, navigationTarget({ x: e.x, y: lot.y + 8.5 }));
+      e.path = [];
+    }
+    return;
+  }
+  lot.garrisonReleased = true;
+  const elite = lot.kind === 'hall';
+  const roles: HeroRole[] = elite ? [...GUILD_ROLES] : Array.from({ length: lot.kind === 'tavern' ? 2 : 1 }, () => 'warrior');
+  const level = Math.min(6, humanLevel(s) + (elite ? 1 : 0));
+  const training = s.campaign?.mapId === 'faubourg' ? 0.3 : 1;
+  for (const [i, role] of roles.entries()) {
+    const kind: EnemyKind = elite ? 'hero' : 'guard';
+    const def = enemyDefinition({ kind, role });
+    const hp = Math.round(def.hp * (1 + (level - 1) * 0.15) * (elite ? 1.2 : 1) * training);
+    const point = navigationTarget({ x: entrance(lot).x - 1 + i * 0.65, y: lot.y + 8.5 });
+    s.enemies.push({ id: s.nextId++, kind, role, garrisonLotId: lot.id, ...point, hp, maxHp: hp,
+      damage: def.damage * (1 + (level - 1) * 0.12) * training, level, path: [], target: 6, facing: -1,
+      fighting: false, healTarget: null, attackCooldown: 0.6,
+      pursuitTarget: attackers[i % attackers.length].id, aggressors: attackers.map(u => u.id) });
+  }
+  announce(s, elite ? 'La garde d’élite de la mairie sort dans la rue !' : `Les défenseurs de ${BUILDINGS[lot.kind].name.toLowerCase()} sortent dans la rue !`);
+}
 function mobilizeRacketPatrols(s: State) {
   const hall = sourceBuilding(s, 'guard');
   for (const tower of s.strategy.towers) {
@@ -2330,7 +2361,7 @@ function advanceProjectiles(s: State, dt: number) {
     }
     const distance = distanceBetween(p, destination);
     if (distance <= 11 * dt) {
-      target.hp = Math.max(0, target.hp - p.damage);
+      target.hp = Math.max(0, target.hp - ('owned' in target ? p.damage : physicalDamage(p.damage, target)));
       if ('owned' in target && target.hp <= 0) loseLot(s, target);
       p.life = 0;
     } else {
@@ -2383,12 +2414,21 @@ function advanceEnemies(s: State, dt: number) {
           aggressor.hp = Math.max(
             0,
             aggressor.hp -
-              (e.role === 'monk' ? monkDamage(e, aggressor) : e.damage * humanMultiplier(e, aggressor.kind, unitIsMounted(s, aggressor))) * dt,
+              (e.role === 'monk' ? monkDamage(e, aggressor) : physicalDamage(e.damage * humanMultiplier(e, aggressor.kind, unitIsMounted(s, aggressor)), aggressor)) * dt,
           );
       } else {
         pursue(e, aggressor);
         walk(s, e, def.speed * dt);
       }
+      continue;
+    }
+    const home = e.garrisonLotId === undefined ? undefined : s.lots[e.garrisonLotId];
+    if (home && home.kind !== 'guild' && !home.owned && !e.aggressors?.length) {
+      const destination = navigationTarget({ x: entrance(home).x, y: home.y + 8.5 });
+      if (distanceBetween(e, destination) > 1) {
+        pursue(e, destination);
+        walk(s, e, def.speed * dt);
+      } else e.path = [];
       continue;
     }
     if (e.role === 'monk') {
@@ -2451,7 +2491,7 @@ function advanceEnemies(s: State, dt: number) {
         e.facing = victim.x >= e.x ? 1 : -1;
         if (e.role === 'archer')
           shoot(s, e, { type: 'unit', id: victim.id }, victim);
-        else victim.hp = Math.max(0, victim.hp - e.damage * humanMultiplier(e, victim.kind, unitIsMounted(s, victim)) * dt);
+        else victim.hp = Math.max(0, victim.hp - physicalDamage(e.damage * humanMultiplier(e, victim.kind, unitIsMounted(s, victim)), victim) * dt);
         continue;
       }
       pursue(e, victim);
@@ -2726,12 +2766,18 @@ function tickStep(s: State, dt: number) {
   advanceShields(s);
   for (const u of s.units) {
     if (u.hp <= 0) continue;
+    healAlly(s, u);
     if (u.manualUntil === Infinity && u.task === 'idle') u.manualUntil = s.elapsed + MANUAL_ORDER_GRACE;
     if (u.manualUntil !== undefined && s.elapsed >= u.manualUntil) {
       delete u.manualUntil;
       delete u.holdPosition;
     }
     u.fighting = false;
+    if (u.task === 'attack' && u.target !== null) {
+      const lot = s.lots[u.target];
+      if (lot && !lot.owned && distanceBetween(u, entrance(lot)) <= (u.kind === 'alchemist' ? ALCHEMY.range : 4.5) && clearShot(u, entrance(lot)))
+        releaseBuildingDefenders(s, lot, s.units.filter(a => a.hp > 0 && a.task === 'attack' && a.target === lot.id));
+    }
     if (
       u.focusTarget !== undefined &&
       (u.task !== 'defend' ||
@@ -2748,7 +2794,7 @@ function tickStep(s: State, dt: number) {
       u.task !== 'move'
     ) {
       if (u.task === 'idle' && !u.holdPosition) {
-        const threat = nearest(u, s.enemies, 4.5);
+        const threat = nearest(u, s.enemies, u.kind === 'alchemist' ? ALCHEMY.range : 4.5);
         if (threat) {
           const manual = u.manualUntil !== undefined;
           assign(u, threat, 'defend', threat.id);
@@ -2771,12 +2817,13 @@ function tickStep(s: State, dt: number) {
             (u.focusTarget === undefined || e.id === u.focusTarget) &&
             clearShot(u, e),
         ),
-        u.kind === 'alchemist' ? 4 : 1.9,
+        u.kind === 'alchemist' ? ALCHEMY.range : 1.9,
       );
       if (threat) {
         u.fighting = true;
         u.facing = threat.x >= u.x ? 1 : -1;
-        hitEnemy(s, u, threat, armyDamage(s, u), dt);
+        if (u.kind === 'alchemist') throwPotion(s, u, threat);
+        else hitEnemy(s, u, threat, armyDamage(s, u), dt);
       }
     }
     if (!u.fighting && (u.task === 'sabotage' || u.task === 'hunt')) {
@@ -2817,6 +2864,14 @@ function tickStep(s: State, dt: number) {
           );
         }
       } else if (approach) pursue(u, approach);
+    }
+    if (!u.fighting && u.kind === 'alchemist' && u.task === 'attack' && u.target !== null) {
+      const lot = s.lots[u.target];
+      if (lot && !lot.owned && distanceBetween(u, entrance(lot)) <= ALCHEMY.range && clearShot(u, entrance(lot))) {
+        u.fighting = true;
+        u.facing = entrance(lot).x >= u.x ? 1 : -1;
+        if (lot.hp > 0) throwPotion(s, u, entrance(lot), lot.id);
+      }
     }
     if (!u.fighting) {
       // Resume the siege after a skirmish has displaced a unit from the gate.
@@ -2871,27 +2926,14 @@ function tickStep(s: State, dt: number) {
       const attackers = s.units.filter(
         (u) =>
           u.hp > 0 &&
-          !u.fighting &&
+          (!u.fighting || (u.kind === 'alchemist' && lot.hp <= 0)) &&
           u.task === 'attack' &&
           u.target === lot.id &&
-          atEntrance(u, lot),
+          (u.kind === 'alchemist' ? distanceBetween(u, entrance(lot)) <= ALCHEMY.range && clearShot(u, entrance(lot)) : atEntrance(u, lot)),
       );
       if (attackers.length) {
-        const damage = attackers.reduce((n, u) => n + armyDamage(s, u) * (u.kind === 'minotaur' ? COMBAT.minotaurVsBuilding : 1), 0);
+        const damage = attackers.reduce((n, u) => n + (u.kind === 'alchemist' ? 0 : armyDamage(s, u) * (u.kind === 'minotaur' ? COMBAT.minotaurVsBuilding : 1)), 0);
         lot.hp = Math.max(0, lot.hp - damage * dt);
-        if (lot.kind === 'guild' && damage > 0)
-          releaseGuildDefenders(s, lot, attackers);
-        const retaliation =
-          (lot.kind === 'hall'
-            ? 18
-            : lot.kind === 'guild'
-              ? 0
-              : lot.kind === 'tavern'
-                ? 11
-                : 7) *
-          (1 + (humanLevel(s) - 1) * 0.12);
-        for (const u of attackers)
-          u.hp -= (retaliation * dt) / attackers.length;
         if (lot.hp <= 0) {
           lot.owned = true;
           lot.level = 1;
@@ -2933,6 +2975,7 @@ function tickStep(s: State, dt: number) {
   advanceEnemies(s, dt);
   separateCombatants(s, dt);
   advanceProjectiles(s, dt);
+  advanceAlchemy(s, dt);
   spreadBraises(s);
   for (const lot of advanceBuildingUpgrades(s, dt))
     announce(s, `${BUILDINGS[lot.kind].name} passe au niveau ${lot.level}.`);
@@ -2968,7 +3011,7 @@ function tickStep(s: State, dt: number) {
     hasBuilding(s, 'hall') &&
     hasBuilding(s, 'guild') &&
     !s.enemies.length &&
-    !s.projectiles.length
+    !s.projectiles.length && !(s.alchemy?.potions.length)
   ) {
     s.won = true;
     announce(

@@ -1109,7 +1109,6 @@ export class Renderer {
                   Math.floor(t * 10 + l.id + side * 2 + 8) %
                     ASSETS['fx-fire'].frames,
                 );
-            if (l.level > 1) this.label(x, y - 40, '★'.repeat(l.level - 1));
           }
         },
       });
@@ -1139,12 +1138,12 @@ export class Renderer {
       if (
         !l.owned &&
         l.kind !== 'empty' &&
-        !(l.kind === 'guild' && l.garrisonReleased)
+        !l.garrisonReleased
       )
         for (
           let i = 0;
           i <
-          (l.kind === 'guild' ? GUILD_ROLES.length : l.kind === 'hall' ? 2 : 1);
+          (l.kind === 'guild' || l.kind === 'hall' ? GUILD_ROLES.length : 1);
           i++
         )
           drawables.push({
@@ -1156,7 +1155,7 @@ export class Renderer {
                     u.task === 'attack' &&
                     atEntrance(u, l),
                 ),
-                role = l.kind === 'guild' ? GUILD_ROLES[i] : undefined,
+                role = l.kind === 'guild' || l.kind === 'hall' ? GUILD_ROLES[i] : undefined,
                 key = role
                   ? enemyAnimationSequence(
                       { kind: 'hero', role },
@@ -1183,7 +1182,7 @@ export class Renderer {
                 key,
                 role ? heroX : guardX,
                 gy,
-                role === 'lancer' ? 0.58 : role ? 0.78 : 0.65,
+                (role === 'lancer' ? 0.58 : role ? 0.78 : 0.65) * (l.kind === 'hall' ? 1.18 : 1),
                 Math.floor(t * 10 + i) % ASSETS[key].frames,
                 1,
                 true,
@@ -1534,7 +1533,7 @@ export class Renderer {
             sample.key,
             x,
             y,
-            e.role === 'lancer' ? 0.58 : e.kind === 'hero' ? 0.78 : 0.65,
+            (e.role === 'lancer' ? 0.58 : e.kind === 'hero' ? 0.78 : 0.65) * (e.garrisonLotId !== undefined && s.lots[e.garrisonLotId]?.kind === 'hall' ? 1.18 : 1),
             sample.frame,
             1,
             e.facing < 0,
@@ -1623,6 +1622,14 @@ export class Renderer {
           );
         },
       });
+    for (const p of s.alchemy?.potions ?? []) drawables.push({
+      depth: p.y * CELL + 1,
+      draw: () => {
+        const x = p.x * CELL, y = p.y * CELL - 28;
+        this.draw.rect(x - 4, y - 6, 8, 12, '#df9aff');
+        this.draw.rect(x - 2, y - 10, 4, 5, '#ffe7af');
+      },
+    });
     // Remains lie on the ground, underneath living actors and scenery.
     for (const corpse of s.domain.corpses.filter((c) => !c.carrier)) {
       const x = corpse.x * CELL,
@@ -1683,6 +1690,16 @@ export class Renderer {
         particle.scale,
         frame,
       );
+    }
+    for (const effect of s.alchemy?.effects ?? []) {
+      const x = effect.x * CELL, y = effect.y * CELL;
+      if (effect.kind === 'heal') {
+        this.sprite('hero-heal', x, y - 18, 0.7, Math.floor(t * 10) % ASSETS['hero-heal'].frames);
+        this.label(x, y - 70, '+ soin', '#a8ef9d');
+      } else if (!this.reducedMotion) {
+        const age = Math.min(1, (s.elapsed - effect.at) / 0.8);
+        this.draw.ellipse(x, y - 12, 20 + age * 32, 10 + age * 16, '#dda0ff', 4 / this.scale, 1 - age);
+      }
     }
     for (const lot of s.lots.filter((l) => isHaunted(s, l))) {
       const x = (lot.x + 4) * CELL,
@@ -1769,6 +1786,8 @@ export class Renderer {
           this.bar(bar.x, bar.y - stackedBar, 1 - l.upgrading.remaining / l.upgrading.duration, 90);
       }
       const hovered = this.hover?.type === 'lot' && this.hover.id === l.id;
+      if (bar && l.level > 1 && !l.construction)
+        this.label(x, labelY - (23 * this.uiScale) / this.scale, '★'.repeat(l.level - 1), '#ffe0a0');
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
           x,

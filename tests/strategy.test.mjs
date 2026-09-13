@@ -105,10 +105,10 @@ test('Alchemist solvent amplifies only fire, with a stronger effect on the front
   assert.equal(e.hp, 97);
   assert.equal(e.burningUntil, undefined);
   hitEnemy(s, unit(s, 'goblin', point), e, 4, 1);
-  assert.equal(e.hp, 85.5);
+  assert.equal(e.hp, 86.5);
   assert.equal(s.strategy.comboHits, 1);
   advanceStrategy(s, 1);
-  assert.equal(e.hp, 80.5);
+  assert.equal(e.hp, 81.5);
   e.hp = 0;
   advanceStrategy(s, 0);
   assert.equal(nearby.burningUntil, s.elapsed + 4);

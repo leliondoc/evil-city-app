@@ -80,9 +80,10 @@ test('Human development changes the models and adds towers to the advanced town 
   assert.equal(buildingHasTowers('hall', true, 6), false);
 });
 
-test('A fortified town hall still falls to a dedicated siege force and becomes a level-one captured property', () => {
+test('After its garrison is defeated, a fortified town hall falls to siege damage and becomes a level-one property', () => {
   const s = town(6);
   const hall = s.lots.find(l => l.kind === 'hall');
+  hall.garrisonReleased = true;
   s.units = Array.from({ length: 2 }, () => ({
     id: s.nextId++, kind: 'minotaur', hp: CREATURES.minotaur.hp,
     ...entrance(hall), task: 'attack', target: hall.id, path: [], facing: 1,

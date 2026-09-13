@@ -147,7 +147,7 @@ test('Guild identity survives resurrection data and a living defender cancels re
   assert.equal(guild.garrisonReleased, true);
 });
 
-test('The four visible guild defenders deploy once on actual damage, even without reinforcement funds', () => {
+test('The four visible guild defenders deploy once when an attack approaches the gate, even without reinforcement funds', () => {
   const { s, u, guild } = assault();
   u.task = 'move';
   tick(s, 0.1);
@@ -159,7 +159,7 @@ test('The four visible guild defenders deploy once on actual damage, even withou
   u.task = 'attack';
   tick(s, 0.1);
   assert.equal(guild.garrisonReleased, true);
-  assert.ok(guild.hp < guild.maxHp);
+  assert.equal(guild.hp, guild.maxHp, 'Defenders intercept the assault before the building is hit');
   assert.deepEqual(
     s.enemies.map((e) => e.role),
     Object.keys(HEROES),

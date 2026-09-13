@@ -25,7 +25,6 @@ import {
   Shield,
   CheckCircle2,
   Circle,
-  Crown,
   ArrowUp,
   Hourglass,
   LockKeyhole,
@@ -64,7 +63,7 @@ import { GuildRoster, GuildHeroSelection } from './GuildPanel';
 import { Bestiary } from './Bestiary';
 import { CombatDetails } from './CombatDetails';
 import { CommandWheel } from './CommandWheel';
-import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
+import { creatureCombatProfile, HUMAN_COMBAT, armorPercent } from './combat';
 import { UpgradeBenefit } from './UpgradeBenefit';
 import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
 import { ManorProgression } from './ManorProgression';
@@ -949,6 +948,10 @@ export default function Game({
             {s.lost ? ' · Défaite' : s.won ? ' · Victoire' : ''}
           </span>
         </div>
+        <div className="population-counters">
+        <div className="army-cap-counter" title="Places occupées et réservées par les recrutements. Les grandes créatures occupent plusieurs places. Construisez ou améliorez les tanières pour augmenter la capacité." aria-label={`Population de l’armée : ${population(s)} sur ${capacity(s)}`}>
+          <Users size={20} aria-hidden="true" /><span><strong>{population(s)}/{capacity(s)}</strong><small>Armée</small></span>
+        </div>
         <button
           className="goblin-counter"
           disabled={workforce.total === 0}
@@ -978,6 +981,7 @@ export default function Game({
             </small>
           </div>
         </button>
+        </div>
         <div className="top-actions">
           <Button
             className="speed-btn"
@@ -1136,7 +1140,7 @@ export default function Game({
                     {shieldActive(selectedEnemy, s.elapsed) && <p className="combat-status"><Shield size={16} />Bouclier · {Math.ceil(selectedEnemy.shieldUntil! - s.elapsed)} s · −{shieldSettings(selectedEnemy).reduction * 100} % de dégâts reçus</p>}
                     <div className="selection-stats">
                       <span><Shield size={14} />{Math.ceil(selectedEnemy.hp)} / {selectedEnemy.maxHp} PV</span>
-                      <span>Niveau {selectedEnemy.level}</span>
+                      <span>Niveau {selectedEnemy.level} · Armure {armorPercent(selectedEnemy)} %</span>
                     </div>
                     <HealthBar
                       value={(selectedEnemy.hp / selectedEnemy.maxHp) * 100}
@@ -1191,7 +1195,7 @@ export default function Game({
                       aria-label="Santé de la créature"
                     />
                     <p className="reason">
-                      {Number(armyDamage(s, selectedUnit).toFixed(1))} dégâts/s avant bonus · vitesse {Number(unitSpeed(s, selectedUnit).toFixed(1))}
+                      {Number(armyDamage(s, selectedUnit).toFixed(1))} dégâts/s {selectedUnit.kind === 'alchemist' ? 'magiques' : 'physiques'} avant bonus · vitesse {Number(unitSpeed(s, selectedUnit).toFixed(1))} · Armure {armorPercent(selectedUnit)} %
                       {unitIsMounted(s, selectedUnit) ? ' · Monté sur cochon' : ''}
                     </p>
                     <Button
@@ -2302,7 +2306,7 @@ export default function Game({
           )}
           {modal === 'victory' && (
             <>
-              <Crown className="victory-seal" strokeWidth={1.2} />
+              <div className="start-title victory-wordmark" aria-label="Evil City"><span data-text="Evil">Evil</span><span data-text="City">City</span></div>
               <DialogTitle style={{ textAlign: 'center' }}>
                 {map ? `${map.name} · Chapitre terminé` : 'Le quartier est à vous.'}
               </DialogTitle>

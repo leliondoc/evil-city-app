@@ -77,7 +77,7 @@ test('Mounted bonuses require completed research and stack with guard specializa
     ['archer', true, 16.5],
     ['monk', false, 11],
     ['monk', true, 16.5],
-    ['lancer', true, 11],
+    ['lancer', true, 9.35],
   ]) {
     const { s, unit, enemy } = arena(['spear-goblin'], role);
     if (mounted) s.strategy.research.push('pig-riding');
@@ -96,14 +96,14 @@ test('Human specializations apply both to opportunistic attacks and retaliation'
     for (const [role, kind, mounted, expected] of [
       ['lancer', 'spear-goblin', true, 15],
       ['lancer', 'spear-goblin', false, 10],
-      ['lancer', 'troll', false, 14],
-      ['lancer', 'minotaur', false, 14],
-      ['lancer', 'skeleton', false, 10],
-      ['warrior', 'skeleton', false, 16.2],
+      ['lancer', 'troll', false, 11.9],
+      ['lancer', 'minotaur', false, 11.2],
+      ['lancer', 'skeleton', false, 9],
+      ['warrior', 'skeleton', false, 14.58],
       ['warrior', 'spear-goblin', false, 16.2],
       ['warrior', 'spear-goblin', true, 12],
-      ['warrior', 'troll', false, 12],
-      ['guard', 'skeleton', false, 6],
+      ['warrior', 'troll', false, 10.2],
+      ['guard', 'skeleton', false, 5.4],
     ]) {
       const { s, unit, enemy } = arena([kind], role);
       if (mounted) s.strategy.research.push('pig-riding');
@@ -198,6 +198,7 @@ test('Minotaur siege bonus applies to buildings, not to all targets', () => {
   const { s, unit } = arena(['minotaur']);
   s.enemies = [];
   const lot = s.lots.find((l) => !l.owned && l.kind === 'house');
+  lot.garrisonReleased = true; // Isolate siege damage after the street defenders have fallen.
   Object.assign(unit, entrance(lot), {
     task: 'attack',
     target: lot.id,
@@ -222,13 +223,13 @@ test('Solvent changes fire only, expires, and amplifies both burning and weapon 
     assert.equal(hp - enemy.hp, 3);
     const goblin = { ...s.units[0], kind: 'goblin' };
     hitEnemy(s, goblin, enemy, 4, 1);
-    assert.equal(hp - enemy.hp, 7 + 3 * fire);
+    assert.ok(Math.abs(hp - enemy.hp - (3 + (role === 'warrior' ? 3 : role === 'lancer' ? 3.4 : 4) + 3 * fire)) < 1e-8);
     advanceStrategy(s, 1);
-    assert.equal(hp - enemy.hp, 7 + 5 * fire);
+    assert.ok(Math.abs(hp - enemy.hp - (3 + (role === 'warrior' ? 3 : role === 'lancer' ? 3.4 : 4) + 5 * fire)) < 1e-8);
     s.elapsed = 8;
     const before = enemy.hp;
     hitEnemy(s, goblin, enemy, 4, 1);
-    assert.equal(before - enemy.hp, 7);
+    assert.ok(Math.abs(before - enemy.hp - (3 + (role === 'warrior' ? 3 : role === 'lancer' ? 3.4 : 4))) < 1e-8);
   }
 });
 

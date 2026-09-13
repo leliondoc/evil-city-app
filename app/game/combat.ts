@@ -1,4 +1,12 @@
-import type { CreatureKind, Enemy, HeroRole } from './engine.ts';
+import type { CreatureKind, Enemy, HeroRole, Unit } from './engine.ts';
+
+export function armorPercent(actor: Pick<Unit, 'kind'> | Pick<Enemy, 'kind' | 'role'>): number {
+  if (actor.kind === 'hero') return actor.role === 'warrior' ? 25 : actor.role === 'lancer' ? 15 : 0;
+  return actor.kind === 'troll' ? 15 : actor.kind === 'minotaur' ? 20 : actor.kind === 'skeleton' ? 10 : 0;
+}
+export function physicalDamage(damage: number, actor: Pick<Unit, 'kind'> | Pick<Enemy, 'kind' | 'role'>): number {
+  return damage * (1 - armorPercent(actor) / 100);
+}
 
 /** Matchup bonuses affect direct attacks; fire keeps its own solvent multiplier. */
 export const COMBAT = {
@@ -116,9 +124,9 @@ export function creatureCombatProfile(
       };
     case 'alchemist':
       return {
-        strength: 'Chevaliers et Lanciers, avec le feu allié',
+        strength: 'Groupes ennemis et unités en armure',
         weakness: 'Archères de l’Aube',
-        effect: `Après recherche, le solvant dure 8 s : feu ×${COMBAT.solventVsFrontline.toLocaleString('fr')} sur chevaliers et lanciers, ×${COMBAT.solvent} sur les autres. Portée 4 cases.`,
+        effect: `Après recherche, le solvant dure 8 s : feu ×${COMBAT.solventVsFrontline.toLocaleString('fr')} sur chevaliers et lanciers, ×${COMBAT.solvent} sur les autres. Portée 5,5 cases. Potions magiques de zone ignorant l’armure, jusqu’à 4 ennemis (60 % sur les cibles secondaires). Soigne un allié proche de 25 PV toutes les 8 s.`,
       };
     case 'specter':
       return {

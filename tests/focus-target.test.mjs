@@ -102,6 +102,11 @@ test('Melee and ranged fighters hit and face their focus target even when anothe
     monk.x = kind === 'alchemist' ? 7.2 : 8.8;
     assert.equal(focus(s, u, monk), '');
     tick(s, 0.1);
+    if (kind === 'alchemist') {
+      assert.equal(s.alchemy.potions.length, 1, 'The potion travels toward the designated enemy');
+      assert.ok(s.alchemy.potions[0].target.x < u.x);
+      tick(s, 0.5);
+    }
     assert.ok(monk.hp < monk.maxHp, `${kind} damages the designated enemy`);
     assert.equal(guard.hp, guard.maxHp, `${kind} ignores the closer enemy`);
     assert.equal(u.facing, -1, `${kind} faces its target after combat spacing`);

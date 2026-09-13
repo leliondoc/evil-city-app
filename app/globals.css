@@ -3745,3 +3745,11 @@ svg {
 .recruit-progress progress, .research-progress progress, .objective-progress progress, .capture-status progress { accent-color: var(--faction-purple); }
 .recruit-progress progress::-webkit-progress-value, .research-progress progress::-webkit-progress-value, .objective-progress progress::-webkit-progress-value, .capture-status progress::-webkit-progress-value { background: var(--faction-purple); box-shadow: inset 0 1px var(--faction-lavender); }
 .recruit-progress progress::-moz-progress-bar, .research-progress progress::-moz-progress-bar, .objective-progress progress::-moz-progress-bar, .capture-status progress::-moz-progress-bar { background: var(--faction-purple); box-shadow: inset 0 1px var(--faction-lavender); }
+
+.population-counters { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.army-cap-counter { display: flex; align-items: center; gap: 5px; color: #f4e6c7; white-space: nowrap; }
+.army-cap-counter strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.army-cap-counter small { display: block; font-size: 11px; }
+
+.game-shell[data-compact='true'] .army-cap-counter strong { font-size: 13px; }
+.game-shell[data-compact='true'] .army-cap-counter svg { width: 16px; }
