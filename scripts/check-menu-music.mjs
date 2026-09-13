@@ -93,7 +93,10 @@ for (const scenario of [
     await requireLandscape(page);
     await press(page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }));
     await page.locator('.world-canvas[data-ready=true]').waitFor();
-    if (scenario.touch)
+    if (
+      scenario.touch &&
+      await page.getByRole('button', { name: 'Fermer les détails', exact: true }).isVisible()
+    )
       await press(
         page.getByRole('button', { name: 'Fermer les détails', exact: true }),
       );
@@ -165,6 +168,18 @@ for (const scenario of [
     await page.evaluate(() => {
       delete document.hidden;
       document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await audible(page, true);
+
+    // Leaving the page must stop playback even before visibility changes.
+    // A cached page may return later, without creating a second music stream.
+    await page.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    assert.equal(await page.evaluate(() => window.menuGraph.audio.paused), true);
+    await page.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
     });
     await audible(page, true);
 

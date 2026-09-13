@@ -56,8 +56,8 @@
   cursor: pointer;
 }
 .army-command:hover:not(:disabled), .army-command[aria-pressed='true'] {
-  background: #655073;
-  border-color: #dcc59c;
+  background: var(--faction-purple);
+  border-color: var(--faction-lavender);
 }
 .army-command:disabled { opacity: .5; cursor: default; }
 .army-order-hint { display: block; margin-top: 6px; color: #e4d1a9; font-size: 11px; line-height: 1.4; }
@@ -100,7 +100,7 @@
 .interface-settings input {
   width: 100%;
   height: 44px;
-  accent-color: #9973b0;
+  accent-color: var(--faction-purple);
 }
 .interface-settings p {
   font-size: 13px;

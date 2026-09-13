@@ -408,9 +408,9 @@
   font-size: 13px;
 }
 .start-animation-tabs button[aria-pressed='true'] {
-  border-color: #bc9860;
-  background: #b3894226;
-  color: #f5dcaa;
+  border-color: var(--faction-lavender);
+  background: var(--faction-purple);
+  color: var(--faction-on-purple);
 }
 .start-bestiary .bestiary-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -452,7 +452,7 @@
 .start-settings input {
   width: 100%;
   height: 26px;
-  accent-color: #d6ad63;
+  accent-color: var(--faction-purple);
   cursor: pointer;
 }
 .start-settings > p {

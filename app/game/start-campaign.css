@@ -147,7 +147,7 @@
   box-shadow: 0 3px 6px #20382c55;
 }
 .atlas-node[aria-pressed='true'] strong {
-  background: #6b422f;
+  background: var(--faction-purple);
   border-color: #ffe9a4;
 }
 .atlas-node small {

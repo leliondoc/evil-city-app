@@ -34,12 +34,23 @@ export class GameMusic {
   private ambienceDue = false;
   private finishedTracks = 0;
   private syncPlayback = () => this.sync();
+  private pageInactive = false;
+  private hidePage = () => {
+    this.pageInactive = true;
+    this.sync();
+  };
+  private showPage = () => {
+    this.pageInactive = false;
+    this.sync();
+  };
 
   constructor(
     private baseUrl: string,
     private mode: 'game' | 'menu' = 'game',
   ) {
     document.addEventListener('visibilitychange', this.syncPlayback);
+    window.addEventListener('pagehide', this.hidePage);
+    window.addEventListener('pageshow', this.showPage);
   }
 
   unlock(context: AudioContext) {
@@ -182,6 +193,7 @@ export class GameMusic {
       this.paused ||
       this.muted ||
       this.volume === 0 ||
+      this.pageInactive ||
       document.hidden ||
       (this.context !== null && this.context.state !== 'running')
     );
@@ -397,6 +409,8 @@ export class GameMusic {
     this.cancelTransitionTimer();
     this.suspendBreak();
     document.removeEventListener('visibilitychange', this.syncPlayback);
+    window.removeEventListener('pagehide', this.hidePage);
+    window.removeEventListener('pageshow', this.showPage);
     this.context?.removeEventListener('statechange', this.syncPlayback);
     if (this.element) {
       this.element.onended = null;
