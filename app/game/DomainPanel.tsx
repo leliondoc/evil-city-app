@@ -22,7 +22,9 @@ export function DomainPanel({
   unit,
   onAction,
   mode = 'sidebar',
+  ability,
 }: {
+  ability?: 'haunt' | 'bribe';
   mode?: 'sidebar' | 'bubble';
   state: State;
   lot?: Lot;
@@ -93,7 +95,7 @@ export function DomainPanel({
           )}
         </AbilityCard>
       )}
-      {mode === 'bubble' && lot && !lot.owned && lot.kind !== 'empty' && (
+      {mode === 'bubble' && ability !== 'bribe' && lot && !lot.owned && lot.kind !== 'empty' && (
         <AbilityCard
           title="Hantise"
           icon="specter-avatar"
@@ -126,7 +128,7 @@ export function DomainPanel({
           </details>
         </AbilityCard>
       )}
-      {mode === 'bubble' && lot?.kind === 'hall' && !lot.owned && (
+      {mode === 'bubble' && ability !== 'haunt' && lot?.kind === 'hall' && !lot.owned && (
         <AbilityCard title="Pot-de-vin" icon="ui-gold">
           <p>
             Retarde la patrouille de <b>45 s</b> et retire{' '}

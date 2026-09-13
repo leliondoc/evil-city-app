@@ -3386,9 +3386,9 @@ svg {
 .game-shell[data-compact='false'] .build-card.locked { opacity: 1; }
 .game-shell[data-compact='false'] .build-card:hover { background: #314852f5; }
 .game-shell[data-compact='false'] .recruit-progress {
-  background: #192b31ed;
+  background: transparent;
   border-radius: 3px;
-  padding: 3px 5px;
+  padding: 0;
 }
 
 /* Bestiary factions share the modal background. */
@@ -3537,9 +3537,9 @@ svg {
   bottom: 3px;
   left: 4px;
   right: 4px;
-  background: #192b31;
+  background: transparent;
   border-radius: 3px;
-  padding: 3px;
+  padding: 0;
 }
 .game-shell .creation-scroll-controls button { width: 44px; height: 36px; background: #20323b; }
 .game-shell[data-compact='false'] .bottom-bar {
@@ -3768,3 +3768,15 @@ svg {
 .demolish-building button { min-height: 44px; white-space: normal; }
 .demolish-actions button { flex: 1 1 110px; }
 .demolish-building .demolish-confirm { background: #62404a; color: #ffe4d5; }
+/* Keep production beneath the costs, without an opaque overlay. */
+.game-shell[data-compact] .recruit-card > :is(img, canvas:not(.pack-skin)) { width: 68px !important; height: 68px !important; }
+.game-shell .recruit-progress { margin: 0; }
+.game-shell .recruit-progress-label { line-height: 12px; }
+.game-shell .creation-cards .build-card { transition: transform 90ms ease-out, filter 90ms ease-out; }
+.game-shell .creation-cards .build-card:active { transform: scale(.97); filter: brightness(1.14); }
+@media (prefers-reduced-motion: reduce) {
+  .game-shell .creation-cards .build-card { transition: none; }
+  .game-shell .creation-cards .build-card:active { transform: none; }
+}
+.game-shell[data-compact='true'] .recruit-card > :is(img, canvas:not(.pack-skin)) { width: 56px !important; height: 56px !important; }
+.creation-spark { position: fixed; z-index: 95; width: 3px; height: 3px; border-radius: 50%; background: #ffe3a1; box-shadow: 0 0 5px #ffe3a1; pointer-events: none; }

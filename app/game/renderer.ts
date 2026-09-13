@@ -315,7 +315,7 @@ export class Renderer {
   public abilityAnchor(selection: Selection) {
     if (!this.ready) return null;
     const s = this.getState();
-    let x: number, top: number, bottom: number;
+    let x: number, top: number, bottom: number, halfWidth = 28;
     if (selection.type === 'lot') {
       const lot = s.lots[selection.id];
       if (!lot || lot.kind === 'empty') return null;
@@ -323,7 +323,9 @@ export class Renderer {
       bottom = (lot.y + 6.2) * CELL - (lot.kind === 'guild' && !lot.owned ? 28 : 0);
       const key = buildingArt(lot.kind, lot.owned, lot.level, lot.id);
       const scale = lot.kind === 'hall' || lot.kind === 'hq' ? 0.78 : lot.kind === 'crypt' || lot.kind === 'guild' ? 0.72 : 0.9;
-      top = this.buildingPlacement(key, x, bottom, scale).top;
+      const placement = this.buildingPlacement(key, x, bottom, scale);
+      top = placement.top;
+      halfWidth = this.bounds.get(key)!.width * placement.scale / 2;
     } else if (selection.type === 'unit') {
       const unit = s.units.find(u => u.id === selection.id && u.hp > 0);
       if (!unit) return null;
@@ -334,7 +336,7 @@ export class Renderer {
     const screenTop = rect.top + this.origin.y + top * this.scale;
     const screenBottom = rect.top + this.origin.y + bottom * this.scale;
     if (screenX < rect.left || screenX > rect.right || screenBottom < rect.top || screenTop > rect.bottom) return null;
-    return { x: screenX, top: screenTop, bottom: screenBottom };
+    return { x: screenX, left: screenX - halfWidth * this.scale, right: screenX + halfWidth * this.scale, top: screenTop, bottom: screenBottom };
   }
   public resetView() {
     this.pointerCancel();

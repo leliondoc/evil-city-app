@@ -22,6 +22,12 @@ export function AbilityBubble({
   onAction: (action: (s: State) => string | void) => unknown;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const [choice, setChoice] = useState<{
+    selection: Selection;
+    ability: 'haunt' | 'bribe';
+  } | null>(null);
+  const multiple = lot?.kind === 'hall' && !lot.owned;
+  const ability = choice?.selection === selection ? choice.ability : 'haunt';
   const [closedSelection, setClosedSelection] = useState<Selection | null>(
     null,
   );
@@ -30,7 +36,8 @@ export function AbilityBubble({
     (lot &&
       ((!lot.owned && lot.kind !== 'empty') ||
         (lot.owned && lot.kind === 'crypt'))) ||
-    unit?.kind === 'specter' || unit?.kind === 'alchemist'
+    unit?.kind === 'specter' ||
+    unit?.kind === 'alchemist'
   );
   useEffect(() => {
     if (!available || dismissed) return;
@@ -46,32 +53,40 @@ export function AbilityBubble({
             .querySelector('.topbar')
             ?.getBoundingClientRect();
           const floor = Math.max(edge, (header?.bottom ?? 0) + 8);
-          const ceiling = window.innerHeight - edge;
-          el.style.maxHeight = `${Math.max(100, ceiling - floor - 20)}px`;
+          const navigation = document
+            .querySelector('.mobile-nav')
+            ?.getBoundingClientRect();
+          const ceiling = Math.min(
+            window.innerHeight - edge,
+            navigation?.height ? navigation.top - 8 : Infinity,
+          );
+          el.style.maxHeight = `${Math.max(100, Math.min(360, ceiling - floor))}px`;
           el.style.setProperty('--bubble-max-height', el.style.maxHeight);
           const box = el.getBoundingClientRect();
+          const rightFits =
+            anchor.right + 12 + box.width <= window.innerWidth - edge;
+          const leftFits = anchor.left - 12 - box.width >= edge;
+          const side = rightFits || !leftFits ? 'right' : 'left';
           const left = Math.max(
             edge,
             Math.min(
-              anchor.x - box.width / 2,
+              side === 'right'
+                ? anchor.right + 12
+                : anchor.left - box.width - 12,
               window.innerWidth - box.width - edge,
             ),
           );
-          const above = anchor.top - box.height - 14 >= floor;
           const top = Math.max(
             floor,
-            Math.min(
-              above ? anchor.top - box.height - 14 : anchor.bottom + 14,
-              ceiling - box.height,
-            ),
+            Math.min(anchor.top, ceiling - box.height),
           );
           el.style.left = `${left}px`;
           el.style.top = `${top}px`;
           el.style.setProperty(
             '--bubble-tip',
-            `${Math.max(22, Math.min(box.width - 22, anchor.x - left))}px`,
+            `${Math.max(22, Math.min(box.height - 22, (anchor.top + anchor.bottom) / 2 - top))}px`,
           );
-          el.dataset.side = above ? 'above' : 'below';
+          el.dataset.side = side;
         }
       }
       frame = requestAnimationFrame(position);
@@ -86,6 +101,31 @@ export function AbilityBubble({
       className="ability-bubble"
       aria-label="Capacités de la sélection"
     >
+      <div className="ability-bubble-bar">
+        {multiple ? (
+          <div
+            className="ability-bubble-choices"
+            aria-label="Choisir une capacité"
+          >
+            <button
+              type="button"
+              aria-pressed={ability === 'haunt'}
+              onClick={() => setChoice({ selection, ability: 'haunt' })}
+            >
+              Hantise
+            </button>
+            <button
+              type="button"
+              aria-pressed={ability === 'bribe'}
+              onClick={() => setChoice({ selection, ability: 'bribe' })}
+            >
+              Pot-de-vin
+            </button>
+          </div>
+        ) : (
+          <span>Capacité</span>
+        )}
+      </div>
       <button
         type="button"
         className="ability-bubble-close"
@@ -94,16 +134,14 @@ export function AbilityBubble({
       >
         <PackIcon asset="ui-close" />
       </button>
-      <div
-        className="ability-bubble-content"
-        data-multiple={lot?.kind === 'hall' && !lot.owned}
-      >
+      <div className="ability-bubble-content">
         <DomainPanel
           state={state}
           lot={lot}
           unit={unit}
           onAction={onAction}
           mode="bubble"
+          ability={multiple ? ability : undefined}
         />
       </div>
     </section>,

@@ -180,6 +180,32 @@ function Costs({ cost, available }: { cost: Cost; available?: Cost }) {
     </div>
   );
 }
+function creationFeedback(button: HTMLButtonElement) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  button.getAnimations().forEach(animation => animation.cancel());
+  button.animate(reduced ? [{ filter: 'brightness(1.2)' }, { filter: 'brightness(1)' }] : [{ transform: 'scale(.96)', filter: 'brightness(1.2)' }, { transform: 'scale(1.02)', filter: 'brightness(1.1)', offset: .5 }, { transform: 'none', filter: 'brightness(1)' }], { duration: reduced ? 100 : 280 });
+  if (!reduced) {
+    const box = button.getBoundingClientRect();
+    for (let i = 0; i < 8; i++) {
+      const angle = i * Math.PI / 4;
+      const x = box.left + box.width / 2 + Math.cos(angle) * box.width * .44;
+      const y = box.top + box.height / 2 + Math.sin(angle) * box.height * .44;
+      const spark = document.createElement('span');
+      spark.className = 'creation-spark';
+      spark.setAttribute('aria-hidden', 'true');
+      Object.assign(spark.style, { left: `${x}px`, top: `${y}px` });
+      document.body.append(spark);
+      const animation = spark.animate([{ transform: 'translate(0, 0) scale(.5)', opacity: 0 }, { opacity: 1, offset: .15 }, { transform: `translate(${Math.cos(angle) * 22}px, ${Math.sin(angle) * 18 - 8}px) scale(0)`, opacity: 0 }], { duration: 420, easing: 'ease-out' });
+      void animation.finished.then(() => spark.remove(), () => spark.remove());
+    }
+  }
+  const art = button.querySelector(':scope > canvas, :scope > img');
+  if (art && !reduced) {
+    art.getAnimations().forEach(animation => animation.cancel());
+    art.animate([{ transform: 'scale(.94)' }, { transform: 'translateY(-4px) scale(1.08)', offset: .45 }, { transform: 'none' }], { duration: 300, easing: 'ease-out' });
+  }
+}
+
 function clock(seconds: number) {
   return `${Math.floor(seconds / 60)
     .toString()
@@ -482,20 +508,21 @@ export default function Game({
       const locked = buildUnlockReason(gameStore.getState(), kind);
       if (locked) {
         notify(locked);
-        return;
+        return false;
       }
       setPendingBuild(kind);
       setTouchMode('inspect');
       setMobilePanel(null);
       setTab('build');
       notify('Choisissez une parcelle à vous pour lancer le chantier.');
+      return true;
     },
     [notify, gameStore, setPendingBuild, setTouchMode, setMobilePanel, setTab],
   );
   const chooseRecruit = useCallback(
     (kind: CreatureKind) => {
       const selected = selectionRef.current;
-      run((s) =>
+      return run((s) =>
         recruit(s, kind, selected.type === 'lot' ? selected.id : undefined),
       );
     },
@@ -1760,7 +1787,7 @@ export default function Game({
                   <button
                     className={`build-card building-card ${pendingBuild === kind ? 'chosen' : ''} ${reason ? 'locked' : ''}`}
                     key={kind}
-                    onClick={() => chooseBuild(kind)}
+                    onClick={(event) => { if (chooseBuild(kind)) creationFeedback(event.currentTarget); }}
                     aria-pressed={pendingBuild === kind}
                     aria-disabled={!!locked}
                     title={reason || buildSummary}
@@ -1812,7 +1839,7 @@ export default function Game({
                   <div className="recruit-option" key={kind}>
                     <button
                       className={`build-card recruit-card ${reason ? 'locked' : ''}`}
-                      onClick={() => chooseRecruit(kind)}
+                      onClick={(event) => { if (chooseRecruit(kind)) creationFeedback(event.currentTarget); }}
                       title={reason || `Recruter : ${c.name}`}
                       aria-label={`Recruter ${c.name}${reason ? `. ${reason}` : ''}`}
                     >

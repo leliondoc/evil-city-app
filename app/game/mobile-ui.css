@@ -312,7 +312,7 @@
   .game-shell[data-compact='true'] .build-tabs > [role='tablist'] { display: none; }
   .game-shell[data-compact='true'] :is(.building-card, .recruit-card) > :is(img, canvas:not(.pack-skin)) { width: 56px !important; height: 56px !important; }
   .game-shell[data-compact='true'] .card-row > .building-card,
-  .game-shell[data-compact='true'] .recruit-option > .recruit-card { height: 184px; min-height: 184px; }
+  .game-shell[data-compact='true'] .recruit-option > .recruit-card { height: 196px; min-height: 196px; }
   .mobile-command-dock .command-wheel { width: 240px; height: 200px; }
   .mobile-command-dock .command-wheel-manor { left: 110px; top: 54px; width: 104px; height: 104px; }
   .mobile-command-dock .command-wheel-castle.pack-icon { width: 76px; height: 65px; top: 0; }

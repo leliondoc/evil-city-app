@@ -1,12 +1,12 @@
 .ability-bubble {
   position: fixed;
   z-index: 90;
-  width: max-content;
+  width: 260px;
   max-width: calc(100vw - 24px);
   visibility: hidden;
   color: #fff4d8;
   border: 1px solid #b997cf;
-  border-radius: 14px;
+  border-radius: 10px;
   background: linear-gradient(145deg, #87629f 0%, #74518d 40%, #493257 100%);
   box-shadow:
     0 8px 24px #10101977,
@@ -18,44 +18,38 @@
 .ability-bubble::after {
   content: '';
   position: absolute;
-  left: var(--bubble-tip, 50%);
-  width: 16px;
-  height: 16px;
-  background: #50365f;
-  border-right: 1px solid #b997cf;
+  top: var(--bubble-tip, 40px);
+  left: -6px;
+  width: 10px;
+  height: 10px;
+  background: #805b97;
+  border-left: 1px solid #b997cf;
   border-bottom: 1px solid #b997cf;
-  bottom: -9px;
-  transform: translateX(-50%) rotate(45deg);
+  transform: translateY(-50%) rotate(45deg);
   pointer-events: none;
 }
-.ability-bubble[data-side='below']::after {
-  top: -9px;
-  bottom: auto;
-  transform: translateX(-50%) rotate(225deg);
-  background: #805b97;
+.ability-bubble[data-side='left']::after {
+  left: auto;
+  right: -6px;
+  transform: translateY(-50%) rotate(225deg);
+  background: #624574;
 }
 .ability-bubble-content {
   display: grid;
-  width: 306px;
+  width: 100%;
   max-width: calc(100vw - 26px);
-  max-height: calc(var(--bubble-max-height, 600px) - 48px);
-  margin-top: 48px;
+  max-height: calc(var(--bubble-max-height, 360px) - 46px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 12px;
+  padding: 0 10px 8px;
   border-radius: inherit;
-}
-.ability-bubble-content[data-multiple='true'] {
-  width: 590px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
 }
 .ability-bubble .domain-card.ability-card {
   background: none;
   border: 0;
   box-shadow: none;
   margin: 0;
-  padding: 8px 4px;
+  padding: 4px 0;
   min-width: 0;
   color: #fff4d8;
 }
@@ -63,12 +57,12 @@
   display: none;
 }
 .ability-bubble .ability-heading {
-  padding-right: 24px;
+  margin-bottom: 6px;
 }
 .ability-bubble .ability-card .ability-heading h4 {
   color: #fff4d8;
   font:
-    bold 17px/1.2 'Trebuchet MS',
+    bold 15px/1.2 'Trebuchet MS',
     sans-serif;
   letter-spacing: normal;
 }
@@ -139,11 +133,32 @@
   outline: 2px solid #fff4d8;
   outline-offset: 2px;
 }
-@media (max-width: 620px) {
-  .ability-bubble-content[data-multiple='true'] {
-    width: 306px;
-    grid-template-columns: 1fr;
-  }
+.ability-bubble-bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 44px 0 10px;
+}
+.ability-bubble-bar > span {
+  font-size: 12px;
+  color: #eddbf3;
+}
+.ability-bubble-choices {
+  display: flex;
+  gap: 4px;
+}
+.ability-bubble-choices button {
+  min-height: 44px;
+  padding: 0 7px;
+  font-size: 12px;
+  color: #eddbf3;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.ability-bubble-choices button[aria-pressed='true'] {
+  color: #fff4d8;
+  border-bottom-color: #e6cba0;
+  font-weight: bold;
 }
 @media (pointer: coarse) {
   .ability-bubble-close {
