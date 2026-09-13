@@ -50,7 +50,7 @@
 }
 .campaign-atlas {
   position: relative;
-  height: 370px;
+  height: 420px;
   isolation: isolate;
   border: 4px solid #ad8752;
   outline: 1px solid #e0bd80;
@@ -61,8 +61,7 @@
     0 15px 45px #071c2966,
     inset 0 0 70px #29241370;
 }
-.atlas-land,
-.atlas-route {
+.atlas-land {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -70,30 +69,17 @@
   pointer-events: none;
   z-index: -1;
 }
-.atlas-route path {
-  fill: none;
-  stroke: #efd59a;
-  stroke-width: 9;
-  stroke-linecap: round;
-  stroke-dasharray: 3 15;
-  filter: drop-shadow(0 2px 1px #574d32);
-}
-.atlas-route-tall {
+.atlas-land-compact,
+.atlas-land-portrait {
   display: none;
 }
-.atlas-caption {
-  position: absolute;
-  left: 26px;
-  top: 23px;
-  font:
-    italic 15px Georgia,
-    serif;
-  color: #384831;
-}
+.atlas-geography { paint-order: stroke; stroke: #c4c698aa; stroke-width: 2px; }
 .atlas-node {
+  --atlas-marker-size: 100px;
   position: absolute;
-  width: 160px;
-  transform: translate(-50%, -50%);
+  width: 170px;
+  top: calc(var(--atlas-node-y) - var(--atlas-marker-size) - 8px);
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -106,43 +92,43 @@
 }
 .atlas-node-refuge {
   left: 16%;
-  top: 62%;
+  --atlas-node-y: 62%;
 }
 .atlas-node-faubourg {
   left: 39%;
-  top: 38%;
+  --atlas-node-y: 40%;
 }
 .atlas-node-remparts {
   left: 62%;
-  top: 62%;
+  --atlas-node-y: 65%;
 }
 .atlas-node-tilleuls {
   left: 84%;
-  top: 30%;
+  --atlas-node-y: 38%;
 }
 .atlas-landmark {
   position: relative;
   display: grid;
   place-items: end center;
   width: 110px;
-  height: 112px;
-  margin-bottom: 5px;
+  height: var(--atlas-marker-size);
+  margin-bottom: 7px;
 }
 .atlas-landmark::before {
   content: '';
   position: absolute;
   width: 105px;
-  height: 32px;
-  bottom: -2px;
-  background: #496047;
-  border: 2px solid #d6bb77;
+  height: 23px;
+  bottom: -3px;
+  background: #586d4977;
+  border: 1px solid #d6bb7766;
   border-radius: 50%;
-  box-shadow: 0 3px 0 #45513c;
+  box-shadow: 0 3px 5px #354d3c55;
   z-index: -1;
 }
 .atlas-landmark img {
   width: 108px;
-  height: 110px;
+  height: var(--atlas-marker-size);
   object-fit: contain;
   filter: drop-shadow(0 4px 2px #20302e70);
   transition: transform 150ms;
@@ -158,6 +144,7 @@
     0 4px 0 #665135;
 }
 .atlas-node strong {
+  white-space: nowrap;
   padding: 6px 13px;
   border: 1px solid #d1b476;
   border-radius: 6px;
@@ -194,23 +181,6 @@
     bold 14px Georgia,
     serif;
   background: #644132;
-}
-.atlas-compass {
-  position: absolute;
-  right: 22px;
-  bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #e4d29d;
-  font:
-    12px Georgia,
-    serif;
-  text-shadow: 0 1px 2px #354c3d;
-}
-.atlas-compass span {
-  font-size: 43px;
-  line-height: 1;
 }
 .campaign-departure {
   display: grid;
@@ -282,33 +252,32 @@
     font-size: 12px;
   }
   .campaign-atlas {
-    height: 500px;
+    height: 600px;
   }
-  .atlas-route-wide {
-    display: none;
-  }
-  .atlas-route-tall {
-    display: block;
-  }
+  .atlas-land-wide { display: none; }
+  .atlas-land-portrait { display: block; }
+  .atlas-geography, .atlas-rose { display: none; }
   .atlas-node {
+    --atlas-marker-size: 85px;
     width: 136px;
     padding: 5px;
+    top: calc(var(--atlas-node-y) - var(--atlas-marker-size) - 5px);
   }
   .atlas-node-refuge {
-    left: 25%;
-    top: 77%;
+    left: 62%;
+    --atlas-node-y: 84%;
   }
   .atlas-node-faubourg {
-    left: 65%;
-    top: 56%;
+    left: 40%;
+    --atlas-node-y: 61%;
   }
   .atlas-node-remparts {
-    left: 28%;
-    top: 35%;
+    left: 65%;
+    --atlas-node-y: 38%;
   }
   .atlas-node-tilleuls {
-    left: 65%;
-    top: 17%;
+    left: 38%;
+    --atlas-node-y: 16%;
   }
   .atlas-node strong {
     font-size: 14px;
@@ -332,15 +301,6 @@
     font-size: 12px;
     right: -2px;
   }
-  .atlas-caption {
-    font-size: 11px;
-    left: 14px;
-    top: 15px;
-  }
-  .atlas-compass {
-    right: 14px;
-    bottom: 12px;
-  }
   .campaign-departure {
     grid-template-columns: 1fr;
     gap: 18px;
@@ -358,16 +318,15 @@
   .start-menu[data-screen='map'] .start-footer { display: none; }
   .campaign-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .campaign-atlas { height: 100%; min-height: 150px; border-width: 2px; }
-  .atlas-node { width: 122px; padding: 3px; }
-  .atlas-node-tilleuls { top: 36%; }
-  .atlas-landmark, .atlas-landmark img { height: 54px; width: 78px; }
-  .atlas-landmark::before { width: 74px; height: 20px; }
+  .atlas-land-wide { display: none; }
+  .atlas-land-compact { display: block; }
+  .atlas-geography { display: none; }
+  .atlas-node { --atlas-marker-size: clamp(42px, 12svh, 54px); width: 122px; padding: 3px; top: calc(var(--atlas-node-y) - var(--atlas-marker-size) - 3px); }
+  .atlas-landmark, .atlas-landmark img { height: var(--atlas-marker-size); width: 78px; }
+  .atlas-landmark::before { width: 68px; height: 18px; }
   .atlas-node strong { font-size: 12px; padding: 4px 6px; }
   .atlas-node small { font-size: 9px; margin-top: 2px; padding: 2px 4px; }
   .atlas-number { width: 21px; height: 21px; font-size: 11px; right: -3px; bottom: 3px; }
-  .atlas-caption { font-size: 10px; top: 9px; left: 13px; }
-  .atlas-compass { bottom: 8px; right: 10px; font-size: 10px; }
-  .atlas-compass span { font-size: 28px; }
   .campaign-departure { gap: 16px; padding: 0 2px; }
   .campaign-brief h2 { font-size: 19px; margin: 3px 0; }
   .campaign-brief > p { font-size: 10px; }
