@@ -1,5 +1,6 @@
 import {
   enemyDefinition,
+  garrisonPosition,
   BUILDINGS,
   CREATURES,
   unitIsMounted,
@@ -309,6 +310,30 @@ export class Renderer {
     const pan = (x / this.width - 0.5) * 2;
     const distance = Math.hypot(pan, (y / this.height - 0.5) * 2);
     return { pan: pan * 0.65, gain: Math.max(0.25, 1 - distance * 0.45) };
+  }
+  public abilityAnchor(selection: Selection) {
+    if (!this.ready) return null;
+    const s = this.getState();
+    let x: number, top: number, bottom: number;
+    if (selection.type === 'lot') {
+      const lot = s.lots[selection.id];
+      if (!lot || lot.kind === 'empty') return null;
+      x = (lot.x + 4) * CELL;
+      bottom = (lot.y + 6.2) * CELL - (lot.kind === 'guild' && !lot.owned ? 28 : 0);
+      const key = buildingArt(lot.kind, lot.owned, lot.level, lot.id);
+      const scale = lot.kind === 'hall' || lot.kind === 'hq' ? 0.78 : lot.kind === 'crypt' || lot.kind === 'guild' ? 0.72 : 0.9;
+      top = this.buildingPlacement(key, x, bottom, scale).top;
+    } else if (selection.type === 'unit') {
+      const unit = s.units.find(u => u.id === selection.id && u.hp > 0);
+      if (!unit) return null;
+      x = unit.x * CELL; bottom = unit.y * CELL; top = bottom - 65;
+    } else return null;
+    const rect = this.canvas.getBoundingClientRect();
+    const screenX = rect.left + this.origin.x + x * this.scale;
+    const screenTop = rect.top + this.origin.y + top * this.scale;
+    const screenBottom = rect.top + this.origin.y + bottom * this.scale;
+    if (screenX < rect.left || screenX > rect.right || screenBottom < rect.top || screenTop > rect.bottom) return null;
+    return { x: screenX, top: screenTop, bottom: screenBottom };
   }
   public resetView() {
     this.pointerCancel();
@@ -1121,9 +1146,7 @@ export class Renderer {
             this.sprite('bones', x + 55, y + 25, 0.7);
           },
         });
-      const gate = entrance(l),
-        gx = gate.x * CELL,
-        // Put the feet on the street in front of the gate, clear of walls and fencing.
+      const         // Put the feet on the street in front of the gate, clear of walls and fencing.
         gy = (l.y + 8.25) * CELL;
       const pennant = factionPennantPosition(l);
       if (kind !== 'empty')
@@ -1144,7 +1167,7 @@ export class Renderer {
         for (
           let i = 0;
           i <
-          (l.kind === 'guild' || l.kind === 'hall' ? GUILD_ROLES.length : 1);
+          (l.kind === 'guild' || l.kind === 'hall' ? GUILD_ROLES.length : l.kind === 'tavern' ? 2 : 1);
           i++
         )
           drawables.push({
@@ -1159,14 +1182,14 @@ export class Renderer {
                 role = l.kind === 'guild' || l.kind === 'hall' ? GUILD_ROLES[i] : undefined,
                 key = role
                   ? enemyAnimationSequence(
-                      { kind: 'hero', role },
+                      { kind: 'hero', role, municipal: l.kind === 'hall' },
                       fighting && role !== 'monk' ? 'attack' : 'idle',
                     )[0]
                   : fighting
                     ? 'guard-attack'
                     : 'guard-idle',
-                heroX = gx - 72 + i * 48,
-                guardX = l.kind === 'hall' ? gx - 22 + i * 44 : gx,
+                heroX = garrisonPosition(l, i).x * CELL,
+                guardX = heroX,
                 selected =
                   l.kind === 'guild' &&
                   role &&
@@ -1801,7 +1824,7 @@ export class Renderer {
       }
       const hovered = this.hover?.type === 'lot' && this.hover.id === l.id;
       if (bar && l.level > 1 && !l.construction)
-        this.label(x, labelY - (23 * this.uiScale) / this.scale, '★'.repeat(l.level - 1), '#ffe0a0');
+        this.label(x, bar.y + 10 + 5 / this.scale, '★'.repeat(l.level - 1), '#ffe0a0');
       if (this.selection.type === 'lot' && this.selection.id === l.id)
         this.label(
           x,

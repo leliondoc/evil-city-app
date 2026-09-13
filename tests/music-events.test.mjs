@@ -2,6 +2,32 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MusicEvents } from '../app/game/musicEvents.ts';
 import { createGame, tick } from '../app/game/engine.ts';
+import { enemyAnimationSequence } from '../app/game/art.ts';
+
+test('Municipal defenders use blue sprites and the municipal theme, independently of the guild', () => {
+  const s = createGame(), events = new MusicEvents(); events.update(s);
+  s.enemies.push({ id: 501, kind: 'hero', role: 'warrior', hp: 20, municipal: true, garrisonLotId: 2 });
+  assert.equal(events.update(s), 'human');
+  for (const role of ['warrior', 'lancer', 'archer', 'monk']) {
+    assert.deepEqual(enemyAnimationSequence({ kind: 'hero', role, municipal: true }, 'attack'), [`municipal-${role}-attack`]);
+    assert.deepEqual(enemyAnimationSequence({ kind: 'hero', role }, 'idle'), [`hero-${role}-idle`]);
+  }
+  assert.deepEqual(enemyAnimationSequence({ kind: 'hero', role: 'warrior', municipal: true, shieldUntil: 10, hp: 20 }, 'idle', 1), ['municipal-warrior-shield']);
+});
+
+test('Combat music stops when its last human dies or its living party becomes idle', () => {
+  for (const kind of ['guard', 'hero']) {
+    const s = createGame(), events = new MusicEvents(); events.update(s);
+    s.enemies.push({ id: 600, kind, hp: 20, fighting: true });
+    assert.equal(events.update(s), kind === 'hero' ? 'guild' : 'human');
+    s.enemies[0].hp = 0;
+    assert.equal(events.update(s), 'stop'); assert.equal(events.update(s), null);
+    s.enemies.push({ id: 601, kind, hp: 20, fighting: true }); events.update(s);
+    s.elapsed += 5; assert.equal(events.update(s), null);
+    s.enemies[1].fighting = false; s.elapsed += 2; assert.equal(events.update(s), null);
+    s.elapsed += 2; assert.equal(events.update(s), 'stop');
+  }
+});
 
 test('Guard and guild departures emit one distinct cue per party, never per frame', () => {
   for (const [kind, theme] of [

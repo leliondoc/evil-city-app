@@ -499,6 +499,7 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  municipal?: boolean;
   cannon?: CannonState;
   impTauntedBy?: number;
   impTauntedUntil?: number;
@@ -2183,12 +2184,17 @@ function advanceGuildGarrisons(s: State) {
     }
   }
 }
+/** Shared with the preview sprites: defenders become actors exactly where shown. */
+export function garrisonPosition(lot: Lot, index: number): Point {
+  const offset = lot.kind === 'hall' || lot.kind === 'guild' ? -2.25 + index * 1.5
+    : lot.kind === 'tavern' ? -0.65 + index * 1.3 : 0;
+  return { x: entrance(lot).x + offset, y: lot.y + 8.25 };
+}
 function releaseGuildDefenders(s: State, lot: Lot, attackers: Unit[]) {
   if (lot.garrisonReleased || lot.hp <= 0 || lot.owned) return;
   lot.garrisonReleased = true;
   lot.garrisonReturnsAt = undefined;
   const level = humanLevel(s);
-  const point = entrance(lot);
   for (const [i, role] of GUILD_ROLES.entries()) {
     const def = HEROES[role];
     const hp = Math.round(def.hp * (1 + (level - 1) * 0.15));
@@ -2197,8 +2203,7 @@ function releaseGuildDefenders(s: State, lot: Lot, attackers: Unit[]) {
       kind: 'hero',
       garrisonLotId: lot.id,
       role,
-      ...point,
-      x: point.x - 0.9 + i * 0.6,
+      ...garrisonPosition(lot, i),
       hp,
       maxHp: hp,
       damage: def.damage * (1 + (level - 1) * 0.12),
@@ -2230,10 +2235,6 @@ function releaseBuildingDefenders(s: State, lot: Lot, attackers: Unit[]) {
   if (lot.garrisonReleased || lot.hp <= 0 || lot.owned || lot.kind === 'empty' || !attackers.length) return;
   if (lot.kind === 'guild') {
     releaseGuildDefenders(s, lot, attackers);
-    for (const e of s.enemies.filter(e => e.garrisonLotId === lot.id)) {
-      Object.assign(e, navigationTarget({ x: e.x, y: lot.y + 8.5 }));
-      e.path = [];
-    }
     return;
   }
   lot.garrisonReleased = true;
@@ -2245,8 +2246,8 @@ function releaseBuildingDefenders(s: State, lot: Lot, attackers: Unit[]) {
     const kind: EnemyKind = elite ? 'hero' : 'guard';
     const def = enemyDefinition({ kind, role });
     const hp = Math.round(def.hp * (1 + (level - 1) * 0.15) * (elite ? 1.2 : 1) * training);
-    const point = navigationTarget({ x: entrance(lot).x - 1 + i * 0.65, y: lot.y + 8.5 });
-    s.enemies.push({ id: s.nextId++, kind, role, garrisonLotId: lot.id, ...point, hp, maxHp: hp,
+    const point = garrisonPosition(lot, i);
+    s.enemies.push({ id: s.nextId++, kind, role, municipal: lot.kind === 'hall', garrisonLotId: lot.id, ...point, hp, maxHp: hp,
       damage: def.damage * (1 + (level - 1) * 0.12) * training, level, path: [], target: 6, facing: -1,
       fighting: false, healTarget: null, attackCooldown: 0.6,
       pursuitTarget: attackers[i % attackers.length].id, aggressors: attackers.map(u => u.id) });

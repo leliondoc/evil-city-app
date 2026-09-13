@@ -1,0 +1,155 @@
+.ability-bubble {
+  position: fixed;
+  z-index: 90;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  visibility: hidden;
+  color: #fff4d8;
+  border: 1px solid #b997cf;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #87629f 0%, #74518d 40%, #493257 100%);
+  box-shadow:
+    0 8px 24px #10101977,
+    inset 0 1px #ffffff26;
+  font:
+    14px/1.45 'Trebuchet MS',
+    sans-serif;
+}
+.ability-bubble::after {
+  content: '';
+  position: absolute;
+  left: var(--bubble-tip, 50%);
+  width: 16px;
+  height: 16px;
+  background: #50365f;
+  border-right: 1px solid #b997cf;
+  border-bottom: 1px solid #b997cf;
+  bottom: -9px;
+  transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
+}
+.ability-bubble[data-side='below']::after {
+  top: -9px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(225deg);
+  background: #805b97;
+}
+.ability-bubble-content {
+  display: grid;
+  width: 306px;
+  max-width: calc(100vw - 26px);
+  max-height: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px;
+  border-radius: inherit;
+}
+.ability-bubble-content[data-multiple='true'] {
+  width: 590px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.ability-bubble .domain-card.ability-card {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 8px 4px;
+  min-width: 0;
+  color: #fff4d8;
+}
+.ability-bubble .ability-card > .pack-skin {
+  display: none;
+}
+.ability-bubble .ability-heading {
+  padding-right: 24px;
+}
+.ability-bubble .ability-card .ability-heading h4 {
+  color: #fff4d8;
+  font:
+    bold 17px/1.2 'Trebuchet MS',
+    sans-serif;
+  letter-spacing: normal;
+}
+.ability-bubble .ability-heading > img {
+  width: 30px;
+  height: 30px;
+}
+.ability-bubble .ability-card p {
+  margin: 8px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ability-bubble
+  .ability-card
+  :is(
+    .ability-meta,
+    .ability-footer,
+    .ability-status,
+    .ability-status[data-blocked='true'],
+    .domain-toggle small
+  ) {
+  color: #f1dfed;
+  font-size: 12px;
+}
+.ability-bubble .ability-card strong,
+.ability-bubble .ability-costs,
+.ability-bubble .ability-details {
+  color: #fff4d8;
+}
+.ability-bubble .ability-details {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-color: #b997cf66;
+}
+.ability-bubble .ability-details summary {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.ability-bubble .ability-card .primary-btn {
+  min-height: 44px;
+  font-size: 13px;
+}
+.ability-bubble .ability-card .primary-btn:disabled {
+  color: #e7d7e9;
+}
+.ability-bubble-close {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+.ability-bubble-close .pack-icon {
+  width: 24px;
+  height: 24px;
+}
+.ability-bubble button:focus-visible,
+.ability-bubble summary:focus-visible {
+  outline: 2px solid #fff4d8;
+  outline-offset: 2px;
+}
+@media (max-width: 620px) {
+  .ability-bubble-content[data-multiple='true'] {
+    width: 306px;
+    grid-template-columns: 1fr;
+  }
+}
+@media (pointer: coarse) {
+  .ability-bubble-close {
+    width: 44px;
+    height: 44px;
+  }
+  .ability-bubble .ability-details summary {
+    min-height: 44px;
+  }
+}

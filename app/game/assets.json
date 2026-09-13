@@ -2128,5 +2128,109 @@
     "frameWidth": 128,
     "frames": 1,
     "anchor": 0.67
+  },
+  "municipal-archer-attack": {
+    "src": "/tiny-swords/municipal-archer-attack.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "municipal-archer-idle": {
+    "src": "/tiny-swords/municipal-archer-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "municipal-archer-walk": {
+    "src": "/tiny-swords/municipal-archer-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "municipal-lancer-attack": {
+    "src": "/tiny-swords/municipal-lancer-attack.png",
+    "width": 960,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 3,
+    "anchor": 0.67
+  },
+  "municipal-lancer-idle": {
+    "src": "/tiny-swords/municipal-lancer-idle.png",
+    "width": 3840,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 12,
+    "anchor": 0.67
+  },
+  "municipal-lancer-walk": {
+    "src": "/tiny-swords/municipal-lancer-walk.png",
+    "width": 1920,
+    "height": 320,
+    "frameWidth": 320,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "municipal-monk-attack": {
+    "src": "/tiny-swords/municipal-monk-attack.png",
+    "width": 2112,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 11,
+    "anchor": 0.67
+  },
+  "municipal-monk-idle": {
+    "src": "/tiny-swords/municipal-monk-idle.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "municipal-monk-walk": {
+    "src": "/tiny-swords/municipal-monk-walk.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "municipal-warrior-attack": {
+    "src": "/tiny-swords/municipal-warrior-attack.png",
+    "width": 768,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 4,
+    "anchor": 0.67
+  },
+  "municipal-warrior-idle": {
+    "src": "/tiny-swords/municipal-warrior-idle.png",
+    "width": 1536,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 8,
+    "anchor": 0.67
+  },
+  "municipal-warrior-shield": {
+    "src": "/tiny-swords/municipal-warrior-shield.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
+  },
+  "municipal-warrior-walk": {
+    "src": "/tiny-swords/municipal-warrior-walk.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
   }
 }

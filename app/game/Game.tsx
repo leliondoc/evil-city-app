@@ -68,6 +68,7 @@ import { UpgradeBenefit } from './UpgradeBenefit';
 import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
 import { ManorProgression } from './ManorProgression';
 import { shieldActive, shieldSettings, provocationReason } from './shields';
+import { AbilityBubble } from './AbilityBubble';
 import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
@@ -200,7 +201,7 @@ export default function Game({
   const recruitOptions = RECRUIT_OPTIONS.filter(kind => classicCampaign(s) || s.campaign?.creatures.includes(kind));
   const [uiScale, setUIScale] = useState(readUIScale);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const audioRef = useRef<GameAudio | null>(null);
   const [audioSettings, setAudioSettings] = useState(readAudioSettings);
@@ -1000,7 +1001,6 @@ export default function Game({
         </aside>
         <div className="selection-column" hidden={selection.type === 'none' || mobilePanel !== 'details'}>
           <aside
-            ref={sidebarRef}
             className="sidebar"
             aria-label="Sélection"
           >
@@ -1014,6 +1014,7 @@ export default function Game({
                 <PackIcon asset="ui-close" />
               </button>
             )}
+            <div className="selection-scroll" ref={sidebarRef}>
             {sheetNotice}
             {selection.type === 'units' ? (
               <section
@@ -1468,10 +1469,12 @@ export default function Game({
                 />}
               </section>
             )}
+            </div>
           </aside>
         </div>
 
         <section className="world-wrap" aria-label="Carte du quartier">
+          {advancedCampaign(s) && active && !modal && ready && <AbilityBubble state={s} lot={selectedLot} unit={selectedUnit} selection={selection} renderer={rendererRef} onAction={run} />}
           <canvas
             className="world-canvas"
             data-ready={ready}

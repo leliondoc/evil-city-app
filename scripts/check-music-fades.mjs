@@ -176,6 +176,20 @@ try {
     'The ambient track resumes after the part heard during the fade',
   );
   assert.ok(resumed.gain < 0.12, 'Returning to ambience also fades in');
+  for (const theme of ['human', 'guild']) {
+    await page.evaluate(theme => window.testMusic.playTheme(theme), theme);
+    await track(theme + '-theme.mp3');
+    await delay(2700);
+    const beforeStop = await sample();
+    await page.evaluate(() => window.testMusic.stopBattleTheme());
+    await delay(900);
+    const duringStop = await sample();
+    assert.equal(duringStop.src, beforeStop.src);
+    assert.ok(duringStop.gain < beforeStop.gain && duringStop.gain > 0.05, 'Combat ending fades progressively');
+    await page.evaluate(() => window.testMusic.stopBattleTheme());
+    await track('/alkakrab/');
+    assert.ok((await sample()).gain < 0.15, 'Ambience resumes with a fade');
+  }
   const ordinaryOutro = await outro();
   await page.waitForFunction(() => window.graphs[0].audio.ended);
   assert.equal((await sample()).paused, true);

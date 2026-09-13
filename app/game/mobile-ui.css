@@ -362,7 +362,8 @@
   gap: 6px;
   scroll-padding-top: 44px;
 }
-.game-shell[data-compact='true'] .sidebar .mobile-sheet-close { margin-bottom: -44px; }
+.game-shell[data-compact='true'] .sidebar { overflow: hidden; }
+.game-shell[data-compact='true'] .sidebar .mobile-sheet-close { margin: 0; }
 .game-shell[data-compact='true'] .sidebar .selection-panel { padding: 12px 0 0; scroll-margin-top: 44px; }
 .game-shell[data-compact='true'] .sidebar .selection-name { margin-top: 0; padding-right: 34px; font-size: 18px; line-height: 22px; }
 .game-shell[data-compact='true'] .sidebar .selection-art { width: 88px; height: 88px; margin: 6px auto; }

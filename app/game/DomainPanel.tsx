@@ -20,7 +20,9 @@ export function DomainPanel({
   lot,
   unit,
   onAction,
+  mode = 'sidebar',
 }: {
+  mode?: 'sidebar' | 'bubble';
   state: State;
   lot?: Lot;
   unit?: Unit;
@@ -43,10 +45,10 @@ export function DomainPanel({
       s.domain.souls.some((body) => body.home === lot.id));
   return (
     <>
-      {researchLot && (
+      {mode === 'sidebar' && researchLot && (
         <ResearchPanel state={s} lot={researchLot} onAction={onAction} />
       )}
-      {resurrectionSite && (
+      {mode === 'sidebar' && resurrectionSite && (
         <AbilityCard
           title="Résurrection humaine"
           icon="ui-shield"
@@ -66,7 +68,7 @@ export function DomainPanel({
           </p>
         </AbilityCard>
       )}
-      {unit && (
+      {unit && (mode === 'bubble' ? unit.kind === 'specter' : unit.kind !== 'specter') && (
         <AbilityCard
           title={thought(s, unit) || 'Ordres et besoins'}
           icon={unit.kind === 'specter' ? 'specter-avatar' : 'ui-info'}
@@ -86,7 +88,7 @@ export function DomainPanel({
           )}
         </AbilityCard>
       )}
-      {lot && !lot.owned && lot.kind !== 'empty' && (
+      {mode === 'bubble' && lot && !lot.owned && lot.kind !== 'empty' && (
         <AbilityCard
           title="Hantise"
           icon="specter-avatar"
@@ -102,7 +104,7 @@ export function DomainPanel({
           <p className="ability-meta">Nécessite un spectre disponible</p>
           <Button
             className="primary-btn"
-            disabled={!!hauntError}
+            disabled={locked || !!hauntError}
             title={hauntError || 'Envoyer un spectre'}
             onClick={() => onAction((state) => haunt(state, lot.id))}
           >
@@ -119,7 +121,7 @@ export function DomainPanel({
           </details>
         </AbilityCard>
       )}
-      {lot?.kind === 'hall' && !lot.owned && (
+      {mode === 'bubble' && lot?.kind === 'hall' && !lot.owned && (
         <AbilityCard title="Pot-de-vin" icon="ui-gold">
           <p>
             Retarde la patrouille de <b>45 s</b> et retire{' '}
@@ -128,11 +130,11 @@ export function DomainPanel({
           <AbilityCosts cost={{ gold: BRIBE_GOLD }} available={s.resources} />
           <Button
             className="primary-btn"
-            disabled={!!bribeError}
+            disabled={locked || !!bribeError}
             title={bribeError || 'Envoyer la bourse'}
             onClick={() => onAction(sendBribe)}
           >
-            Envoyer la bourse
+            Soudoyer · {BRIBE_GOLD} or
           </Button>
           <p className="ability-status" data-blocked={!!bribeError}>
             <PackIcon asset="ui-info" /><span>{bribeError || 'Disponible · récupération 120 s'}</span>
@@ -149,7 +151,7 @@ export function DomainPanel({
           )}
         </AbilityCard>
       )}
-      {lot?.owned && lot.kind === 'crypt' && (
+      {mode === 'bubble' && lot?.owned && lot.kind === 'crypt' && (
         <AbilityCard
           title="Relever les morts"
           icon="skeleton-avatar"
@@ -168,7 +170,7 @@ export function DomainPanel({
           </p>
           <Button
             className="primary-btn"
-            disabled={!!ritualError}
+            disabled={locked || !!ritualError}
             title={ritualError || 'Deux dépouilles et 12 essence'}
             onClick={() => onAction(raiseSkeleton)}
           >

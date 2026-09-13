@@ -205,7 +205,8 @@ export class GameAudio {
   update(s: State) {
     // Consume events even while muted so turning sound back on never replays them.
     const theme = this.musicEvents.update(s);
-    if (theme) this.music.playTheme(theme);
+    if (theme === 'stop') this.music.stopBattleTheme();
+    else if (theme) this.music.playTheme(theme);
     const cues = this.events.update(s);
     cues.sort(
       (a, b) => SOUND_DEFS[b.kind].priority - SOUND_DEFS[a.kind].priority,

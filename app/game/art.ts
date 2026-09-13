@@ -71,11 +71,12 @@ export function buildingDoorX(key: AssetKey) {
     : ASSETS[key].frameWidth / 2;
 }
 export function enemyAnimationSequence(
-  enemy: Pick<Enemy, 'kind' | 'role'> & Partial<Pick<Enemy, 'hp' | 'shieldUntil' | 'cannon'>>,
+  enemy: Pick<Enemy, 'kind' | 'role'> & Partial<Pick<Enemy, 'hp' | 'shieldUntil' | 'cannon' | 'municipal'>>,
   action: Animation,
   elapsed = 0,
 ): AssetKey[] {
   if (enemy.cannon) return [enemy.cannon.direction.y < 0 ? 'cannon-up' : enemy.cannon.direction.y > 0 ? 'cannon-down' : 'cannon-right'];
+  if (enemy.municipal) return [shieldActive({ hp: enemy.hp ?? 1, shieldUntil: enemy.shieldUntil }, elapsed) ? 'municipal-warrior-shield' : `municipal-${enemy.role}-${action}` as AssetKey];
   if (shieldActive({ hp: enemy.hp ?? 1, shieldUntil: enemy.shieldUntil }, elapsed))
     return [enemy.kind === 'guard' ? 'guard-shield' : 'hero-warrior-shield'];
   return [
@@ -107,8 +108,9 @@ export function animationFrame(sequence: AssetKey[], seconds: number) {
   return { key: sequence[0], frame: 0 };
 }
 export const portrait = (kind: CreatureKind) => ASSETS[`${kind}-avatar`].src;
-export function enemyPortrait(enemy: Pick<Enemy, 'kind' | 'role' | 'cannon'>): AssetKey {
+export function enemyPortrait(enemy: Pick<Enemy, 'kind' | 'role' | 'cannon' | 'municipal'>): AssetKey {
   if (enemy.cannon) return 'cannon-right';
+  if (enemy.municipal) return `municipal-${enemy.role}-idle` as AssetKey;
   return enemy.kind === 'guard' ? 'guard-avatar' : `hero-${enemy.role || 'warrior'}-avatar`;
 }
 

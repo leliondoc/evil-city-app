@@ -25,6 +25,7 @@ export class GameMusic {
   private failed = false;
   private theme: MusicTheme | null = null;
   private pendingTheme: MusicTheme | null = null;
+  private stoppingBattle = false;
   private transitionTimer: ReturnType<typeof setTimeout> | null = null;
   private fadeInEnd = 0;
   private fadeEnd: number | null = null;
@@ -144,6 +145,12 @@ export class GameMusic {
 
   /** One cue per arriving party; never layer music or restart the current theme. */
   playTheme(theme: MusicTheme) {
+    if (this.stoppingBattle && theme !== 'dark') {
+      this.cancelTransitionTimer();
+      this.stoppingBattle = false;
+      this.holdEnvelope();
+      this.scheduleEnvelope();
+    }
     if (
       this.mode !== 'game' ||
       this.blocked() ||
@@ -199,6 +206,39 @@ export class GameMusic {
     );
   }
 
+  stopBattleTheme() {
+    if (this.stoppingBattle || this.mode !== 'game') return;
+    if (this.pendingTheme === 'human' || this.pendingTheme === 'guild') {
+      this.pendingTheme = null;
+      this.cancelTransitionTimer();
+    }
+    if (this.theme !== 'human' && this.theme !== 'guild') {
+      this.scheduleEnvelope();
+      return;
+    }
+    this.stoppingBattle = true;
+    this.cancelTransitionTimer();
+    if (this.blocked() || !this.playing || !this.context || !this.envelope) {
+      this.finishBattle();
+      return;
+    }
+    this.holdEnvelope();
+    this.envelope.gain.linearRampToValueAtTime(0, this.context.currentTime + 2.5);
+    this.transitionTimer = setTimeout(() => this.finishBattle(), 2500);
+  }
+
+  private finishBattle() {
+    this.cancelTransitionTimer();
+    this.stoppingBattle = false;
+    if (this.disposed) return;
+    this.theme = this.darkDue ? 'dark' : null;
+    this.darkDue = false;
+    this.pendingTheme = null;
+    this.load();
+    if (!this.theme && this.element) this.element.currentTime = this.ambientPosition;
+    this.sync();
+  }
+
   private remaining() {
     if (
       !this.element ||
@@ -229,6 +269,7 @@ export class GameMusic {
   }
 
   private scheduleEnvelope() {
+    if (this.stoppingBattle) return;
     if (
       !this.envelope ||
       !this.context ||
@@ -267,6 +308,7 @@ export class GameMusic {
   }
 
   private refreshEnvelope() {
+    if (this.stoppingBattle) return;
     if (
       !this.context ||
       !this.element ||
@@ -309,6 +351,7 @@ export class GameMusic {
 
   private ended() {
     if (this.disposed) return;
+    if (this.stoppingBattle) { this.finishBattle(); return; }
     this.playing = false;
     this.element?.pause();
     this.resetEnvelope();
@@ -364,6 +407,10 @@ export class GameMusic {
       this.suspendBreak();
       this.cancelTransitionTimer();
       this.resetEnvelope();
+      return;
+    }
+    if (this.stoppingBattle) {
+      if (this.element.paused) this.finishBattle();
       return;
     }
     if (this.pendingTheme) {
