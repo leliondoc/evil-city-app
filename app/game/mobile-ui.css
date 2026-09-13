@@ -412,3 +412,27 @@
 }
 
 .game-shell[data-compact='true'] .population-counters .goblin-counter { min-width: 44px; }
+
+/* Both population counters stay identifiable without hover on touch screens. */
+.game-shell[data-compact='true'] .goblin-counter strong > span { display: block; font-size: 10px; line-height: 12px; }
+.game-shell .sidebar .demolish-confirm { background: #62404a; color: #ffe4d5; border: 1px solid #b68b87; }
+
+.game-shell[data-compact='true'] .touch-toolbar { grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(320px, calc(100vw - 220px)); }
+
+@media (max-height: 500px) and (min-width: 700px) {
+  .game-shell[data-compact='true'] .mobile-nav { width: min(440px, calc(100vw - 260px)); }
+  .game-shell[data-compact='true'] .mobile-nav .primary-btn { font-size: 12px; gap: 4px; }
+  .game-shell[data-compact='true'] .mobile-mission:not([data-expanded='true']) { width: 200px; }
+}
+
+
+.game-shell[data-compact='true'] .mobile-mission-toggle > span { min-width: 0; font-size: 16px; line-height: 20px; white-space: nowrap; }
+@media (max-height: 500px) {
+  .game-shell[data-compact='true'] .game-notifications { top: calc(var(--touch-header-height) + 8px); bottom: auto; width: min(280px, calc(100vw - 420px)); }
+}
+@media (max-width: 699px) and (max-height: 500px) {
+  .game-shell[data-compact='true'] .mobile-nav { right: auto; width: min(320px, calc(100vw - 208px)); }
+  .game-shell[data-compact='true'] .mobile-mission:not([data-expanded='true']) { width: 200px; }
+  .game-shell[data-compact='true'] .mobile-mission:not([data-expanded='true']) .mission-card { display: none; }
+  .game-shell[data-compact='true'] .touch-toolbar { width: min(280px, calc(100vw - 208px)); }
+}

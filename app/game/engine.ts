@@ -111,7 +111,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   den: {
     name: 'Grotte gobeline',
     description:
-      'Recrute les gobelins bâtisseurs et lanciers à pied dès le début. Ajoute 6 places d’armée par niveau, en plus des 6 places de base. Les grottes se cumulent. Les bâtisseurs ont une limite séparée de 6. Permet aux créatures de se reposer. La recherche des cochons exige le manoir niveau 2.',
+      'Recrute les gobelins bâtisseurs et lanciers à pied dès le début. Ajoute 6 places d’armée par niveau, en plus des 6 places de base. Les grottes se cumulent. Les bâtisseurs ont une limite séparée : 6 au départ, puis +2 par grotte supplémentaire terminée, jusqu’à 10. Améliorer une grotte ne change pas cette limite. Permet aux créatures de se reposer. La recherche des cochons exige le manoir niveau 2.',
     short: '+6 places d’armée · repos',
     art: 1,
     cost: { gold: 70, wood: 25 },
@@ -1460,8 +1460,8 @@ export function recruitReason(s: State, kind: CreatureKind) {
   if (discovery) return discovery;
   if (kind === 'goblin') {
     const workforce = goblinWorkforce(s);
-    if (workforce.total + workforce.queued >= GOBLIN_CAP)
-      return `Limite de ${GOBLIN_CAP} gobelins atteinte, recrutements en cours inclus.`;
+    if (workforce.total + workforce.queued >= goblinCapacity(s))
+      return `Limite de ${goblinCapacity(s)} gobelins atteinte, recrutements en cours inclus.${goblinCapacity(s) < 10 ? ' Deux grottes terminées permettent 8 bâtisseurs, trois permettent 10.' : ''}`;
   }
   if (kind === 'spear-goblin' && !hasBuilding(s, 'den'))
     return 'Construisez une grotte gobeline pour recruter les lanciers.';
@@ -1768,6 +1768,27 @@ export function cancelWork(s: State, id: number): string {
   announce(s, `${construction ? 'Construction annulée' : 'Amélioration annulée'}. La part non utilisée des ressources a été remboursée.`);
   return '';
 }
+export function demolishReason(s: State, id: number): string {
+  const lot = s.lots[id];
+  if (s.won || s.lost) return 'La partie est terminée.';
+  if (!lot?.owned || lot.kind === 'empty' || lot.hp <= 0) return 'Choisissez un bâtiment de votre domaine.';
+  if (lot.kind === 'hq') return 'Le manoir ne peut pas être démoli.';
+  if (lot.construction || lot.upgrading) return 'Annulez d’abord les travaux en cours.';
+  if (s.recruits.some(r => r.source === id)) return 'Attendez la fin des recrutements de ce bâtiment.';
+  return '';
+}
+export function demolish(s: State, id: number): string {
+  const reason = demolishReason(s, id);
+  if (reason) return reason;
+  const lot = s.lots[id], name = BUILDINGS[lot.kind].name;
+  for (const unit of s.units.filter(u => u.target === id && ['build', 'repair', 'eat', 'rest', 'deliver'].includes(u.task))) {
+    assign(unit, unit, 'idle', null); unit.path = [];
+  }
+  lot.kind = 'empty'; lot.level = 1; lot.hp = lot.maxHp = 180;
+  lot.construction = null; delete lot.upgrading; delete lot.ruins; delete lot.repairQuiet;
+  announce(s, name + ' démoli. La parcelle est libre et reste à vous.');
+  return '';
+}
 export function foodBalance(s: State) {
   const production = Math.round(harvestRates(s).food * 60);
   const kitchen = Math.max(
@@ -1790,6 +1811,10 @@ export function foodBalance(s: State) {
   return { production, consumption, net: production - consumption };
 }
 export const GOBLIN_CAP = 6;
+export function goblinCapacity(s: State): number {
+  const caves = s.lots.filter(l => l.owned && l.hp > 0 && l.kind === 'den' && !l.construction).length;
+  return Math.min(10, GOBLIN_CAP + Math.max(0, caves - 1) * 2);
+}
 export const GOBLIN_LOAD = 30;
 const GOBLIN_HARVEST_PER_SECOND = 0.9;
 const GOBLIN_HARVEST_SECONDS = 4;

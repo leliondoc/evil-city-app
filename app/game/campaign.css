@@ -222,11 +222,8 @@
   .sidebar
   :is(.selection-text, .reason, .selection-stats),
 .game-shell[data-compact='true'] .build-card small {
-  font-size: calc(12px * var(--touch-text-scale, 1));
+  font-size: calc(13px * var(--touch-text-scale, 1));
   line-height: 1.5;
-}
-.game-shell[data-compact='true'] .touch-toolbar {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .game-shell[data-compact='true'] .touch-toolbar .primary-btn {
   font-size: 10px;

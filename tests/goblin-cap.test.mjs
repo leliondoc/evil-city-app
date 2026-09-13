@@ -7,6 +7,7 @@ import {
   tick,
   goblinWorkforce,
   GOBLIN_CAP,
+  goblinCapacity,
   population,
   capacity,
 } from '../app/game/engine.ts';
@@ -56,12 +57,12 @@ test('Goblin limit includes queued recruits and rejects spam without spending re
   assert.equal(goblinWorkforce(s).queued, 0);
   assert.match(recruitReason(s, 'goblin'), /Limite de 6 gobelins/);
 });
-test('A goblin death releases one slot; more housing never raises the goblin limit', () => {
+test('A goblin death releases one slot; cave upgrades do not raise the worker limit', () => {
   const s = funded();
   for (let i = 0; i < 3; i++) recruit(s, 'goblin');
   tick(s, 7);
   s.lots[3].level = 3;
-  s.lots[7].kind = 'den';
+  assert.equal(goblinCapacity(s), 6);
   assert.match(recruitReason(s, 'goblin'), /Limite de 6 gobelins/);
   s.units[0].hp = 0;
   tick(s, 0.1);
@@ -73,4 +74,26 @@ test('A goblin death releases one slot; more housing never raises the goblin lim
     '',
     'Other creatures retain their own recruitment rules',
   );
+});
+
+test('Completed extra caves unlock 8 then 10 builders; levels, unfinished and lost caves do not count', () => {
+  const s = funded();
+  assert.equal(goblinCapacity(s), 6);
+  Object.assign(s.lots[7], {kind:'den',owned:true,level:1,construction:{kind:'den',progress:0.5}});
+  assert.equal(goblinCapacity(s), 6);
+  s.lots[7].construction = null;
+  assert.equal(goblinCapacity(s), 8);
+  s.lots[7].level = 3; assert.equal(goblinCapacity(s), 8);
+  Object.assign(s.lots[4], {kind:'den',owned:true,level:1,construction:null});
+  assert.equal(goblinCapacity(s), 10);
+  Object.assign(s.lots[5], {kind:'den',owned:true,level:1,construction:null});
+  assert.equal(goblinCapacity(s), 10);
+  s.lots[4].owned = false; s.lots[5].hp = 0;
+  assert.equal(goblinCapacity(s), 8);
+  for(let i=0;i<5;i++) assert.equal(recruit(s,'goblin'), '');
+  assert.match(recruitReason(s,'goblin'), /Limite de 8 gobelins/);
+  s.lots[7].owned = false;
+  assert.equal(goblinCapacity(s), 6);
+  assert.equal(s.recruits.length, 5, 'Losing capacity does not delete paid recruits');
+  assert.match(recruitReason(s,'goblin'), /Limite de 6 gobelins/);
 });

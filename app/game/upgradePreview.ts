@@ -11,7 +11,7 @@ export function upgradePreview(state: State, lot: Lot) {
   if (lot.kind === 'den') return {
     label: 'Population maximale de l’armée',
     from: `${capacity(state)} places`, to: `${capacity(after)} places`,
-    note: `Cette grotte : ${6 * n} → ${6 * (n + 1)} places. Les 6 places de base et celles de toutes vos grottes s’additionnent. Les bâtisseurs ont leur propre limite.`,
+    note: `Cette grotte : ${6 * n} → ${6 * (n + 1)} places. Les 6 places de base et celles de toutes vos grottes s’additionnent. La limite de bâtisseurs ne change pas avec les niveaux : seules les grottes supplémentaires terminées l’augmentent (jusqu’à 10).`,
   };
   if (lot.kind === 'canteen' || lot.kind === 'forge') {
     const kitchen = lot.kind === 'canteen';

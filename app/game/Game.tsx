@@ -65,6 +65,7 @@ import { CombatDetails } from './CombatDetails';
 import { CommandWheel } from './CommandWheel';
 import { creatureCombatProfile, HUMAN_COMBAT, armorPercent } from './combat';
 import { UpgradeBenefit } from './UpgradeBenefit';
+import { DemolishBuilding } from './DemolishBuilding';
 import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
 import { ManorProgression } from './ManorProgression';
 import { shieldActive, shieldSettings, provocationReason } from './shields';
@@ -97,7 +98,7 @@ import {
   harvestRates,
   gatheringText,
   gather,
-  GOBLIN_CAP,
+  goblinCapacity,
   RESOURCE_CAP,
   foodBalance,
   army,
@@ -118,6 +119,7 @@ import {
   upgradeReason,
   upgradeCost,
   cancelWork,
+  demolish,
   cancelWorkRefund,
   moveUnit,
   commandUnits,
@@ -949,14 +951,14 @@ export default function Game({
           </span>
         </div>
         <div className="population-counters">
-        <div className="army-cap-counter" title="Places occupées et réservées par les combattants. Les gobelins bâtisseurs ont leur propre limite de 6 et ne prennent aucune place dans l’armée. Les grandes créatures occupent plusieurs places. Les 6 places de base et celles de chaque grotte s’additionnent. Construisez ou améliorez vos grottes pour augmenter la limite." aria-label={`Population de l’armée : ${population(s)} sur ${capacity(s)}`}>
+        <div className="army-cap-counter" title="Places occupées et réservées par les combattants. Les gobelins bâtisseurs ont leur propre limite et ne prennent aucune place dans l’armée. Les grandes créatures occupent plusieurs places. Les 6 places de base et celles de chaque grotte s’additionnent. Construisez ou améliorez vos grottes pour augmenter la limite." aria-label={`Population de l’armée : ${population(s)} sur ${capacity(s)}`}>
           <Users size={20} aria-hidden="true" /><span><strong>{population(s)}/{capacity(s)}</strong><small>Armée</small></span>
         </div>
         <button
           className="goblin-counter"
           disabled={workforce.total === 0}
-          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres, ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Limite séparée de ${GOBLIN_CAP}, recrutements inclus, sans utiliser le cap armée. Les gobelins libres se répartissent entre or, bois et vivres selon les stocks. Chargements de 30, crédités uniquement au manoir. Les débits affichés sont estimatifs. Cliquer pour sélectionner tous les gobelins.`}
-          aria-label={`Gobelins : ${workforce.total} sur ${GOBLIN_CAP}, ${workforce.queued} en recrutement, dont ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
+          title={`${workforce.total}/${goblinCapacity(s)} gobelins : ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres, ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Limite séparée de ${goblinCapacity(s)}, recrutements inclus, sans utiliser le cap armée. Les gobelins libres se répartissent entre or, bois et vivres selon les stocks. Chargements de 30, crédités uniquement au manoir. Les débits affichés sont estimatifs. Cliquer pour sélectionner tous les gobelins.`}
+          aria-label={`Gobelins : ${workforce.total} sur ${goblinCapacity(s)}, ${workforce.queued} en recrutement, dont ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
           onClick={() => {
             select(
               unitSelection(
@@ -972,7 +974,7 @@ export default function Game({
           <CreaturePortrait kind="goblin" />
           <div>
             <strong>
-              {workforce.total}/{GOBLIN_CAP} <span>Gobelins</span>
+              {workforce.total}/{goblinCapacity(s)} <span>Bâtisseurs</span>
             </strong>
             <small>
               Bois {workforce.wood} · Or {workforce.gold} · Vivres{' '}
@@ -1456,6 +1458,7 @@ export default function Game({
                         )}
                       </>
                     )}
+                    <DemolishBuilding key={selectedLot.id} state={s} lot={selectedLot} onDemolish={() => run(state => demolish(state, selectedLot.id))} />
                     {selectedLot.kind === 'guild' && (
                       <GuildRoster state={s} onSelect={select} />
                     )}
@@ -1750,6 +1753,7 @@ export default function Game({
             <CreationCards layout={compact ? 'grid' : 'scroll'}>
               {buildOptions.map((kind, i) => {
                 const b = BUILDINGS[kind];
+                const buildSummary = kind === 'den' ? '+6 places d’armée' + (s.lots.some(l => l.owned && l.hp > 0 && l.kind === 'den' && !l.construction) && goblinCapacity(s) < 10 ? ' · +2 bâtisseurs' : ' · repos') : b.short;
                 const locked = buildUnlockReason(s, kind);
                 const reason = buildMenuReason(s, kind);
                 return (
@@ -1759,14 +1763,14 @@ export default function Game({
                     onClick={() => chooseBuild(kind)}
                     aria-pressed={pendingBuild === kind}
                     aria-disabled={!!locked}
-                    title={reason || b.short}
+                    title={reason || buildSummary}
                     aria-label={`${b.name}${reason ? `. ${reason}` : ''}`}
                   >
                     <Sprite asset={buildingArt(kind)} />
                     <div>
                       <strong>{b.name}</strong>
                       <small className={reason ? 'recruit-blocker' : undefined}>
-                        {reason || b.short}
+                        {reason || buildSummary}
                       </small>
                       <Costs cost={b.cost} available={s.resources} />
                     </div>
@@ -1820,7 +1824,7 @@ export default function Game({
                         >
                           {reason ||
                             (kind === 'goblin'
-                              ? `${c.job} · ${workforce.total + workforce.queued}/${GOBLIN_CAP} places utilisées ou réservées`
+                              ? `${c.job} · ${workforce.total + workforce.queued}/${goblinCapacity(s)} places utilisées ou réservées`
                               : c.job)}
                         </small>
                         <Costs cost={c.cost} available={s.resources} />

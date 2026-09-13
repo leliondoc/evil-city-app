@@ -35,17 +35,26 @@ try {
       await page.goto('http://127.0.0.1:3000/');
       await page.getByRole('button', { name: 'Jouer', exact: true }).tap();
       await requireLandscape(page);
-      await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).tap();
+      await page
+        .getByRole('button', { name: 'Entrer dans le quartier', exact: true })
+        .tap();
       await page.locator('.world-canvas[data-ready=true]').waitFor();
       await page.locator('.loading-art').waitFor({ state: 'hidden' });
-      assert.equal(await page.locator('.sidebar').isVisible(), true,
-        'Selection and the first objective are open when a game starts');
-      await page.getByRole('button', { name: 'Fermer les détails', exact: true }).tap();
+      assert.equal(
+        await page.locator('.sidebar').isVisible(),
+        false,
+        'The game starts with the map unobstructed and the guide accessible',
+      );
       await page
         .getByRole('button', { name: 'Mettre en pause', exact: true })
         .tap();
       assert.match(await page.locator('.goblin-counter').innerText(), /0\/6/);
-      await page.getByRole('button', { name: 'Ouvrir le guide et les objectifs', exact: true }).tap();
+      await page
+        .getByRole('button', {
+          name: 'Ouvrir le guide et les objectifs',
+          exact: true,
+        })
+        .tap();
       await page
         .getByRole('button', {
           name: 'Recruter mon premier gobelin',
@@ -61,7 +70,10 @@ try {
           .isDisabled(),
       );
       await page
-        .getByRole('button', { name: 'Réduire le guide et les objectifs', exact: true })
+        .getByRole('button', {
+          name: 'Réduire le guide et les objectifs',
+          exact: true,
+        })
         .tap();
       await page.getByRole('button', { name: 'Reprendre', exact: true }).tap();
       await page.waitForFunction(
@@ -71,35 +83,87 @@ try {
         { timeout: 12000 },
       );
     }
+    await page.setViewportSize({
+      width: Math.max(viewport.width, viewport.height),
+      height: Math.min(viewport.width, viewport.height),
+    });
     await page.goto('http://127.0.0.1:3000/tests/domain-preview.html');
+    await page.locator('.world-canvas[data-ready=true]').waitFor();
+    await requireLandscape(page);
+    Object.assign(viewport, page.viewportSize());
+    await page.getByRole('button', { name: /^Voir le manoir, niveau/ }).tap();
     await page.locator('.loading-art').waitFor({ state: 'hidden' });
     assert.equal(
       await page.locator('main').getAttribute('data-compact'),
       'true',
     );
-    assert.equal(await page.locator('.sidebar').isVisible(), true,
-      'Touch players can understand their selection immediately');
-    assert.equal(await page.locator('.sidebar .mission-card').count(), 0,
-      'The tutorial is separate from the selection');
-    const guide = page.getByRole('complementary', { name: 'Guide du quartier' });
+    assert.equal(
+      await page.locator('.sidebar').isVisible(),
+      true,
+      'Touch players can understand their selection immediately',
+    );
+    assert.equal(
+      await page.locator('.sidebar .mission-card').count(),
+      0,
+      'The tutorial is separate from the selection',
+    );
+    const guide = page.getByRole('complementary', {
+      name: 'Guide du quartier',
+    });
     const guideBox = await guide.boundingBox();
-    assert.ok(guideBox.x <= 10 && guideBox.y >= 48 && guideBox.height <= 110,
-      'The compact map name and objective sit just below the resources');
+    assert.ok(
+      guideBox.x <= 10 && guideBox.y >= 48 && guideBox.height <= 110,
+      'The compact map name and objective sit just below the resources',
+    );
     const selectionBox = await page.locator('.sidebar').boundingBox();
-    assert.ok(selectionBox.width <= 320 && selectionBox.height <= viewport.height * 0.43,
-      'The selection leaves room for the map');
-    const closeDetails = page.getByRole('button', { name: 'Fermer les détails', exact: true });
+    assert.ok(
+      selectionBox.width <= 320 &&
+        selectionBox.height <= viewport.height * 0.43,
+      'The selection leaves room for the map',
+    );
+    const closeDetails = page.getByRole('button', {
+      name: 'Fermer les détails',
+      exact: true,
+    });
     const closeBox = await closeDetails.boundingBox();
-    assert.equal(closeBox.width, 44, 'The close action is a small touch target');
-    assert.equal(await closeDetails.innerText(), '', 'Only the cross is visible');
-    await page.screenshot({ path: join(output, `${viewport.width}-initial-details.png`) });
+    assert.equal(
+      closeBox.width,
+      44,
+      'The close action is a small touch target',
+    );
+    assert.equal(
+      await closeDetails.innerText(),
+      '',
+      'Only the cross is visible',
+    );
+    await page.screenshot({
+      path: join(output, `${viewport.width}-initial-details.png`),
+    });
     await closeDetails.tap();
-    await page.getByRole('button', { name: 'Ouvrir le guide et les objectifs', exact: true }).tap();
-    assert.equal(await page.locator('.sidebar').isVisible(), false,
-      'Opening objectives never opens the selection');
-    assert.ok(await guide.locator('.quest-list').isVisible(), 'The expanded guide exposes the objectives');
-    await page.screenshot({ path: join(output, `${viewport.width}-expanded-guide.png`) });
-    await page.getByRole('button', { name: 'Réduire le guide et les objectifs', exact: true }).tap();
+    await page
+      .getByRole('button', {
+        name: 'Ouvrir le guide et les objectifs',
+        exact: true,
+      })
+      .tap();
+    assert.equal(
+      await page.locator('.sidebar').isVisible(),
+      false,
+      'Opening objectives never opens the selection',
+    );
+    assert.ok(
+      await guide.locator('.quest-list').isVisible(),
+      'The expanded guide exposes the objectives',
+    );
+    await page.screenshot({
+      path: join(output, `${viewport.width}-expanded-guide.png`),
+    });
+    await page
+      .getByRole('button', {
+        name: 'Réduire le guide et les objectifs',
+        exact: true,
+      })
+      .tap();
     assert.equal(await page.locator('.bottom-bar').isVisible(), false);
     assert.equal(await page.locator('.resource.mana').isVisible(), true);
     assert.ok(
@@ -110,53 +174,133 @@ try {
     const canvas = await page.locator('canvas.world-canvas').boundingBox();
     assert.ok(canvas.width >= viewport.width * 0.95);
     assert.ok(canvas.height >= viewport.height * 0.5);
-    assert.ok((await page.locator('.topbar').boundingBox()).height <= 48,
-      'The mobile header fits one row');
-    assert.equal((await page.locator('.touch-toolbar').boundingBox()).height, 44,
-      'Touch modes share one small row');
-    assert.equal(await page.locator('.touch-selection').count(), 0,
-      'The redundant terrain/selection panel does not cover the map');
-    for (const button of await page.locator('.resources, .touch-toolbar').getByRole('button').all()) {
+    assert.ok(
+      (await page.locator('.topbar').boundingBox()).height <= 48,
+      'The mobile header fits one row',
+    );
+    assert.equal(
+      (await page.locator('.touch-toolbar').boundingBox()).height,
+      44,
+      'Touch modes share one small row',
+    );
+    assert.equal(
+      await page.locator('.touch-selection').count(),
+      0,
+      'The redundant terrain/selection panel does not cover the map',
+    );
+    for (const button of await page
+      .locator('.resources, .touch-toolbar')
+      .getByRole('button')
+      .all()) {
       const box = await button.boundingBox();
-      assert.ok(box.width >= 44 && box.height >= 44, 'Compact controls retain usable touch targets');
+      assert.ok(
+        box.width >= 44 && box.height >= 44,
+        'Compact controls retain usable touch targets',
+      );
     }
     const freeMap = await page.evaluate(() => {
-      const selectors = '.topbar, .mobile-mission, .mobile-nav, .touch-toolbar, .command-wheel button, .map-controls button, .game-notifications > *';
-      const boxes = [...document.querySelectorAll(selectors)].filter((el) => el.getClientRects().length).map((el) => el.getBoundingClientRect());
+      const selectors =
+        '.topbar, .mobile-mission, .mobile-nav, .touch-toolbar, .command-wheel button, .map-controls button, .game-notifications > *';
+      const boxes = [...document.querySelectorAll(selectors)]
+        .filter((el) => el.getClientRects().length)
+        .map((el) => el.getBoundingClientRect());
       let free = 0;
       for (let y = 10; y < innerHeight; y += 20)
         for (let x = 10; x < innerWidth; x += 20)
-          if (!boxes.some((box) => x >= box.left && x < box.right && y >= box.top && y < box.bottom)) free++;
-      return free / (Math.floor(innerWidth / 20) * Math.floor(innerHeight / 20));
+          if (
+            !boxes.some(
+              (box) =>
+                x >= box.left &&
+                x < box.right &&
+                y >= box.top &&
+                y < box.bottom,
+            )
+          )
+            free++;
+      return (
+        free / (Math.floor(innerWidth / 20) * Math.floor(innerHeight / 20))
+      );
     });
-    const minimumFreeMap = viewport.width < 400 && viewport.height < 600 ? 0.5 : 0.6;
-    assert.ok(freeMap >= minimumFreeMap, `The HUD and persistent guide leave the majority of the map unobstructed (${Math.round(freeMap * 100)}%)`);
+    const minimumFreeMap = viewport.height < 360 ? 0.5 : 0.6;
+    if (freeMap < minimumFreeMap) {
+      await page.screenshot({ path: join(output, 'free-map.png') });
+      console.log(
+        output,
+        await page
+          .locator('.mobile-nav, .mobile-mission, .touch-toolbar')
+          .evaluateAll((es) =>
+            es.map((e) => ({
+              class: e.className,
+              w: e.getBoundingClientRect().width,
+              h: e.getBoundingClientRect().height,
+            })),
+          ),
+      );
+    }
+    assert.ok(
+      freeMap >= minimumFreeMap,
+      `The HUD and persistent guide leave the majority of the map unobstructed (${Math.round(freeMap * 100)}%)`,
+    );
     const notice = page.getByRole('button', { name: /^Lire la notification/ });
     if (await notice.count()) {
       const box = await notice.boundingBox();
-      assert.ok(box.height <= 48 && Math.abs(box.x + box.width / 2 - viewport.width / 2) < 1,
-        'Notifications stay small and centered');
-      const fullText = (await notice.getAttribute('aria-label')).replace('Lire la notification : ', '');
+      assert.ok(
+        box.height <= 48 &&
+          Math.abs(box.x + box.width / 2 - viewport.width / 2) < 1,
+        'Notifications stay small and centered',
+      );
+      const fullText = (await notice.getAttribute('aria-label')).replace(
+        'Lire la notification : ',
+        '',
+      );
       await notice.tap();
-      await page.getByRole('heading', { name: 'Notification du quartier', exact: true }).waitFor();
-      assert.equal(await page.locator('.notice-detail').textContent(), fullText,
-        'Reading a shortened notification preserves the entire message');
+      await page
+        .getByRole('heading', { name: 'Notification du quartier', exact: true })
+        .waitFor();
+      assert.equal(
+        await page.locator('.notice-detail').textContent(),
+        fullText,
+        'Reading a shortened notification preserves the entire message',
+      );
       await page.getByRole('button', { name: 'Fermer', exact: true }).tap();
     }
     await page.getByRole('button', { name: /^État du quartier/ }).tap();
     const summary = page.locator('.district-overview');
     await summary.waitFor();
-    assert.ok((await summary.locator('time').innerText()).length >= 5, 'Session time remains available');
+    assert.ok(
+      (await summary.locator('time').innerText()).length >= 5,
+      'Session time remains available',
+    );
     await summary.getByRole('button', { name: 'Humains', exact: true }).tap();
     await summary.getByRole('button', { name: /^Garde\./ }).tap();
-    await summary.getByRole('heading', { name: 'Garde', exact: true }).waitFor();
+    await summary
+      .getByRole('heading', { name: 'Garde', exact: true })
+      .waitFor();
     const summaryBox = await summary.boundingBox();
-    assert.ok(summaryBox.x >= 0 && summaryBox.x + summaryBox.width <= viewport.width && summaryBox.y >= 0 && summaryBox.y + summaryBox.height <= viewport.height,
-      'The district details stay within the screen');
-    assert.equal(await page.locator('.district-popover').count(), 0,
-      'Touch details reuse one panel instead of stacking popovers');
-    await summary.getByRole('button', { name: 'Retour au résumé du quartier', exact: true }).tap();
-    await summary.getByRole('button', { name: 'Fermer le résumé du quartier', exact: true }).tap();
+    assert.ok(
+      summaryBox.x >= 0 &&
+        summaryBox.x + summaryBox.width <= viewport.width &&
+        summaryBox.y >= 0 &&
+        summaryBox.y + summaryBox.height <= viewport.height,
+      'The district details stay within the screen',
+    );
+    assert.equal(
+      await page.locator('.district-popover').count(),
+      0,
+      'Touch details reuse one panel instead of stacking popovers',
+    );
+    await summary
+      .getByRole('button', {
+        name: 'Retour au résumé du quartier',
+        exact: true,
+      })
+      .tap();
+    await summary
+      .getByRole('button', {
+        name: 'Fermer le résumé du quartier',
+        exact: true,
+      })
+      .tap();
     await summary.waitFor({ state: 'hidden' });
     const nav = page.getByRole('navigation', { name: 'Navigation du jeu' });
     for (const button of await nav.getByRole('button').all()) {
@@ -165,32 +309,69 @@ try {
         box.width >= 44 && box.height >= 44,
         'Navigation targets fit a finger',
       );
-      assert.ok(await button.evaluate((element) => element.classList.contains('primary-btn')),
-        'Navigation shares the desktop faction button');
+      assert.ok(
+        await button.evaluate((element) =>
+          element.classList.contains('primary-btn'),
+        ),
+        'Navigation shares the desktop faction button',
+      );
     }
-    const wheel = page.getByRole('navigation', { name: 'Commandes du domaine' });
+    const wheel = page.getByRole('navigation', {
+      name: 'Commandes du domaine',
+    });
     const pauseBox = await wheel.locator('.wheel-pause').boundingBox();
     const gearBox = await wheel.locator('.wheel-settings').boundingBox();
-    assert.equal(pauseBox.width, gearBox.width, 'Pause matches settings in size');
+    assert.equal(
+      pauseBox.width,
+      gearBox.width,
+      'Pause matches settings in size',
+    );
     assert.equal(pauseBox.height, gearBox.height);
-    assert.ok(await wheel.isVisible(), 'The desktop domain wheel is available on touch');
+    assert.ok(
+      await wheel.isVisible(),
+      'The desktop domain wheel is available on touch',
+    );
     for (const button of await wheel.getByRole('button').all()) {
       const box = await button.boundingBox();
-      assert.ok(box.width >= 44 && box.height >= 44, 'Wheel actions fit a finger');
-      assert.ok(await button.evaluate((element) => {
-        const rect = element.getBoundingClientRect();
-        return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
-      }), 'Each wheel action is unobstructed');
+      assert.ok(
+        box.width >= 44 && box.height >= 44,
+        'Wheel actions fit a finger',
+      );
+      assert.ok(
+        await button.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return element.contains(
+            document.elementFromPoint(
+              rect.x + rect.width / 2,
+              rect.y + rect.height / 2,
+            ),
+          );
+        }),
+        'Each wheel action is unobstructed',
+      );
     }
     await nav.getByRole('button', { name: 'Détails', exact: true }).tap();
     assert.equal(await page.locator('.sidebar').isVisible(), true);
     await page.getByRole('button', { name: 'Fermer les détails' }).tap();
     await nav.getByRole('button', { name: 'Recruter', exact: true }).tap();
-    assert.equal(await page.locator('.bottom-bar').evaluate((el) => getComputedStyle(el).backgroundColor),
-      'rgba(0, 0, 0, 0)', 'No dark sheet behind the illustrated cards');
-    if (viewport.height > 500) assert.ok(await page.getByRole('tab', { name: 'Construire des bâtiments' }).isVisible());
-    assert.equal(await page.locator('.recruit-card > .pack-paper').count(), 0,
-      'Recruitment uses the new desktop illustration frames');
+    assert.equal(
+      await page
+        .locator('.bottom-bar')
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+      'rgba(0, 0, 0, 0)',
+      'No dark sheet behind the illustrated cards',
+    );
+    if (viewport.height > 500)
+      assert.ok(
+        await page
+          .getByRole('tab', { name: 'Construire des bâtiments' })
+          .isVisible(),
+      );
+    assert.equal(
+      await page.locator('.recruit-card > .pack-paper').count(),
+      0,
+      'Recruitment uses the new desktop illustration frames',
+    );
     assert.equal(
       await page
         .getByRole('button', { name: 'Recruter Spectre', exact: true })
@@ -262,7 +443,9 @@ try {
       );
       throw error;
     }
-    const selected = await page.locator('.touch-selection-status').textContent();
+    const selected = await page
+      .locator('.touch-selection-status')
+      .textContent();
     const center = {
       x: canvas.x + canvas.width / 2,
       y: canvas.y + canvas.height / 2,
@@ -341,7 +524,10 @@ try {
     await nav.getByRole('button', { name: 'Bâtir', exact: true }).tap();
     await page.getByRole('button', { name: /^Grotte gobeline/ }).tap();
     assert.equal(await page.locator('.bottom-bar').isVisible(), false);
-    assert.match(await page.locator('.touch-mode-hint').innerText(), /parcelle/);
+    assert.match(
+      await page.locator('.touch-mode-hint').innerText(),
+      /parcelle/,
+    );
     const placement = await page.evaluate(async () => {
       const { state } = await import('/tests/domain-preview.tsx');
       const rect = document
@@ -364,13 +550,30 @@ try {
       };
     });
     await page.touchscreen.tap(placement.x, placement.y);
-    if (!await page.evaluate(async () => (await import('/tests/domain-preview.tsx')).state.lots[4].construction)) {
-      await page.screenshot({ path: join(output, `${viewport.width}-placement-error.png`) });
-      console.log(output, placement, await page.evaluate(async (point) => {
-        const { state } = await import('/tests/domain-preview.tsx');
-        return { notice: state.notice, feedback: document.querySelector('.touch-mode-hint')?.textContent,
-          target: document.elementFromPoint(point.x, point.y)?.outerHTML.slice(0, 250) };
-      }, placement));
+    if (
+      !(await page.evaluate(
+        async () =>
+          (await import('/tests/domain-preview.tsx')).state.lots[4]
+            .construction,
+      ))
+    ) {
+      await page.screenshot({
+        path: join(output, `${viewport.width}-placement-error.png`),
+      });
+      console.log(
+        output,
+        placement,
+        await page.evaluate(async (point) => {
+          const { state } = await import('/tests/domain-preview.tsx');
+          return {
+            notice: state.notice,
+            feedback: document.querySelector('.touch-mode-hint')?.textContent,
+            target: document
+              .elementFromPoint(point.x, point.y)
+              ?.outerHTML.slice(0, 250),
+          };
+        }, placement),
+      );
     }
     assert.equal(
       await page.evaluate(
@@ -437,7 +640,9 @@ try {
     await page.screenshot({
       path: join(output, `${viewport.width}-rotated-details.png`),
     });
-    await page.getByRole('button', { name: 'Fermer les détails', exact: true }).tap();
+    await page
+      .getByRole('button', { name: 'Fermer les détails', exact: true })
+      .tap();
     await page
       .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })
       .tap();
@@ -454,14 +659,30 @@ try {
     await page.setViewportSize(viewport);
     await page.goto('http://127.0.0.1:3000/tests/mission-preview.html');
     await page.locator('.world-canvas[data-ready=true]').waitFor();
-    await page.getByRole('button', { name: 'Fermer les détails', exact: true }).tap();
-    await page.getByRole('button', { name: 'Ouvrir le guide et les objectifs', exact: true }).tap();
-    await page.getByRole('button', { name: 'Voir la cible', exact: true }).tap();
-    assert.equal(await page.locator('.sidebar').isVisible(), true,
-      'An objective shortcut opens its target in the separate selection');
+    if (await page.locator('.sidebar').isVisible())
+      await page
+        .getByRole('button', { name: 'Fermer les détails', exact: true })
+        .tap();
+    await page
+      .getByRole('button', {
+        name: 'Ouvrir le guide et les objectifs',
+        exact: true,
+      })
+      .tap();
+    await page
+      .getByRole('button', { name: 'Voir la cible', exact: true })
+      .tap();
+    assert.equal(
+      await page.locator('.sidebar').isVisible(),
+      true,
+      'An objective shortcut opens its target in the separate selection',
+    );
     assert.match(await page.locator('.selection-name').innerText(), /Maison/);
-    assert.equal(await page.locator('.mobile-mission').getAttribute('data-expanded'), 'false',
-      'Following an objective folds the guide and leaves the selected target readable');
+    assert.equal(
+      await page.locator('.mobile-mission').getAttribute('data-expanded'),
+      'false',
+      'Following an objective folds the guide and leaves the selected target readable',
+    );
     assert.deepEqual(errors, []);
     console.log(
       `Touch ${viewport.width}x${viewport.height}: layout, pack UI, gestures, recruitment, construction, gathering and rotation OK`,
@@ -475,13 +696,17 @@ try {
   await page.goto('http://127.0.0.1:3000/');
   await page.getByRole('button', { name: 'Jouer', exact: true }).click();
   await requireLandscape(page);
-  await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Entrer dans le quartier', exact: true })
+    .click();
   await page.locator('.world-canvas[data-ready=true]').waitFor();
   await page.locator('.loading-art').waitFor({ state: 'hidden' });
   assert.equal(
     await page.locator('main').getAttribute('data-compact'),
     'false',
   );
+  assert.equal(await page.locator('.sidebar').isVisible(), false);
+  await page.getByRole('button', { name: /^Voir le manoir, niveau/ }).click();
   assert.equal(await page.locator('.sidebar').isVisible(), true);
   assert.equal(await page.locator('.bottom-bar').isVisible(), true);
   assert.equal(await page.locator('.mobile-nav').count(), 0);

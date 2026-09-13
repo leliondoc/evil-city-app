@@ -16,7 +16,7 @@ import {
   capacity,
   population,
   goblinWorkforce,
-  GOBLIN_CAP,
+  goblinCapacity,
   humanLevel,
   PRESSURE,
   sourceBuilding,
@@ -254,7 +254,7 @@ export function ThreatPanel({
             </strong>
           </div>
           <p className="district-note">
-            {s.recruits.filter(r => r.kind !== 'goblin').length} recrutement(s) militaire(s) en cours, déjà comptés. Les grandes créatures prennent plusieurs places. Les gobelins bâtisseurs ont une limite séparée de {GOBLIN_CAP}.
+            {s.recruits.filter(r => r.kind !== 'goblin').length} recrutement(s) militaire(s) en cours, déjà comptés. Les grandes créatures prennent plusieurs places. Les gobelins bâtisseurs ont une limite séparée de {goblinCapacity(s)}.
           </p>
           <p className="district-note">Maximum : 6 places de base + {capacity(s) - 6} apportées par vos grottes. Leurs capacités s’additionnent.</p>
           <GameButton
@@ -272,20 +272,21 @@ export function ThreatPanel({
       id: 'goblins',
       label: 'Vos gobelins',
       icon: 'goblin-avatar',
-      badge: `${workers.total}/${GOBLIN_CAP}`,
+      badge: `${workers.total}/${goblinCapacity(s)}`,
       summary: `${workers.total} gobelins, ${workers.queued} en recrutement.`,
       content: (
         <>
           <div className="district-stat">
-            <span>Gobelins vivants</span>
+            <span>Bâtisseurs vivants / maximum</span>
             <strong>
-              {workers.total} / {GOBLIN_CAP}
+              {workers.total} / {goblinCapacity(s)}
             </strong>
           </div>
           <p>
             {workers.queued} en recrutement · {workers.building} au chantier ·{' '}
             {workers.other} en mission ou au repos.
           </p>
+          <p className="district-note">6 bâtisseurs au départ, puis +2 par grotte supplémentaire terminée, jusqu’à 10. Les niveaux des grottes augmentent seulement la capacité militaire. Les recrutements en cours réservent déjà leur place.</p>
           <div className="evil-harvest-list">
             {(['gold', 'wood', 'food'] as const).map((kind) => (
               <button
