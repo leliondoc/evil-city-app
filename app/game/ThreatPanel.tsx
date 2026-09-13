@@ -12,6 +12,7 @@ import { GameButton, PackIcon, ResourceIcon } from './PackUI';
 import { unitSelection } from './selection';
 import {
   army,
+  enemyFaction,
   capacity,
   population,
   goblinWorkforce,
@@ -68,7 +69,7 @@ export function ThreatPanel({
     const m = s.mobilization[kind],
       source = sourceBuilding(s, kind);
     const stopped = !source || source.owned;
-    const alive = s.enemies.filter((e) => e.kind === kind).length;
+    const alive = s.enemies.filter((e) => e.hp > 0 && enemyFaction(s, e) === kind).length;
     const status = stopped
       ? 'Renforts coupés'
       : source && isHaunted(s, source)

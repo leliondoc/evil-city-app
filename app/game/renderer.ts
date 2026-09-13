@@ -1167,6 +1167,7 @@ export class Renderer {
                 heroX = gx - 72 + i * 48,
                 guardX = l.kind === 'hall' ? gx - 22 + i * 44 : gx,
                 selected =
+                  l.kind === 'guild' &&
                   role &&
                   this.selection.type === 'guildHero' &&
                   this.selection.id === i;
@@ -1187,7 +1188,7 @@ export class Renderer {
                 1,
                 true,
               );
-              hit.selection = role
+              hit.selection = l.kind === 'guild' && role
                 ? { type: 'guildHero', id: i }
                 : { type: 'lot', id: l.id };
               this.hits.push(hit);

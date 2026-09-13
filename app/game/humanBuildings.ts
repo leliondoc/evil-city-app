@@ -31,7 +31,7 @@ export function advanceHumanBuildings(s: State) {
 export function humanBuildingDescription(kind: BuildingKind, level: number) {
   const tier = humanBuildingTier(level);
   const role = kind === 'hall'
-    ? 'Centre de commandement : mobilise la garde. Les minotaures sont efficaces pour le siège.'
+    ? 'Centre de commandement de la garde municipale. Un chevalier, un lancier, une archère et un moine d’élite défendent la mairie et sortent dans la rue au premier assaut. Les minotaures sont efficaces pour le siège.'
     : kind === 'guild'
       ? 'Quartier général des héros : quatre défenseurs sortent au premier assaut. Sa conquête coupe leurs expéditions.'
       : kind === 'tavern'

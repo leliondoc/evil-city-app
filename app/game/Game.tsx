@@ -612,7 +612,7 @@ export default function Game({
     selection.type === 'enemy'
       ? s.enemies.find((e) => e.id === selection.id)
       : undefined;
-  const enemyDef = selectedEnemy ? enemyDefinition(selectedEnemy) : undefined;
+  const enemyDef = selectedEnemy ? enemyDefinition(selectedEnemy, s) : undefined;
   const pursuedUnit = selectedEnemy
     ? s.units.find((u) => u.id === selectedEnemy.pursuitTarget && u.hp > 0)
     : undefined;

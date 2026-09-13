@@ -528,7 +528,17 @@ export interface Enemy extends Point {
   healTarget: number | null;
   attackCooldown: number;
 }
-export function enemyDefinition(enemy: Pick<Enemy, 'kind' | 'role'>) {
+export function enemyFaction(s: State, enemy: Pick<Enemy, 'kind' | 'garrisonLotId'>): EnemyKind {
+  return enemy.garrisonLotId !== undefined && s.lots[enemy.garrisonLotId]?.kind === 'hall' ? 'guard' : enemy.kind;
+}
+export function enemyDefinition(enemy: Pick<Enemy, 'kind' | 'role' | 'garrisonLotId'>, state?: State) {
+  if (enemy.kind === 'hero' && enemy.garrisonLotId !== undefined && state?.lots[enemy.garrisonLotId]?.kind === 'hall') {
+    return {
+      ...HEROES[enemy.role],
+      name: `${HEROES[enemy.role].short} de la garde municipale`,
+      description: 'Défenseur d’élite de la mairie. Il sort dans la rue pour protéger le bâtiment contre ses assaillants. Il appartient à la garde municipale, indépendante de la guilde.',
+    };
+  }
   return enemy.kind === 'guard'
     ? { ...ENEMIES.guard, range: 1.9 }
     : HEROES[enemy.role];
@@ -1532,7 +1542,7 @@ export function commandUnit(
     markAttackOrder(s, { type: 'enemy', id: enemy.id });
     announce(
       s,
-      `${CREATURES[unit.kind].name} intercepte ${enemyDefinition(enemy).name.toLowerCase()}.`,
+      `${CREATURES[unit.kind].name} intercepte ${enemyDefinition(enemy, s).name.toLowerCase()}.`,
     );
   } else if (lot && !lot.owned && lot.kind !== 'empty') {
     const error = attackTargetReason(s, lot.id);

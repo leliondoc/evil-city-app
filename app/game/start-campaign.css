@@ -124,32 +124,16 @@
   border-radius: 50%;
   z-index: -1;
 }
-.atlas-selection-ring {
-  position: absolute;
-  bottom: -6px;
-  width: 132px;
-  height: 46px;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  pointer-events: none;
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 150ms;
-}
-.atlas-ring-outline { stroke: #4c4e31; stroke-width: 6; }
-.atlas-ring-gold { stroke: #e7c46c; stroke-width: 3.2; }
-.atlas-ring-highlight { stroke: #fff0b6; stroke-width: 1.2; }
-.atlas-node[aria-pressed='true'] .atlas-selection-ring { opacity: 1; }
 .atlas-landmark img {
   width: 108px;
   height: var(--atlas-marker-size);
   object-fit: contain;
-  filter: drop-shadow(0 4px 2px #20302e70);
-  transition: transform 150ms;
+  filter: drop-shadow(0 2px 1px #20302e55);
 }
-.atlas-node:hover img {
-  transform: translateY(-4px);
+.atlas-node[aria-pressed='true'] .atlas-landmark img {
+  filter: drop-shadow(1px 0 0 #f5d76d) drop-shadow(-1px 0 0 #f5d76d)
+    drop-shadow(0 1px 0 #f5d76d) drop-shadow(0 -1px 0 #f5d76d)
+    drop-shadow(0 2px 2px #263a3650);
 }
 .atlas-node strong {
   white-space: nowrap;
@@ -176,22 +160,19 @@
 }
 .atlas-number {
   position: absolute;
-  right: -3px;
-  bottom: 7px;
-  width: 29px;
-  height: 35px;
-  overflow: visible;
-  filter: drop-shadow(0 2px 1px #293b3455);
-  font:
-    bold 18px Georgia,
-    serif;
+  right: 0;
+  bottom: 9px;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid #d9c48a;
+  border-radius: 50%;
+  color: #fff0c9;
+  font: bold 14px Georgia, serif;
+  background: #354c3d;
+  box-shadow: 0 1px 2px #263a3640;
 }
-.atlas-badge-rim { fill: #bbac79; stroke: #495344; stroke-width: 1.5; }
-.atlas-badge-face { fill: #3b5849; stroke: #747953; stroke-width: 1; }
-.atlas-badge-shine { fill: none; stroke: #e3d49b; stroke-width: 1; opacity: .5; }
-.atlas-number text { fill: #fff0c9; }
-.atlas-node[aria-pressed='true'] .atlas-badge-rim { fill: #eacb7b; stroke: #635239; }
-.atlas-node[aria-pressed='true'] .atlas-badge-face { fill: #814831; stroke: #9f653a; }
 .campaign-departure {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -305,10 +286,10 @@
     width: 75px;
     height: 16px;
   }
-  .atlas-selection-ring { width: 106px; height: 37px; bottom: -5px; }
   .atlas-number {
-    width: 25px;
-    height: 30px;
+    width: 23px;
+    height: 23px;
+    font-size: 12px;
     right: -2px;
   }
   .campaign-departure {
@@ -334,20 +315,13 @@
   .atlas-node { --atlas-marker-size: clamp(42px, 12svh, 54px); width: 122px; padding: 3px; top: calc(var(--atlas-node-y) - var(--atlas-marker-size) - 3px); }
   .atlas-landmark, .atlas-landmark img { height: var(--atlas-marker-size); width: 78px; }
   .atlas-landmark::before { width: 58px; height: 12px; }
-  .atlas-selection-ring { width: 88px; height: 31px; bottom: -5px; }
   .atlas-node strong { font-size: 12px; padding: 4px 6px; }
   .atlas-node small { font-size: 9px; margin-top: 2px; padding: 2px 4px; }
-  .atlas-number { width: 22px; height: 26px; right: 0; bottom: 0; }
+  .atlas-number { width: 21px; height: 21px; font-size: 11px; right: -3px; bottom: 3px; }
   .campaign-departure { gap: 16px; padding: 0 2px; }
   .campaign-brief h2 { font-size: 19px; margin: 3px 0; }
   .campaign-brief > p { font-size: 10px; }
   .campaign-brief > div { font-size: 11px; line-height: 1.4; max-height: 2.8em; overflow-y: auto; }
   .campaign-launch .start-play { min-width: 190px; height: 58px; min-height: 44px; font-size: 14px; padding: 5px 12px; gap: 6px; }
   .campaign-launch p { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .atlas-landmark img,
-  .atlas-selection-ring {
-    transition: none;
-  }
 }

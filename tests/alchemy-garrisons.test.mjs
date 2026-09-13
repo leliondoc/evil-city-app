@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, CREATURES, HEROES, tick, commandUnit, entrance } from '../app/game/engine.ts';
+import { createGame, CREATURES, HEROES, tick, commandUnit, entrance, enemyDefinition, enemyFaction } from '../app/game/engine.ts';
 import { throwPotion, healAlly, advanceAlchemy } from '../app/game/alchemy.ts';
 import { armorPercent, physicalDamage } from '../app/game/combat.ts';
 function unit(s, kind, x=10.5, y=20.5) {
@@ -50,7 +50,14 @@ test('Every occupied building deploys its defenders into the street once; the to
   assert.equal(commandUnit(s,u.id,{type:'lot',id:lot.id},p),'');tick(s,0.1);
   const defenders=s.enemies.filter(e=>e.garrisonLotId===lot.id);assert.ok(defenders.length);
   assert.ok(defenders.every(e=>e.y>=lot.y+8),'The fight begins outside the fence');
-  if(kind==='hall'){assert.deepEqual(defenders.map(e=>e.role),Object.keys(HEROES));assert.ok(defenders.every(e=>e.maxHp>HEROES[e.role].hp));}
+  if(kind==='hall'){
+   assert.deepEqual(defenders.map(e=>e.role),Object.keys(HEROES));
+   assert.ok(defenders.every(e=>e.maxHp>HEROES[e.role].hp));
+   assert.ok(defenders.every(e=>enemyDefinition(e,s).name.endsWith('de la garde municipale')));
+   assert.ok(defenders.every(e=>!enemyDefinition(e,s).name.includes('Aube')));
+   assert.ok(defenders.every(e=>enemyFaction(s,e)==='guard'));
+  }
+  if(kind==='guild') assert.ok(defenders.every(e=>enemyDefinition(e,s).name===HEROES[e.role].name && enemyFaction(s,e)==='hero'));
   const ids=defenders.map(e=>e.id);tick(s,0.1);assert.deepEqual(s.enemies.filter(e=>e.garrisonLotId===lot.id).map(e=>e.id),ids);
  }
 });
