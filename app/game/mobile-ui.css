@@ -376,12 +376,34 @@
   .game-shell[data-compact='true'] .sidebar { left: auto; right: 260px; width: min(320px, calc(100vw - 512px)); }
 }
 
-.game-shell[data-compact='true'] .topbar { grid-template-columns: minmax(0, 1fr) 116px 44px; }
-.game-shell[data-compact='true'] .population-counters { grid-column: 2; grid-row: 1; gap: 8px; justify-content: center; }
+.game-menu-slot { display: flex; align-items: center; flex-shrink: 0; }
+.game-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid #a1956888;
+  border-radius: 5px;
+  background: #24363c;
+  color: #f3dfab;
+  font: 600 13px/1.2 'Trebuchet MS', sans-serif;
+  cursor: pointer;
+}
+.game-menu-button:hover { background: #34464b; border-color: #e1c588; }
+.game-menu-button:focus-visible { outline: 2px solid #ffe4a9; outline-offset: 2px; }
+.game-shell[data-compact='true'] .game-menu-slot { grid-column: 1; grid-row: 1; }
+.game-shell[data-compact='true'] .game-menu-button { width: 48px; height: 44px; padding: 3px; flex-direction: column; gap: 2px; font-size: 10px; }
+.game-shell[data-compact='true'] .topbar { grid-template-columns: 48px minmax(0, 1fr) 116px 44px; }
+.game-shell[data-compact='true'] .resources { grid-column: 2; }
+.game-shell[data-compact='true'] .population-counters { grid-column: 3; grid-row: 1; gap: 8px; justify-content: center; }
 .game-shell[data-compact='true'] .army-cap-counter { min-width: 50px; }
 @media (min-width: 700px) {
-  .game-shell[data-compact='true'] .topbar { grid-template-columns: minmax(280px, 1fr) auto 116px 44px; }
-  .game-shell[data-compact='true'] .population-counters { grid-column: 3; }
+  .game-shell[data-compact='true'] .topbar { grid-template-columns: 48px minmax(280px, 1fr) auto 116px 44px; }
+  .game-shell[data-compact='true'] .session-status { grid-column: 3; }
+  .game-shell[data-compact='true'] .population-counters { grid-column: 4; }
 }
 
 .game-shell[data-compact='true'] .population-counters .goblin-counter { min-width: 44px; }

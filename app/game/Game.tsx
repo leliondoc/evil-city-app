@@ -855,21 +855,17 @@ export default function Game({
       data-commanding={touchMode === 'command'}
     >
       <header className="topbar">
-        <div className="brand">
+        <div className="game-menu-slot">
           {onReturnToMenu ? (
             <button
-              className="brand-home"
+              className="game-menu-button"
+              type="button"
               aria-label="Retour au menu principal"
               title="Menu principal · Partie mise en pause"
               onClick={onReturnToMenu}
             >
-              <img
-                className="brand-mark"
-                src={`${import.meta.env.BASE_URL}evil-city-logo.png`}
-                width={40}
-                height={40}
-                alt=""
-              />
+              <House size={18} aria-hidden="true" />
+              <span>Menu</span>
             </button>
           ) : (
             <img

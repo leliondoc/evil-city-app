@@ -150,20 +150,24 @@ try {
       await page.locator('.world-canvas[data-ready=true]').waitFor();
     }
     const returnToMenu = async () => {
-      await press(
-        page.getByRole('button', {
-          name: 'Ouvrir les paramètres',
-          exact: true,
-        }),
-      );
-      await press(
-        page.getByRole('button', {
-          name: 'Menu principal · Garder la partie',
-          exact: true,
-        }),
-      );
+      const button = page.getByRole('button', {
+        name: 'Retour au menu principal',
+        exact: true,
+      });
+      assert.equal(await button.innerText(), 'Menu');
+      assert.equal(await button.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width >= 44 && r.height >= 44 && r.left >= 0 &&
+          r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
+      }), true, 'A labelled, touch-sized menu button stays on screen');
+      await press(button);
     };
+    await page.screenshot({ path: join(output, `game-menu-${viewport.width}.png`) });
     await returnToMenu();
+    const pausedTime = await page.locator('.session-status time').textContent();
+    await page.waitForTimeout(1300);
+    assert.equal(await page.locator('.session-status time').textContent(), pausedTime,
+      'Returning to the menu pauses the current game');
     await press(
       page.getByRole('button', { name: 'Carte des quartiers', exact: true }),
     );
