@@ -394,6 +394,10 @@
 }
 .game-menu-button:hover { background: #34464b; border-color: #e1c588; }
 .game-menu-button:focus-visible { outline: 2px solid #ffe4a9; outline-offset: 2px; }
+@media (max-width: 900px) {
+  .game-shell[data-compact='false'] .resources { gap: 8px; }
+  .game-shell[data-compact='false'] .session-status-label { display: none; }
+}
 .game-shell[data-compact='true'] .game-menu-slot { grid-column: 1; grid-row: 1; }
 .game-shell[data-compact='true'] .game-menu-button { width: 48px; height: 44px; padding: 3px; flex-direction: column; gap: 2px; font-size: 10px; }
 .game-shell[data-compact='true'] .topbar { grid-template-columns: 48px minmax(0, 1fr) 116px 44px; }
