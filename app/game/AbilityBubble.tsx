@@ -53,32 +53,73 @@ export function AbilityBubble({
             .querySelector('.topbar')
             ?.getBoundingClientRect();
           const floor = Math.max(edge, (header?.bottom ?? 0) + 8);
-          const navigation = document
-            .querySelector('.mobile-nav')
-            ?.getBoundingClientRect();
-          const ceiling = Math.min(
-            window.innerHeight - edge,
-            navigation?.height ? navigation.top - 8 : Infinity,
-          );
-          el.style.maxHeight = `${Math.max(100, Math.min(360, ceiling - floor))}px`;
+          const ceiling = window.innerHeight - edge;
+          const obstacles = [
+            ...document.querySelectorAll(
+              '.sidebar, .bottom-bar, .mobile-nav, .mobile-mission, .mobile-command-dock, .touch-toolbar, .map-controls, .game-notifications',
+            ),
+          ]
+            .map((node) => node.getBoundingClientRect())
+            .filter((rect) => rect.width && rect.height);
+          const width = el.getBoundingClientRect().width;
+          const clampX = (x: number) =>
+            Math.max(edge, Math.min(x, window.innerWidth - width - edge));
+          const preferred = clampX(anchor.right + 12);
+          const candidates = [
+            preferred,
+            clampX(anchor.left - width - 12),
+            ...obstacles.flatMap((rect) => [
+              clampX(rect.right + 8),
+              clampX(rect.left - width - 8),
+            ]),
+          ];
+          const spaces = candidates.flatMap((left) => {
+            let slots = [{ top: floor, bottom: ceiling }];
+            for (const rect of obstacles) {
+              if (rect.right + 8 <= left || rect.left - 8 >= left + width)
+                continue;
+              slots = slots
+                .flatMap((slot) =>
+                  rect.bottom + 8 <= slot.top || rect.top - 8 >= slot.bottom
+                    ? [slot]
+                    : [
+                        {
+                          top: slot.top,
+                          bottom: Math.min(slot.bottom, rect.top - 8),
+                        },
+                        {
+                          top: Math.max(slot.top, rect.bottom + 8),
+                          bottom: slot.bottom,
+                        },
+                      ],
+                )
+                .filter((slot) => slot.bottom - slot.top >= 112);
+            }
+            return slots.map((slot) => ({ ...slot, left }));
+          });
+          const space = spaces.sort((a, b) => {
+            const score = (slot: typeof a) =>
+              Math.abs(slot.left - preferred) +
+              Math.abs(
+                Math.max(slot.top, Math.min(anchor.top, slot.bottom - 240)) -
+                  anchor.top,
+              ) +
+              Math.max(0, 280 - (slot.bottom - slot.top)) * 3;
+            return score(a) - score(b);
+          })[0];
+          if (!space) {
+            el.style.visibility = 'hidden';
+            frame = requestAnimationFrame(position);
+            return;
+          }
+          el.style.maxHeight = `${Math.min(360, space.bottom - space.top)}px`;
           el.style.setProperty('--bubble-max-height', el.style.maxHeight);
           const box = el.getBoundingClientRect();
-          const rightFits =
-            anchor.right + 12 + box.width <= window.innerWidth - edge;
-          const leftFits = anchor.left - 12 - box.width >= edge;
-          const side = rightFits || !leftFits ? 'right' : 'left';
-          const left = Math.max(
-            edge,
-            Math.min(
-              side === 'right'
-                ? anchor.right + 12
-                : anchor.left - box.width - 12,
-              window.innerWidth - box.width - edge,
-            ),
-          );
+          const left = space.left;
+          const side = left >= anchor.x ? 'right' : 'left';
           const top = Math.max(
-            floor,
-            Math.min(anchor.top, ceiling - box.height),
+            space.top,
+            Math.min(anchor.top, space.bottom - box.height),
           );
           el.style.left = `${left}px`;
           el.style.top = `${top}px`;

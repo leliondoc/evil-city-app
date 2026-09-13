@@ -89,7 +89,10 @@ for (const engine of [chromium, webkit]) {
       const anchor = await page.evaluate(() =>
         window.manorRenderer.abilityAnchor({ type: 'lot', id: 3 }),
       );
-      if (anchor.right + 12 + box.width <= viewport.width - 12)
+      if (
+        viewport.width >= 1400 &&
+        anchor.right + 12 + box.width <= viewport.width - 12
+      )
         assert.ok(
           box.x >= anchor.right + 10,
           'Bubble opens right of visible building',
@@ -101,6 +104,42 @@ for (const engine of [chromium, webkit]) {
       await bubble
         .getByRole('button', { name: 'Pot-de-vin', exact: true })
         .click();
+      await frame();
+      assert.ok(
+        await bubble.evaluate((element) => {
+          const b = element.getBoundingClientRect();
+          return [
+            ...document.querySelectorAll(
+              '.sidebar, .bottom-bar, .mobile-nav, .mobile-mission, .mobile-command-dock, .touch-toolbar, .map-controls, .game-notifications',
+            ),
+          ].every((node) => {
+            const r = node.getBoundingClientRect();
+            return (
+              !r.width ||
+              !r.height ||
+              b.right <= r.left ||
+              b.left >= r.right ||
+              b.bottom <= r.top ||
+              b.top >= r.bottom
+            );
+          });
+        }),
+        'The ability bubble never covers visible game controls',
+      );
+      const choice = bubble.getByRole('button', {
+        name: 'Pot-de-vin',
+        exact: true,
+      });
+      assert.notEqual(
+        await choice.evaluate((e) => getComputedStyle(e).backgroundImage),
+        'none',
+      );
+      assert.equal(
+        await bubble
+          .locator('.ability-costs li')
+          .evaluate((e) => getComputedStyle(e).backgroundColor),
+        'rgba(0, 0, 0, 0)',
+      );
       assert.equal(
         await bubble
           .getByRole('heading', { name: 'Pot-de-vin', exact: true })

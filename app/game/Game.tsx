@@ -381,7 +381,9 @@ export default function Game({
       setSelection(next);
       selectionRef.current = next;
       const touchUnit = (next.type === 'unit' || next.type === 'units') && window.matchMedia('(max-width: 800px), (pointer: coarse)').matches;
-      setMobilePanel(next.type === 'none' || touchUnit ? null : 'details');
+      const target = next.type === 'lot' ? gameStore.getState().lots[next.id] : undefined;
+      const enemyAbility = target && !target.owned && target.kind !== 'empty' && advancedCampaign(gameStore.getState());
+      setMobilePanel(next.type === 'none' || touchUnit || enemyAbility ? null : 'details');
       if (next.type === 'unit' || next.type === 'units') setPendingBuild(null);
       if (next.type === 'none') {
         setPendingBuild(null);
@@ -1505,7 +1507,7 @@ export default function Game({
         </div>
 
         <section className="world-wrap" aria-label="Carte du quartier">
-          {advancedCampaign(s) && active && !modal && ready && <AbilityBubble state={s} lot={selectedLot} unit={selectedUnit} selection={selection} renderer={rendererRef} onAction={run} />}
+          {advancedCampaign(s) && active && !modal && ready && (!compact || mobilePanel !== 'details') && <AbilityBubble state={s} lot={selectedLot} unit={selectedUnit} selection={selection} renderer={rendererRef} onAction={run} />}
           <canvas
             className="world-canvas"
             data-ready={ready}

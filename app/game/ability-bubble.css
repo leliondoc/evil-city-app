@@ -1,6 +1,6 @@
 .ability-bubble {
   position: fixed;
-  z-index: 90;
+  z-index: 18;
   width: 260px;
   max-width: calc(100vw - 24px);
   visibility: hidden;
@@ -38,7 +38,7 @@
   display: grid;
   width: 100%;
   max-width: calc(100vw - 26px);
-  max-height: calc(var(--bubble-max-height, 360px) - 46px);
+  max-height: calc(var(--bubble-max-height, 360px) - 56px);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 10px 8px;
@@ -134,7 +134,7 @@
   outline-offset: 2px;
 }
 .ability-bubble-bar {
-  height: 44px;
+  height: 54px;
   display: flex;
   align-items: center;
   padding: 0 44px 0 10px;
@@ -153,12 +153,32 @@
   font-size: 12px;
   color: #eddbf3;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  border: 1px solid #b997cf80;
+  border-radius: 5px;
+  background: linear-gradient(#664879, #50365f);
+  box-shadow: inset 0 1px #ffffff14;
 }
 .ability-bubble-choices button[aria-pressed='true'] {
   color: #fff4d8;
-  border-bottom-color: #e6cba0;
+  border-color: #e6cba0;
+  background: linear-gradient(#9976ad, #79558f);
   font-weight: bold;
+}
+.ability-bubble .ability-costs li {
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  color: #fff0bf;
+  font-weight: bold;
+  gap: 7px;
+}
+.ability-bubble .ability-costs li[data-missing='true'] {
+  color: #ffcfb5;
+}
+.ability-bubble .ability-costs img {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 1px 2px #2e183e);
 }
 @media (pointer: coarse) {
   .ability-bubble-close {
