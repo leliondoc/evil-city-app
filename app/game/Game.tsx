@@ -945,13 +945,13 @@ export default function Game({
           </span>
         </div>
         <div className="population-counters">
-        <div className="army-cap-counter" title="Places occupées et réservées par les recrutements. Les grandes créatures occupent plusieurs places. Construisez ou améliorez les tanières pour augmenter la capacité." aria-label={`Population de l’armée : ${population(s)} sur ${capacity(s)}`}>
+        <div className="army-cap-counter" title="Places occupées et réservées par les combattants. Les gobelins bâtisseurs ont leur propre limite de 6 et ne prennent aucune place dans l’armée. Les grandes créatures occupent plusieurs places. Construisez ou améliorez les tanières pour augmenter la capacité." aria-label={`Population de l’armée : ${population(s)} sur ${capacity(s)}`}>
           <Users size={20} aria-hidden="true" /><span><strong>{population(s)}/{capacity(s)}</strong><small>Armée</small></span>
         </div>
         <button
           className="goblin-counter"
           disabled={workforce.total === 0}
-          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres, ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Maximum ${GOBLIN_CAP}, recrutements inclus. Les gobelins libres se répartissent entre or, bois et vivres selon les stocks. Chargements de 30, crédités uniquement au manoir. Les débits affichés sont estimatifs. Cliquer pour sélectionner tous les gobelins.`}
+          title={`${workforce.total}/${GOBLIN_CAP} gobelins : ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres, ${workforce.building} aux chantiers, ${workforce.other} en mission ou au repos. ${workforce.queued} en recrutement. Limite séparée de ${GOBLIN_CAP}, recrutements inclus, sans utiliser le cap armée. Les gobelins libres se répartissent entre or, bois et vivres selon les stocks. Chargements de 30, crédités uniquement au manoir. Les débits affichés sont estimatifs. Cliquer pour sélectionner tous les gobelins.`}
           aria-label={`Gobelins : ${workforce.total} sur ${GOBLIN_CAP}, ${workforce.queued} en recrutement, dont ${workforce.wood} au bois, ${workforce.gold} à l’or, ${workforce.food} aux vivres et ${workforce.building} aux chantiers. Sélectionner tous les gobelins.`}
           onClick={() => {
             select(

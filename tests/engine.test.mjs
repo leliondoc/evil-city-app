@@ -144,13 +144,13 @@ test('Queued recruitment reserves beds and cannot overfill the domain', () => {
   const s = createGame();
   s.lots[7].kind = 'crypt';
   s.resources = { gold: 9999, wood: 9999, food: 9999, mana: 9999 };
-  for (let i = 0; i < 9; i++) assert.equal(recruit(s, 'skeleton'), '');
+  for (let i = 0; i < 12; i++) assert.equal(recruit(s, 'skeleton'), '');
   assert.equal(population(s), capacity(s));
   const before = s.resources.gold;
   assert.ok(recruit(s, 'skeleton'));
   assert.equal(s.resources.gold, before);
   advance(s, 7);
-  assert.equal(s.units.length, 12);
+  assert.equal(s.units.length, 15);
 });
 
 test('Retreat stops attacks and injured creatures heal at the manor', () => {
@@ -222,5 +222,5 @@ test('Skeleton and minotaur progression is reachable from a developed domain', (
   advance(s, 16);
   assert.ok(s.units.some((u) => u.kind === 'skeleton'));
   assert.ok(s.units.some((u) => u.kind === 'minotaur'));
-  assert.equal(population(s), 7);
+  assert.equal(population(s), 4);
 });

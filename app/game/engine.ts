@@ -239,7 +239,7 @@ export const CREATURES: Record<
     damage: 0,
     speed: 2.1,
     size: 31,
-    population: 1,
+    population: 0,
   },
   'spear-goblin': {
     name: 'Gobelin lancier',
@@ -1375,7 +1375,7 @@ export function recruitReason(s: State, kind: CreatureKind) {
     return 'Le Minotaure exige une hutte des trolls et une crypte.';
   if (!recruitmentSource(s, kind))
     return 'Aucun bâtiment de recrutement opérationnel.';
-  if (population(s) + CREATURES[kind].population > capacity(s))
+  if (kind !== 'goblin' && population(s) + CREATURES[kind].population > capacity(s))
     return 'Plus de place. Construisez ou améliorez une grotte gobeline.';
   if (!canAfford(s, CREATURES[kind].cost)) {
     const missing = Object.entries(CREATURES[kind].cost)
