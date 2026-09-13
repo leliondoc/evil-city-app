@@ -81,8 +81,7 @@ export function DomainPanel({
             </>
           ) : (
             <p>
-              Au calme, les créatures vont manger et se reposer. Vos ordres
-              restent prioritaires.
+              Après un ordre, les repas et le repos automatiques attendent la fin de l’action, puis 30 secondes. Tenir suspend ces automatismes jusqu’au prochain ordre.
             </p>
           )}
         </AbilityCard>

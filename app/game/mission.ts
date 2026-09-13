@@ -10,11 +10,14 @@ import {
   type State,
 } from './engine.ts';
 import { manorLevel, upgradeBenefit } from './progression.ts';
+import { campaignMap, campaignObjectives, RALLY_POINT } from './campaign.ts';
 
 type MissionAction =
+  | { type: 'rally' }
   | { type: 'recruit'; kind: CreatureKind }
   | { type: 'inspect'; lotId: number; buildKind?: BuildingKind };
 export type MissionHint = {
+  rallyPoint?: { x: number; y: number };
   detail: string;
   button?: string;
   action?: MissionAction;
@@ -40,7 +43,8 @@ export function mission(s: State) {
   const conquered = s.lots.some((l) => l.owned && property(l));
   const crypt = hasBuilding(s, 'crypt');
   const fighters = army(s);
-  const objectives = [
+  const map = campaignMap(s);
+  const objectives = map ? campaignObjectives(s) : [
     {
       id: 'goblin',
       label: 'Recruter un premier gobelin',
@@ -98,25 +102,32 @@ export function mission(s: State) {
     detail: s.lost ? 'Votre manoir est tombé.' : 'Le quartier est à vous.',
   };
 
-  const recruitHint = (kind: 'goblin' | 'spear-goblin'): MissionHint => {
+  const recruitHint = (kind: CreatureKind): MissionHint => {
     const queued = s.recruits.filter((r) => r.kind === kind);
     const next = queued.reduce<State['recruits'][number] | undefined>(
       (a, b) => (!a || b.remaining < a.remaining ? b : a),
       undefined,
     );
     const enoughQueued =
-      kind === 'goblin'
+      kind !== 'spear-goblin'
         ? queued.length > 0
         : fighters.length + queued.length >= 2;
     return {
-      detail:
-        kind === 'goblin'
+      detail: kind === 'skeleton'
+        ? 'Le squelette ne consomme pas de vivres. Recrutez-en un à la crypte pour renforcer les lanciers.'
+        : kind === 'troll'
+          ? 'Le troll brise la première ligne des chevaliers. Recrutez-en un, puis choisissez vos renforts et vos recherches avant l’assaut.'
+          : kind === 'goblin'
           ? 'Les gobelins récoltent et construisent. Recrutez le premier au manoir.'
-          : 'Les gobelins lanciers à pied sont disponibles dès le début à la grotte. Rassemblez-en deux pour conquérir votre première maison.',
+          : map?.id === 'refuge'
+            ? 'La cantine est prête : les lanciers sont maintenant disponibles. Recrutez-en deux, puis vous apprendrez à les déplacer ensemble.'
+            : 'Recrutez deux lanciers à la grotte pour préparer une conquête.',
       button: enoughQueued
         ? kind === 'goblin'
           ? 'Premier gobelin en préparation…'
           : 'Recrutement en cours…'
+        : kind === 'skeleton' ? 'Recruter un squelette'
+        : kind === 'troll' ? 'Recruter un troll'
         : kind === 'goblin'
           ? 'Recruter mon premier gobelin'
           : 'Recruter un lancier',
@@ -132,7 +143,7 @@ export function mission(s: State) {
       status: next ? `Arrivée dans ${Math.ceil(next.remaining)} s` : undefined,
       marker: enoughQueued
         ? undefined
-        : { lotId: kind === 'goblin' ? 6 : 3, kind: 'recruit', label: 'Recruter' },
+        : { lotId: s.lots.find(l => l.owned && l.kind === (kind === 'skeleton' ? 'crypt' : kind === 'troll' ? 'forge' : kind === 'goblin' ? 'hq' : 'den'))?.id ?? 6, kind: 'recruit', label: 'Recruter' },
     };
   };
   const constructionHint = (
@@ -145,11 +156,16 @@ export function mission(s: State) {
         (l) => l.owned && buildable(l) && (kind !== 'forge' || property(l)),
       ) ??
       s.lots.find((l) => l.owned && buildable(l));
-    if (!lot)
+    if (!lot) {
+      const target = s.lots.filter(l => !l.owned && property(l) && adjacent(s, l)).sort((a, b) => a.hp - b.hp)[0];
       return {
         detail:
           'Conquérez une maison voisine avec votre armée pour libérer un emplacement.',
+        button: target ? 'Voir le terrain à conquérir' : undefined,
+        action: target ? { type: 'inspect', lotId: target.id } : undefined,
+        marker: target ? { lotId: target.id, kind: 'attack', label: 'Conquérir' } : undefined,
       };
+    }
     const name =
       kind === 'canteen'
         ? 'la cantine'
@@ -162,7 +178,7 @@ export function mission(s: State) {
         : kind === 'forge'
           ? 'Le terrain gagné peut maintenant accueillir la hutte des trolls. Préparez-la, puis lancez le chantier ici.'
           : kind === 'crypt'
-            ? 'Le manoir niveau 2 et la cantine débloquent la crypte : squelettes, spectres et alchimistes.'
+            ? map?.id === 'faubourg' ? 'Transformez la maison conquise en crypte. Vous y recruterez votre premier squelette.' : 'Le manoir niveau 2 et la cantine débloquent la crypte.'
             : 'Installez la cantine sur votre terrain libre, près du manoir.',
       button: work ? 'Voir le chantier' : `Préparer ${name}`,
       action: {
@@ -180,6 +196,14 @@ export function mission(s: State) {
     };
   };
   if (current?.id === 'goblin') hint = recruitHint('goblin');
+  else if (current?.id === 'rally') {
+    hint = fighters.length < 2 ? recruitHint('spear-goblin') : {
+      detail: 'Sélectionnez vos lanciers avec le bouton ci-dessous, puis touchez ou cliquez près du drapeau doré au sud de la cantine. Ils attendent 30 s après l’arrivée. Tenir les garde sur place jusqu’au prochain ordre.',
+      button: 'Déplacer mes lanciers', action: { type: 'rally' }, rallyPoint: RALLY_POINT,
+    };
+  }
+  else if (current?.id === 'crypt-army') hint = crypt ? recruitHint('skeleton') : constructionHint('crypt');
+  else if (current?.id === 'troll') hint = recruitHint('troll');
   else if (current?.id === 'army') hint = recruitHint('spear-goblin');
   else if (current?.id === 'manor2' || current?.id === 'manor3') {
     const manor = s.lots.find((lot) => lot.owned && lot.kind === 'hq');
@@ -238,7 +262,7 @@ export function mission(s: State) {
         detail: marching
           ? `Votre armée ${besieging ? 'réduit les défenses' : 'rejoint la cible'}. Le bâtiment sera à vous quand sa résistance atteindra zéro.`
           : current.id === 'capture'
-            ? 'Envoyez vos combattants conquérir la propriété indiquée. Une fois à vous, elle pourra accueillir la hutte des trolls.'
+            ? `Sélectionnez l’armée, puis donnez un ordre sur la maison indiquée. Une fois conquise, elle pourra accueillir ${map?.id === 'faubourg' ? 'la crypte' : 'un bâtiment'}.`
             : 'Conquérez ce bâtiment avec votre armée pour couper les renforts humains.',
         button: marching ? 'Voir l’assaut' : 'Voir la cible',
         action: { type: 'inspect', lotId: target.id },

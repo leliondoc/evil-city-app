@@ -1,6 +1,7 @@
 import { STREET_STARTS, STREET_WIDTH } from './streets.ts';
 import type { State } from './engine';
 import type { AssetKey } from './art';
+import { campaignMap } from './campaign.ts';
 import type { DrawLayer } from './pixiScene';
 import { BRIDGES, HIGHLANDS } from './scenery.ts';
 import { ISLAND_PATHS } from './islandRoutes.ts';
@@ -98,7 +99,7 @@ function terrace(draw: DrawLayer, p: GroundPatch, lower: GroundPatch[]) {
     );
 }
 export function drawTerrain(draw: DrawLayer, state: State): GroundTile[] {
-  const ground = groundTiles();
+  const ground = groundTiles().map(tile => ({ ...tile, key: campaignMap(state)?.ground ?? tile.key }));
   const coast = new Map(ground.map((t) => [`${t.x},${t.y}`, t]));
   for (const p of HIGHLANDS)
     for (const tile of patchTiles(p)) {
@@ -132,13 +133,13 @@ export function drawTerrain(draw: DrawLayer, state: State): GroundTile[] {
   for (const lot of state.lots) {
     const key: AssetKey = lot.owned
       ? 'terrain-5'
-      : lot.id === 0
+      : lot.kind === 'guild'
         ? 'terrain-2'
         : lot.id === 8
           ? 'terrain-3'
           : 'terrain-1';
     grassPatch(draw, key, lot.x * CELL, lot.y * CELL, 4, 4);
-    if (lot.id === 0 && !lot.owned) {
+    if (lot.kind === 'guild' && !lot.owned) {
       terrace(
         draw,
         {

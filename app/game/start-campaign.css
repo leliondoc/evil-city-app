@@ -1,0 +1,95 @@
+.start-menu:has(.start-campaign) {
+  min-height: 100svh;
+  height: auto;
+  overflow-y: auto;
+}
+.start-menu:has(.start-campaign) .start-content {
+  min-height: 100svh;
+  height: auto;
+  padding-top: 52px;
+}
+.start-menu:has(.start-campaign) .start-brand {
+  margin-top: 0;
+}
+.start-menu:has(.start-campaign) .start-title {
+  font-size: clamp(65px, 10vh, 116px);
+}
+.start-menu:has(.start-campaign) .start-actions {
+  padding-top: 16px;
+}
+.start-campaign {
+  width: min(460px, calc(100vw - 32px));
+  margin: 0 auto 16px;
+}
+.start-chapters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.start-chapters button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  min-height: 78px;
+  color: #f4e8d0;
+  background: #192b316e;
+  border: 1px solid #99896966;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.start-chapters button[aria-pressed='true'] {
+  border-color: #f0d69a;
+  background: #74518d66;
+}
+.start-chapters button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.start-chapters span {
+  font-family: Georgia, serif;
+  color: #f0d69a;
+}
+.start-chapters strong {
+  font-size: 13px;
+}
+.start-chapters small {
+  font-size: 11px;
+}
+.start-campaign p {
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 10px 0 0;
+  color: #e5d6bf;
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .start-menu:has(.start-campaign) .start-content {
+    padding: 45px 24px 42px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 28px;
+  }
+  .start-menu:has(.start-campaign) .start-title {
+    flex-direction: column;
+    font-size: 64px;
+  }
+  .start-menu:has(.start-campaign) .start-actions {
+    padding: 0;
+  }
+  .start-menu:has(.start-campaign) .start-tagline {
+    max-width: 220px;
+  }
+  .start-campaign {
+    width: min(370px, 48vw);
+    margin-bottom: 10px;
+  }
+  .start-campaign p {
+    font-size: 11px;
+  }
+  .start-chapters button {
+    min-height: 64px;
+    padding: 6px 4px;
+  }
+}

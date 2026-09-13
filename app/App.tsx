@@ -1,5 +1,6 @@
 import { Component, lazy, Suspense, useState, type ReactNode } from 'react';
 import { StartMenu } from './game/StartMenu';
+import type { CampaignMapId } from './game/campaign';
 
 const Game = lazy(() => import('./game/Game'));
 
@@ -31,6 +32,7 @@ class GameBoundary extends Component<
 export default function App() {
   const [hasGame, setHasGame] = useState(false);
   const [menuOpen, setMenuOpen] = useState(true);
+  const [initialMap, setInitialMap] = useState<CampaignMapId>('refuge');
 
   return (
     <>
@@ -45,6 +47,7 @@ export default function App() {
               }
             >
               <Game
+                initialMap={initialMap}
                 active={!menuOpen}
                 onReturnToMenu={() => setMenuOpen(true)}
               />
@@ -55,7 +58,8 @@ export default function App() {
       {menuOpen && (
         <StartMenu
           hasGame={hasGame}
-          onPlay={() => {
+          onPlay={(mapId) => {
+            if (!hasGame) setInitialMap(mapId);
             setHasGame(true);
             setMenuOpen(false);
           }}

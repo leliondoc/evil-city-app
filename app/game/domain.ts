@@ -139,6 +139,7 @@ export function restUnit(s: State, id: number, preferred?: number): string {
     return 'Aucun chemin vers le lieu de repos.';
   assign(u, entrance(lot), lot.kind === 'crypt' ? 'restore' : 'rest', lot.id);
   u.manualRest = true;
+  if (u.kind !== 'goblin') u.manualUntil = Infinity;
   announce(
     s,
     `${CREATURES[u.kind].name} part se soigner jusqu’à récupération complète.`,
@@ -208,6 +209,7 @@ export function haunt(s: State, id: number, unitId?: number): string {
       (u.hauntReadyAt ?? 0) <= s.elapsed,
   )!;
   assign(ghost, entrance(s.lots[id]), 'haunt', id);
+  ghost.manualUntil = Infinity;
   announce(
     s,
     'Le spectre part hanter le bâtiment. Il doit atteindre son entrée et préparer son maléfice.',
@@ -631,7 +633,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
   }
   const needs = ['eat', 'rest', 'restore'];
   if (needs.includes(u.task) && !u.manualRest && !safe(s, u)) idle(u);
-  if (free(u) && safe(s, u)) {
+  if (free(u) && !u.holdPosition && u.manualUntil === undefined && safe(s, u)) {
     const crypt = room(s, 'crypt');
     if (
       u.kind === 'goblin' &&

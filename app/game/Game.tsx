@@ -2,6 +2,7 @@
 
 import '../globals.css';
 import './mobile-ui.css';
+import './campaign.css';
 import { restReason, restUnit, restUnits } from './domain';
 
 import {
@@ -71,11 +72,15 @@ import { shieldActive, shieldSettings, provocationReason } from './shields';
 import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
+import { CAMPAIGN_MAPS, campaignMap, advancedCampaign, type CampaignMapId } from './campaign';
+import { completeChapter, readUnlockedChapter, readUIScale, saveUIScale } from './preferences';
 import { createGameStore } from './gameStore';
 import { buildingArt, buildingHasTowers, enemyPortrait, type Animation } from './art';
 import { humanBuildingDescription } from './humanBuildings';
 import {
   BUILDINGS,
+  createGame,
+  holdUnits,
   CREATURES,
   armyDamage,
   unitSpeed,
@@ -180,22 +185,29 @@ function clock(seconds: number) {
 
 export default function Game({
   initialState,
+  initialMap = 'refuge',
   active = true,
   onReturnToMenu,
 }: {
   initialState?: State;
+  initialMap?: CampaignMapId;
   active?: boolean;
   onReturnToMenu?: () => void;
 } = {}) {
-  const [gameStore] = useState(() => createGameStore(initialState));
+  const [gameStore] = useState(() => createGameStore(initialState ?? createGame(initialMap)));
   const s = useSyncExternalStore(gameStore.subscribe, gameStore.getSnapshot);
+  const map = campaignMap(s);
+  const buildOptions = BUILD_OPTIONS.filter(kind => !s.campaign || s.campaign.buildings.includes(kind));
+  const recruitOptions = RECRUIT_OPTIONS.filter(kind => !s.campaign || s.campaign.creatures.includes(kind));
+  const [unlockedChapter, setUnlockedChapter] = useState(readUnlockedChapter);
+  const [uiScale, setUIScale] = useState(readUIScale);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const audioRef = useRef<GameAudio | null>(null);
   const [audioSettings, setAudioSettings] = useState(readAudioSettings);
   const [audioStatus, setAudioStatus] = useState<AudioStatus>('idle');
-  const [selection, setSelection] = useState<Selection>({ type: 'lot', id: 7 });
+  const [selection, setSelection] = useState<Selection>({ type: 'none' });
   const selectionRef = useRef(selection);
   useLayoutEffect(() => {
     selectionRef.current = selection;
@@ -207,13 +219,13 @@ export default function Game({
   }, [pendingBuild]);
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const [tab, setTab] = useState('build');
+  const [tab, setTab] = useState('recruit');
   const [compact, setCompact] = useState(
     () => window.matchMedia('(max-width: 800px), (pointer: coarse)').matches,
   );
   const [mobilePanel, setMobilePanel] = useState<
     'details' | 'build' | 'recruit' | null
-  >('details');
+  >(null);
   const [missionExpanded, setMissionExpanded] = useState(false);
   const [touchMode, setTouchMode] = useState<'inspect' | 'select' | 'command'>(
     'inspect',
@@ -231,8 +243,9 @@ export default function Game({
           );
       document.documentElement.style.setProperty(
         '--game-ui-scale',
-        scale.toFixed(3),
+        (query.matches ? 1 : scale * uiScale).toFixed(3),
       );
+      document.documentElement.style.setProperty('--touch-text-scale', String(uiScale));
     };
     update();
     query.addEventListener('change', update);
@@ -241,11 +254,12 @@ export default function Game({
       query.removeEventListener('change', update);
       window.removeEventListener('resize', update);
       document.documentElement.style.removeProperty('--game-ui-scale');
+      document.documentElement.style.removeProperty('--touch-text-scale');
     };
-  }, []);
+  }, [uiScale]);
   const [bestiaryAction, setBestiaryAction] = useState<Animation>('idle');
   const [modal, setModal] = useState<
-    'guide' | 'bestiary' | 'settings' | 'restart' | 'victory' | 'defeat' | 'notice' | null
+    'guide' | 'bestiary' | 'settings' | 'chapters' | 'restart' | 'victory' | 'defeat' | 'notice' | null
   >(null);
   const [noticeDetail, setNoticeDetail] = useState('');
   const [ready, setReady] = useState(false);
@@ -336,6 +350,8 @@ export default function Game({
     (next: Selection) => {
       setSelection(next);
       selectionRef.current = next;
+      const touchUnit = (next.type === 'unit' || next.type === 'units') && window.matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+      setMobilePanel(next.type === 'none' || touchUnit ? null : 'details');
       if (next.type === 'unit' || next.type === 'units') setPendingBuild(null);
       if (next.type === 'none') {
         setPendingBuild(null);
@@ -351,7 +367,7 @@ export default function Game({
         }
       }
     },
-    [notify, gameStore],
+    [notify, gameStore, setSelection, setMobilePanel, setPendingBuild, setFeedback],
   );
   const command = useCallback(
     (point: Point, target: Selection | null) => {
@@ -376,13 +392,14 @@ export default function Game({
         ) {
           setFeedback('');
           setTouchMode('inspect');
+          setMobilePanel(null);
         }
       } else
         notify(
           'Sélectionnez une créature pour donner un ordre.',
         );
     },
-    [notify, run],
+    [notify, run, setPendingBuild, setFeedback, setTouchMode, setMobilePanel],
   );
 
   useEffect(() => {
@@ -412,6 +429,8 @@ export default function Game({
           !victoryShown.current
         ) {
           victoryShown.current = true;
+          const state = gameStore.getState();
+          if (state.won && state.campaign) setUnlockedChapter(value => Math.max(value, completeChapter(state.campaign!.mapId)));
           setModal(gameStore.getState().lost ? 'defeat' : 'victory');
         }
       }
@@ -438,7 +457,7 @@ export default function Game({
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.cancelGesture();
-      rendererRef.current.interactionMode = compact ? touchMode : 'inspect';
+      rendererRef.current.interactionMode = touchMode;
     }
   }, [compact, touchMode]);
   useEffect(() => {
@@ -467,7 +486,7 @@ export default function Game({
       setTab('build');
       notify('Choisissez une parcelle à vous pour lancer le chantier.');
     },
-    [notify, gameStore],
+    [notify, gameStore, setPendingBuild, setTouchMode, setMobilePanel, setTab],
   );
   const chooseRecruit = useCallback(
     (kind: CreatureKind) => {
@@ -523,14 +542,18 @@ export default function Game({
         setPendingBuild(null);
         setFeedback('');
         setSelection({ type: 'none' });
+        setMobilePanel(null);
+        setTouchMode('inspect');
       }
       if (event.key.toLowerCase() === 'h') setModal('guide');
       if (event.key.toLowerCase() === 'r') run((s) => retreat(s));
       if (['1', '2', '3', '4', '5', '6', '7'].includes(event.key)) {
         const i = Number(event.key) - 1;
-        if (tab === 'build' && BUILD_OPTIONS[i]) chooseBuild(BUILD_OPTIONS[i]);
-        else if (tab === 'recruit' && RECRUIT_OPTIONS[i])
-          chooseRecruit(RECRUIT_OPTIONS[i]);
+        const state = gameStore.getState();
+        const buildings = BUILD_OPTIONS.filter(kind => !state.campaign || state.campaign.buildings.includes(kind));
+        const creatures = RECRUIT_OPTIONS.filter(kind => !state.campaign || state.campaign.creatures.includes(kind));
+        if (tab === 'build' && buildings[i]) chooseBuild(buildings[i]);
+        else if (tab === 'recruit' && creatures[i]) chooseRecruit(creatures[i]);
       }
       const movement: Record<string, [number, number]> = {
         z: [0, 40],
@@ -565,7 +588,7 @@ export default function Game({
       window.removeEventListener('blur', stop);
       document.removeEventListener('visibilitychange', stop);
     };
-  }, [active, modal, tab, chooseBuild, chooseRecruit, run]);
+  }, [active, modal, tab, chooseBuild, chooseRecruit, run, gameStore]);
 
   const group = s.units.filter(
     (u) => u.hp > 0 && selectedUnitIds(selection).includes(u.id),
@@ -622,6 +645,13 @@ export default function Game({
       run((state) => recruit(state, action.kind));
       return;
     }
+    if (action.type === 'rally') {
+      select(unitSelection(army(s).map(u => u.id)));
+      setMissionExpanded(false);
+      setMobilePanel(null);
+      setTouchMode('command');
+      return;
+    }
     // Inspect first: choosing the objective never spends construction resources.
     setMissionExpanded(false);
     setPendingBuild(action.buildKind ?? null);
@@ -650,15 +680,22 @@ export default function Game({
     setPendingBuild(null);
     if (mode === 'command') setMobilePanel(null);
   };
-  const reset = () => {
-    gameStore.reset();
-    setSelection({ type: 'lot', id: 7 });
+  const clearTouchSelection = () => {
+    chooseTouchMode('inspect');
+    if (!pendingBuild) select({ type: 'none' });
+  };
+  const reset = (mapId = s.campaign?.mapId) => {
+    gameStore.reset(createGame(mapId));
+    setSelection({ type: 'none' });
+    selectionRef.current = { type: 'none' };
+    pendingRef.current = null;
     setPendingBuild(null);
     setPaused(false);
     setSpeed(1);
     setFeedback('');
     setModal(null);
-    setMobilePanel('details');
+    setMobilePanel(null);
+    setTab('recruit');
     setTouchMode('inspect');
     setMissionExpanded(false);
     victoryShown.current = false;
@@ -702,19 +739,19 @@ export default function Game({
             aria-controls="mobile-mission-content"
             onClick={() => setMissionExpanded((value) => !value)}
           >
-            <span>Les Tilleuls</span>
+            <span>{map?.name ?? 'Les Tilleuls'}</span>
             <small>{objectives.filter((o) => o.done).length}/{objectives.length}</small>
             <ChevronDown size={16} />
           </button>
-        ) : <h2>Les Tilleuls</h2>}
+        ) : <h2>{map?.name ?? 'Les Tilleuls'}</h2>}
       </div>
       <section
         className="mission-card"
         aria-label="Mission et objectifs"
         id={compact ? 'mobile-mission-content' : undefined}
       >
-        <PanelSkin kind="notice" />
-        <p className="eyebrow">Chapitre I · Premiers méfaits</p>
+        <PanelSkin kind={compact ? 'paper' : 'notice'} />
+        <p className="eyebrow">Chapitre {map?.chapter ?? 1} · {map?.subtitle ?? 'Premiers méfaits'}</p>
         <div
           className="current-objective"
           data-objective={currentObjective?.id ?? 'ended'}
@@ -724,7 +761,7 @@ export default function Game({
           </p>
           <h2 aria-live="polite">
             {currentObjective?.label ??
-              (s.won ? 'Le quartier est à vous.' : 'Votre manoir est tombé.')}
+              (s.won ? 'Chapitre terminé !' : 'Votre manoir est tombé.')}
           </h2>
           <p className="objective-detail">{hint.detail}</p>
           {hint.progress !== undefined && (
@@ -750,6 +787,7 @@ export default function Game({
             <p className="objective-reason">{hint.reason}</p>
           )}
         </div>
+        {map && <details className="chapter-context"><summary>Pourquoi sommes-nous ici ?</summary><p>{map.briefing}</p></details>}
         <details className="objectives-disclosure" open={compact ? missionExpanded : undefined}>
           <summary>
             Objectifs{' '}
@@ -816,6 +854,7 @@ export default function Game({
       data-compact={compact}
       data-panel={mobilePanel ?? 'map'}
       data-placing={!!pendingBuild}
+      data-commanding={touchMode === 'command'}
     >
       <header className="topbar">
         <div className="brand">
@@ -960,16 +999,16 @@ export default function Game({
         >
           {missionCard}
         </aside>
-        <div className="selection-column">
+        <div className="selection-column" hidden={selection.type === 'none' || mobilePanel !== 'details'}>
           <aside
             ref={sidebarRef}
             className="sidebar"
             aria-label="Sélection"
           >
-            {compact && (
+            {(
               <button
                 type="button"
-                className="mobile-sheet-close"
+                className="mobile-sheet-close selection-close"
                 aria-label="Fermer les détails"
                 onClick={() => setMobilePanel(null)}
               >
@@ -1016,34 +1055,18 @@ export default function Game({
                 </div>
                 <p className="reason">
                   {compact
-                    ? 'Fermez les détails, puis Ordre et touchez la destination ou la cible.'
+                    ? 'Touchez une rue libre pour déplacer le groupe, ou un ennemi pour attaquer. Désélectionner libère la sélection.'
                     : 'Clic droit : déplacer le groupe ou attaquer une cible.'}{' '}
                   Les gobelins ne combattent pas.
                 </p>
+                <p className="reason">Repas et repos automatiques : 30 s après la fin d’un ordre. Tenir conserve la position jusqu’au prochain ordre.</p>
                 <p className="reason">
                   {compact
                     ? 'Groupe : touchez les créatures pour les ajouter ou les retirer, ou tracez un rectangle. Explorer revient au déplacement de la carte.'
                     : 'Shift + clic : ajouter ou retirer une unité. Shift + rectangle : compléter la sélection. Échap ou clic dans le vide : désélectionner.'}
                 </p>
               </section>
-            ) : selection.type === 'none' ? (
-              <section
-                className="selection-panel"
-                aria-label="Aucune sélection"
-              >
-                <h3 className="selection-name">Aucune sélection</h3>
-                <p className="selection-text">
-                  {compact
-                    ? 'Touchez une créature ou une parcelle, puis ouvrez Détails. Groupe permet de sélectionner plusieurs créatures avec un rectangle.'
-                    : 'Cliquez sur une créature ou une parcelle pour afficher ses actions. Maintenez Shift et glissez avec le bouton gauche pour sélectionner plusieurs unités par rectangle.'}
-                </p>
-                <p className="reason">
-                  {compact
-                    ? 'Dans Explorer, touchez le vide pour désélectionner. Sélectionnez une créature, puis Ordre pour la déplacer ou attaquer.'
-                    : 'Clic dans le vide ou Échap : désélectionner. Clic droit : déplacer la créature sélectionnée ou attaquer une cible ennemie.'}
-                </p>
-              </section>
-            ) : selection.type === 'tower' ? (
+            ) : selection.type === 'none' ? null : selection.type === 'tower' ? (
               <TowerPanel state={s} id={selection.id} onAction={run} />
             ) : selection.type === 'worker' || selection.type === 'resource' ? (
               <SupplySelection
@@ -1110,7 +1133,7 @@ export default function Game({
                 </p>
                 {selectedEnemy && (
                   <>
-                    <CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} />
+                    <details className="combat-disclosure"><summary>Forces et faiblesses</summary><CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} /></details>
                     {shieldActive(selectedEnemy, s.elapsed) && <p className="combat-status"><Shield size={16} />Bouclier · {Math.ceil(selectedEnemy.shieldUntil! - s.elapsed)} s · −{shieldSettings(selectedEnemy).reduction * 100} % de dégâts reçus</p>}
                     <div className="selection-stats">
                       <span><Shield size={14} />{Math.ceil(selectedEnemy.hp)} / {selectedEnemy.maxHp} PV</span>
@@ -1146,7 +1169,8 @@ export default function Game({
                 )}
                 {selectedUnit && creature && (
                   <>
-                    <CombatDetails profile={creatureCombatProfile(selectedUnit.kind, unitIsMounted(s, selectedUnit))} />
+                    <details className="combat-disclosure"><summary>Forces et faiblesses</summary><CombatDetails profile={creatureCombatProfile(selectedUnit.kind, unitIsMounted(s, selectedUnit))} /></details>
+                    {(selectedUnit.holdPosition || selectedUnit.manualUntil !== undefined) && <p className="manual-order-status">{selectedUnit.holdPosition && selectedUnit.manualUntil === undefined ? 'Position tenue · jusqu’au prochain ordre' : selectedUnit.manualUntil === Infinity ? 'Ordre prioritaire · automatisation en attente' : `Ordre prioritaire · automatisation dans ${Math.ceil(Math.max(0, (selectedUnit.manualUntil ?? 0) - s.elapsed))} s`}</p>}
                     {provocationReason(s, selectedUnit) && <p className="combat-status">{provocationReason(s, selectedUnit)}</p>}
                     <div className="selection-stats">
                       <span>
@@ -1434,13 +1458,13 @@ export default function Game({
                     )}
                   </>
                 )}
-                {selectedLot?.kind === 'hq' && <ManorProgression level={manorLevel(s)} />}
-                <DomainPanel
+                {selectedLot?.kind === 'hq' && advancedCampaign(s) && <details><summary>Progression du manoir</summary><ManorProgression level={manorLevel(s)} /></details>}
+                {advancedCampaign(s) && <DomainPanel
                   state={s}
                   lot={selectedLot}
                   unit={selectedUnit}
                   onAction={run}
-                />
+                />}
               </section>
             )}
           </aside>
@@ -1454,11 +1478,11 @@ export default function Game({
             tabIndex={0}
             aria-label={
               compact
-                ? 'Carte tactile. Touchez pour sélectionner, glissez pour explorer, pincez pour zoomer. Groupe permet une sélection par rectangle ; Ordre permet de toucher une destination ou un ennemi.'
+                ? 'Carte tactile. Touchez une unité puis une rue pour la déplacer, ou un ennemi pour attaquer. Glissez pour explorer, pincez pour zoomer. Groupe permet une sélection par rectangle. Désélectionner annule la sélection.'
                 : 'Carte interactive en vue du dessus. Cliquez sur une parcelle ou une créature. Shift + glisser gauche : sélectionner un groupe ou compléter la sélection. Shift + clic : ajouter ou retirer une unité. Glisser gauche, clic molette, ZQSD ou flèches : déplacer la carte.'
             }
           />
-          <ThreatPanel
+          {advancedCampaign(s) && <ThreatPanel
             state={s}
             compact={compact}
             onSelect={(next) => {
@@ -1467,7 +1491,17 @@ export default function Game({
               setMobilePanel('details');
             }}
             onDefend={() => run((state) => defend(state))}
-          />
+          />}
+          {!compact && army(s).length > 0 && <div className="army-command-bar" aria-label="Commandes de l’armée">
+            <Button className="primary-btn" onClick={() => {
+              select(unitSelection(army(s).map(u => u.id)));
+              setMobilePanel(null);
+              setTouchMode('inspect');
+            }}><Users size={17} /> Armée</Button>
+            <Button className="primary-btn" disabled={!group.length || s.won || s.lost} aria-pressed={touchMode === 'command'} onClick={() => chooseTouchMode('command')}><Flag size={17} /> Déplacer / attaquer</Button>
+            <Button className="primary-btn" disabled={!group.length || s.won || s.lost} onClick={() => { run(state => holdUnits(state, group.map(u => u.id))); setTouchMode('inspect'); }}><Shield size={17} /> Tenir</Button>
+          </div>}
+          {touchMode === 'command' && <output className="order-instruction" aria-live="polite">{compact ? 'Touchez' : 'Cliquez sur'} une destination ou une cible. {hint.rallyPoint ? 'Rejoignez le drapeau doré.' : ''}</output>}
           {compact && (
             <>
               <div className="touch-toolbar" aria-label="Commandes tactiles">
@@ -1477,13 +1511,13 @@ export default function Game({
                   onPointerDown={(e) => {
                     if (e.pointerType === 'touch') {
                       e.preventDefault();
-                      chooseTouchMode('inspect');
+                      clearTouchSelection();
                     }
                   }}
-                  onClick={() => chooseTouchMode('inspect')}
+                  onClick={clearTouchSelection}
                 >
                   {pendingBuild ? <PackIcon asset="ui-close" /> : <Hand size={18} aria-hidden="true" />}
-                  {pendingBuild ? 'Annuler' : 'Explorer'}
+                  {pendingBuild ? 'Annuler' : group.length ? 'Désélectionner' : 'Explorer'}
                 </Button>
                 <Button
                   className="primary-btn"
@@ -1517,6 +1551,7 @@ export default function Game({
                   <Flag size={18} aria-hidden="true" />
                   Ordre
                 </Button>
+                <Button className="primary-btn" disabled={!group.length || s.won || s.lost} onClick={() => { run(state => holdUnits(state, group.map(u => u.id))); setTouchMode('inspect'); }}><Shield size={18} /> Tenir</Button>
               </div>
               <output
                 className="touch-selection-status sr-only"
@@ -1639,7 +1674,7 @@ export default function Game({
             </span>
           </div>
           <div className="army-faces">
-            {RECRUIT_OPTIONS.map((kind) => {
+            {recruitOptions.map((kind) => {
               const ids = s.units
                 .filter((u) => u.kind === kind && u.hp > 0)
                 .map((u) => u.id);
@@ -1710,7 +1745,8 @@ export default function Game({
           </TabsList>
           <TabsContent value="build">
             <CreationCards layout={compact ? 'grid' : 'scroll'}>
-              {BUILD_OPTIONS.map((kind, i) => {
+              {buildOptions.length === 0 && <p className="discovery-note">Recrutez votre premier gobelin pour découvrir la construction.</p>}
+              {buildOptions.map((kind, i) => {
                 const b = BUILDINGS[kind];
                 const locked = buildUnlockReason(s, kind);
                 const reason = buildMenuReason(s, kind);
@@ -1742,7 +1778,7 @@ export default function Game({
           </TabsContent>
           <TabsContent value="recruit">
             <CreationCards layout={compact ? 'grid' : 'scroll'}>
-              {RECRUIT_OPTIONS.map((kind, i) => {
+              {recruitOptions.map((kind, i) => {
                 const c = CREATURES[kind],
                   reason = recruitReason(s, kind);
                 const orders = s.recruits.filter((r) => r.kind === kind);
@@ -1896,6 +1932,12 @@ export default function Game({
                 La partie reste en pause pendant que ce menu est ouvert.
               </DialogDescription>
               <div className="game-settings">
+                <section className="interface-settings" aria-label="Réglages de l’interface">
+                  <label htmlFor="ui-scale">Taille de l’interface <output>{Math.round(uiScale * 100)} %</output></label>
+                  <input id="ui-scale" type="range" min="80" max="130" step="5" value={Math.round(uiScale * 100)} onChange={event => { const value = Number(event.target.value) / 100; setUIScale(value); saveUIScale(value); }} />
+                  <p>{compact ? 'Agrandit le texte ; les commandes tactiles restent faciles à toucher.' : 'Ajuste les panneaux et les commandes à votre écran.'}</p>
+                  {map && <Button className="subtle-btn" onClick={() => setModal('chapters')}>Choisir un chapitre</Button>}
+                </section>
                 <section
                   className="audio-settings"
                   aria-label="Réglages du son"
@@ -2055,11 +2097,17 @@ export default function Game({
             <>
               <DialogTitle>Le guide du mauvais voisin</DialogTitle>
               <DialogDescription>
-                Prenez la mairie et la guilde, puis éliminez les ennemis encore
+                {map ? map.briefing : <>Prenez la mairie et la guilde, puis éliminez les ennemis encore
                 dans les rues. Protégez votre manoir : sa destruction met fin à
-                la partie.
+                la partie.</>}
               </DialogDescription>
-              <div className="guide-steps">
+              {map && <div className="chapter-guide">
+                <ol>{map.objectives.map(objective => <li key={objective.id}>{objective.label}</li>)}</ol>
+                <p>Les cartes apparaissent au fil de vos découvertes. Les boutons du guide vous conduisent à la prochaine action.</p>
+                <p>{compact ? 'Touchez une unité ou Armée, puis directement une rue pour déplacer la sélection. Touchez un ennemi pour attaquer. Glissez pour explorer, pincez pour zoomer. Désélectionner libère la sélection. Groupe permet de la composer.' : 'Cliquez sur Armée, puis Déplacer / attaquer et une destination. Vous pouvez aussi utiliser le clic droit et Shift pour composer un groupe.'} Les ordres restent prioritaires pendant leur exécution, puis 30 secondes après leur fin. Tenir maintient la position jusqu’au prochain ordre.</p>
+                <p>Fermez les détails avec la croix. La taille de l’interface se règle dans les paramètres.</p>
+              </div>}
+              {!map && <><div className="guide-steps">
                 <div className="guide-step">
                   <b>01</b>
                   <div>
@@ -2167,6 +2215,7 @@ export default function Game({
                   </p>
                 </div>
               </div>
+              </>}
               {compact && (
                 <p className="controls-guide">
                     Sur téléphone : glissez un doigt pour explorer et pincez à
@@ -2237,11 +2286,9 @@ export default function Game({
             <>
               <DialogTitle>On recommence les méfaits ?</DialogTitle>
               <DialogDescription>
-                Vous retrouverez le quartier intact, sans gobelin ni paysan,
-                avec vos ressources de départ. La partie en cours sera
-                remplacée.
+                Vous recommencerez {map?.name ?? 'le quartier'} avec son camp et ses ressources de départ. La partie en cours sera remplacée ; les chapitres débloqués restent accessibles.
               </DialogDescription>
-              <Button className="primary-btn" onClick={reset}>
+              <Button className="primary-btn" onClick={() => reset()}>
                 Recommencer la partie
               </Button>
               <Button className="subtle-btn" onClick={() => setModal(null)}>
@@ -2253,10 +2300,10 @@ export default function Game({
             <>
               <Crown className="victory-seal" strokeWidth={1.2} />
               <DialogTitle style={{ textAlign: 'center' }}>
-                Le quartier est à vous.
+                {map ? `${map.name} · Chapitre terminé` : 'Le quartier est à vous.'}
               </DialogTitle>
               <DialogDescription style={{ textAlign: 'center' }}>
-                La mairie et la guilde sont neutralisées. Les rues sont à vous.
+                {map?.success ?? 'La mairie et la guilde sont neutralisées. Les rues sont à vous.'}
               </DialogDescription>
               <div className="victory-stats">
                 <div>
@@ -2272,10 +2319,12 @@ export default function Game({
                   <span>Créatures présentes</span>
                 </div>
               </div>
-              <Button className="primary-btn" onClick={() => setModal(null)}>
+              {map?.next && <Button className="primary-btn" onClick={() => reset(map.next)}>Continuer · {CAMPAIGN_MAPS[map.next].name}</Button>}
+              {map && !map.next && <Button className="primary-btn" onClick={() => setModal('chapters')}>Rejouer un chapitre</Button>}
+              <Button className="subtle-btn" onClick={() => setModal(null)}>
                 Observer le quartier
               </Button>
-              <Button className="subtle-btn" onClick={reset}>
+              <Button className="subtle-btn" onClick={() => reset()}>
                 Une nouvelle conquête
               </Button>
             </>
@@ -2300,7 +2349,7 @@ export default function Game({
                   <span>Parcelles restantes</span>
                 </div>
               </div>
-              <Button className="primary-btn" onClick={reset}>
+              <Button className="primary-btn" onClick={() => reset()}>
                 Retenter la conquête
               </Button>
               <Button className="subtle-btn" onClick={() => setModal(null)}>
@@ -2308,6 +2357,13 @@ export default function Game({
               </Button>
             </>
           )}
+          {modal === 'chapters' && <>
+            <DialogTitle>Les trois quartiers</DialogTitle>
+            <DialogDescription>Chaque chapitre commence avec son propre camp. Le lancer remplace la partie en cours. Vos déblocages sont conservés sur cet appareil.</DialogDescription>
+            <div className="chapter-picker">{Object.values(CAMPAIGN_MAPS).map(chapter => <button key={chapter.id} disabled={chapter.chapter > unlockedChapter} onClick={() => reset(chapter.id)}>
+              <strong>{chapter.chapter}. {chapter.name}</strong><span>{chapter.subtitle} · {chapter.objectives.length} objectifs</span><small>{chapter.chapter > unlockedChapter ? `Terminez le chapitre ${chapter.chapter - 1}` : chapter.briefing}</small>
+            </button>)}</div>
+          </>}
         </DialogContent>
       </Dialog>
     </main>

@@ -22,6 +22,7 @@ import {
 } from './engine.ts';
 import { COMBAT, creatureMultiplier, fireMultiplier } from './combat.ts';
 import { manorRequirement } from './progression.ts';
+import { advancedCampaign } from './campaign.ts';
 
 export type Research = 'embers' | 'solvent' | 'chain' | 'pig-riding';
 export const RESEARCH: Record<
@@ -130,6 +131,7 @@ export const hasResearch = (s: State, key: Research) =>
   s.strategy.research.includes(key);
 export function researchReason(s: State, key: Research) {
   if (s.won || s.lost) return 'La partie est terminée.';
+  if (!advancedCampaign(s)) return 'Les recherches se découvrent dans les Tilleuls, au chapitre 3.';
   if (hasResearch(s, key)) return 'Amélioration acquise.';
   if (s.strategy.pendingResearch?.some((r) => r.key === key))
     return 'Recherche en cours.';
@@ -467,6 +469,8 @@ export function advanceStrategy(s: State, dt: number) {
         if (
           u.hp > 0 &&
           u.task === 'idle' &&
+          !u.holdPosition &&
+          u.manualUntil === undefined &&
           !['goblin', 'specter'].includes(u.kind) &&
           distance(u, t) < TOWER_RANGE.reinforcement
         )

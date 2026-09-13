@@ -1,6 +1,6 @@
 # Evil City
 
-Jeu de stratégie solo en temps réel, jouable dans le navigateur. Développez votre domaine dans le quartier des Tilleuls, recrutez vos créatures et prenez la mairie et la guilde tout en protégeant le manoir.
+Jeu de stratégie solo en temps réel, jouable dans le navigateur. Une campagne de trois quartiers introduit progressivement la construction, le commandement et la conquête : Le Refuge (3 objectifs), Le Faubourg (4), puis Les Tilleuls (5).
 
 ## Lancer le projet
 
@@ -40,9 +40,11 @@ node scripts/check-pixi.mjs
 node scripts/check-pixi-lifecycle.mjs
 node scripts/check-mission.mjs
 node scripts/check-menu-music.mjs
+node scripts/check-campaign.mjs
+node --experimental-strip-types scripts/check-campaign-balance.mjs
 ```
 
-Les anciens contrôles dédiés acceptent `PLAYWRIGHT_CHANNEL` pour choisir Chrome ou Chromium et `PLAYWRIGHT_PACKAGE` pour un environnement externe. Le contrôle du build utilise le Playwright verrouillé du projet ; `PLAYWRIGHT_BROWSERS=chromium` ou `webkit` limite son exécution à un moteur.
+Les anciens contrôles dédiés acceptent `PLAYWRIGHT_CHANNEL` pour choisir Chrome ou Chromium et `PLAYWRIGHT_PACKAGE` pour un environnement externe. Le contrôle du build utilise le Playwright verrouillé du projet ; `PLAYWRIGHT_BROWSERS=chromium` ou `webkit` limite son exécution à un moteur. Le contrôle de campagne accepte `CAMPAIGN_BROWSER=webkit` et `CAMPAIGN_WIDTH` pour isoler un format. Il vérifie cinq formats, le parcours tactile, la transition entre chapitres, le guide et le réglage de taille ; ses captures sont temporaires.
 
 ## Interface et commandes
 
@@ -50,13 +52,15 @@ Le menu utilise des particules et le dégradé commun aux cartes : `#443A50` ver
 
 Sur ordinateur : clic pour sélectionner, glisser ou ZQSD pour déplacer la carte, molette pour zoomer, Shift + clic/glisser pour composer un groupe. Les flèches déplacent la carte lorsqu’elle a le focus. Clic droit annule un placement en cours ou donne un ordre contextuel. Espace met en pause, R rappelle l’armée, H ouvre l’aide, 1 à 7 choisit l’option de l’onglet actif. Ctrl, Commande et Alt restent réservés aux raccourcis du système et du navigateur.
 
-Sur téléphone et tablette : glisser pour explorer, pincer pour zoomer, Groupe pour sélectionner plusieurs unités et Ordre pour indiquer une cible. Le guide compact « Les Tilleuls » reste séparé du sélecteur, sous les ressources. Les détails s’ouvrent au début ; la croix ferme le volet. La navigation du bas et la roue du manoir donnent accès aux constructions, créatures, réglages et à la pause.
+Sur téléphone et tablette : toucher une unité puis une rue libre la déplace ; toucher un ennemi donne un ordre d’attaque aux combattants sélectionnés. Glisser explore la carte et pincer zoome, sans modifier les ordres. Groupe compose une sélection, Ordre permet une commande contextuelle et Désélectionner libère la sélection. Le guide compact reste sous les ressources ; son contenu déplié défile sur les écrans courts. Les détails sont fermés au démarrage et possèdent une croix sur tous les écrans. La navigation du bas et la roue du manoir donnent accès aux constructions, créatures, réglages et à la pause.
+
+Les combattants conservent la priorité d’un ordre pendant toute son exécution, puis 30 secondes après sa fin. Un nouvel ordre relance cette priorité. Tenir maintient la position sans limite, avec riposte à portée ; un nouvel ordre la libère. Les repas et le repos reprennent automatiquement après le délai. La taille de l’interface est réglable de 80 à 130 % ; sur tactile, la taille du texte change tout en conservant des commandes d’au moins 44 pixels.
 
 Le menu et le jeu partagent les réglages audio. La lecture est tentée à l’ouverture du menu puis au premier geste si le navigateur exige une interaction. Les musiques entrent progressivement, s’effacent en fin de piste et conservent leurs longues pauses. Les mobilisations humaines et héroïques utilisent leurs thèmes sans boucle. La musique sombre accompagne le premier passage au-dessus de 60 % du territoire. Les sources et réglages sont détaillés dans [ASSETS.md](ASSETS.md).
 
 ## Simulation et architecture
 
-Vous commencez sans ouvrier : recrutez un gobelin, établissez vos récoltes et suivez les objectifs. Les sept créatures recrutables sont le gobelin, le gobelin lancier, le troll, le squelette, le minotaure, le spectre et l’alchimiste. Le bestiaire présente leurs animations ainsi que les unités humaines et le chevaucheur déverrouillable.
+Le Refuge commence sans ouvrier et sans attaque humaine. Il apprend à recruter un gobelin, bâtir une cantine, puis réunir deux lanciers au drapeau. Le Faubourg fournit un camp établi et enseigne la conquête, le manoir niveau 2 et les squelettes, sans raids chronométrés. Les Tilleuls ajoutent les recherches, les spécialistes, les trolls et les réactions humaines. Chaque quartier a sa disposition de bâtiments, son armée de départ, ses ressources et sa victoire. Les cartes de création se révèlent au fil des étapes ; les mêmes restrictions s’appliquent aux commandes du moteur et aux raccourcis. Les objectifs déjà validés restent acquis après une perte, tandis que la victoire exige toujours le contrôle effectif de ses cibles. Voir [les choix de conception](docs/onboarding-3-chapitres.md).
 
 Les livraisons alimentent réellement les stocks ; les constructions, recherches et améliorations prennent du temps. La mairie et la guilde financent leurs renforts avec les ressources des paysans. Les paysans tués ou déplacés par la fermeture d’une route peuvent être remplacés après les délais prévus, même quand leur disparition a épuisé les stocks nécessaires au recrutement. La provocation bloque les ordres des unités concernées ; une garnison peut quitter sa tour sur un ordre individuel.
 
@@ -68,6 +72,7 @@ Les livraisons alimentent réellement les stocks ; les constructions, recherches
 | `app/game/engine.ts` | État, navigation, économie et ordres sans dépendance au DOM |
 | `app/game/combat.ts`, `domain.ts`, `strategy.ts`, `shields.ts` | Combat et mécaniques spécialisées |
 | `app/game/progression.ts`, `mission.ts` | Déblocages, coûts, durées et objectifs |
+| `app/game/campaign.ts`, `preferences.ts` | Trois scénarios, découvertes progressives, chapitres débloqués et taille de l’interface |
 | `app/game/renderer.ts` | Caméra, entrées tactiles/souris, sélection sur l’alpha et animation |
 | `app/game/pixiScene.ts`, `terrainRenderer.ts` | Scène WebGL, textures et terrain mis en cache |
 | `app/game/audio.ts`, `music.ts`, `musicPlaylist.ts` | Effets, réglages et transitions musicales |
@@ -77,9 +82,9 @@ Le moteur reçoit explicitement le temps de simulation. Le rendu Pixi réutilise
 
 ## Limites et portabilité
 
-« Reprendre » garde la partie tant que cette page existe. Il n’y a pas encore de sauvegarde persistante de partie, de multijoueur, d’application iOS, d’exécutable Steam, ni de prise en charge complète des manettes. Les réglages audio sont les seules préférences enregistrées localement.
+« Reprendre » garde la partie tant que cette page existe. Les chapitres débloqués, la taille de l’interface et les réglages audio sont enregistrés localement quand le navigateur le permet. Chaque chapitre repart de son camp prédéfini, sans transfert de troupes ni de stocks. Il n’y a pas encore de sauvegarde persistante de partie, de multijoueur, d’application iOS, d’exécutable Steam, ni de prise en charge complète des manettes.
 
-Le quartier et certains trajets sont encore liés à la carte actuelle. L’ajout de cartes demandera une définition de carte indépendante du moteur. Une migration des tâches vers des unions discriminées et une séparation progressive des gros modules restent des améliorations d’architecture à traiter avec leurs propres tests.
+Les trois quartiers partagent la grille de rues et les accès aux ressources ; leurs implantations et scénarios sont définis séparément. Des géographies arbitraires nécessiteraient encore de généraliser la navigation et les ponts. Le moteur sans paramètre conserve le scénario libre historique pour les fixtures de régression ; le jeu démarre explicitement avec `createGame('refuge')`. Une migration des tâches vers des unions discriminées et une séparation progressive des gros modules restent des améliorations d’architecture à traiter avec leurs propres tests.
 
 Les tests WebKit automatisés ne remplacent pas une validation sur iPhone/iPad, WKWebView, interruptions audio réelles, Steam Deck et matériel peu puissant. Les licences des assets doivent également couvrir chaque distribution : notamment Agenda Fantasy Demo et les MP3 fournis par l’utilisateur.
 

@@ -88,7 +88,7 @@ try {
   await page.locator('.objectives-disclosure summary').click();
   assert.match(
     await page.locator('.quest-list').innerText(),
-    /Conquérir une propriété avec l’armée/,
+    /Rassembler deux lanciers au drapeau/,
   );
   await page.locator('.objectives-disclosure summary').click();
   await page
@@ -218,7 +218,8 @@ try {
     mobile.on('pageerror', (error) => errors.push(error.message));
     await mobile.goto(`${base}/tests/mission-preview.html`);
     await mobile.locator('.world-canvas[data-ready=true]').waitFor();
-    await mobile.getByRole('button', { name: 'Fermer les détails', exact: true }).tap();
+    const closeDetails = mobile.getByRole('button', { name: 'Fermer les détails', exact: true });
+    if (await closeDetails.isVisible()) await closeDetails.tap();
     await mobile
       .getByRole('button', { name: 'Mettre en pause', exact: true })
       .tap();

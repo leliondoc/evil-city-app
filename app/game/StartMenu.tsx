@@ -5,6 +5,7 @@ import {
   useState,
   type CSSProperties,
 } from 'react';
+import './start-campaign.css';
 import {
   BookOpen,
   ChevronRight,
@@ -30,6 +31,8 @@ import {
 } from './audio';
 import { GameMusic } from './music';
 import type { Animation } from './art';
+import { CAMPAIGN_MAPS, type CampaignMapId } from './campaign';
+import { readUnlockedChapter } from './preferences';
 
 type MenuPanel = 'bestiary' | 'settings' | 'guide' | null;
 
@@ -38,9 +41,11 @@ export function StartMenu({
   onPlay,
 }: {
   hasGame: boolean;
-  onPlay: () => void;
+  onPlay: (map: CampaignMapId) => void;
 }) {
   const [panel, setPanel] = useState<MenuPanel>(null);
+  const [selectedMap, setSelectedMap] = useState<CampaignMapId>('refuge');
+  const [unlocked] = useState(readUnlockedChapter);
   const [action, setAction] = useState<Animation>('idle');
   const [settings, setSettings] = useState(readAudioSettings);
   const playRef = useRef<HTMLButtonElement>(null);
@@ -152,11 +157,17 @@ export function StartMenu({
         </header>
 
         <div className="start-actions">
+          {!hasGame && <div className="start-campaign" aria-label="Campagne en trois chapitres">
+            <div className="start-chapters">{Object.values(CAMPAIGN_MAPS).map(map => <button key={map.id} disabled={map.chapter > unlocked} aria-pressed={selectedMap === map.id} onClick={() => setSelectedMap(map.id)} title={map.chapter > unlocked ? `Terminez le chapitre ${map.chapter - 1}` : map.subtitle}>
+              <span>{map.chapter}</span><strong>{map.name}</strong><small>{map.chapter > unlocked ? 'À débloquer' : `${map.objectives.length} objectifs`}</small>
+            </button>)}</div>
+            <p>{CAMPAIGN_MAPS[selectedMap].briefing}</p>
+          </div>}
           <button
             ref={playRef}
             className="start-play"
             data-resume={hasGame}
-            onClick={onPlay}
+            onClick={() => onPlay(selectedMap)}
           >
             <Swords size={26} aria-hidden="true" />
             <span>{hasGame ? 'Reprendre' : 'Jouer'}</span>

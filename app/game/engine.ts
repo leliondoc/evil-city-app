@@ -1,4 +1,5 @@
 import { streetCenter } from './streets.ts';
+import { CAMPAIGN_MAPS, advanceCampaign, advancedCampaign, campaignObjectives, campaignCreatureReason, campaignBuildingReason, campaignUpgradeReason, type CampaignMapId, type CampaignProgress } from './campaign.ts';
 import { COMBAT, humanMultiplier } from './combat.ts';
 import { BUILDING_TIER, canUpgradeKind, manorRequirement, upgradeDuration, advanceBuildingUpgrades } from './progression.ts';
 import { advanceHumanBuildings, humanBuildingHealth } from './humanBuildings.ts';
@@ -306,6 +307,7 @@ export const BUILD_PREREQUISITES: Partial<Record<BuildingKind, BuildingKind>> =
 export function buildUnlockReason(s: State, kind: BuildingKind): string {
   const required = BUILD_PREREQUISITES[kind];
   return [
+    campaignBuildingReason(s, kind),
     manorRequirement(s, BUILDING_TIER[kind] ?? 1),
     required && !hasBuilding(s, required)
       ? `Terminez ${BUILDINGS[required].name.toLowerCase()} pour débloquer ce bâtiment.` : '',
@@ -356,6 +358,10 @@ export interface Lot {
   upgrading?: { kind: BuildingKind; targetLevel: number; duration: number; remaining: number };
 }
 export interface Unit extends Point {
+  /** A move holds this destination for 30 seconds; a Hold order has no deadline. */
+  holdPosition?: Point;
+  /** Infinity during an order, then 30 simulation seconds after it finishes. */
+  manualUntil?: number;
   provokedBy?: number;
   provokedUntil?: number;
   /** A player rest order lasts until healed or replaced by another order. */
@@ -704,6 +710,7 @@ export function raidSupply(s: State, target: Selection) {
       target.type === 'resource' ? 'sabotage' : 'hunt',
       target.id,
     );
+    u.manualUntil = Infinity;
   }
   markAttackOrder(s, { type: target.type, id: target.id });
   announce(
@@ -839,6 +846,7 @@ export function resourceGain(
   });
 }
 export interface State {
+  campaign?: CampaignProgress;
   attackOrder?: {
     sequence: number;
     target: { type: 'lot' | 'enemy' | 'worker' | 'resource'; id: number };
@@ -882,8 +890,9 @@ export interface State {
 
 export const HUMAN_WORKER_CAP = 6;
 export const HUMAN_WORKER_SECONDS = 20;
-export function createGame(): State {
-  const kinds: BuildingKind[] = [
+export function createGame(mapId?: CampaignMapId): State {
+  const map = mapId ? CAMPAIGN_MAPS[mapId] : undefined;
+  const kinds: BuildingKind[] = map?.lots ?? [
     'guild',
     'tavern',
     'hall',
@@ -898,7 +907,7 @@ export function createGame(): State {
     domain: createDomain(),
     strategy: createStrategy(),
     resourceGains: [],
-    resources: { gold: 35, wood: 0, food: 24, mana: 0 },
+    resources: { ...(map?.resources ?? { gold: 35, wood: 0, food: 24, mana: 0 }) },
     economy: {
       stocks: { gold: 45, wood: 25, food: 35 },
       delivered: { gold: 0, wood: 0, food: 0 },
@@ -922,10 +931,10 @@ export function createGame(): State {
       x: STARTS[id % 3],
       y: STARTS[Math.floor(id / 3)],
       kind,
-      owned: [3, 6, 7].includes(id),
+      owned: (map?.owned ?? [3, 6, 7]).includes(id),
       hp: kind === 'hq' ? 500 : humanBuildingHealth(kind, 1),
       maxHp: kind === 'hq' ? 500 : humanBuildingHealth(kind, 1),
-      level: 1,
+      level: kind === 'hq' ? map?.manor ?? 1 : 1,
       humanKind: kind === 'den' ? 'house' : kind,
       construction: null,
     })),
@@ -961,6 +970,20 @@ export function createGame(): State {
     captures: 0,
     recruited: 0,
   };
+  if (map) {
+    for (const lot of state.lots) if (!lot.owned) lot.hp = lot.maxHp = Math.ceil(lot.maxHp * map.fortification);
+    state.campaign = { mapId: map.id, completed: [], creatures: [], buildings: [] };
+    state.journal = [map.briefing];
+    state.domain.autoCollect = map.id === 'tilleuls';
+    if (map.id !== 'tilleuls') {
+      state.strategy.towers = [];
+      state.economy.nextUpgradeAt = Infinity;
+    }
+    if (map.id === 'refuge') state.economy.workerReadyAt = Infinity;
+    for (const kind of map.units) spawnUnit(state, kind, recruitmentSource(state, kind)?.id ?? 6);
+    state.recruited = state.units.length;
+    advanceCampaign(state);
+  }
   return state;
 }
 export function entrance(lot: Lot): Point {
@@ -1185,11 +1208,21 @@ export function assign(
   if (u.task === 'deliver-loot' && task !== 'deliver-loot') u.loot = undefined;
   delete u.focusTarget;
   delete u.manualRest;
+  delete u.holdPosition;
+  delete u.manualUntil;
   u.path = findPath(u, point);
   u.task = task;
   u.target = target;
   u.idleTime = 0;
   u.activityProgress = 0;
+}
+export const MANUAL_ORDER_GRACE = 30;
+function assignPlayerOrder(u: Unit, point: Point, task: Unit['task'], target: number | null) {
+  assign(u, point, task, target);
+  if (u.kind !== 'goblin') {
+    u.manualUntil = Infinity;
+    if (task === 'move') u.holdPosition = u.path.at(-1) ?? navigationTarget(point);
+  }
 }
 function spawnUnit(s: State, kind: CreatureKind, source = 6) {
   const home = entrance(s.lots[source]),
@@ -1245,6 +1278,7 @@ function allocateWorkers(s: State) {
         u.hp > 0 &&
         u.kind === 'goblin' &&
         !u.manualRest &&
+        !u.holdPosition &&
         ['idle', 'forage', 'eat', 'rest', 'collect'].includes(u.task),
     );
     const door = entrance(lot);
@@ -1260,6 +1294,7 @@ function allocateWorkers(s: State) {
 export const CLAIM_COST: Cost = { gold: 80, mana: 30 };
 export function claimReason(s: State, id: number) {
   if (s.won || s.lost) return 'La partie est terminée.';
+  if (s.campaign?.mapId === 'refuge') return 'Votre terrain près du manoir suffit pour ce chapitre.';
   const l = s.lots[id];
   if (!l || l.owned || l.kind !== 'empty')
     return 'Ce terrain ne peut pas être revendiqué.';
@@ -1305,6 +1340,8 @@ export function unitSpeed(s: State, u: Pick<Unit, 'kind'>): number {
 }
 export function recruitReason(s: State, kind: CreatureKind) {
   if (s.won || s.lost) return 'La partie est terminée.';
+  const discovery = campaignCreatureReason(s, kind);
+  if (discovery) return discovery;
   if (kind === 'goblin') {
     const workforce = goblinWorkforce(s);
     if (workforce.total + workforce.queued >= GOBLIN_CAP)
@@ -1389,7 +1426,7 @@ export function attackReason(s: State, id: number) {
 export function attack(s: State, id: number) {
   const error = attackReason(s, id);
   if (error) return error;
-  for (const u of army(s)) if (!provocationReason(s, u)) assign(u, entrance(s.lots[id]), 'attack', id);
+  for (const u of army(s)) if (!provocationReason(s, u)) assignPlayerOrder(u, entrance(s.lots[id]), 'attack', id);
   markAttackOrder(s, { type: 'lot', id });
   announce(
     s,
@@ -1399,7 +1436,7 @@ export function attack(s: State, id: number) {
 }
 export function retreat(s: State) {
   if (s.won || s.lost) return;
-  for (const u of army(s)) if (!provocationReason(s, u)) assign(u, entrance(s.lots[6]), 'move', null);
+  for (const u of army(s)) if (!provocationReason(s, u)) assignPlayerOrder(u, entrance(s.lots[6]), 'move', null);
   announce(s, 'Repli au manoir. Les blessés s’y rétabliront.');
 }
 export function moveUnit(s: State, id: number, point: Point) {
@@ -1407,7 +1444,21 @@ export function moveUnit(s: State, id: number, point: Point) {
   const u = s.units.find((v) => v.id === id && v.hp > 0);
   if (!u) return;
   if (provocationReason(s, u)) return;
-  assign(u, point, 'move', null);
+  assignPlayerOrder(u, point, 'move', null);
+}
+
+export function holdUnits(s: State, ids: number[]): string {
+  if (s.won || s.lost) return 'La partie est terminée.';
+  const units = s.units.filter(u => ids.includes(u.id) && u.hp > 0 && !provocationReason(s, u));
+  if (!units.length) return 'Sélectionnez des créatures disponibles.';
+  for (const u of units) {
+    for (const tower of s.strategy.towers) if (tower.occupant === u.id) tower.occupant = null;
+    assign(u, u, 'idle', null);
+    u.path = [];
+    u.holdPosition = { x: u.x, y: u.y };
+  }
+  announce(s, 'Position tenue. Les créatures ripostent à portée et attendent votre prochain ordre.');
+  return '';
 }
 function markAttackOrder(
   s: State,
@@ -1455,7 +1506,7 @@ export function commandUnit(
   if (target?.type === 'enemy') {
     const enemy = s.enemies.find((e) => e.id === target.id && e.hp > 0);
     if (!enemy) return 'Cet ennemi n’est plus dans le quartier.';
-    assign(unit, enemy, 'defend', enemy.id);
+    assignPlayerOrder(unit, enemy, 'defend', enemy.id);
     unit.focusTarget = enemy.id;
     markAttackOrder(s, { type: 'enemy', id: enemy.id });
     announce(
@@ -1465,7 +1516,7 @@ export function commandUnit(
   } else if (lot && !lot.owned && lot.kind !== 'empty') {
     const error = attackTargetReason(s, lot.id);
     if (error) return error;
-    assign(unit, entrance(lot), 'attack', lot.id);
+    assignPlayerOrder(unit, entrance(lot), 'attack', lot.id);
     markAttackOrder(s, { type: 'lot', id: lot.id });
     announce(
       s,
@@ -1478,7 +1529,7 @@ export function commandUnit(
       target.type === 'resource'
         ? resourceApproach(s.sites.find((site) => site.id === target.id)!)
         : s.workers.find((worker) => worker.id === target.id)!;
-    assign(
+    assignPlayerOrder(
       unit,
       destination,
       target.type === 'resource' ? 'sabotage' : 'hunt',
@@ -1491,6 +1542,8 @@ export function commandUnit(
     );
   } else {
     if (!finitePoint(point)) return 'Cette destination est invalide.';
+    if (!findPath(unit, point).length && distanceBetween(unit, navigationTarget(point)) > 1)
+      return 'Choisissez une rue ou un terrain accessible.';
     moveUnit(s, id, point);
   }
   return '';
@@ -1546,6 +1599,8 @@ export function upgradeReason(s: State, id: number) {
   if (l.upgrading) return 'Amélioration en cours.';
   if (!canUpgradeKind(l.kind)) return 'Ce bâtiment ne possède pas d’amélioration.';
   if (l.level >= 3) return 'Niveau maximal atteint.';
+  const chapter = campaignUpgradeReason(s, l.level + 1);
+  if (chapter) return chapter;
   if (l.kind !== 'hq' && manorRequirement(s, l.level + 1))
     return `${manorRequirement(s, l.level + 1)} Le niveau du manoir limite celui des bâtiments.`;
   if (!canAfford(s, upgradeCost(l)))
@@ -1703,7 +1758,7 @@ function automaticSite(s: State, u: Unit) {
     )[0];
 }
 function advanceGathering(s: State, u: Unit, dt: number): boolean {
-  if (u.kind !== 'goblin') return false;
+  if (u.kind !== 'goblin' || u.holdPosition) return false;
   if (u.task === 'idle') {
     const site =
       u.gathering && (!u.gathering.automatic || u.gathering.cargo > 0)
@@ -1939,7 +1994,7 @@ export function defend(s: State, id = 6): string {
   const locked = armyProvocationReason(s);
   if (locked) return locked;
   for (const u of army(s))
-    if (!provocationReason(s, u)) assign(u, entrance(s.lots[id]), 'move', null);
+    if (!provocationReason(s, u)) assignPlayerOrder(u, entrance(s.lots[id]), 'move', null);
   announce(
     s,
     `Votre armée se rassemble devant ${BUILDINGS[s.lots[id].kind].name.toLowerCase()}.`,
@@ -1956,7 +2011,7 @@ export function intercept(s: State, id: number): string {
   if (locked) return locked;
   for (const u of army(s)) {
     if (provocationReason(s, u)) continue;
-    assign(u, enemy, 'defend', id);
+    assignPlayerOrder(u, enemy, 'defend', id);
     u.focusTarget = id;
   }
   markAttackOrder(s, { type: 'enemy', id });
@@ -2616,8 +2671,10 @@ function tickStep(s: State, dt: number) {
       `Les humains passent au niveau ${humanLevel(s)}. Leurs défenses et leurs prochains renforts se renforcent.`,
     );
   }
-  mobilize(s);
-  mobilizeRacketPatrols(s);
+  if (advancedCampaign(s)) {
+    mobilize(s);
+    mobilizeRacketPatrols(s);
+  }
   const income = rates(s);
   for (const key of Object.keys(income) as (keyof Resources)[]) {
     if (income[key] < 0)
@@ -2643,6 +2700,11 @@ function tickStep(s: State, dt: number) {
   advanceShields(s);
   for (const u of s.units) {
     if (u.hp <= 0) continue;
+    if (u.manualUntil === Infinity && u.task === 'idle') u.manualUntil = s.elapsed + MANUAL_ORDER_GRACE;
+    if (u.manualUntil !== undefined && s.elapsed >= u.manualUntil) {
+      delete u.manualUntil;
+      delete u.holdPosition;
+    }
     u.fighting = false;
     if (
       u.focusTarget !== undefined &&
@@ -2659,9 +2721,13 @@ function tickStep(s: State, dt: number) {
       u.kind !== 'specter' &&
       u.task !== 'move'
     ) {
-      if (u.task === 'idle') {
+      if (u.task === 'idle' && !u.holdPosition) {
         const threat = nearest(u, s.enemies, 4.5);
-        if (threat) assign(u, threat, 'defend', threat.id);
+        if (threat) {
+          const manual = u.manualUntil !== undefined;
+          assign(u, threat, 'defend', threat.id);
+          if (manual) u.manualUntil = Infinity;
+        }
       }
       if (u.task === 'defend') {
         const threat = s.enemies.find((e) => e.id === u.target && e.hp > 0);
@@ -2865,7 +2931,13 @@ function tickStep(s: State, dt: number) {
       `${fallen.length} créature${fallen.length > 1 ? 's sont tombées' : ' est tombée'}. Un repli permet de soigner les autres.`,
     );
   s.units = s.units.filter((u) => u.hp > 0);
-  if (
+  advanceCampaign(s);
+  if (s.campaign) {
+    if (!s.lost && campaignObjectives(s).every(o => o.done)) {
+      s.won = true;
+      announce(s, CAMPAIGN_MAPS[s.campaign.mapId].success);
+    }
+  } else if (
     !s.lost &&
     hasBuilding(s, 'hall') &&
     hasBuilding(s, 'guild') &&

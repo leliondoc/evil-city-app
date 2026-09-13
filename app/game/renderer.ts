@@ -531,7 +531,9 @@ export class Renderer {
         (this.interactionMode === 'inspect' &&
           !this.down.additive &&
           !this.buildKind &&
-          selectedFightersCanAttack(this.getState(), this.selection, hit))
+          (selectedFightersCanAttack(this.getState(), this.selection, hit) ||
+            ((e.pointerType === 'touch' || e.pointerType === 'pen') && !hit &&
+              this.getState().units.some(u => u.hp > 0 && selectedUnitIds(this.selection).includes(u.id)))))
       ) {
         this.onCommand(this.toWorld(p), hit);
       } else if (this.down.additive && hit?.type === 'unit')
@@ -612,7 +614,8 @@ export class Renderer {
 
   private makeTerrain() {
     const state = this.getState();
-    this.ownership = state.lots.map((l) => Number(l.owned)).join('');
+    this.ownership = `${state.campaign?.mapId ?? 'free'}:${state.lots.map(l => `${l.kind}:${Number(l.owned)}`).join(',')}`;
+    this.makeDecorations();
     this.scene.setTerrain(
       (layer) => {
         this.shore = drawTerrain(layer, state);
@@ -715,7 +718,7 @@ export class Renderer {
   }
   private approach(lot: Lot, doorX: number, ground: number) {
     const center = (lot.x + 4) * CELL;
-    if (lot.id === 0 && !lot.owned) {
+    if (lot.kind === 'guild' && !lot.owned) {
       this.draw.image(
         'terrain-2',
         128,
@@ -932,11 +935,12 @@ export class Renderer {
     this.updateCursor();
     const s = this.getState(),
       t = this.reducedMotion ? 0 : s.elapsed;
+    const help = mission(s).hint;
     const guidance =
       this.buildKind || this.interactionMode === 'command'
         ? undefined
-        : mission(s).hint.marker;
-    if (this.ownership !== s.lots.map((l) => Number(l.owned)).join(''))
+        : help.marker;
+    if (this.ownership !== `${s.campaign?.mapId ?? 'free'}:${s.lots.map(l => `${l.kind}:${Number(l.owned)}`).join(',')}`)
       this.makeTerrain();
     this.scene.begin(this.origin, this.scale, this.width, this.height);
     for (const tile of this.shore) {
@@ -1026,7 +1030,7 @@ export class Renderer {
     for (const l of s.lots) {
       const kind = l.construction?.kind || l.kind,
         x = (l.x + 4) * CELL,
-        y = (l.y + 6.2) * CELL - (l.id === 0 && !l.owned ? 28 : 0),
+        y = (l.y + 6.2) * CELL - (l.kind === 'guild' && !l.owned ? 28 : 0),
         key =
           kind === 'house' && l.owned
             ? (`house-purple-${(l.id % 2) + 2}` as AssetKey)
@@ -1774,6 +1778,16 @@ export class Renderer {
         );
       else if (hovered && guidance?.lotId !== l.id)
         this.label(x, labelY, BUILDINGS[l.kind].name);
+    }
+    if (help.rallyPoint) {
+      const { x, y } = help.rallyPoint;
+      const ui = this.uiScale / this.scale;
+      this.label(x * CELL, y * CELL - 28 * ui, '⚑ Rassemblement', '#ffe3a1');
+      this.draw.line([
+        { x: (x - 1.6) * CELL, y: y * CELL }, { x: x * CELL, y: (y - 0.6) * CELL },
+        { x: (x + 1.6) * CELL, y: y * CELL }, { x: x * CELL, y: (y + 0.6) * CELL },
+        { x: (x - 1.6) * CELL, y: y * CELL },
+      ], '#ffe3a1', 3 / this.scale);
     }
     if (guidance && guidance.kind !== 'recruit') {
       const lot = s.lots[guidance.lotId];
