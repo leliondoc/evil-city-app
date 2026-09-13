@@ -949,7 +949,7 @@ export default function Game({
           </span>
         </div>
         <div className="population-counters">
-        <div className="army-cap-counter" title="Places occupées et réservées par les combattants. Les gobelins bâtisseurs ont leur propre limite de 6 et ne prennent aucune place dans l’armée. Les grandes créatures occupent plusieurs places. Construisez ou améliorez les tanières pour augmenter la capacité." aria-label={`Population de l’armée : ${population(s)} sur ${capacity(s)}`}>
+        <div className="army-cap-counter" title="Places occupées et réservées par les combattants. Les gobelins bâtisseurs ont leur propre limite de 6 et ne prennent aucune place dans l’armée. Les grandes créatures occupent plusieurs places. Les 6 places de base et celles de chaque grotte s’additionnent. Construisez ou améliorez vos grottes pour augmenter la limite." aria-label={`Population de l’armée : ${population(s)} sur ${capacity(s)}`}>
           <Users size={20} aria-hidden="true" /><span><strong>{population(s)}/{capacity(s)}</strong><small>Armée</small></span>
         </div>
         <button
@@ -1371,7 +1371,7 @@ export default function Game({
                             {canUpgradeKind(selectedLot.kind) && (selectedLot.upgrading || selectedLot.level >= 3) && <p className="reason">{buildingLevelEffect(selectedLot.kind, selectedLot.level)}.</p>}
                             {canUpgradeKind(selectedLot.kind) && !selectedLot.upgrading && selectedLot.level < 3 && (
                               <div style={{ marginTop: 8 }}>
-                                <UpgradeBenefit lot={selectedLot} />
+                                <UpgradeBenefit lot={selectedLot} state={s} />
                                 <Costs cost={upgradeCost(selectedLot)} />
                               </div>
                             )}
@@ -1820,7 +1820,7 @@ export default function Game({
                         >
                           {reason ||
                             (kind === 'goblin'
-                              ? `${c.job} · ${workforce.total + workforce.queued}/${GOBLIN_CAP} places réservées`
+                              ? `${c.job} · ${workforce.total + workforce.queued}/${GOBLIN_CAP} places utilisées ou réservées`
                               : c.job)}
                         </small>
                         <Costs cost={c.cost} available={s.resources} />

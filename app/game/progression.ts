@@ -31,15 +31,15 @@ export function buildingLevelEffect(kind: BuildingKind, level: number): string {
     case 'hq':
       return `${number(10.8 * level)} essence/min · palier ${level}`;
     case 'den':
-      return `+${6 * level} places pour la Cour des Monstres`;
+      return `Cette grotte ajoute ${6 * level} places à la population maximale de l’armée`;
     case 'canteen':
-      return `Consommation réduite de ${Math.min(60, 20 * level)} %`;
+      return `Cette cantine réduit la consommation de ${Math.min(60, 20 * level)} %. Seule la meilleure cantine s’applique`;
     case 'crypt':
-      return `${24 * level} essence/min`;
+      return `Ce bâtiment produit ${24 * level} essence/min, ajoutées au total du domaine`;
     case 'forge':
-      return `Dégâts de l’armée : +${15 * (level - 1)} %`;
+      return `Cette hutte apporte +${15 * (level - 1)} % aux dégâts de l’armée. Seule la meilleure hutte s’applique`;
     case 'guild':
-      return `${18 * level} essence/min`;
+      return `Ce bâtiment produit ${18 * level} essence/min, ajoutées au total du domaine`;
     default:
       return '';
   }
@@ -53,11 +53,11 @@ export function upgradeBenefit(lot: Pick<Lot, 'kind' | 'level'>): string {
     case 'den':
       return `Capacité de cette grotte : ${6 * n} → ${6 * (n + 1)} places.`;
     case 'canteen':
-      return `Réduction de consommation : ${20 * n} → ${20 * (n + 1)} %. Seule la meilleure cantine compte.`;
+      return `Réduction apportée par cette cantine : ${20 * n} → ${20 * (n + 1)} %. Seule la meilleure cantine compte.`;
     case 'crypt':
-      return `Production d’essence : ${24 * n} → ${24 * (n + 1)}/min.`;
+      return `Production de ce bâtiment : ${24 * n} → ${24 * (n + 1)}/min.`;
     case 'forge':
-      return `Bonus aux dégâts de l’armée : +${15 * (n - 1)} → +${15 * n} %. Seule la meilleure hutte compte.`;
+      return `Bonus apporté par cette hutte : +${15 * (n - 1)} → +${15 * n} %. Seule la meilleure hutte compte.`;
     case 'guild':
       return `Production d’essence : ${18 * n} → ${18 * (n + 1)}/min.`;
     default:

@@ -248,15 +248,15 @@ export function ThreatPanel({
             <strong>{fighters.length}</strong>
           </div>
           <div className="district-stat">
-            <span>Population</span>
+            <span>Places utilisées / maximum</span>
             <strong>
               {population(s)} / {capacity(s)}
             </strong>
           </div>
           <p className="district-note">
-            {s.recruits.length} recrutement{s.recruits.length > 1 ? 's' : ''} en
-            cours. Les gobelins occupent aussi des places dans votre domaine.
+            {s.recruits.filter(r => r.kind !== 'goblin').length} recrutement(s) militaire(s) en cours, déjà comptés. Les grandes créatures prennent plusieurs places. Les gobelins bâtisseurs ont une limite séparée de {GOBLIN_CAP}.
           </p>
+          <p className="district-note">Maximum : 6 places de base + {capacity(s) - 6} apportées par vos grottes. Leurs capacités s’additionnent.</p>
           <GameButton
             className="primary-btn"
             tone="purple"

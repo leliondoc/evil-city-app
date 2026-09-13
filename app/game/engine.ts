@@ -111,8 +111,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   den: {
     name: 'Grotte gobeline',
     description:
-      'Recrute les gobelins bâtisseurs et lanciers à pied dès le début. Accueille 6 créatures par niveau et leur permet de se reposer. La recherche des cochons exige le manoir niveau 2.',
-    short: '+6 places · repos',
+      'Recrute les gobelins bâtisseurs et lanciers à pied dès le début. Ajoute 6 places d’armée par niveau, en plus des 6 places de base. Les grottes se cumulent. Les bâtisseurs ont une limite séparée de 6. Permet aux créatures de se reposer. La recherche des cochons exige le manoir niveau 2.',
+    short: '+6 places d’armée · repos',
     art: 1,
     cost: { gold: 70, wood: 25 },
     duration: 18,
@@ -120,7 +120,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   canteen: {
     name: 'Cantine de la Cour',
     description:
-      'La cantine sert les vivres rapportés par vos gobelins. Elle réduit la consommation de 20 % par niveau, jusqu’à 60 %, et permet de manger sur place.',
+      'La cantine sert les vivres rapportés par vos gobelins. Elle réduit la consommation de 20 % par niveau, jusqu’à 60 %, et permet de manger sur place. Seule la cantine de plus haut niveau compte : leurs réductions ne s’additionnent pas.',
     short: '−20 % de consommation',
     art: 2,
     cost: { gold: 80, wood: 25 },
@@ -129,7 +129,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   forge: {
     name: 'Hutte des Trolls',
     description:
-      'Exige le manoir niveau 3 et une crypte terminée. Recrute les trolls, accueille les recherches de feu et renforce les dégâts de l’armée de 15 % par niveau supplémentaire.',
+      'Exige le manoir niveau 3 et une crypte terminée. Recrute les trolls, accueille les recherches de feu et renforce les dégâts de l’armée de 15 % par niveau supplémentaire. Seule la hutte de plus haut niveau compte : leurs bonus ne s’additionnent pas.',
     short: 'Manoir 3 · trolls',
     art: 3,
     cost: { gold: 180, wood: 75 },
