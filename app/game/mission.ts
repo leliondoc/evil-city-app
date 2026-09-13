@@ -260,7 +260,7 @@ export function mission(s: State) {
       );
       hint = {
         detail: marching
-          ? `Votre armée ${besieging ? 'réduit les défenses' : 'rejoint la cible'}. Le bâtiment sera à vous quand sa résistance atteindra zéro.`
+          ? `Votre armée ${besieging ? 'réduit les défenses' : 'rejoint la cible'}. Le bâtiment sera à vous quand ses points de vie atteindront zéro.`
           : current.id === 'capture'
             ? `Sélectionnez l’armée, puis donnez un ordre sur la maison indiquée. Une fois conquise, elle pourra accueillir ${map?.id === 'faubourg' ? 'la crypte' : 'un bâtiment'}.`
             : 'Conquérez ce bâtiment avec votre armée pour couper les renforts humains.',

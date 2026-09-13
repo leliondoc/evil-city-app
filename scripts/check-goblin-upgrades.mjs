@@ -172,13 +172,13 @@ try {
   await page
     .getByRole('button', { name: 'Ouvrir le bestiaire', exact: true })
     .click();
-  assert.equal(await page.locator('.bestiary-creature').count(), 16);
+  assert.equal(await page.locator('.bestiary-creature').count(), 15);
   assert.equal(
     await page
       .getByRole('region', { name: 'La Cour des Monstres', exact: true })
       .locator('article')
       .count(),
-    8,
+    7,
   );
   assert.equal(
     await page
@@ -191,13 +191,13 @@ try {
     .getByRole('textbox', { name: 'Chercher dans le bestiaire', exact: true })
     .fill('lancier');
   const results = await page.locator('.bestiary-creature').allTextContents();
-  assert.ok(results.length > 0 && results.length < 16);
+  assert.ok(results.length > 0 && results.length < 15);
   assert.ok(results.every((entry) => /lancier/i.test(entry)));
   assert.ok(results.some((entry) => /Gobelin lancier/.test(entry)));
   assert.ok(results.some((entry) => /Lancier de l’Aube/.test(entry)));
   await page.getByRole('textbox', { name: 'Chercher dans le bestiaire', exact: true }).fill('Chevaucheur de cochon');
   assert.equal(await page.locator('.bestiary-creature').count(), 1);
-  assert.match(await page.locator('.bestiary-creature .bestiary-badge').innerText(), /Évolution par recherche/);
+  assert.match(await page.locator('.bestiary-evolution .bestiary-badge').innerText(), /Évolution par recherche/);
   assert.equal(await page.locator('.animation-tabs').count(), 0);
   await page.getByRole('img', { name: 'Chevaucheur de cochon', exact: true }).scrollIntoViewIfNeeded();
   await page.waitForFunction(() => {
@@ -231,7 +231,7 @@ try {
   await page.screenshot({ path: join(output, 'pig-pasture.png') });
   assert.deepEqual(errors, []);
   console.log(
-    'Cave selection, timed mounted research, hammer cursor, 16 bestiary entries and pasture: OK; no browser errors.',
+    'Cave selection, timed mounted research, hammer cursor, 15 bestiary entries and pasture: OK; no browser errors.',
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/tests/pack-preview.html`);

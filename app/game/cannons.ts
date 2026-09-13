@@ -81,7 +81,7 @@ export function advanceCannons(s: State, dt: number) {
         (w) =>
           w.hp > 0 &&
           !w.recovery &&
-          w.rebuilding === undefined &&
+          w.rebuilding === undefined && w.repairing === undefined &&
           w.cannonId === undefined &&
           w.cargo === 0,
       )

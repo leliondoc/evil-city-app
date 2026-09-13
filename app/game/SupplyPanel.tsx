@@ -88,13 +88,11 @@ export function SupplySelection({
   selection,
   onRaid,
   onGather,
-  onSelect,
 }: {
   state: State;
   selection: Selection;
   onRaid: () => void;
   onGather: () => void;
-  onSelect: (selection: Selection) => void;
 }) {
   const worker =
     selection.type === 'worker'
@@ -154,7 +152,7 @@ export function SupplySelection({
         </span>
         <span>
           {worker
-            ? worker.phase === 'harvest'
+            ? worker.repairing !== undefined ? 'Répare un bâtiment' : worker.rebuilding !== undefined ? 'Reconstruit une maison' : worker.phase === 'harvest'
               ? 'Récolte'
               : worker.phase === 'return'
                 ? `Livraison : ${worker.cargo}`
@@ -178,24 +176,6 @@ export function SupplySelection({
         {worker ? 'Attaquer le paysan' : 'Saboter la production'}
       </GameButton>
       {reason && <p className="reason">{reason}</p>}
-      <button
-        className="subtle-btn"
-        onClick={() => onSelect({ type: 'lot', id: site.home })}
-      >
-        Voir le bâtiment de livraison →
-      </button>
-      {!worker &&
-        s.workers
-          .filter((w) => w.site === site.id)
-          .map((w) => (
-            <button
-              className="subtle-btn"
-              key={w.id}
-              onClick={() => onSelect({ type: 'worker', id: w.id })}
-            >
-              Suivre le {def.worker.toLowerCase()} →
-            </button>
-          ))}
       <p className="reason">
         Réparation : 10 or + 10 bois. Un paysan tué est remplacé après au moins
         40 s si la route reste active. Coût : 8 or + 5 vivres, pris en charge si

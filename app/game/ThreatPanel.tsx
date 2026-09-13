@@ -190,14 +190,14 @@ export function ThreatPanel({
       content: (
         <>
           <div className="district-stat">
-            <span>Résistance</span>
+            <span>Points de vie</span>
             <strong>
               {Math.ceil(home.hp)} / {home.maxHp}
             </strong>
           </div>
           <progress
             className="district-meter home-meter"
-            aria-label="Résistance du manoir"
+            aria-label="Points de vie du manoir"
             max={home.maxHp}
             value={Math.ceil(home.hp)}
           />

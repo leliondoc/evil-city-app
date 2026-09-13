@@ -137,6 +137,7 @@ const unitsText = {
   'deliver-loot': 'Rapporte le butin',
   forage: 'Récolte des ressources',
   build: 'Au chantier',
+  repair: 'Répare un bâtiment',
   attack: 'En expédition',
   move: 'En déplacement',
   defend: 'Intercepte un ennemi',
@@ -1074,7 +1075,6 @@ export default function Game({
               <SupplySelection
                 state={s}
                 selection={selection}
-                onSelect={select}
                 onRaid={() => run((state) => raidSupply(state, selection))}
                 onGather={() =>
                   run((state) => {
@@ -1256,12 +1256,13 @@ export default function Game({
                       <>
                         <HealthBar
                           value={(selectedLot.hp / selectedLot.maxHp) * 100}
-                          aria-label="Résistance du bâtiment"
+                          aria-label="Points de vie du bâtiment"
                         />
                         <p className="building-health">
                           {Math.ceil(selectedLot.hp)} / {selectedLot.maxHp}{' '}
-                          résistance
+                          points de vie
                         </p>
+                        {selectedLot.hp < selectedLot.maxHp && !selectedLot.construction && <p className="reason">{s.units.some(u => u.hp > 0 && u.task === 'repair' && u.target === selectedLot.id) ? 'Un gobelin s’occupe des réparations.' : 'Un gobelin disponible viendra réparer une fois les ennemis repoussés.'}</p>}
                       </>
                     )}
                     <div className="selection-stats">
@@ -1279,13 +1280,6 @@ export default function Game({
                         )}
                       </span>
                       <span>
-                        {(selectedLot.construction || selectedLot.upgrading) && selectedLot.owned && <div className="cancel-work">
-                      <Button className="subtle-btn" disabled={s.won || s.lost} onClick={() => run(state => cancelWork(state, selectedLot.id))}>
-                        <PackIcon asset="ui-close" /> {selectedLot.construction ? 'Annuler la construction' : 'Annuler l’amélioration'}
-                      </Button>
-                      <p className="reason">Remboursement de la part non utilisée, selon l’avancement et la place dans vos stocks :</p>
-                      <Costs cost={cancelWorkRefund(s, selectedLot)} />
-                    </div>}
                     {selectedLot.construction ? (
                           <>
                             <Hammer size={14} />
@@ -1300,19 +1294,22 @@ export default function Game({
                         )}
                       </span>
                     </div>
-                    {selectedLot.construction ? (
-                      <>
-                        <Progress
-                          className="healthbar"
-                          value={selectedLot.construction.progress * 100}
-                          aria-label="Avancement du chantier"
-                        />
-                        <p className="reason">
-                          {Math.floor(selectedLot.construction.progress * 100)}{' '}
-                          % · Les gobelins se chargent des travaux.
-                        </p>
-                      </>
-                    ) : selectedLot.owned ? (
+                    {(selectedLot.construction || selectedLot.upgrading) && selectedLot.owned && (
+                      <div className="building-work">
+                        <div className="building-work-heading">
+                          <strong>{selectedLot.construction ? 'Construction' : 'Amélioration · niveau ' + selectedLot.upgrading!.targetLevel}</strong>
+                          <Button className="work-cancel" disabled={s.won || s.lost}
+                            aria-label={selectedLot.construction ? 'Annuler la construction' : 'Annuler l’amélioration'}
+                            onClick={() => run(state => cancelWork(state, selectedLot.id))}>Annuler</Button>
+                        </div>
+                        <Progress className="healthbar"
+                          value={selectedLot.construction ? selectedLot.construction.progress * 100 : (1 - selectedLot.upgrading!.remaining / selectedLot.upgrading!.duration) * 100}
+                          aria-label={selectedLot.construction ? 'Avancement du chantier' : 'Avancement de l’amélioration'} />
+                        <p className="reason">{selectedLot.construction ? Math.floor(selectedLot.construction.progress * 100) + ' % · Travaux en cours' : Math.ceil(selectedLot.upgrading!.remaining) + ' s restantes'}</p>
+                        <div className="work-refund"><span>Remboursement</span><Costs cost={cancelWorkRefund(s, selectedLot)} /></div>
+                      </div>
+                    )}
+                    {selectedLot.construction ? null : selectedLot.owned ? (
                       <>
                         {pendingBuild &&
                         (selectedLot.kind === 'empty' ||
@@ -1358,11 +1355,6 @@ export default function Game({
                           </Button>
                         ) : (
                           <>
-                            {selectedLot.upgrading && <output className="upgrade-status">
-                              <strong>Niveau {selectedLot.upgrading.targetLevel} · Amélioration</strong>
-                              <Progress className="healthbar" value={(1 - selectedLot.upgrading.remaining / selectedLot.upgrading.duration) * 100} aria-label="Avancement de l’amélioration" />
-                              <span>{Math.ceil(selectedLot.upgrading.remaining)} s restantes</span>
-                            </output>}
                             {canUpgradeKind(selectedLot.kind) && !selectedLot.upgrading && <Button
                               className="primary-btn"
                               disabled={!!upgradeReason(s, selectedLot.id)}
@@ -1424,7 +1416,7 @@ export default function Game({
                       <>
                         <HealthBar
                           value={(selectedLot.hp / selectedLot.maxHp) * 100}
-                          aria-label="Résistance des défenseurs"
+                          aria-label="Points de vie des défenseurs"
                         />
                         {army(s).some(
                           (u) =>
@@ -2275,8 +2267,7 @@ export default function Game({
             <>
               <DialogTitle>Des voisins peu fréquentables</DialogTitle>
               <DialogDescription>
-                Vos 7 créatures recrutables, le chevaucheur de cochon et les 8 unités humaines : gardes,
-                héros et travailleurs.
+                Découvrez la Cour des Monstres, ses évolutions et les humains du quartier.
               </DialogDescription>
               <Bestiary />
             </>

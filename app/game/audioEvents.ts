@@ -233,7 +233,7 @@ export class SoundEvents {
             point,
             1.2,
           );
-      } else if (unit.task === 'build' && !unit.path.length)
+      } else if ((unit.task === 'build' || unit.task === 'repair') && !unit.path.length)
         periodic(`unit-${unit.id}`, 'build', point, 1.4);
     }
     for (const enemy of s.enemies) {

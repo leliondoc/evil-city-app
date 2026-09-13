@@ -7,18 +7,13 @@ import {
   SUPPLIES,
 } from './engine.ts';
 
-export const BESTIARY_CREATURES = RECRUIT_OPTIONS.flatMap((kind) => {
-  const base = { ...CREATURES[kind], id: kind, kind, mounted: false };
-  return kind === 'spear-goblin'
-    ? [base, {
-        ...base,
-        id: 'pig-rider',
+export const BESTIARY_CREATURES = RECRUIT_OPTIONS.map((kind) => ({
+  ...CREATURES[kind], id: kind, kind,
+  evolution: kind === 'spear-goblin' ? {
         name: 'Chevaucheur de cochon',
-        mounted: true,
         description: 'Évolution montée du gobelin lancier : il traverse rapidement le champ de bataille pour attaquer les archères et les moines. La recherche Chevaucheurs de cochons, à la grotte avec un manoir niveau 2, transforme les lanciers existants et futurs.',
-      }]
-    : [base];
-});
+      } : undefined,
+}));
 
 /** Every entry is backed by an actor in the simulation. */
 export const BESTIARY_HUMANS = [

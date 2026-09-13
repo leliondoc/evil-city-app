@@ -1,3 +1,4 @@
+import { advanceRepairs } from './repairs.ts';
 import { advanceCannons, advanceKnockback, releaseCannonWorker, type CannonState, type Knockback } from './cannons.ts';
 import { streetCenter } from './streets.ts';
 import { CAMPAIGN_MAPS, advanceCampaign, advancedCampaign, classicCampaign, campaignObjectives, campaignCreatureReason, campaignBuildingReason, campaignUpgradeReason, type CampaignMapId, type CampaignProgress } from './campaign.ts';
@@ -345,6 +346,7 @@ export const RECRUIT_OPTIONS: CreatureKind[] = [
 export const BOARD = 32;
 export const STARTS = [2, 12, 22];
 export interface Lot {
+  repairQuiet?: number;
   ruins?: { quiet: number; progress: number; paid: boolean; workerId?: number };
   /** The visible guild defenders have left their posts. */
   garrisonReleased?: boolean;
@@ -403,6 +405,7 @@ export interface Unit extends Point {
     | 'deliver-loot'
     | 'idle'
     | 'build'
+    | 'repair'
     | 'attack'
     | 'move'
     | 'forage'
@@ -651,6 +654,7 @@ const SUPPLY_LOCATIONS: (Point & { kind: Supply; home: number; hp: number })[] =
 export interface HumanWorker extends Point {
   cannonId?: number;
   rebuilding?: number;
+  repairing?: number;
   taxed?: boolean;
   recovery?: { corpseId: number; returning: boolean };
   moving?: boolean;
@@ -789,7 +793,7 @@ function advanceReconstruction(s: State, dt: number) {
     if (!worker) {
       releaseRebuilder(s, lot);
       if (!ruins.paid && !suppliesAvailable(s, HUMAN_REBUILD.cost)) continue;
-      worker = nearest(gate, s.workers.filter(w => w.hp > 0 && w.rebuilding === undefined && w.cannonId === undefined && !w.recovery && w.cargo === 0 && supplyActive(s, s.sites[w.site])), Infinity);
+      worker = nearest(gate, s.workers.filter(w => w.hp > 0 && w.rebuilding === undefined && w.repairing === undefined && w.cannonId === undefined && !w.recovery && w.cargo === 0 && supplyActive(s, s.sites[w.site])), Infinity);
       if (!worker) continue;
       const path = findPath(worker, gate);
       if (!path.length && distanceBetween(worker, gate) > 0.8) continue;
@@ -865,7 +869,7 @@ function advanceEconomy(s: State, dt: number) {
   for (const w of s.workers) {
     const site = s.sites[w.site];
     if (w.hp <= 0 || !supplyActive(s, site)) continue;
-    if (w.recovery || w.rebuilding !== undefined || w.cannonId !== undefined) continue;
+    if (w.repairing !== undefined || w.recovery || w.rebuilding !== undefined || w.cannonId !== undefined) continue;
     walk(s, w, 1.8 * dt);
     if (w.path.length) continue;
     if (w.phase === 'outbound') {
@@ -2896,10 +2900,12 @@ function tickStep(s: State, dt: number) {
   }
   s.recruits = s.recruits.filter((r) => r.remaining !== -Infinity);
   allocateWorkers(s);
+  advanceRepairs(s, dt);
   advanceShields(s);
   for (const u of s.units) {
     if (u.hp <= 0) continue;
     if (advanceKnockback(u, dt)) continue;
+    if (u.task === 'repair') continue;
     healAlly(s, u);
     if (u.manualUntil === Infinity && u.task === 'idle') u.manualUntil = s.elapsed + MANUAL_ORDER_GRACE;
     if (u.manualUntil !== undefined && s.elapsed >= u.manualUntil) {
@@ -3129,10 +3135,6 @@ function tickStep(s: State, dt: number) {
   creditResource(s, 'gold', defeated.length * 12);
   s.enemies = s.enemies.filter((e) => e.hp > 0);
   advanceGuildGarrisons(s);
-  for (const lot of s.lots.filter((l) => l.owned && l.hp > 0)) {
-    if (!nearest(entrance(lot), s.enemies, 4))
-      lot.hp = Math.min(lot.maxHp, lot.hp + dt * 1.5);
-  }
   const fallen = s.units.filter((u) => u.hp <= 0);
   for (const u of fallen)
     if (u.kind !== 'skeleton' && u.kind !== 'specter')

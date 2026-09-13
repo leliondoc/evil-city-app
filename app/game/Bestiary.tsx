@@ -11,7 +11,7 @@ export function Bestiary() {
   const [search, setSearch] = useState('');
   const query = search.trim().toLocaleLowerCase('fr');
   const creatures = BESTIARY_CREATURES.filter((entry) =>
-    `${entry.name} ${entry.description}`
+    `${entry.name} ${entry.description} ${entry.evolution?.name ?? ''} ${entry.evolution?.description ?? ''}`
       .toLocaleLowerCase('fr')
       .includes(query),
   );
@@ -49,15 +49,21 @@ export function Bestiary() {
                   sequence={animationSequence(
                     entry.kind,
                     'attack',
-                    entry.mounted,
                   )}
                   figure
                   label={entry.name}
                 />
                 <strong>{entry.name}</strong>
-                <span className="bestiary-badge available">{entry.mounted ? 'Évolution par recherche' : 'Recrutable'}</span>
+                <span className="bestiary-badge available">Recrutable</span>
                 <p>{entry.description}</p>
-                <CombatDetails profile={creatureCombatProfile(entry.kind, entry.mounted)} />
+                <CombatDetails profile={creatureCombatProfile(entry.kind)} />
+                {entry.evolution && <details className="bestiary-evolution" open={query && entry.evolution.name.toLocaleLowerCase('fr').includes(query) ? true : undefined}>
+                  <summary>Évolution : {entry.evolution.name}</summary>
+                  <Sprite sequence={animationSequence(entry.kind, 'attack', true)} figure label={entry.evolution.name} />
+                  <span className="bestiary-badge">Évolution par recherche</span>
+                  <p>{entry.evolution.description}</p>
+                  <CombatDetails profile={creatureCombatProfile(entry.kind, true)} />
+                </details>}
               </article>
             ))}
           </div>

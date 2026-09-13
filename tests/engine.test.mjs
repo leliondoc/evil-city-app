@@ -166,7 +166,7 @@ test('Retreat stops attacks and injured creatures heal at the manor', () => {
   retreat(s);
   const hp = s.lots[1].hp;
   advance(s, 80);
-  assert.equal(s.lots[1].hp, hp);
+  assert.ok(s.lots[1].hp >= hp, "Retreat stops damage; human workers may repair the house");
   assert.equal(s.units.find((u) => u.kind === 'troll').hp, CREATURES.troll.hp);
 });
 

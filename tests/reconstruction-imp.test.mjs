@@ -45,7 +45,7 @@ test('Rebuilding requires calm, supplies and a living worker physically at the r
   tick(s, 0.1);
   assert.equal(w.rebuilding, lot.id);
   assert.equal(s.economy.stocks.gold, 80);
-  assert.equal(workerArt(w, s.sites[w.site]), 'pawn-gold-work');
+  assert.equal(workerArt(w, s.sites[w.site]), 'pawn-hammer-work');
   advance(s, 26);
   assert.equal(lot.kind, 'house'); assert.equal(lot.owned, false);
   assert.equal(lot.hp, lot.maxHp); assert.equal(w.rebuilding, undefined);

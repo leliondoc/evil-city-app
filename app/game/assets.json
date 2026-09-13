@@ -2248,5 +2248,21 @@
     "frameWidth": 128,
     "frames": 9,
     "anchor": 0.5
+  },
+  "pawn-hammer-work": {
+    "src": "/tiny-swords/pawn-hammer-interact.png",
+    "width": 576,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 3,
+    "anchor": 0.67
+  },
+  "pawn-hammer-walk": {
+    "src": "/tiny-swords/pawn-hammer-run.png",
+    "width": 1152,
+    "height": 192,
+    "frameWidth": 192,
+    "frames": 6,
+    "anchor": 0.67
   }
 }

@@ -115,8 +115,8 @@ export function enemyPortrait(enemy: Pick<Enemy, 'kind' | 'role' | 'cannon' | 'm
 }
 
 export function workerArt(worker: HumanWorker, site: ResourceSite): AssetKey {
-  if (worker.rebuilding !== undefined || worker.cannonId !== undefined)
-    return worker.path.length ? 'pawn-gold-walk' : 'pawn-gold-work';
+  if (worker.repairing !== undefined || worker.rebuilding !== undefined || worker.cannonId !== undefined)
+    return worker.path.length ? 'pawn-hammer-walk' : 'pawn-hammer-work';
   const action =
     worker.phase === 'harvest'
       ? 'work'

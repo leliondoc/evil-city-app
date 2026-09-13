@@ -17,14 +17,14 @@ try {
   await page.goto('http://127.0.0.1:3000');
   await page.getByRole('button', { name: 'Bestiaire', exact: true }).click();
   await page.getByRole('region', { name: 'La Cour des Monstres', exact: true }).waitFor();
-  assert.equal(await page.locator('.bestiary-creature').count(), 16);
+  assert.equal(await page.locator('.bestiary-creature').count(), 15);
   assert.equal(await page.locator('.start-animation-tabs, .animation-tabs').count(), 0);
   await page.waitForFunction(() => [...window.spritePaints.keys()].some(canvas => canvas.closest('.bestiary-creature')));
   assert.ok(![...requested].some(url => url.endsWith('/hero-monk-attack.png')), 'Offscreen combat sheets are not loaded at opening');
   await page.evaluate(() => window.spritePaints.clear());
   await page.waitForTimeout(650);
   const menuPaints = await page.evaluate(() => [...window.spritePaints].filter(([canvas]) => canvas.closest('.bestiary-creature')).map(([, n]) => n));
-  assert.ok(menuPaints.length > 0 && menuPaints.length < 16);
+  assert.ok(menuPaints.length > 0 && menuPaints.length < 15);
   assert.ok(menuPaints.every(n => n <= 8), 'One shared clock caps combat previews at ten frames per second');
   await page.getByRole('img', { name: 'Moine de l’Aube', exact: true }).scrollIntoViewIfNeeded();
   await page.waitForFunction(() => [...window.spritePaints].some(([canvas, count]) => canvas.getAttribute('aria-label') === 'Moine de l’Aube' && count > 0));
@@ -50,7 +50,7 @@ try {
     assert.equal(await page.evaluate(() => window.mapPaints), before, 'Map is not rendered behind modal');
     if (label === 'Ouvrir le bestiaire') {
       const counts = await page.evaluate(() => [...window.spritePaints].filter(([canvas]) => canvas.closest('.bestiary-creature')).map(([, n]) => n));
-      assert.ok(counts.length > 0 && counts.length < 16, 'Only visible bestiary sprites animate');
+      assert.ok(counts.length > 0 && counts.length < 15, 'Only visible bestiary sprites animate');
       assert.ok(counts.every(n => n <= 8), 'Sprite rendering is capped at sheet frame rate');
       await page.locator('.combat-matchups').first().scrollIntoViewIfNeeded();
       await page.screenshot({ path: process.env.TEMP + '/evil-bestiary-polish.png' });

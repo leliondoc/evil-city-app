@@ -1336,7 +1336,7 @@ export class Renderer {
             worker.x * CELL,
             worker.y * CELL,
             0.72,
-            worker.rebuilding === undefined && worker.cannonId === undefined && worker.phase !== 'harvest' && worker.moving === false
+            worker.repairing === undefined && worker.rebuilding === undefined && worker.cannonId === undefined && worker.phase !== 'harvest' && worker.moving === false
               ? 0
               : Math.floor(
                   (worker.phase === 'harvest' ? worker.progress : t) * 10,
@@ -1494,10 +1494,10 @@ export class Renderer {
               0.45,
             );
           if (
-            u.task === 'build' &&
+            (u.task === 'build' || u.task === 'repair') &&
             u.target !== null &&
             atEntrance(u, s.lots[u.target]) &&
-            s.lots[u.target].construction &&
+            (s.lots[u.target].construction || u.task === 'repair') &&
             !this.reducedMotion
           ) {
             const frame = Math.floor(t * 10 + u.id * 3) % 16;

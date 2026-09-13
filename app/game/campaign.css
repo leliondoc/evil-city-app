@@ -17,7 +17,7 @@
   height: 30px;
 }
 .game-shell .sidebar .selection-name {
-  padding-right: 38px;
+  padding-right: 0;
 }
 .chapter-context {
   margin-top: 10px;
