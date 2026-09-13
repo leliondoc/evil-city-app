@@ -26,6 +26,8 @@ export class GameMusic {
   private theme: MusicTheme | null = null;
   private pendingTheme: MusicTheme | null = null;
   private stoppingBattle = false;
+  private victory = false;
+  private victoryFinished = false;
   private transitionTimer: ReturnType<typeof setTimeout> | null = null;
   private fadeInEnd = 0;
   private fadeEnd: number | null = null;
@@ -103,6 +105,11 @@ export class GameMusic {
       };
       // Stop retrying on every click if the optional music files are absent.
       this.element.onerror = () => {
+        if (this.victory) {
+          this.victoryFinished = true;
+          this.resetEnvelope();
+          return;
+        }
         if (this.pendingTheme) {
           this.finishTransition();
           return;
@@ -143,8 +150,28 @@ export class GameMusic {
     this.sync();
   }
 
+  setVictory(visible: boolean) {
+    if (this.disposed || this.victory === visible) return;
+    this.victory = visible;
+    this.victoryFinished = false;
+    this.darkDue = false;
+    this.stoppingBattle = false;
+    this.cancelTransitionTimer();
+    this.pendingTheme = null;
+    if (visible) {
+      this.prepare();
+      this.playTheme('victory');
+    } else {
+      this.theme = null;
+      this.load();
+      if (this.element) this.element.currentTime = this.ambientPosition;
+      this.sync();
+    }
+  }
+
   /** One cue per arriving party; never layer music or restart the current theme. */
   playTheme(theme: MusicTheme) {
+    if (this.victory && theme !== 'victory') return;
     if (this.stoppingBattle && theme !== 'dark') {
       this.cancelTransitionTimer();
       this.stoppingBattle = false;
@@ -153,7 +180,7 @@ export class GameMusic {
     }
     if (
       this.mode !== 'game' ||
-      this.blocked() ||
+      (this.blocked() && theme !== 'victory') ||
       !this.element ||
       this.theme === theme ||
       this.pendingTheme === theme
@@ -196,6 +223,7 @@ export class GameMusic {
   private blocked() {
     return (
       this.disposed ||
+      this.victoryFinished ||
       this.failed ||
       this.paused ||
       this.muted ||
@@ -207,6 +235,7 @@ export class GameMusic {
   }
 
   stopBattleTheme() {
+    if (this.victory) return;
     if (this.stoppingBattle || this.mode !== 'game') return;
     if (this.pendingTheme === 'human' || this.pendingTheme === 'guild') {
       this.pendingTheme = null;
@@ -358,6 +387,10 @@ export class GameMusic {
     if (this.pendingTheme) {
       if (!this.theme && this.mode === 'game') this.finishAmbient();
       this.finishTransition();
+      return;
+    }
+    if (this.victory) {
+      this.victoryFinished = true;
       return;
     }
     if (this.theme) {

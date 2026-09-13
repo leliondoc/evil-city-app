@@ -325,7 +325,8 @@ export default function Game({
     audioRef.current?.setPaused(
       !active || paused || modal !== null || document.hidden,
     );
-    audioRef.current?.setMusicPaused(!active || paused);
+    audioRef.current?.setMusicPaused(!active || (paused && modal !== 'victory'));
+    audioRef.current?.setVictory(modal === 'victory');
   }, [active, paused, modal]);
 
   const notify = useCallback((message: string) => {

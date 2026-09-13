@@ -2232,5 +2232,21 @@
     "frameWidth": 192,
     "frames": 6,
     "anchor": 0.67
+  },
+  "alchemist-projectile": {
+    "src": "/tiny-swords/alchemist-projectile.png",
+    "width": 384,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 3,
+    "anchor": 0.5
+  },
+  "alchemist-impact": {
+    "src": "/tiny-swords/alchemist-impact.png",
+    "width": 1152,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 9,
+    "anchor": 0.5
   }
 }

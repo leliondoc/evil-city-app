@@ -214,7 +214,7 @@ export const CREATURES: Record<
     name: 'Alchimiste',
     job: 'Maître des mixtures',
     description:
-      'Lance des potions explosives à 5,5 cases : dégâts magiques de zone ignorant l’armure. Soigne un allié blessé proche de 25 PV toutes les 8 s. Son solvant amplifie le feu allié. Fragile face aux archères.',
+      'Projette une boule magique à 5,5 cases : dégâts de zone ignorant l’armure. Soigne un allié blessé proche de 25 PV toutes les 8 s. Son solvant amplifie le feu allié. Fragile face aux archères.',
     art: 5,
     cost: { gold: 100, mana: 35, food: 15 },
     hp: 60,

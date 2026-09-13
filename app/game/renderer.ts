@@ -42,6 +42,7 @@ import { mission } from './mission';
 import type { GroundTile } from './terrainLayout';
 import { isHaunted, thought } from './domain';
 import { ParticleFeedback } from './particles';
+import { ALCHEMY } from './alchemy';
 import { hasResearch, towerOccupant } from './strategy';
 import {
   selectedUnitIds,
@@ -1416,7 +1417,10 @@ export class Renderer {
             motion = { action, since: t };
             this.motions.set(u.id, motion);
           }
-          const sample = animationFrame(
+          const castingAge = s.elapsed - ((u.potionReadyAt ?? -100) - ALCHEMY.interval);
+          const sample = u.kind === 'alchemist' && action === 'attack'
+            ? animationFrame([castingAge < 1 ? 'alchemist-attack' : 'alchemist-idle'], castingAge < 1 ? castingAge : t)
+            : animationFrame(
               animationSequence(u.kind, action, unitIsMounted(s, u)),
               t - motion.since,
             ),
@@ -1659,12 +1663,11 @@ export class Renderer {
           );
         },
       });
-    for (const p of s.alchemy?.potions ?? []) drawables.push({
+    for (const p of s.alchemy?.potions ?? []) if (p.windup <= 0) drawables.push({
       depth: p.y * CELL + 1,
       draw: () => {
-        const x = p.x * CELL, y = p.y * CELL - 28;
-        this.draw.rect(x - 4, y - 6, 8, 12, '#df9aff');
-        this.draw.rect(x - 2, y - 10, 4, 5, '#ffe7af');
+        this.sprite('alchemist-projectile', p.x * CELL, p.y * CELL - 28, 0.72,
+          Math.floor(p.flightTime / FRAME_SECONDS) % ASSETS['alchemist-projectile'].frames);
       },
     });
     // Remains lie on the ground, underneath living actors and scenery.
@@ -1735,8 +1738,8 @@ export class Renderer {
         this.sprite('hero-heal', x, y, 0.7, Math.min(ASSETS['hero-heal'].frames - 1, Math.floor((s.elapsed - effect.at) / FRAME_SECONDS)));
         this.label(x, y - 70, `+${Math.round(effect.amount ?? 25)} PV`, '#a8ef9d');
       } else if (!this.reducedMotion) {
-        const age = Math.min(1, (s.elapsed - effect.at) / 0.8);
-        this.draw.ellipse(x, y - 12, 20 + age * 32, 10 + age * 16, '#dda0ff', 4 / this.scale, 1 - age);
+        this.sprite('alchemist-impact', x, y - 28, 0.72,
+          Math.min(ASSETS['alchemist-impact'].frames - 1, Math.floor((s.elapsed - effect.at) / FRAME_SECONDS)));
       }
     }
     for (const lot of s.lots.filter((l) => isHaunted(s, l))) {

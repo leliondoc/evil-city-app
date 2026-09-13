@@ -105,7 +105,7 @@ test('Melee and ranged fighters hit and face their focus target even when anothe
     if (kind === 'alchemist') {
       assert.equal(s.alchemy.potions.length, 1, 'The potion travels toward the designated enemy');
       assert.ok(s.alchemy.potions[0].target.x < u.x);
-      tick(s, 0.5);
+      tick(s, 1); // Original casting gesture, followed by projectile travel.
     }
     assert.ok(monk.hp < monk.maxHp, `${kind} damages the designated enemy`);
     assert.equal(guard.hp, guard.maxHp, `${kind} ignores the closer enemy`);

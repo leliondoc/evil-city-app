@@ -24,11 +24,14 @@ test('Healing follows its moving recipient and then heals the next wounded gobli
  assert.equal(s.alchemy.effects.at(-1).targetId,second.id);
  assert.equal(s.alchemy.effects.at(-1).amount,15,'Display only the HP actually restored');
 });
-test('Potions travel, respect their cooldown, splash at most four enemies and ignore passive armor',()=>{
+test('Magic projectiles wait for the casting gesture, travel, splash at most four enemies and ignore passive armor',()=>{
  const s=createGame();s.elapsed=1;const u=unit(s,'alchemist'),target=enemy(s);
  const others=[0.3,0.6,0.9,1.2,3].map(d=>enemy(s,'warrior',target.x+d));
  throwPotion(s,u,target);throwPotion(s,u,target);assert.equal(s.alchemy.potions.length,1);
  advanceAlchemy(s,0.1);assert.equal(target.hp,200,'No damage before impact');
+ assert.equal(s.alchemy.potions[0].x,u.x,'The projectile stays hidden during the original casting gesture');
+ advanceAlchemy(s,0.4);assert.equal(s.alchemy.potions[0].x,u.x);
+ advanceAlchemy(s,0.1);assert.ok(s.alchemy.potions[0].x>u.x,'Flight begins after the release frame');
  advanceAlchemy(s,1);assert.equal(target.hp,186.5,'13.5 magic damage despite 25% armor');
  for(const e of others.slice(0,3)) assert.ok(Math.abs(e.hp-191.9)<1e-8);
  for(const e of others.slice(3)) assert.equal(e.hp,200);

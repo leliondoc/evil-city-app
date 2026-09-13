@@ -38,7 +38,8 @@
   display: grid;
   width: 306px;
   max-width: calc(100vw - 26px);
-  max-height: inherit;
+  max-height: calc(var(--bubble-max-height, 600px) - 48px);
+  margin-top: 48px;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 12px;

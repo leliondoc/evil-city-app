@@ -1,6 +1,6 @@
 import { enemyFaction, territory, type State } from './engine.ts';
 
-export type MusicTheme = 'human' | 'guild' | 'dark';
+export type MusicTheme = 'human' | 'guild' | 'dark' | 'victory';
 
 /** Detect departures, including racket patrols and defenders of the guild. */
 export class MusicEvents {

@@ -202,6 +202,10 @@ export class GameAudio {
     this.music.setPaused(paused);
   }
 
+  setVictory(visible: boolean) {
+    this.music.setVictory(visible);
+  }
+
   update(s: State) {
     // Consume events even while muted so turning sound back on never replays them.
     const theme = this.musicEvents.update(s);

@@ -204,6 +204,25 @@ try {
     'The natural fade does not shorten the musical break',
   );
 
+  await page.evaluate(() => window.testMusic.setVictory(true));
+  await track('victory-theme.mp3');
+  assert.ok((await sample()).gain < 0.15, 'Victory fades in');
+  await page.evaluate(() => {
+    window.testMusic.playTheme('human');
+    window.testMusic.stopBattleTheme();
+    window.testMusic.setVictory(true);
+  });
+  await delay(500);
+  assert.ok((await sample()).src.endsWith('victory-theme.mp3'), 'Combat cannot replace victory music');
+  await page.evaluate(() => window.testMusic.configure(true, 0.5));
+  assert.equal((await sample()).paused, true, 'Victory respects mute');
+  await page.evaluate(() => window.testMusic.configure(false, 0.25));
+  await track('victory-theme.mp3');
+  await outro();
+  await page.waitForFunction(() => window.graphs[0].audio.ended);
+  await page.evaluate(() => window.testMusic.unlock(window.testContext));
+  assert.equal((await sample()).paused, true, 'Victory plays once and leaves the result screen silent');
+  await page.evaluate(() => window.testMusic.setVictory(false));
   await page.evaluate(() => window.testMusic.playTheme('guild'));
   await track('guild-theme.mp3');
   await page.evaluate(() => {

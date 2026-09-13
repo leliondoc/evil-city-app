@@ -3214,7 +3214,7 @@ svg {
 /* Floating desktop HUD: only useful cards shade the live world behind them. */
 .selection-column { display: contents; }
 .game-shell[data-compact] .sidebar { position: relative; overflow: hidden; }
-.selection-scroll { overflow-y: auto; overflow-x: hidden; min-height: 0; max-height: 100%; padding: 36px 10px 0; overscroll-behavior: contain; }
+.selection-scroll { overflow-y: auto; overflow-x: hidden; min-height: 0; max-height: calc(100% - 48px); margin-top: 48px; padding: 0 10px; overscroll-behavior: contain; }
 .selection-scroll > section { flex-shrink: 0; }
 .game-shell[data-compact] .sidebar .selection-close { position: absolute; top: 4px; right: 4px; margin: 0; z-index: 5; }
 .game-shell[data-compact='false'] .selection-column {

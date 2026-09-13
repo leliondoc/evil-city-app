@@ -54,7 +54,16 @@ async function closeDetails(page) {
     name: 'Fermer les détails',
     exact: true,
   });
-  if (await close.isVisible()) await close.click();
+  if (await close.isVisible()) {
+    const before = await close.boundingBox();
+    const scroll = page.locator('.selection-scroll');
+    const area = await scroll.boundingBox();
+    assert.ok(before && area && before.y + before.height <= area.y,
+      'The close button has its own header above the scrollbar');
+    await scroll.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    assert.deepEqual(await close.boundingBox(), before, 'Scrolling never moves the close button');
+    await close.click();
+  }
 }
 
 try {
@@ -109,6 +118,7 @@ try {
         await requireLandscape(page);
         await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page.locator('.world-canvas[data-ready=true]').waitFor();
+        await page.getByRole('button', { name: /^Voir le manoir, niveau/ }).click();
         await closeDetails(page);
         await page
           .getByRole('button', { name: 'Mettre en pause', exact: true })

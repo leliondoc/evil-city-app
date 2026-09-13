@@ -48,6 +48,7 @@ export function AbilityBubble({
           const floor = Math.max(edge, (header?.bottom ?? 0) + 8);
           const ceiling = window.innerHeight - edge;
           el.style.maxHeight = `${Math.max(100, ceiling - floor - 20)}px`;
+          el.style.setProperty('--bubble-max-height', el.style.maxHeight);
           const box = el.getBoundingClientRect();
           const left = Math.max(
             edge,

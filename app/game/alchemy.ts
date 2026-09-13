@@ -1,8 +1,8 @@
 import { armyDamage, clearShot, CREATURES, rememberAggressor, type Point, type State, type Unit } from './engine.ts';
 import { shieldMultiplier } from './shields.ts';
 
-export const ALCHEMY = { range: 5.5, interval: 1.5, radius: 1.6, splash: 0.6, maxTargets: 4, speed: 9, healRange: 4, healAmount: 25, healCooldown: 8 } as const;
-type Potion = Point & { target: Point; source: number; damage: number; solvent: boolean; buildingId?: number };
+export const ALCHEMY = { range: 5.5, interval: 1.5, windup: 0.5, radius: 1.6, splash: 0.6, maxTargets: 4, speed: 9, healRange: 4, healAmount: 25, healCooldown: 8 } as const;
+type Potion = Point & { target: Point; source: number; damage: number; solvent: boolean; buildingId?: number; windup: number; flightTime: number };
 type AlchemyEffect = Point & { at: number; kind: 'heal' | 'blast'; targetId?: number; amount?: number };
 export type AlchemyState = { potions: Potion[]; effects: AlchemyEffect[] };
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -12,7 +12,7 @@ export function throwPotion(s: State, u: Unit, enemy: Point, buildingId?: number
   if ((u.potionReadyAt ?? 0) > s.elapsed) return;
   u.potionReadyAt = s.elapsed + ALCHEMY.interval;
   state(s).potions.push({ x: u.x, y: u.y, target: { x: enemy.x, y: enemy.y }, source: u.id,
-    damage: armyDamage(s, u) * ALCHEMY.interval, solvent: s.strategy.research.includes('solvent'), buildingId });
+    damage: armyDamage(s, u) * ALCHEMY.interval, solvent: s.strategy.research.includes('solvent'), buildingId, windup: ALCHEMY.windup, flightTime: 0 });
 }
 
 export function healAlly(s: State, u: Unit) {
@@ -29,7 +29,7 @@ export function healAlly(s: State, u: Unit) {
 
 export function advanceAlchemy(s: State, dt: number) {
   if (!s.alchemy) return;
-  s.alchemy.effects = s.alchemy.effects.filter(e => s.elapsed - e.at < (e.kind === 'heal' ? 1.1 : 0.8));
+  s.alchemy.effects = s.alchemy.effects.filter(e => s.elapsed - e.at < (e.kind === 'heal' ? 1.1 : 0.9));
   for (const effect of s.alchemy.effects) {
     if (effect.kind !== 'heal') continue;
     const target = s.units.find(u => u.id === effect.targetId && u.hp > 0);
@@ -37,13 +37,18 @@ export function advanceAlchemy(s: State, dt: number) {
   }
   s.alchemy.potions = s.alchemy.potions.filter(p => {
     if (!clearShot(p, p.target)) return false;
+    const source = s.units.find(u => u.id === p.source);
+    const travelTime = Math.max(0, dt - p.windup);
+    if (p.windup > 0 && (!source || source.hp <= 0 || (source.path.length > 0 && !source.fighting))) return false;
+    p.windup = Math.max(0, p.windup - dt);
+    if (!travelTime) return true;
+    p.flightTime += travelTime;
     const d = distance(p, p.target);
-    if (d > ALCHEMY.speed * dt) {
-      p.x += (p.target.x - p.x) / d * ALCHEMY.speed * dt;
-      p.y += (p.target.y - p.y) / d * ALCHEMY.speed * dt;
+    if (d > ALCHEMY.speed * travelTime) {
+      p.x += (p.target.x - p.x) / d * ALCHEMY.speed * travelTime;
+      p.y += (p.target.y - p.y) / d * ALCHEMY.speed * travelTime;
       return true;
     }
-    const source = s.units.find(u => u.id === p.source);
     const lot = p.buildingId === undefined ? undefined : s.lots[p.buildingId];
     if (lot && !lot.owned) lot.hp = Math.max(0, lot.hp - p.damage);
     const victims = s.enemies.filter(e => e.hp > 0 && distance(e, p.target) <= ALCHEMY.radius && clearShot(p.target, e))
