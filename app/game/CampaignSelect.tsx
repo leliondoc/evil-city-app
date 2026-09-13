@@ -54,12 +54,22 @@ export function CampaignSelect({
             onClick={() => setSelected(chapter.id)}
           >
             <span className="atlas-landmark">
+              <svg className="atlas-selection-ring" viewBox="0 0 132 46" aria-hidden="true">
+                <path className="atlas-ring-outline" d="M16 17C34 4 91 4 114 15M120 22C120 37 36 44 12 29" />
+                <path className="atlas-ring-gold" d="M16 17C34 4 91 4 114 15M120 22C120 37 36 44 12 29" />
+                <path className="atlas-ring-highlight" d="M25 13C45 6 76 6 94 10M112 29C91 37 50 39 29 33" />
+              </svg>
               <img
                 src={ASSETS[landmarks[chapter.id]].src}
                 alt=""
                 draggable={false}
               />
-              <span className="atlas-number">{chapter.chapter}</span>
+              <svg className="atlas-number" viewBox="0 0 32 38" aria-hidden="true">
+                <path className="atlas-badge-rim" d="M3 2Q16 0 29 2L28 24Q24 31 16 36Q8 31 4 24Z" />
+                <path className="atlas-badge-face" d="M6 5Q16 3 26 5L25 23Q22 28 16 32Q10 28 7 23Z" />
+                <path className="atlas-badge-shine" d="M8 7Q16 5 24 7M8 9 9 21" />
+                <text x="16" y="24" textAnchor="middle">{chapter.chapter}</text>
+              </svg>
             </span>
             <strong>{chapter.name}</strong>
             <small>{descriptions[chapter.id]}</small>
