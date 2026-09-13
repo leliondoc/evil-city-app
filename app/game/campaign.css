@@ -36,12 +36,6 @@
   margin: 10px 0;
   font-size: 13px;
 }
-.discovery-note {
-  padding: 18px;
-  max-width: 300px;
-  line-height: 1.5;
-  color: #efdfbd;
-}
 .army-command-bar {
   display: flex;
   gap: 4px;

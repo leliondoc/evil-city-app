@@ -1749,7 +1749,6 @@ export default function Game({
           </TabsList>
           <TabsContent value="build">
             <CreationCards layout={compact ? 'grid' : 'scroll'}>
-              {buildOptions.length === 0 && <p className="discovery-note">Recrutez votre premier gobelin pour découvrir la construction.</p>}
               {buildOptions.map((kind, i) => {
                 const b = BUILDINGS[kind];
                 const locked = buildUnlockReason(s, kind);
