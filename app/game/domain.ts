@@ -216,6 +216,11 @@ export function haunt(s: State, id: number, unitId?: number): string {
   );
   return '';
 }
+export function canResumeSpecterDuel(unit: Unit, monk: Enemy): boolean {
+  return unit.kind === 'specter' && unit.hp > 0 && monk.hp > 0 && monk.role === 'monk' &&
+    (monk.exorcising === unit.id || monk.pursuitTarget === unit.id || !!monk.aggressors?.includes(unit.id));
+}
+
 export function exorcise(s: State, monk: Enemy, dt: number): boolean {
   const opponent = s.units.find((u) => u.id === monk.exorcising && u.hp > 0);
   if (monk.exorcismStreet && opponent && distance(monk, opponent) <= 8) {
@@ -621,6 +626,10 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
     if (!monk) {
       idle(u);
       return true;
+    }
+    if (u.manualUntil !== undefined && (distance(u, monk) > 2.2 || !clearShot(u, monk)) &&
+      (!u.path.length || distance(u.path.at(-1)!, monk) > 1)) {
+      u.path = findPath(u, monk);
     }
     walk(s, u, unitSpeed(s, u) * dt);
     if (!u.path.length && distance(u, monk) <= 2.2 && clearShot(u, monk)) {

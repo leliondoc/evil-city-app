@@ -1,6 +1,7 @@
 import { establishedGame as createGame } from './established-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { selectedFightersCanAttack, unitSelection } from '../app/game/selection.ts';
 import {
   tick,
   recruit,
@@ -396,4 +397,31 @@ test('New mechanics remain equivalent across normal steps and accelerated simula
   );
   for (const key of ['gold', 'wood', 'food', 'mana'])
     assert.ok(Math.abs(a.resources[key] - b.resources[key]) < 0.001);
+});
+
+test('A fleeing specter can resume its duel against the pursuing monk', () => {
+  const { s, u, monk } = streetDuel();
+  assert.equal(commandUnit(s, u.id, null, entrance(s.lots[6])), '');
+  tick(s, 1);
+  const hp = monk.hp;
+  assert.equal(selectedFightersCanAttack(s, unitSelection([u.id]), { type: 'enemy', id: monk.id }), true);
+  assert.equal(commandUnit(s, u.id, { type: 'enemy', id: monk.id }, monk), '');
+  assert.equal(u.task, 'duel');
+  until(s, () => monk.hp < hp, 8);
+  assert.ok(u.hp > 0);
+  assert.equal(commandUnit(s, u.id, null, entrance(s.lots[6])), '');
+  assert.equal(u.task, 'move');
+});
+
+test('A specter can resume after the initial exorcism link clears, but cannot duel an unrelated monk', () => {
+  const { s, u, monk } = streetDuel();
+  assert.equal(commandUnit(s, u.id, null, entrance(s.lots[6])), '');
+  monk.exorcising = undefined;
+  monk.exorcismStreet = undefined;
+  assert.equal(commandUnit(s, u.id, { type: 'enemy', id: monk.id }, monk), '');
+  const hp = monk.hp;
+  until(s, () => monk.hp < hp, 8);
+  const other = { ...monk, id: s.nextId++, exorcising: undefined, pursuitTarget: undefined, aggressors: [] };
+  s.enemies.push(other);
+  assert.notEqual(commandUnit(s, u.id, { type: 'enemy', id: other.id }, other), '');
 });

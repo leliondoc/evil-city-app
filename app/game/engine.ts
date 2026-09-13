@@ -19,6 +19,7 @@ import {
   haunt,
   isHaunted,
   exorcise,
+  canResumeSpecterDuel,
   resurrect,
   restUnit,
   type DomainState,
@@ -1505,6 +1506,16 @@ export function commandUnit(
     (lot && !lot.owned && lot.kind !== 'empty');
   if (hostile && unit.kind === 'specter') {
     if (lot) return haunt(s, lot.id, unit.id);
+    const monk = target?.type === 'enemy' ? s.enemies.find(e => e.id === target.id) : undefined;
+    if (monk && canResumeSpecterDuel(unit, monk)) {
+      assignPlayerOrder(unit, monk, 'duel', monk.id);
+      monk.exorcising = unit.id;
+      monk.exorcismStreet = navigationTarget(unit);
+      rememberAggressor(s, monk, unit);
+      markAttackOrder(s, { type: 'enemy', id: monk.id });
+      announce(s, 'Le spectre reprend le duel contre le moine.');
+      return '';
+    }
     return 'Le spectre hante les bâtiments. Clic droit sur une propriété humaine.';
   }
   if (hostile && unit.kind === 'goblin' && !hasResearch(s, 'embers'))
@@ -2403,6 +2414,7 @@ function advanceEnemies(s: State, dt: number) {
         s.enemies.filter(
           (ally) =>
             ally.id !== e.id &&
+            ally.hp > 0 &&
             ally.kind === 'hero' &&
             ally.hp < ally.maxHp &&
             clearShot(e, ally),
@@ -2419,11 +2431,19 @@ function advanceEnemies(s: State, dt: number) {
         e.facing = ally.x >= e.x ? 1 : -1;
         continue;
       }
+      // A support unit escorts living fighters; it never raids a building alone.
+      const escort = nearest(e, s.enemies.filter(ally => ally.hp > 0 && ally.kind === 'hero' && ally.role !== 'monk'), Infinity);
+      const guild = sourceBuilding(s, 'hero');
+      const destination = escort ?? (guild && !guild.owned && guild.hp > 0 ? entrance(guild) : e);
+      if (distanceBetween(e, destination) > (escort ? 2.5 : 1)) {
+        pursue(e, destination);
+        walk(s, e, def.speed * dt);
+      } else {
+        e.path = [];
+      }
+      continue;
     }
-    const victim =
-      e.role === 'monk'
-        ? undefined
-        : nearest(e, s.units, Math.max(4, def.range));
+    const victim = nearest(e, s.units, Math.max(4, def.range));
     if (victim) {
       if (distanceBetween(e, victim) <= def.range && clearShot(e, victim)) {
         e.path = [];

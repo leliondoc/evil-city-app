@@ -312,3 +312,34 @@ test('The guild fields four human roles with complete animations; monsters stay 
       assert.ok(ASSETS[enemyAnimationSequence(e, action)[0]]);
   for (const w of s.workers) assert.ok(ASSETS[workerArt(w, s.sites[w.site])]);
 });
+
+test('An idle lone monk returns to the guild instead of marching on the manor', () => {
+  const s = createGame();
+  s.units = [];
+  const home = entrance(s.lots[0]);
+  const start = entrance(s.lots[6]);
+  const monk = hero(s, 'monk', start.x, start.y);
+  tick(s, 45);
+  assert.ok(Math.hypot(monk.x - home.x, monk.y - home.y) <= 1);
+  assert.equal(monk.fighting, false);
+});
+
+test('A living lone monk does not prevent funded guild expeditions, and starvation resumes after resupply', () => {
+  const s = createGame();
+  s.units = [];
+  s.workers = [];
+  s.economy.workerReadyAt = Infinity;
+  s.economy.nextUpgradeAt = Infinity;
+  s.economy.stocks = { gold: 0, wood: 0, food: 0 };
+  hero(s, 'monk');
+  s.mobilization.hero.active = true;
+  s.mobilization.hero.nextRaidAt = 0;
+  tick(s, 0.1);
+  assert.equal(s.mobilization.hero.starved, true);
+  assert.equal(s.mobilization.hero.waves, 0);
+  s.economy.stocks = { gold: 1000, wood: 1000, food: 1000 };
+  tick(s, 0.1);
+  assert.equal(s.mobilization.hero.starved, false);
+  assert.equal(s.mobilization.hero.waves, 1);
+  assert.ok(s.enemies.some(e => e.role !== 'monk' && e.kind === 'hero'));
+});

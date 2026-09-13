@@ -963,7 +963,7 @@ export class Renderer {
     const alive = new Set([...s.units, ...s.enemies].map((u) => u.id));
     for (const id of this.motions.keys())
       if (!alive.has(id)) this.motions.delete(id);
-    const drawables: { depth: number; draw: () => void }[] = [];
+    const drawables: { depth: number; sizePriority?: number; draw: () => void }[] = [];
     const buildingBars = new Map<number, Point>();
     const combatBars: {
       x: number;
@@ -1350,6 +1350,7 @@ export class Renderer {
     for (const u of s.units)
       drawables.push({
         depth: u.y * CELL + 1,
+        sizePriority: u.kind === 'troll' || u.kind === 'minotaur' ? 2 : unitIsMounted(s, u) ? 1 : 0,
         draw: () => {
           if (u.kind === 'goblin' && !u.path.length && !u.fighting) {
             const lot = u.target === null ? undefined : s.lots[u.target];
@@ -1639,7 +1640,8 @@ export class Renderer {
       );
       this.sprite('unit-death', death.x * CELL, death.y * CELL, 0.8, frame);
     }
-    drawables.sort((a, b) => a.depth - b.depth);
+    // At equal ground depth, large creatures cover smaller ones, regardless of recruitment order.
+    drawables.sort((a, b) => a.depth - b.depth || (a.sizePriority ?? 0) - (b.sizePriority ?? 0));
     for (const d of drawables) d.draw();
     for (const r of s.domain.resurrections)
       if (!this.reducedMotion)

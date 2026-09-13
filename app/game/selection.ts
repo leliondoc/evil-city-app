@@ -1,4 +1,5 @@
 import type { Point, Selection, State, Unit } from './engine';
+import { canResumeSpecterDuel } from './domain.ts';
 
 /** Whether the selected fighters can attack a hostile target. */
 export function selectedFightersCanAttack(
@@ -13,7 +14,7 @@ export function selectedFightersCanAttack(
       (u) =>
         ids.includes(u.id) &&
         u.hp > 0 &&
-        u.kind !== 'specter' &&
+        (u.kind !== 'specter' || (target.type === 'enemy' && state.enemies.some(e => e.id === target.id && canResumeSpecterDuel(u, e)))) &&
         (u.kind !== 'goblin' || state.strategy.research.includes('embers')),
     )
   )
