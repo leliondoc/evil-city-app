@@ -2067,10 +2067,10 @@
   },
   "imp-sanctum": {
     "src": "/tiny-swords/imp-sanctum.png",
-    "width": 128,
-    "height": 256,
-    "frameWidth": 128,
-    "frames": 1,
+    "width": 1024,
+    "height": 192,
+    "frameWidth": 256,
+    "frames": 4,
     "anchor": 1
   },
   "imp-attack-start": {
