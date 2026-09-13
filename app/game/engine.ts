@@ -117,7 +117,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     duration: 18,
   },
   canteen: {
-    name: 'Cantine des hordes',
+    name: 'Cantine de la Cour',
     description:
       'La cantine sert les vivres rapportés par vos gobelins. Elle réduit la consommation de 20 % par niveau, jusqu’à 60 %, et permet de manger sur place.',
     short: '−20 % de consommation',

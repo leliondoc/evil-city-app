@@ -85,7 +85,7 @@ try {
       let size = 0;
       PixiScene.prototype.render = function () {
         const label = this.actors.container.children.find(
-          (node) => node.visible && node.text === 'Cantine des hordes',
+          (node) => node.visible && node.text === 'Cantine de la Cour',
         );
         if (label) size = label.style.fontSize * this.world.scale.x;
         return render.call(this);

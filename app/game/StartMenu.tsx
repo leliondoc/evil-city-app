@@ -30,7 +30,6 @@ import {
   type AudioSettings,
 } from './audio';
 import { GameMusic } from './music';
-import type { Animation } from './art';
 import type { CampaignMapId } from './campaign';
 import { CampaignSelect } from './CampaignSelect';
 import { LandscapeGate } from './LandscapeGate';
@@ -50,7 +49,6 @@ export function StartMenu({
 }) {
   const [panel, setPanel] = useState<MenuPanel>(null);
   const [showMap, setShowMap] = useState(false);
-  const [action, setAction] = useState<Animation>('idle');
   const [settings, setSettings] = useState(readAudioSettings);
   const playRef = useRef<HTMLButtonElement>(null);
   const panelTrigger = useRef<HTMLButtonElement | null>(null);
@@ -108,6 +106,7 @@ export function StartMenu({
     <LandscapeGate blocked={showMap && portrait} onBack={() => setShowMap(false)}>
     <main
       className="start-menu"
+      data-panel-open={panel !== null}
       data-screen={showMap ? 'map' : 'title'}
       aria-label={
         showMap ? 'Carte des quartiers' : 'Menu principal d’Evil City'
@@ -232,6 +231,7 @@ export function StartMenu({
         }}
       >
         <DialogContent
+          overlayClassName={panel === 'bestiary' ? 'bestiary-overlay' : undefined}
           className={`start-modal${panel === 'bestiary' ? ' start-bestiary' : ''}`}
           showCloseButton={false}
           finalFocus={() => panelTrigger.current ?? playRef.current}
@@ -245,31 +245,11 @@ export function StartMenu({
           </button>
           {panel === 'bestiary' && (
             <>
-              <DialogTitle>La horde & ses ennemis</DialogTitle>
+              <DialogTitle>La Cour des monstres et ses ennemis</DialogTitle>
               <DialogDescription>
                 Faites connaissance avec les habitants du quartier.
               </DialogDescription>
-              <div
-                className="start-animation-tabs"
-                aria-label="Animation des unités"
-              >
-                {(
-                  [
-                    ['idle', 'Au repos'],
-                    ['walk', 'En marche'],
-                    ['attack', 'Au combat'],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    aria-pressed={action === value}
-                    onClick={() => setAction(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <Bestiary action={action} />
+              <Bestiary />
             </>
           )}
           {panel === 'settings' && (
@@ -354,7 +334,7 @@ export function StartMenu({
                 <li>
                   <span>02</span>
                   <div>
-                    <h3>Rassemblez votre horde</h3>
+                    <h3>Rassemblez votre armée</h3>
                     <p>
                       Construisez, améliorez le manoir et recrutez les créatures
                       qui feront trembler le quartier.

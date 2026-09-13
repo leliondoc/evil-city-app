@@ -117,7 +117,7 @@ Le gobelin lancier utilise `Spear Goblin_Idle`, `Spear Goblin_Run`, `Spear Gobli
 
 Le curseur de construction réutilise le marteau `UI Elements/UI Elements/Icons/Icon_01.png`. Le trait de ralliement part du centre visuel du bâtiment. Son repère utilise la seconde rangée bleue de `SmallRibbons.png`, avec ses trois morceaux joints une seule fois, sans déplier ni allonger son centre. Aucun cercle de portée n’est dessiné autour de la tour.
 
-Le bestiaire est construit depuis les unités de la simulation : sept créatures recrutables, les gardes, les quatre classes de héros et les trois métiers humains. Les sprites de réserve restent archivés mais ne sont plus présentés comme unités jouables. Les aperçus utilisent les sols d’origine de leur faction.
+Le bestiaire présente la Cour des monstres et les humains : sept créatures recrutables, le chevaucheur de cochon, les gardes, les quatre classes de héros et les trois métiers humains. Les aperçus affichent directement le combat (soin pour le moine, travail pour les paysans), sans sélecteur d’animation. Seules les planches visibles sont chargées et décodées ; une horloge commune à 10 images/s anime les aperçus visibles et s’arrête sans abonné. La réduction des animations est respectée. Le bestiaire évite le flou d’arrière-plan, suspend les particules du menu et le rendu de la carte en partie.
 
 Le recrutement accepté émet immédiatement une courte confirmation (`Spell Impact 2`) au clic sur la carte ou au raccourci, distincte de l’arrivée de l’unité. Un refus reste silencieux. Ce retour d’interface reste disponible pendant la pause et respecte le volume des effets et la coupure générale.
 

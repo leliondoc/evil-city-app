@@ -31,7 +31,7 @@ export function buildingLevelEffect(kind: BuildingKind, level: number): string {
     case 'hq':
       return `${number(10.8 * level)} essence/min · palier ${level}`;
     case 'den':
-      return `+${6 * level} places pour la horde`;
+      return `+${6 * level} places pour la Cour des monstres`;
     case 'canteen':
       return `Consommation réduite de ${Math.min(60, 20 * level)} %`;
     case 'crypt':

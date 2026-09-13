@@ -175,7 +175,7 @@ try {
   assert.equal(await page.locator('.bestiary-creature').count(), 16);
   assert.equal(
     await page
-      .getByRole('region', { name: 'Votre horde', exact: true })
+      .getByRole('region', { name: 'La Cour des monstres', exact: true })
       .locator('article')
       .count(),
     8,
@@ -198,8 +198,7 @@ try {
   await page.getByRole('textbox', { name: 'Chercher dans le bestiaire', exact: true }).fill('Chevaucheur de cochon');
   assert.equal(await page.locator('.bestiary-creature').count(), 1);
   assert.match(await page.locator('.bestiary-creature .bestiary-badge').innerText(), /Évolution par recherche/);
-  await page.getByRole('tab', { name: 'En marche', exact: true }).click();
-  assert.equal(await page.getByRole('tab', { name: 'En marche', exact: true }).getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('.animation-tabs').count(), 0);
   await page.getByRole('img', { name: 'Chevaucheur de cochon', exact: true }).scrollIntoViewIfNeeded();
   await page.waitForFunction(() => {
     const canvas = document.querySelector('canvas[aria-label="Chevaucheur de cochon"]');

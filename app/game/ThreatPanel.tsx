@@ -237,7 +237,7 @@ export function ThreatPanel({
     entries.find((e) => e.id === 'home')!,
     {
       id: 'army',
-      label: 'Votre horde',
+      label: 'La Cour des monstres',
       icon: 'imp-avatar',
       badge: String(fighters.length),
       summary: `${fighters.length} combattants. Population ${population(s)} sur ${capacity(s)}.`,

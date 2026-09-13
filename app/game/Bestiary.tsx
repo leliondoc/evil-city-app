@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Sprite } from './Sprite';
 import { BESTIARY_CREATURES, BESTIARY_HUMANS } from './bestiaryCatalog';
-import { animationSequence, type Animation, type AssetKey } from './art';
+import { animationSequence, type AssetKey } from './art';
 import { CombatDetails } from './CombatDetails';
 import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
 import type { HeroRole } from './engine';
 
-export function Bestiary({ action }: { action: Animation }) {
+export function Bestiary() {
   const [search, setSearch] = useState('');
   const query = search.trim().toLocaleLowerCase('fr');
   const creatures = BESTIARY_CREATURES.filter((entry) =>
@@ -38,17 +38,17 @@ export function Bestiary({ action }: { action: Animation }) {
       {creatures.length > 0 && (
         <section
           className="bestiary-faction"
-          data-faction="horde"
-          aria-label="Votre horde"
+          data-faction="court"
+          aria-label="La Cour des monstres"
         >
-          <h3>Votre horde</h3>
+          <h3>La Cour des monstres</h3>
           <div className="bestiary-grid">
             {creatures.map((entry) => (
               <article className="bestiary-creature" key={entry.id}>
                 <Sprite
                   sequence={animationSequence(
                     entry.kind,
-                    action,
+                    'attack',
                     entry.mounted,
                   )}
                   figure
@@ -74,7 +74,7 @@ export function Bestiary({ action }: { action: Animation }) {
             {humans.map((entry) => (
               <article className="bestiary-creature" key={entry.id}>
                 <Sprite
-                  sequence={entry.actions[action] as AssetKey[]}
+                  sequence={entry.actions.attack as AssetKey[]}
                   figure
                   label={entry.name}
                 />

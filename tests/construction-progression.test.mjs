@@ -28,7 +28,7 @@ test('Construction menu and placement report the same exact resource shortfall, 
   s.resources.wood = 25;
   assert.equal(buildMenuReason(s, 'canteen'), '');
   s.resources.mana = 0;
-  assert.match(buildMenuReason(s, 'crypt'), /Terminez cantine des hordes/);
+  assert.match(buildMenuReason(s, 'crypt'), /Terminez cantine de la cour/);
   assert.match(buildMenuReason(s, 'crypt'), /50 or, 10 bois, 15 essence/);
 });
 

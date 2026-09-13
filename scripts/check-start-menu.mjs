@@ -162,7 +162,7 @@ try {
 
     await page.getByRole('button', { name: 'Bestiaire', exact: true }).click();
     await page.getByRole('dialog').waitFor();
-    await page.getByRole('button', { name: 'Au combat', exact: true }).click();
+    assert.equal(await page.locator('.start-animation-tabs').count(), 0);
     await page
       .getByRole('textbox', { name: 'Chercher dans le bestiaire' })
       .fill('gobelin');
@@ -219,9 +219,8 @@ try {
           })
           .click();
       } else {
-        await page
-          .getByRole('button', { name: 'Fermer les détails', exact: true })
-          .click();
+        const details = page.getByRole('button', { name: 'Fermer les détails', exact: true });
+        if (await details.isVisible()) await details.click();
         await page
           .getByRole('button', { name: 'Ouvrir les paramètres', exact: true })
           .click();

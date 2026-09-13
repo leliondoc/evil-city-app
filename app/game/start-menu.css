@@ -392,26 +392,6 @@
   width: min(930px, calc(100% - 32px));
   max-width: 930px;
 }
-.start-animation-tabs {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-}
-.start-animation-tabs button {
-  flex: 1;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid #77848e45;
-  border-radius: 4px;
-  background: #101b2880;
-  color: #bfc7ca;
-  font-size: 13px;
-}
-.start-animation-tabs button[aria-pressed='true'] {
-  border-color: var(--faction-lavender);
-  background: var(--faction-purple);
-  color: var(--faction-on-purple);
-}
 .start-bestiary .bestiary-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -751,3 +731,5 @@
 
 .start-title.victory-wordmark { font-size: 54px; line-height: 1.05; letter-spacing: 2px; margin: 0 auto 18px; filter: drop-shadow(0 3px 0 #261526); }
 .start-title.victory-wordmark span::before { -webkit-text-stroke-width: 4px; }
+
+.start-menu[data-panel-open="true"] .start-motes i { animation-play-state: paused; }

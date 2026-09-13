@@ -75,7 +75,7 @@ import { mission } from './mission';
 import { CAMPAIGN_MAPS, campaignMap, advancedCampaign, classicCampaign, type CampaignMapId } from './campaign';
 import { completeChapter, readUIScale, saveUIScale } from './preferences';
 import { createGameStore } from './gameStore';
-import { buildingArt, buildingHasTowers, enemyPortrait, type Animation } from './art';
+import { buildingArt, buildingHasTowers, enemyPortrait } from './art';
 import { humanBuildingDescription } from './humanBuildings';
 import {
   BUILDINGS,
@@ -258,7 +258,6 @@ export default function Game({
       document.documentElement.style.removeProperty('--touch-text-scale');
     };
   }, [uiScale]);
-  const [bestiaryAction, setBestiaryAction] = useState<Animation>('idle');
   const [modal, setModal] = useState<
     'guide' | 'bestiary' | 'settings' | 'chapters' | 'restart' | 'victory' | 'defeat' | 'notice' | null
   >(null);
@@ -1922,7 +1921,7 @@ export default function Game({
           if (!open) setModal(null);
         }}
       >
-        <DialogContent className="ui-modal" showCloseButton={false}>
+        <DialogContent overlayClassName={modal === 'bestiary' ? 'bestiary-overlay' : undefined} className="ui-modal" showCloseButton={false}>
           <Button
             className="pack-modal-close"
             aria-label="Fermer"
@@ -2128,7 +2127,7 @@ export default function Game({
                       Vos gobelins récoltent l’or, le bois et les vivres, puis
                       les déposent au manoir. Seule l’essence est produite par
                       les bâtiments. Dès que vous avez 80 or et 25 bois,
-                      choisissez « Cantine des hordes », puis cliquez sur votre
+                      choisissez « Cantine de la Cour », puis cliquez sur votre
                       terrain libre, à côté du manoir. Les gobelins construisent
                       automatiquement.
                     </p>
@@ -2155,7 +2154,7 @@ export default function Game({
                       Au niveau 2, revendiquez la friche centrale pour 40 or et
                       18 essence. Une cantine terminée permet d’y construire
                       la crypte : squelettes, spectres et alchimistes rejoignent
-                      la horde. Au niveau 3 du manoir, une crypte terminée
+                      la Cour des monstres. Au niveau 3 du manoir, une crypte terminée
                       débloque la hutte des trolls, la tour des braises et
                       recherches de feu. Les autres bâtiments ne peuvent pas
                       dépasser le niveau du manoir. Leur fiche indique le gain
@@ -2166,7 +2165,7 @@ export default function Game({
                 <div className="guide-step">
                   <b>04</b>
                   <div>
-                    <strong>Prenez soin de votre horde</strong>
+                    <strong>Prenez soin de votre armée</strong>
                     <p>
                       Au calme, les créatures vivantes vont manger à la cantine
                       et se reposent à la tanière. Les morts-vivants se
@@ -2279,18 +2278,7 @@ export default function Game({
                 Vos 7 créatures recrutables, le chevaucheur de cochon et les 8 unités humaines : gardes,
                 héros et travailleurs.
               </DialogDescription>
-              <Tabs
-                className="animation-tabs"
-                value={bestiaryAction}
-                onValueChange={(v) => setBestiaryAction(v as Animation)}
-              >
-                <TabsList>
-                  <TabsTrigger value="idle">Au repos</TabsTrigger>
-                  <TabsTrigger value="walk">En marche</TabsTrigger>
-                  <TabsTrigger value="attack">Attaque / soin</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <Bestiary action={bestiaryAction} />
+              <Bestiary />
             </>
           )}
           {modal === 'restart' && (

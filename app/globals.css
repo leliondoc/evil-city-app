@@ -1336,19 +1336,6 @@ svg {
   font-size: 14px;
   text-align: left;
 }
-.animation-tabs [data-slot='tabs-list'] {
-  background: #1c303a;
-  width: 100%;
-  height: 40px;
-}
-.animation-tabs [data-slot='tabs-trigger'] {
-  color: #dce5d7;
-  font-size: 14px;
-}
-.animation-tabs [data-slot='tabs-trigger'][data-active] {
-  background: var(--faction-purple);
-  color: var(--faction-on-purple);
-}
 .art-credit {
   color: #b8cec3;
   font-size: 12px;
@@ -3754,3 +3741,6 @@ svg {
 
 .game-shell[data-compact='true'] .army-cap-counter strong { font-size: 13px; }
 .game-shell[data-compact='true'] .army-cap-counter svg { width: 16px; }
+
+.bestiary-overlay[data-slot="dialog-overlay"] { backdrop-filter: none; background: #0b141ccc; }
+.bestiary-creature .sprite-preview { contain: paint; }
