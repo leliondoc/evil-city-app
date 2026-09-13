@@ -2096,5 +2096,37 @@
     "frameWidth": 192,
     "frames": 4,
     "anchor": 0.67
+  },
+  "cannon-up": {
+    "src": "/tiny-swords/cannon-up.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "cannon-down": {
+    "src": "/tiny-swords/cannon-down.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "cannon-right": {
+    "src": "/tiny-swords/cannon-right.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
+  },
+  "cannon-ball": {
+    "src": "/tiny-swords/cannon-ball.png",
+    "width": 128,
+    "height": 128,
+    "frameWidth": 128,
+    "frames": 1,
+    "anchor": 0.67
   }
 }

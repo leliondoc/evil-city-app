@@ -1,3 +1,4 @@
+import { advanceCannons, advanceKnockback, releaseCannonWorker, type CannonState, type Knockback } from './cannons.ts';
 import { streetCenter } from './streets.ts';
 import { CAMPAIGN_MAPS, advanceCampaign, advancedCampaign, classicCampaign, campaignObjectives, campaignCreatureReason, campaignBuildingReason, campaignUpgradeReason, type CampaignMapId, type CampaignProgress } from './campaign.ts';
 import { humanMultiplier, physicalDamage } from './combat.ts';
@@ -363,6 +364,7 @@ export interface Lot {
   upgrading?: { kind: BuildingKind; targetLevel: number; duration: number; remaining: number };
 }
 export interface Unit extends Point {
+  knockback?: Knockback;
   interruptedSiegeTarget?: number;
   impBurstReadyAt?: number;
   impBurstAt?: number;
@@ -497,6 +499,7 @@ export const ENEMIES = {
   },
 } as const;
 export interface Enemy extends Point {
+  cannon?: CannonState;
   impTauntedBy?: number;
   impTauntedUntil?: number;
   /** Patrol sent specifically to evict a tower racketeer. */
@@ -539,7 +542,8 @@ export interface Enemy extends Point {
 export function enemyFaction(s: State, enemy: Pick<Enemy, 'kind' | 'garrisonLotId'>): EnemyKind {
   return enemy.garrisonLotId !== undefined && s.lots[enemy.garrisonLotId]?.kind === 'hall' ? 'guard' : enemy.kind;
 }
-export function enemyDefinition(enemy: Pick<Enemy, 'kind' | 'role' | 'garrisonLotId'>, state?: State) {
+export function enemyDefinition(enemy: Pick<Enemy, 'kind' | 'role' | 'garrisonLotId' | 'cannon'>, state?: State) {
+  if (enemy.cannon) return { name: 'Canon municipal', short: 'Canon', hp: 160, damage: 24, speed: 0, range: 32, description: 'Canon immobile. Après une mèche de 2 secondes, son boulet blesse et repousse les unités alignées jusqu’au bout de la rue. Recharge : 12 secondes. Détruisez-le ou contournez sa ligne de tir.' };
   if (enemy.kind === 'hero' && enemy.garrisonLotId !== undefined && state?.lots[enemy.garrisonLotId]?.kind === 'hall') {
     return {
       ...HEROES[enemy.role],
@@ -644,6 +648,7 @@ const SUPPLY_LOCATIONS: (Point & { kind: Supply; home: number; hp: number })[] =
     { kind: 'wood', home: 8, ...ISLAND_SITES.wood, hp: 120 },
   ];
 export interface HumanWorker extends Point {
+  cannonId?: number;
   rebuilding?: number;
   taxed?: boolean;
   recovery?: { corpseId: number; returning: boolean };
@@ -783,7 +788,7 @@ function advanceReconstruction(s: State, dt: number) {
     if (!worker) {
       releaseRebuilder(s, lot);
       if (!ruins.paid && !suppliesAvailable(s, HUMAN_REBUILD.cost)) continue;
-      worker = nearest(gate, s.workers.filter(w => w.hp > 0 && w.rebuilding === undefined && !w.recovery && w.cargo === 0 && supplyActive(s, s.sites[w.site])), Infinity);
+      worker = nearest(gate, s.workers.filter(w => w.hp > 0 && w.rebuilding === undefined && w.cannonId === undefined && !w.recovery && w.cargo === 0 && supplyActive(s, s.sites[w.site])), Infinity);
       if (!worker) continue;
       const path = findPath(worker, gate);
       if (!path.length && distanceBetween(worker, gate) > 0.8) continue;
@@ -859,7 +864,7 @@ function advanceEconomy(s: State, dt: number) {
   for (const w of s.workers) {
     const site = s.sites[w.site];
     if (w.hp <= 0 || !supplyActive(s, site)) continue;
-    if (w.recovery || w.rebuilding !== undefined) continue;
+    if (w.recovery || w.rebuilding !== undefined || w.cannonId !== undefined) continue;
     walk(s, w, 1.8 * dt);
     if (w.path.length) continue;
     if (w.phase === 'outbound') {
@@ -940,6 +945,7 @@ export function resourceGain(
   });
 }
 export interface State {
+  cannonReadyAt?: number;
   campaign?: CampaignProgress;
   attackOrder?: {
     sequence: number;
@@ -1312,6 +1318,7 @@ export function assign(
   delete u.holdPosition;
   delete u.manualUntil;
   u.path = findPath(u, point);
+  if (u.knockback) u.knockback.resume = { ...point };
   u.task = task;
   u.target = target;
   u.idleTime = 0;
@@ -2469,7 +2476,7 @@ function advanceProjectiles(s: State, dt: number) {
 function advanceEnemies(s: State, dt: number) {
   const returnedPatrols = new Set<number>();
   for (const e of s.enemies) {
-    if (e.hp <= 0 || s.lost) continue;
+    if (e.hp <= 0 || s.lost || e.cannon) continue;
     e.fighting = false;
     e.moving = false;
     e.healTarget = null;
@@ -2826,6 +2833,7 @@ function tickStep(s: State, dt: number) {
     (gain) => s.elapsed - gain.at < RESOURCE_GAIN_LIFETIME,
   );
   advanceEconomy(s, dt);
+  advanceCannons(s, dt);
   advanceReconstruction(s, dt);
   advanceHumanBuildings(s);
   if (humanLevel(s) > s.humanLevelAnnounced) {
@@ -2864,6 +2872,7 @@ function tickStep(s: State, dt: number) {
   advanceShields(s);
   for (const u of s.units) {
     if (u.hp <= 0) continue;
+    if (advanceKnockback(u, dt)) continue;
     healAlly(s, u);
     if (u.manualUntil === Infinity && u.task === 'idle') u.manualUntil = s.elapsed + MANUAL_ORDER_GRACE;
     if (u.manualUntil !== undefined && s.elapsed >= u.manualUntil) {
@@ -3085,7 +3094,10 @@ function tickStep(s: State, dt: number) {
   for (const lot of advanceBuildingUpgrades(s, dt))
     announce(s, `${BUILDINGS[lot.kind].name} passe au niveau ${lot.level}.`);
   const defeated = s.enemies.filter((e) => e.hp <= 0);
-  for (const e of defeated) leaveCorpse(s, e, 'human');
+  for (const e of defeated) {
+    if (e.cannon) { releaseCannonWorker(s, e.cannon.workerId); s.cannonReadyAt = s.elapsed + 90; }
+    else leaveCorpse(s, e, 'human');
+  }
   s.defeatedEnemies += defeated.length;
   creditResource(s, 'gold', defeated.length * 12);
   s.enemies = s.enemies.filter((e) => e.hp > 0);

@@ -204,7 +204,7 @@ export function hitEnemy(
     for (const target of targets) {
       rememberAggressor(s, target, u);
       target.hp = Math.max(0, target.hp - 18 * shieldMultiplier(target, s.elapsed));
-      if (target.role !== 'monk') {
+      if (target.role !== 'monk' && !target.cannon) {
         target.impTauntedBy = u.id;
         target.impTauntedUntil = s.elapsed + 4;
         target.path = [];

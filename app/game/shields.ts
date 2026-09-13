@@ -41,7 +41,7 @@ export function provocationReason(s: State, u: Unit) {
 export function advanceShields(s: State) {
   for (const e of s.enemies) {
     if (
-      e.hp <= 0 ||
+      e.hp <= 0 || e.cannon ||
       (e.kind !== 'guard' && e.role !== 'warrior') ||
       shieldActive(e, s.elapsed) ||
       (e.shieldReadyAt ?? 0) > s.elapsed

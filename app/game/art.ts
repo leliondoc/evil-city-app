@@ -71,10 +71,11 @@ export function buildingDoorX(key: AssetKey) {
     : ASSETS[key].frameWidth / 2;
 }
 export function enemyAnimationSequence(
-  enemy: Pick<Enemy, 'kind' | 'role'> & Partial<Pick<Enemy, 'hp' | 'shieldUntil'>>,
+  enemy: Pick<Enemy, 'kind' | 'role'> & Partial<Pick<Enemy, 'hp' | 'shieldUntil' | 'cannon'>>,
   action: Animation,
   elapsed = 0,
 ): AssetKey[] {
+  if (enemy.cannon) return [enemy.cannon.direction.y < 0 ? 'cannon-up' : enemy.cannon.direction.y > 0 ? 'cannon-down' : 'cannon-right'];
   if (shieldActive({ hp: enemy.hp ?? 1, shieldUntil: enemy.shieldUntil }, elapsed))
     return [enemy.kind === 'guard' ? 'guard-shield' : 'hero-warrior-shield'];
   return [
@@ -106,12 +107,13 @@ export function animationFrame(sequence: AssetKey[], seconds: number) {
   return { key: sequence[0], frame: 0 };
 }
 export const portrait = (kind: CreatureKind) => ASSETS[`${kind}-avatar`].src;
-export function enemyPortrait(enemy: Pick<Enemy, 'kind' | 'role'>): AssetKey {
+export function enemyPortrait(enemy: Pick<Enemy, 'kind' | 'role' | 'cannon'>): AssetKey {
+  if (enemy.cannon) return 'cannon-right';
   return enemy.kind === 'guard' ? 'guard-avatar' : `hero-${enemy.role || 'warrior'}-avatar`;
 }
 
 export function workerArt(worker: HumanWorker, site: ResourceSite): AssetKey {
-  if (worker.rebuilding !== undefined)
+  if (worker.rebuilding !== undefined || worker.cannonId !== undefined)
     return worker.path.length ? 'pawn-gold-walk' : 'pawn-gold-work';
   const action =
     worker.phase === 'harvest'

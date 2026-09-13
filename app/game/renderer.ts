@@ -1,9 +1,9 @@
 import {
+  enemyDefinition,
   BUILDINGS,
   CREATURES,
   unitIsMounted,
   playerFoodPoint,
-  ENEMIES,
   GUILD_ROLES,
   HEROES,
   SUPPLIES,
@@ -1312,7 +1312,7 @@ export class Renderer {
             worker.x * CELL,
             worker.y * CELL,
             0.72,
-            worker.rebuilding === undefined && worker.phase !== 'harvest' && worker.moving === false
+            worker.rebuilding === undefined && worker.cannonId === undefined && worker.phase !== 'harvest' && worker.moving === false
               ? 0
               : Math.floor(
                   (worker.phase === 'harvest' ? worker.progress : t) * 10,
@@ -1435,6 +1435,7 @@ export class Renderer {
               bubble,
               '#d3efdd',
             );
+          if (u.knockback && !this.reducedMotion) this.sprite('fx-explosion', x, y, 0.3, Math.min(ASSETS['fx-explosion'].frames - 1, 5 + Math.floor(t * 10) % 5), 0.45);
           if (u.task === 'bribe') this.sprite('ui-gold', x + 22, y - 22, 0.5);
           if (u.task === 'deliver-loot')
             this.sprite('ui-gold', x + 22, y - 22, 0.5);
@@ -1535,9 +1536,9 @@ export class Renderer {
             sample.key,
             x,
             y,
-            (e.role === 'lancer' ? 0.58 : e.kind === 'hero' ? 0.78 : 0.65) * (e.garrisonLotId !== undefined && s.lots[e.garrisonLotId]?.kind === 'hall' ? 1.18 : 1),
+            (e.cannon ? 1.5 : e.role === 'lancer' ? 0.58 : e.kind === 'hero' ? 0.78 : 0.65) * (e.garrisonLotId !== undefined && s.lots[e.garrisonLotId]?.kind === 'hall' ? 1.18 : 1),
             sample.frame,
-            1,
+            e.cannon && e.cannon.progress < 1 ? 0.55 : 1,
             e.facing < 0,
           );
           hit.selection = { type: 'enemy', id: e.id };
@@ -1554,9 +1555,20 @@ export class Renderer {
               ratio: e.hp / e.maxHp,
               enemy: true,
               name: selected
-                ? `${e.kind === 'hero' ? HEROES[e.role].short : ENEMIES[e.kind].name} · ${e.level}`
+                ? `${enemyDefinition(e, s).name} · ${e.level}`
                 : undefined,
             });
+          if (e.cannon) {
+            const c = e.cannon;
+            if (c.progress < 1) this.label(x, y - 54, `Installation · ${Math.floor(c.progress * 100)} %`, '#ffe0a3');
+            if (c.fireAt !== undefined) {
+              this.label(x, y - 60, `Tir dans ${Math.max(0, c.fireAt - t).toFixed(1)} s`, '#ffe0a3');
+              this.sprite('fx-fire', x + c.direction.x * 12, y - 20, 0.35, Math.floor(t * 10) % ASSETS['fx-fire'].frames);
+            }
+            if (c.firedAt !== undefined && t - c.firedAt < 0.6)
+              this.sprite('fx-explosion', x + c.direction.x * 26, y + c.direction.y * 26, 0.5, Math.min(ASSETS['fx-explosion'].frames - 1, Math.floor((t - c.firedAt) * 15)));
+            if (c.shot) this.sprite('cannon-ball', c.shot.x * CELL, c.shot.y * CELL, 0.9, 0);
+          }
           if (e.healTarget !== null) {
             const ally = s.enemies.find((ally) => ally.id === e.healTarget);
             if (ally)

@@ -1134,7 +1134,7 @@ export default function Game({
                 {selectedEnemy && (
                   <>
                     {(selectedEnemy.impTauntedUntil ?? 0) > s.elapsed && <p className="combat-status">Attiré par les braises de l’Imp · {Math.ceil(selectedEnemy.impTauntedUntil! - s.elapsed)} s</p>}
-                    <details className="combat-disclosure"><summary>Forces et faiblesses</summary><CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} /></details>
+                    {!selectedEnemy.cannon && <details className="combat-disclosure"><summary>Forces et faiblesses</summary><CombatDetails profile={HUMAN_COMBAT[selectedEnemy.kind === 'guard' ? 'guard' : selectedEnemy.role || 'warrior']} /></details>}
                     {shieldActive(selectedEnemy, s.elapsed) && <p className="combat-status"><Shield size={16} />Bouclier · {Math.ceil(selectedEnemy.shieldUntil! - s.elapsed)} s · −{shieldSettings(selectedEnemy).reduction * 100} % de dégâts reçus</p>}
                     <div className="selection-stats">
                       <span><Shield size={14} />{Math.ceil(selectedEnemy.hp)} / {selectedEnemy.maxHp} PV</span>
@@ -1145,12 +1145,12 @@ export default function Game({
                       aria-label="Santé de l’ennemi"
                     />
                     <p className="reason">
-                      {pursuedUnit
+                      {selectedEnemy.cannon ? (selectedEnemy.cannon.progress < 1 ? `Installation : ${Math.floor(selectedEnemy.cannon.progress * 100)} %` : 'Défense de la rue · canon immobile') : pursuedUnit
                         ? `Poursuite à mort : ${CREATURES[pursuedUnit.kind].name}`
                         : `Objectif : ${BUILDINGS[s.lots[selectedEnemy.target].kind].name}`}
                     </p>
                     <p className="reason">
-                      {selectedEnemy.role === 'monk'
+                      {selectedEnemy.cannon ? '24 dégâts par boulet · recharge 12 s · recul jusqu’au bout de la rue' : selectedEnemy.role === 'monk'
                         ? pursuedUnit
                           ? 'Exorcisme offensif · bonus contre les morts-vivants'
                           : 'Soins aux alliés proches'

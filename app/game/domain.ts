@@ -494,7 +494,7 @@ export function advanceDomain(s: State, dt: number) {
       walk(s, w, 2.2 * dt);
       continue;
     }
-    if (!w.recovery && w.cargo === 0) {
+    if (!w.recovery && w.cannonId === undefined && w.rebuilding === undefined && w.cargo === 0) {
       const c = d.corpses.find(
         (c) =>
           c.side === 'human' &&
