@@ -117,6 +117,8 @@ import {
   upgrade,
   upgradeReason,
   upgradeCost,
+  cancelWork,
+  cancelWorkRefund,
   moveUnit,
   commandUnits,
   entrance,
@@ -1277,7 +1279,14 @@ export default function Game({
                         )}
                       </span>
                       <span>
-                        {selectedLot.construction ? (
+                        {(selectedLot.construction || selectedLot.upgrading) && selectedLot.owned && <div className="cancel-work">
+                      <Button className="subtle-btn" disabled={s.won || s.lost} onClick={() => run(state => cancelWork(state, selectedLot.id))}>
+                        <PackIcon asset="ui-close" /> {selectedLot.construction ? 'Annuler la construction' : 'Annuler l’amélioration'}
+                      </Button>
+                      <p className="reason">Remboursement de la part non utilisée, selon l’avancement et la place dans vos stocks :</p>
+                      <Costs cost={cancelWorkRefund(s, selectedLot)} />
+                    </div>}
+                    {selectedLot.construction ? (
                           <>
                             <Hammer size={14} />
                             Chantier

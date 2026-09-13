@@ -360,7 +360,7 @@ export interface Lot {
   maxHp: number;
   level: number;
   humanKind: BuildingKind;
-  construction: null | { kind: BuildingKind; progress: number };
+  construction: null | { kind: BuildingKind; progress: number; previousRuins?: Lot['ruins'] };
   upgrading?: { kind: BuildingKind; targetLevel: number; duration: number; remaining: number };
 }
 export interface Unit extends Point {
@@ -1373,8 +1373,9 @@ export function build(s: State, id: number, kind: BuildingKind): string {
   if (error) return error;
   pay(s, BUILDINGS[kind].cost);
   releaseRebuilder(s, s.lots[id]);
+  const previousRuins = s.lots[id].ruins ? { ...s.lots[id].ruins, workerId: undefined, quiet: 0 } : undefined;
   s.lots[id].ruins = undefined;
-  s.lots[id].construction = { kind, progress: 0 };
+  s.lots[id].construction = { kind, progress: 0, previousRuins };
   announce(s, `Chantier lancé : ${BUILDINGS[kind].name.toLowerCase()}.`);
   allocateWorkers(s);
   return '';
@@ -1736,6 +1737,31 @@ export function upgrade(s: State, id: number) {
   const duration = upgradeDuration(l);
   l.upgrading = { kind: l.kind, targetLevel: l.level + 1, duration, remaining: duration };
   announce(s, `${BUILDINGS[l.kind].name} : amélioration lancée (${duration} s).`);
+  return '';
+}
+export function cancelWorkRefund(s: State, lot: Lot): Cost {
+  const cost = lot.construction ? BUILDINGS[lot.construction.kind].cost : lot.upgrading ? upgradeCost(lot) : {};
+  const remaining = lot.construction ? 1 - lot.construction.progress : lot.upgrading ? lot.upgrading.remaining / lot.upgrading.duration : 0;
+  return Object.fromEntries(Object.entries(cost).map(([key, amount]) => [key,
+    Math.max(0, Math.min(RESOURCE_CAP - s.resources[key as keyof Resources], Math.floor(amount * Math.max(0, Math.min(1, remaining))))),
+  ]));
+}
+export function cancelWork(s: State, id: number): string {
+  const lot = s.lots[id];
+  if (s.won || s.lost) return 'La partie est terminée.';
+  if (!lot?.owned || (!lot.construction && !lot.upgrading)) return 'Aucun chantier ni amélioration à annuler.';
+  const refund = cancelWorkRefund(s, lot);
+  const construction = lot.construction;
+  if (construction) {
+    lot.ruins = construction.previousRuins;
+    lot.construction = null;
+    for (const u of s.units.filter(u => u.task === 'build' && u.target === id)) {
+      assign(u, u, 'idle', null);
+      u.path = [];
+    }
+  } else lot.upgrading = undefined;
+  for (const [key, amount] of Object.entries(refund)) creditResource(s, key as keyof Resources, amount);
+  announce(s, `${construction ? 'Construction annulée' : 'Amélioration annulée'}. La part non utilisée des ressources a été remboursée.`);
   return '';
 }
 export function foodBalance(s: State) {

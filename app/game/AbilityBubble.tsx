@@ -30,7 +30,7 @@ export function AbilityBubble({
     (lot &&
       ((!lot.owned && lot.kind !== 'empty') ||
         (lot.owned && lot.kind === 'crypt'))) ||
-    unit?.kind === 'specter'
+    unit?.kind === 'specter' || unit?.kind === 'alchemist'
   );
   useEffect(() => {
     if (!available || dismissed) return;

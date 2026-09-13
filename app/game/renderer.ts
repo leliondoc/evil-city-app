@@ -1728,10 +1728,12 @@ export class Renderer {
       );
     }
     for (const effect of s.alchemy?.effects ?? []) {
-      const x = effect.x * CELL, y = effect.y * CELL;
+      const target = effect.kind === 'heal' ? s.units.find(u => u.id === effect.targetId && u.hp > 0) : undefined;
+      if (effect.kind === 'heal' && !target) continue;
+      const x = (target?.x ?? effect.x) * CELL, y = (target?.y ?? effect.y) * CELL;
       if (effect.kind === 'heal') {
-        this.sprite('hero-heal', x, y - 18, 0.7, Math.floor(t * 10) % ASSETS['hero-heal'].frames);
-        this.label(x, y - 70, '+ soin', '#a8ef9d');
+        this.sprite('hero-heal', x, y, 0.7, Math.min(ASSETS['hero-heal'].frames - 1, Math.floor((s.elapsed - effect.at) / FRAME_SECONDS)));
+        this.label(x, y - 70, `+${Math.round(effect.amount ?? 25)} PV`, '#a8ef9d');
       } else if (!this.reducedMotion) {
         const age = Math.min(1, (s.elapsed - effect.at) / 0.8);
         this.draw.ellipse(x, y - 12, 20 + age * 32, 10 + age * 16, '#dda0ff', 4 / this.scale, 1 - age);

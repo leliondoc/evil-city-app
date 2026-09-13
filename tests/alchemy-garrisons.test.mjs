@@ -9,6 +9,21 @@ function unit(s, kind, x=10.5, y=20.5) {
 function enemy(s, role='warrior', x=14.5, y=20.5) {
  const e={id:s.nextId++,kind:'hero',role,x,y,hp:200,maxHp:200,damage:0,level:1,path:[],target:6,facing:-1,fighting:false,healTarget:null,attackCooldown:0};s.enemies.push(e);return e;
 }
+
+test('Healing follows its moving recipient and then heals the next wounded goblin after recovery', () => {
+ const s=createGame(), healer=unit(s,'alchemist'), first=unit(s,'goblin',11), second=unit(s,'goblin',12);
+ first.hp=20; second.hp=30;
+ healAlly(s,healer);
+ assert.equal(first.hp,45); assert.equal(second.hp,30);
+ const effect=s.alchemy.effects[0]; assert.equal(effect.targetId,first.id); assert.equal(effect.amount,25);
+ first.x=13; first.y=21; s.elapsed=0.9; advanceAlchemy(s,0.1);
+ assert.ok(s.alchemy.effects.includes(effect),'All eleven animation frames have time to play');
+ assert.equal(effect.x,13); assert.equal(effect.y,21);
+ s.elapsed=7.9; healAlly(s,healer); assert.equal(second.hp,30);
+ s.elapsed=8; healAlly(s,healer); assert.equal(second.hp,45);
+ assert.equal(s.alchemy.effects.at(-1).targetId,second.id);
+ assert.equal(s.alchemy.effects.at(-1).amount,15,'Display only the HP actually restored');
+});
 test('Potions travel, respect their cooldown, splash at most four enemies and ignore passive armor',()=>{
  const s=createGame();s.elapsed=1;const u=unit(s,'alchemist'),target=enemy(s);
  const others=[0.3,0.6,0.9,1.2,3].map(d=>enemy(s,'warrior',target.x+d));

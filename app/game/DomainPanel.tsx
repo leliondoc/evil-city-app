@@ -13,6 +13,7 @@ import {
 } from './domain';
 import { GameButton as Button, PackIcon } from './PackUI';
 import { AbilityCard, AbilityCosts } from './AbilityCard';
+import { ALCHEMY } from './alchemy';
 import { ResearchPanel } from './StrategyPanel';
 
 export function DomainPanel({
@@ -68,12 +69,16 @@ export function DomainPanel({
           </p>
         </AbilityCard>
       )}
-      {unit && (mode === 'bubble' ? unit.kind === 'specter' : unit.kind !== 'specter') && (
+      {unit && (mode === 'bubble' ? ['specter', 'alchemist'].includes(unit.kind) : !['specter', 'alchemist'].includes(unit.kind)) && (
         <AbilityCard
-          title={thought(s, unit) || 'Ordres et besoins'}
-          icon={unit.kind === 'specter' ? 'specter-avatar' : 'ui-info'}
+          title={unit.kind === 'alchemist' ? 'Soin alchimique' : thought(s, unit) || 'Ordres et besoins'}
+          icon={unit.kind === 'alchemist' ? 'alchemist-avatar' : unit.kind === 'specter' ? 'specter-avatar' : 'ui-info'}
         >
-          {unit.kind === 'specter' ? (
+          {unit.kind === 'alchemist' ? <>
+            <p>Rend <b>{ALCHEMY.healAmount} PV</b> à l’allié le plus blessé, à moins de <b>{ALCHEMY.healRange} cases</b>.</p>
+            <p className="ability-status">{['move', 'rest', 'eat'].includes(unit.task) ? 'Soins en attente : l’alchimiste doit être disponible et à portée.' : (unit.healReadyAt ?? 0) > s.elapsed ? `Prochain soin dans ${Math.ceil(unit.healReadyAt! - s.elapsed)} s` : 'Soin prêt · automatique à portée d’un allié blessé'}</p>
+            <p className="ability-meta">Un allié à la fois · récupération {ALCHEMY.healCooldown} s · les bâtiments bloquent le soin.</p>
+          </> : unit.kind === 'specter' ? (
             <>
               <p>Envoyez le spectre hanter un bâtiment humain.</p>
               <p className="ability-meta">

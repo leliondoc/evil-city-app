@@ -3,7 +3,7 @@ import { shieldMultiplier } from './shields.ts';
 
 export const ALCHEMY = { range: 5.5, interval: 1.5, radius: 1.6, splash: 0.6, maxTargets: 4, speed: 9, healRange: 4, healAmount: 25, healCooldown: 8 } as const;
 type Potion = Point & { target: Point; source: number; damage: number; solvent: boolean; buildingId?: number };
-type AlchemyEffect = Point & { at: number; kind: 'heal' | 'blast' };
+type AlchemyEffect = Point & { at: number; kind: 'heal' | 'blast'; targetId?: number; amount?: number };
 export type AlchemyState = { potions: Potion[]; effects: AlchemyEffect[] };
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 const state = (s: State) => s.alchemy ??= { potions: [], effects: [] };
@@ -16,19 +16,25 @@ export function throwPotion(s: State, u: Unit, enemy: Point, buildingId?: number
 }
 
 export function healAlly(s: State, u: Unit) {
-  if (u.kind !== 'alchemist' || u.task === 'move' || u.task === 'rest' || u.task === 'eat' || (u.healReadyAt ?? 0) > s.elapsed) return;
+  if (u.hp <= 0 || u.kind !== 'alchemist' || u.task === 'move' || u.task === 'rest' || u.task === 'eat' || (u.healReadyAt ?? 0) > s.elapsed) return;
   const ally = s.units.filter(a => a.id !== u.id && a.hp > 0 && a.hp < CREATURES[a.kind].hp &&
     distance(u, a) <= ALCHEMY.healRange && clearShot(u, a))
     .sort((a, b) => a.hp / CREATURES[a.kind].hp - b.hp / CREATURES[b.kind].hp || a.id - b.id)[0];
   if (!ally) return;
-  ally.hp = Math.min(CREATURES[ally.kind].hp, ally.hp + ALCHEMY.healAmount);
+  const amount = Math.min(CREATURES[ally.kind].hp - ally.hp, ALCHEMY.healAmount);
+  ally.hp += amount;
   u.healReadyAt = s.elapsed + ALCHEMY.healCooldown;
-  state(s).effects.push({ x: ally.x, y: ally.y, at: s.elapsed, kind: 'heal' });
+  state(s).effects.push({ x: ally.x, y: ally.y, at: s.elapsed, kind: 'heal', targetId: ally.id, amount });
 }
 
 export function advanceAlchemy(s: State, dt: number) {
   if (!s.alchemy) return;
-  s.alchemy.effects = s.alchemy.effects.filter(e => s.elapsed - e.at < 0.8);
+  s.alchemy.effects = s.alchemy.effects.filter(e => s.elapsed - e.at < (e.kind === 'heal' ? 1.1 : 0.8));
+  for (const effect of s.alchemy.effects) {
+    if (effect.kind !== 'heal') continue;
+    const target = s.units.find(u => u.id === effect.targetId && u.hp > 0);
+    if (target) { effect.x = target.x; effect.y = target.y; }
+  }
   s.alchemy.potions = s.alchemy.potions.filter(p => {
     if (!clearShot(p, p.target)) return false;
     const d = distance(p, p.target);
