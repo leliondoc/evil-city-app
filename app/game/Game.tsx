@@ -1710,13 +1710,6 @@ export default function Game({
           <p className="army-note">
             {s.recruits.length ? (
               `${s.recruits.length} créature${s.recruits.length > 1 ? 's' : ''} en route…`
-            ) : s.resources.food < 20 ? (
-              <button
-                className="army-food-shortcut"
-                onClick={() => showResourceProduction('food')}
-              >
-                Vivres insuffisants ? Voir la ferme →
-              </button>
             ) : (
               'Une armée commence par un bon repas.'
             )}

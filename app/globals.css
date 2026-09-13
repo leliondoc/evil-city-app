@@ -695,12 +695,6 @@ svg {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.army-food-shortcut {
-  color: #ffe0a3;
-  text-align: left;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 .card-cost span {
   display: flex;
   align-items: center;
