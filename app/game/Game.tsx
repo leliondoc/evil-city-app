@@ -66,7 +66,7 @@ import { CombatDetails } from './CombatDetails';
 import { CommandWheel } from './CommandWheel';
 import { creatureCombatProfile, HUMAN_COMBAT } from './combat';
 import { UpgradeBenefit } from './UpgradeBenefit';
-import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit, upgradeDuration } from './progression';
+import { manorLevel, canUpgradeKind, buildingLevelEffect, upgradeBenefit } from './progression';
 import { ManorProgression } from './ManorProgression';
 import { shieldActive, shieldSettings, provocationReason } from './shields';
 import { DomainPanel } from './DomainPanel';
@@ -1362,7 +1362,7 @@ export default function Game({
                               <ArrowUp size={15} />
                               {selectedLot.level >= 3
                                 ? 'Niveau maximal'
-                                : `Niveau ${selectedLot.level + 1} · ${upgradeDuration(selectedLot)} s`}
+                                : `Niveau ${selectedLot.level + 1}`}
                             </Button>}
                             {canUpgradeKind(selectedLot.kind) && (selectedLot.upgrading || selectedLot.level >= 3) && <p className="reason">{buildingLevelEffect(selectedLot.kind, selectedLot.level)}.</p>}
                             {canUpgradeKind(selectedLot.kind) && !selectedLot.upgrading && selectedLot.level < 3 && (

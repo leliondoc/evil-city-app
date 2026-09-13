@@ -65,3 +65,21 @@ test('Completed construction and capture raise dust; destruction finishes after 
     'Final animation expires even after defeat',
   );
 });
+
+test('Building level completion emits one upgrade effect, expires and respects reduced motion', () => {
+  const s = createGame(), fx = new ParticleFeedback();
+  const hq = s.lots.find(l => l.kind === 'hq');
+  fx.update(s);
+  s.elapsed = 1;
+  hq.level = 2;
+  const before = structuredClone(s);
+  assert.equal(fx.update(s).filter(p => p.key === 'upgrade').length, 1);
+  assert.equal(fx.update(s).find(p => p.key === 'upgrade').level, 2);
+  assert.deepEqual(s, before);
+  s.elapsed = 3.1;
+  assert.equal(fx.update(s).length, 0);
+  s.elapsed = 4;
+  hq.level = 3;
+  assert.equal(fx.update(s, true).length, 0);
+  assert.equal(new ParticleFeedback().update(s).length, 0, 'Loading an upgraded building does not replay completion');
+});

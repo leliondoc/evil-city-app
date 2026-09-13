@@ -1,14 +1,15 @@
 import type { State } from './engine';
 
-type ParticleKind = 'fx-impact' | 'fx-dust-large' | 'fx-explosion';
+type ParticleKind = 'fx-impact' | 'fx-dust-large' | 'fx-explosion' | 'upgrade';
 export type Particle = {
   key: ParticleKind;
   x: number;
   y: number;
   at: number;
   scale: number;
+  level?: number;
 };
-type Sample = { hp: number; owned?: boolean; building?: boolean };
+type Sample = { hp: number; owned?: boolean; building?: boolean; level?: number };
 
 /** Presentation-only feedback, driven by simulation time and actual state changes. */
 export class ParticleFeedback {
@@ -30,7 +31,7 @@ export class ParticleFeedback {
     }
     if (reducedMotion) this.active = [];
     this.active = this.active.filter(
-      (p) => now - p.at < (p.key === 'fx-impact' ? 0.8 : 1),
+      (p) => now - p.at < (p.key === 'upgrade' ? 2 : p.key === 'fx-impact' ? 0.8 : 1),
     );
     if (s.elapsed === this.time) return this.active;
     const next = new Map<string, Sample>();
@@ -72,7 +73,12 @@ export class ParticleFeedback {
         else if (lot.hp < old.hp)
           emit(id, 'fx-impact', lot.x + 4, lot.y + 6.5, 0.6);
       }
+      if (old && lot.owned && old.owned && lot.hp > 0 && old.level !== undefined && lot.level > old.level && !reducedMotion) {
+        this.active.push({ key: 'upgrade', x: lot.x + 4, y: lot.y + 5.5, at: now, scale: 1, level: lot.level });
+        emit(id, 'fx-dust-large', lot.x + 4, lot.y + 5.5, 1.6);
+      }
       next.set(id, {
+        level: lot.level,
         hp: lot.hp,
         owned: lot.owned,
         building: !!lot.construction,

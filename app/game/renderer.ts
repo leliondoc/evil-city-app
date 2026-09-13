@@ -529,6 +529,7 @@ export class Renderer {
       } else if (
         this.interactionMode === 'command' ||
         (this.interactionMode === 'inspect' &&
+          (e.pointerType === 'touch' || e.pointerType === 'pen') &&
           !this.down.additive &&
           !this.buildKind &&
           (selectedFightersCanAttack(this.getState(), this.selection, hit) ||
@@ -1662,6 +1663,13 @@ export class Renderer {
       this.reducedMotion,
       particleTime,
     )) {
+      if (particle.key === 'upgrade') {
+        const progress = (particleTime - particle.at) / 2;
+        const x = particle.x * CELL, y = particle.y * CELL;
+        this.draw.ellipse(x, y, 70 + progress * 35, 24 + progress * 12, '#ffe09a', 3 / this.scale, 1 - progress);
+        this.label(x, y - 135 - progress * 24, `Niveau ${particle.level} !`, '#ffe09a');
+        continue;
+      }
       const frame = Math.min(
         ASSETS[particle.key].frames - 1,
         Math.floor((particleTime - particle.at) / FRAME_SECONDS),

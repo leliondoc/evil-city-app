@@ -1,6 +1,6 @@
 import type { Point, Selection, State, Unit } from './engine';
 
-/** A normal click on a hostile target orders the selected fighters only. */
+/** Whether the selected fighters can attack a hostile target. */
 export function selectedFightersCanAttack(
   state: State,
   selection: Selection,

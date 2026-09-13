@@ -13,7 +13,7 @@ const descriptions: Record<CampaignMapId, string> = {
   refuge: 'Pour débuter',
   faubourg: 'Premières conquêtes',
   remparts: 'Tactiques avancées',
-  tilleuls: 'Règles d’origine',
+  tilleuls: 'Conquête libre',
 };
 
 export function CampaignSelect({
@@ -178,7 +178,7 @@ export function CampaignSelect({
           <p>
             <Flag size={14} />{' '}
             {map.id === 'tilleuls'
-              ? 'Règles et difficulté d’origine'
+              ? 'Conquête libre'
               : `${map.objectives.length} objectifs`}{' '}
             <span>·</span> {map.subtitle}
           </p>
