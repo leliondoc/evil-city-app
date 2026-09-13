@@ -35,7 +35,6 @@ export function CampaignSelect({
         <ArrowLeft size={18} /> Retour au menu
       </button>
       <header className="campaign-heading">
-        <p>LA CONQUÊTE D’EVIL CITY</p>
         <h1 ref={heading} tabIndex={-1}>
           Choisissez votre quartier
         </h1>

@@ -34,12 +34,6 @@
   text-align: center;
   margin: 12px 0 22px;
 }
-.campaign-heading > p {
-  letter-spacing: 3px;
-  font-size: 10px;
-  color: #e4bc76;
-  margin-bottom: 8px;
-}
 .campaign-heading h1 {
   font:
     400 clamp(27px, 3.5vw, 42px)/1.25 Georgia,
