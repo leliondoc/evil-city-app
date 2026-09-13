@@ -14,6 +14,7 @@ try {
     await page.setViewportSize({ width, height });
     await page.goto('http://127.0.0.1:3000/');
     await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+    await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     await page.locator('.loading-art').waitFor({ state: 'hidden' });
     await page

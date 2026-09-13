@@ -74,6 +74,7 @@ try {
   page.setDefaultTimeout(15000);
   await page.goto(`${base}/`);
   await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
   await page.locator('.world-canvas[data-ready=true]').waitFor();
   await page
     .getByRole('button', { name: 'Mettre en pause', exact: true })

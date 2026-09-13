@@ -40,6 +40,7 @@ node scripts/check-pixi.mjs
 node scripts/check-pixi-lifecycle.mjs
 node scripts/check-mission.mjs
 node scripts/check-menu-music.mjs
+node scripts/check-map-selection.mjs
 node scripts/check-campaign.mjs
 node --experimental-strip-types scripts/check-campaign-balance.mjs
 ```
@@ -72,7 +73,7 @@ Les livraisons alimentent réellement les stocks ; les constructions, recherches
 | `app/game/engine.ts` | État, navigation, économie et ordres sans dépendance au DOM |
 | `app/game/combat.ts`, `domain.ts`, `strategy.ts`, `shields.ts` | Combat et mécaniques spécialisées |
 | `app/game/progression.ts`, `mission.ts` | Déblocages, coûts, durées et objectifs |
-| `app/game/campaign.ts`, `preferences.ts` | Trois scénarios, découvertes progressives, chapitres débloqués et taille de l’interface |
+| `app/game/campaign.ts`, `preferences.ts` | Trois scénarios, découvertes progressives, progression et taille de l’interface |
 | `app/game/renderer.ts` | Caméra, entrées tactiles/souris, sélection sur l’alpha et animation |
 | `app/game/pixiScene.ts`, `terrainRenderer.ts` | Scène WebGL, textures et terrain mis en cache |
 | `app/game/audio.ts`, `music.ts`, `musicPlaylist.ts` | Effets, réglages et transitions musicales |
@@ -82,9 +83,9 @@ Le moteur reçoit explicitement le temps de simulation. Le rendu Pixi réutilise
 
 ## Limites et portabilité
 
-« Reprendre » garde la partie tant que cette page existe. Les chapitres débloqués, la taille de l’interface et les réglages audio sont enregistrés localement quand le navigateur le permet. Chaque chapitre repart de son camp prédéfini, sans transfert de troupes ni de stocks. Il n’y a pas encore de sauvegarde persistante de partie, de multijoueur, d’application iOS, d’exécutable Steam, ni de prise en charge complète des manettes.
+« Reprendre » garde la partie tant que cette page existe. Les trois quartiers sont accessibles dès la première visite depuis la carte qui suit « Jouer ». Le Refuge est conseillé pour débuter ; Les Tilleuls peuvent être lancés directement. La progression, la taille de l’interface et les réglages audio sont enregistrés localement quand le navigateur le permet. Chaque chapitre repart de son camp prédéfini, sans transfert de troupes ni de stocks. Il n’y a pas encore de sauvegarde persistante de partie, de multijoueur, d’application iOS, d’exécutable Steam, ni de prise en charge complète des manettes.
 
-Les trois quartiers partagent la grille de rues et les accès aux ressources ; leurs implantations et scénarios sont définis séparément. Des géographies arbitraires nécessiteraient encore de généraliser la navigation et les ponts. Le moteur sans paramètre conserve le scénario libre historique pour les fixtures de régression ; le jeu démarre explicitement avec `createGame('refuge')`. Une migration des tâches vers des unions discriminées et une séparation progressive des gros modules restent des améliorations d’architecture à traiter avec leurs propres tests.
+Les trois quartiers partagent la grille de rues et les accès aux ressources ; leurs implantations et scénarios sont définis séparément. Des géographies arbitraires nécessiteraient encore de généraliser la navigation et les ponts. Le moteur sans paramètre conserve le scénario libre historique pour les fixtures de régression ; le jeu démarre avec le quartier choisi sur la carte. Une migration des tâches vers des unions discriminées et une séparation progressive des gros modules restent des améliorations d’architecture à traiter avec leurs propres tests.
 
 Les tests WebKit automatisés ne remplacent pas une validation sur iPhone/iPad, WKWebView, interruptions audio réelles, Steam Deck et matériel peu puissant. Les licences des assets doivent également couvrir chaque distribution : notamment Agenda Fantasy Demo et les MP3 fournis par l’utilisateur.
 

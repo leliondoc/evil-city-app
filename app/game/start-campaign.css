@@ -1,95 +1,385 @@
-.start-menu:has(.start-campaign) {
-  min-height: 100svh;
+.start-menu[data-screen='map'] {
   height: auto;
+  min-height: 100svh;
   overflow-y: auto;
 }
-.start-menu:has(.start-campaign) .start-content {
-  min-height: 100svh;
-  height: auto;
-  padding-top: 52px;
+.campaign-select {
+  position: relative;
+  width: min(1100px, 100%);
+  margin: auto;
+  padding: 26px 28px 60px;
 }
-.start-menu:has(.start-campaign) .start-brand {
-  margin-top: 0;
-}
-.start-menu:has(.start-campaign) .start-title {
-  font-size: clamp(65px, 10vh, 116px);
-}
-.start-menu:has(.start-campaign) .start-actions {
-  padding-top: 16px;
-}
-.start-campaign {
-  width: min(460px, calc(100vw - 32px));
-  margin: 0 auto 16px;
-}
-.start-chapters {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.campaign-back,
+.start-map-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
+  min-height: 44px;
+  color: #f4dfb6;
+  cursor: pointer;
+  border: 1px solid #e0bc7950;
+  border-radius: 8px;
+  background: #192a3266;
+  padding: 8px 14px;
 }
-.start-chapters button {
+.campaign-back:hover,
+.start-map-link:hover {
+  background: #66524277;
+}
+.start-map-link {
+  margin: 0 0 10px;
+}
+.campaign-heading {
+  text-align: center;
+  margin: 12px 0 22px;
+}
+.campaign-heading > p {
+  letter-spacing: 3px;
+  font-size: 10px;
+  color: #e4bc76;
+  margin-bottom: 8px;
+}
+.campaign-heading h1 {
+  font:
+    400 clamp(27px, 3.5vw, 42px)/1.25 Georgia,
+    serif;
+  color: #ffe4ad;
+  margin: 0 0 10px;
+}
+.campaign-heading h1:focus {
+  outline: none;
+}
+.campaign-heading > span {
+  font-size: 13px;
+  color: #e0d4bf;
+}
+.campaign-atlas {
+  position: relative;
+  height: 370px;
+  isolation: isolate;
+  border: 4px solid #ad8752;
+  outline: 1px solid #e0bd80;
+  outline-offset: -9px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow:
+    0 15px 45px #071c2966,
+    inset 0 0 70px #29241370;
+}
+.atlas-land,
+.atlas-route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+.atlas-route path {
+  fill: none;
+  stroke: #efd59a;
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-dasharray: 3 15;
+  filter: drop-shadow(0 2px 1px #574d32);
+}
+.atlas-route-tall {
+  display: none;
+}
+.atlas-caption {
+  position: absolute;
+  left: 26px;
+  top: 23px;
+  font:
+    italic 15px Georgia,
+    serif;
+  color: #384831;
+}
+.atlas-node {
+  position: absolute;
+  width: 180px;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
-  min-height: 78px;
-  color: #f4e8d0;
-  background: #192b316e;
-  border: 1px solid #99896966;
-  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  padding: 8px;
+  color: #fff0cf;
   cursor: pointer;
+  border-radius: 12px;
 }
-.start-chapters button[aria-pressed='true'] {
-  border-color: #f0d69a;
-  background: #74518d66;
+.atlas-node-refuge {
+  left: 20%;
+  top: 62%;
 }
-.start-chapters button:disabled {
-  opacity: 0.5;
-  cursor: default;
+.atlas-node-faubourg {
+  left: 50%;
+  top: 44%;
 }
-.start-chapters span {
-  font-family: Georgia, serif;
-  color: #f0d69a;
+.atlas-node-tilleuls {
+  left: 80%;
+  top: 28%;
 }
-.start-chapters strong {
-  font-size: 13px;
+.atlas-landmark {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  width: 110px;
+  height: 112px;
+  margin-bottom: 5px;
 }
-.start-chapters small {
+.atlas-landmark::before {
+  content: '';
+  position: absolute;
+  width: 105px;
+  height: 32px;
+  bottom: -2px;
+  background: #496047;
+  border: 2px solid #d6bb77;
+  border-radius: 50%;
+  box-shadow: 0 3px 0 #45513c;
+  z-index: -1;
+}
+.atlas-landmark img {
+  width: 108px;
+  height: 110px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 2px #20302e70);
+  transition: transform 150ms;
+}
+.atlas-node:hover img {
+  transform: translateY(-4px);
+}
+.atlas-node[aria-pressed='true'] .atlas-landmark::before {
+  background: #ad8550;
+  border-color: #fff1ab;
+  box-shadow:
+    0 0 0 5px #fff1ab50,
+    0 4px 0 #665135;
+}
+.atlas-node strong {
+  padding: 6px 13px;
+  border: 1px solid #d1b476;
+  border-radius: 6px;
+  background: #263f36;
+  font:
+    600 17px Georgia,
+    serif;
+  box-shadow: 0 3px 6px #20382c55;
+}
+.atlas-node[aria-pressed='true'] strong {
+  background: #6b422f;
+  border-color: #ffe9a4;
+}
+.atlas-node small {
+  margin-top: 3px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: #fff0d0;
+  background: #354c3de8;
+  font-size: 10px;
+}
+.atlas-number {
+  position: absolute;
+  right: 0;
+  bottom: 9px;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 2px solid #ffe6a1;
+  border-radius: 50%;
+  color: #fff0c9;
+  font:
+    bold 14px Georgia,
+    serif;
+  background: #644132;
+}
+.atlas-compass {
+  position: absolute;
+  right: 22px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #e4d29d;
+  font:
+    12px Georgia,
+    serif;
+  text-shadow: 0 1px 2px #354c3d;
+}
+.atlas-compass span {
+  font-size: 43px;
+  line-height: 1;
+}
+.campaign-departure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 32px;
+  padding: 24px 4px 0;
+}
+.campaign-brief > p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
   font-size: 11px;
+  color: #dcc39a;
 }
-.start-campaign p {
+.campaign-brief h2 {
+  font:
+    400 28px Georgia,
+    serif;
+  margin: 8px 0;
+  color: #ffe7b7;
+}
+.campaign-brief > div {
+  max-width: 620px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e1d7c6;
+}
+.campaign-launch .start-play {
+  width: auto;
+  min-width: 270px;
+  min-height: 58px;
+  font-size: 16px;
+  gap: 10px;
+  padding: 10px 16px;
+}
+.campaign-launch p {
   text-align: center;
-  font-size: 12px;
-  line-height: 1.5;
+  color: #d9c5a9;
+  font-size: 11px;
   margin: 10px 0 0;
-  color: #e5d6bf;
 }
-@media (max-height: 540px) and (orientation: landscape) {
-  .start-menu:has(.start-campaign) .start-content {
-    padding: 45px 24px 42px;
-    flex-direction: row;
-    justify-content: center;
-    gap: 28px;
+.campaign-select button:focus-visible {
+  outline: 3px solid #fff1b8;
+  outline-offset: 4px;
+}
+@media (max-width: 650px) {
+  .campaign-select {
+    padding: 20px 16px 48px;
   }
-  .start-menu:has(.start-campaign) .start-title {
-    flex-direction: column;
-    font-size: 64px;
+  .campaign-back {
+    font-size: 12px;
+    padding: 8px;
   }
-  .start-menu:has(.start-campaign) .start-actions {
-    padding: 0;
+  .campaign-heading {
+    margin: 24px 0 16px;
   }
-  .start-menu:has(.start-campaign) .start-tagline {
-    max-width: 220px;
+  .campaign-heading > span {
+    display: block;
+    max-width: 310px;
+    margin: auto;
+    line-height: 1.5;
+    font-size: 12px;
   }
-  .start-campaign {
-    width: min(370px, 48vw);
-    margin-bottom: 10px;
+  .campaign-atlas {
+    height: 400px;
   }
-  .start-campaign p {
+  .atlas-route-wide {
+    display: none;
+  }
+  .atlas-route-tall {
+    display: block;
+  }
+  .atlas-node {
+    width: 136px;
+    padding: 5px;
+  }
+  .atlas-node-refuge {
+    left: 25%;
+    top: 72%;
+  }
+  .atlas-node-faubourg {
+    left: 65%;
+    top: 49%;
+  }
+  .atlas-node-tilleuls {
+    left: 43%;
+    top: 24%;
+  }
+  .atlas-node strong {
+    font-size: 14px;
+    padding: 6px 9px;
+  }
+  .atlas-landmark {
+    width: 85px;
+    height: 85px;
+  }
+  .atlas-landmark img {
+    width: 85px;
+    height: 85px;
+  }
+  .atlas-landmark::before {
+    width: 80px;
+    height: 24px;
+  }
+  .atlas-number {
+    width: 23px;
+    height: 23px;
+    font-size: 12px;
+    right: -2px;
+  }
+  .atlas-caption {
     font-size: 11px;
+    left: 14px;
+    top: 15px;
   }
-  .start-chapters button {
-    min-height: 64px;
-    padding: 6px 4px;
+  .atlas-compass {
+    right: 14px;
+    bottom: 12px;
+  }
+  .campaign-departure {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 20px 2px 0;
+  }
+  .campaign-launch .start-play {
+    width: 100%;
+    min-width: 0;
+  }
+}
+@media (max-height: 540px) and (min-width: 651px) {
+  .campaign-select {
+    padding: 12px 24px 36px;
+  }
+  .campaign-heading {
+    margin: 4px 0 14px;
+  }
+  .campaign-heading h1 {
+    font-size: 25px;
+  }
+  .campaign-heading > p {
+    display: none;
+  }
+  .campaign-atlas {
+    height: 230px;
+  }
+  .atlas-node-tilleuls {
+    top: 36%;
+  }
+  .atlas-landmark,
+  .atlas-landmark img {
+    height: 76px;
+  }
+  .atlas-node strong {
+    font-size: 14px;
+  }
+  .atlas-caption {
+    font-size: 12px;
+  }
+  .campaign-departure {
+    gap: 16px;
+    padding-top: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-landmark img {
+    transition: none;
   }
 }

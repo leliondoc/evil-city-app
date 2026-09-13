@@ -31,21 +31,22 @@ import {
 } from './audio';
 import { GameMusic } from './music';
 import type { Animation } from './art';
-import { CAMPAIGN_MAPS, type CampaignMapId } from './campaign';
-import { readUnlockedChapter } from './preferences';
+import type { CampaignMapId } from './campaign';
+import { CampaignSelect } from './CampaignSelect';
 
 type MenuPanel = 'bestiary' | 'settings' | 'guide' | null;
 
 export function StartMenu({
   hasGame,
   onPlay,
+  onResume,
 }: {
   hasGame: boolean;
   onPlay: (map: CampaignMapId) => void;
+  onResume: () => void;
 }) {
   const [panel, setPanel] = useState<MenuPanel>(null);
-  const [selectedMap, setSelectedMap] = useState<CampaignMapId>('refuge');
-  const [unlocked] = useState(readUnlockedChapter);
+  const [showMap, setShowMap] = useState(false);
   const [action, setAction] = useState<Animation>('idle');
   const [settings, setSettings] = useState(readAudioSettings);
   const playRef = useRef<HTMLButtonElement>(null);
@@ -103,7 +104,10 @@ export function StartMenu({
   return (
     <main
       className="start-menu"
-      aria-label="Menu principal d’Evil City"
+      data-screen={showMap ? 'map' : 'title'}
+      aria-label={
+        showMap ? 'Carte des quartiers' : 'Menu principal d’Evil City'
+      }
       onPointerDownCapture={() => unlockMusic(settings)}
       onClickCapture={() => unlockMusic(settings)}
       onKeyDownCapture={() => unlockMusic(settings)}
@@ -143,60 +147,73 @@ export function StartMenu({
         </button>
       </div>
 
-      <div className="start-content">
-        <header className="start-brand">
-          <h1 className="start-title" aria-label="Evil City">
-            <span data-text="Evil">Evil</span>
-            <span data-text="City">City</span>
-          </h1>
-          <p className="start-tagline">
-            <span />
-            Le mal ne fait pas de quartier.
-            <span />
-          </p>
-        </header>
-
-        <div className="start-actions">
-          {!hasGame && <div className="start-campaign" aria-label="Campagne en trois chapitres">
-            <div className="start-chapters">{Object.values(CAMPAIGN_MAPS).map(map => <button key={map.id} disabled={map.chapter > unlocked} aria-pressed={selectedMap === map.id} onClick={() => setSelectedMap(map.id)} title={map.chapter > unlocked ? `Terminez le chapitre ${map.chapter - 1}` : map.subtitle}>
-              <span>{map.chapter}</span><strong>{map.name}</strong><small>{map.chapter > unlocked ? 'À débloquer' : `${map.objectives.length} objectifs`}</small>
-            </button>)}</div>
-            <p>{CAMPAIGN_MAPS[selectedMap].briefing}</p>
-          </div>}
-          <button
-            ref={playRef}
-            className="start-play"
-            data-resume={hasGame}
-            onClick={() => onPlay(selectedMap)}
-          >
-            <Swords size={26} aria-hidden="true" />
-            <span>{hasGame ? 'Reprendre' : 'Jouer'}</span>
-            <ChevronRight size={24} aria-hidden="true" />
-          </button>
-          <p className="start-key-hint">
-            <CornerDownLeft size={12} aria-hidden="true" /> Entrée pour{' '}
-            {hasGame ? 'reprendre' : 'jouer'}
-          </p>
-          <nav className="start-links" aria-label="Découvrir Evil City">
-            <button
-              onClick={(event) => openPanel('bestiary', event.currentTarget)}
-            >
-              <BookOpen size={17} /> Bestiaire
-            </button>
-            <span aria-hidden="true" />
-            <button
-              onClick={(event) => openPanel('guide', event.currentTarget)}
-            >
-              <CircleHelp size={17} /> Comment jouer
-            </button>
-          </nav>
-          {hasGame && (
-            <p className="start-session-note">
-              Votre partie vous attend dans cet onglet.
+      {showMap ? (
+        <CampaignSelect
+          hasGame={hasGame}
+          onPlay={onPlay}
+          onBack={() => {
+            setShowMap(false);
+            requestAnimationFrame(() => playRef.current?.focus());
+          }}
+        />
+      ) : (
+        <div className="start-content">
+          <header className="start-brand">
+            <h1 className="start-title" aria-label="Evil City">
+              <span data-text="Evil">Evil</span>
+              <span data-text="City">City</span>
+            </h1>
+            <p className="start-tagline">
+              <span />
+              Le mal ne fait pas de quartier.
+              <span />
             </p>
-          )}
+          </header>
+
+          <div className="start-actions">
+            <button
+              ref={playRef}
+              className="start-play"
+              data-resume={hasGame}
+              onClick={() => (hasGame ? onResume() : setShowMap(true))}
+            >
+              <Swords size={26} aria-hidden="true" />
+              <span>{hasGame ? 'Reprendre' : 'Jouer'}</span>
+              <ChevronRight size={24} aria-hidden="true" />
+            </button>
+            <p className="start-key-hint">
+              <CornerDownLeft size={12} aria-hidden="true" /> Entrée pour{' '}
+              {hasGame ? 'reprendre' : 'jouer'}
+            </p>
+            {hasGame && (
+              <button
+                className="start-map-link"
+                onClick={() => setShowMap(true)}
+              >
+                Carte des quartiers
+              </button>
+            )}
+            <nav className="start-links" aria-label="Découvrir Evil City">
+              <button
+                onClick={(event) => openPanel('bestiary', event.currentTarget)}
+              >
+                <BookOpen size={17} /> Bestiaire
+              </button>
+              <span aria-hidden="true" />
+              <button
+                onClick={(event) => openPanel('guide', event.currentTarget)}
+              >
+                <CircleHelp size={17} /> Comment jouer
+              </button>
+            </nav>
+            {hasGame && (
+              <p className="start-session-note">
+                Votre partie vous attend dans cet onglet.
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <footer className="start-footer">
         <span>

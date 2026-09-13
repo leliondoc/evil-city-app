@@ -45,11 +45,9 @@ try {
     page.setDefaultTimeout(20000);
     await page.goto(base);
     await page.screenshot({ path: `${output}/menu-${viewport.width}.png` });
-    assert.equal(
-      await page.getByRole('button', { name: /Le Faubourg/ }).isDisabled(),
-      true,
-    );
     await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+    assert.equal(await page.locator('.atlas-node:disabled').count(), 0);
+    await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     assert.equal(await page.locator('.selection-column').isVisible(), false);
     assert.equal(await page.locator('.army-face').count(), 1);

@@ -89,6 +89,7 @@ for (const scenario of [
     await audible(page, true);
 
     await press(page.getByRole('button', { name: 'Jouer', exact: true }));
+    await press(page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }));
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     if (scenario.touch)
       await press(

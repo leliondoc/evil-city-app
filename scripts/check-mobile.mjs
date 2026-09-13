@@ -33,6 +33,7 @@ try {
     if (viewport.width === 320 || viewport.width === 768) {
       await page.goto('http://127.0.0.1:3000/');
       await page.getByRole('button', { name: 'Jouer', exact: true }).tap();
+      await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).tap();
       await page.locator('.world-canvas[data-ready=true]').waitFor();
       await page.locator('.loading-art').waitFor({ state: 'hidden' });
       assert.equal(await page.locator('.sidebar').isVisible(), true,
@@ -471,6 +472,7 @@ try {
   const page = await desktop.newPage();
   await page.goto('http://127.0.0.1:3000/');
   await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+  await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
   await page.locator('.world-canvas[data-ready=true]').waitFor();
   await page.locator('.loading-art').waitFor({ state: 'hidden' });
   assert.equal(

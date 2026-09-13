@@ -205,6 +205,7 @@ try {
         await play.focus();
         await page.keyboard.press('Enter');
       } else await play.tap();
+      await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
       await page
         .locator('.world-canvas[data-ready=true]')
         .waitFor({ timeout: 30000 });

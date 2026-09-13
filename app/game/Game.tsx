@@ -73,7 +73,7 @@ import { DomainPanel } from './DomainPanel';
 import { TowerPanel } from './StrategyPanel';
 import { mission } from './mission';
 import { CAMPAIGN_MAPS, campaignMap, advancedCampaign, type CampaignMapId } from './campaign';
-import { completeChapter, readUnlockedChapter, readUIScale, saveUIScale } from './preferences';
+import { completeChapter, readUIScale, saveUIScale } from './preferences';
 import { createGameStore } from './gameStore';
 import { buildingArt, buildingHasTowers, enemyPortrait, type Animation } from './art';
 import { humanBuildingDescription } from './humanBuildings';
@@ -199,7 +199,6 @@ export default function Game({
   const map = campaignMap(s);
   const buildOptions = BUILD_OPTIONS.filter(kind => !s.campaign || s.campaign.buildings.includes(kind));
   const recruitOptions = RECRUIT_OPTIONS.filter(kind => !s.campaign || s.campaign.creatures.includes(kind));
-  const [unlockedChapter, setUnlockedChapter] = useState(readUnlockedChapter);
   const [uiScale, setUIScale] = useState(readUIScale);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -430,7 +429,7 @@ export default function Game({
         ) {
           victoryShown.current = true;
           const state = gameStore.getState();
-          if (state.won && state.campaign) setUnlockedChapter(value => Math.max(value, completeChapter(state.campaign!.mapId)));
+          if (state.won && state.campaign) completeChapter(state.campaign.mapId);
           setModal(gameStore.getState().lost ? 'defeat' : 'victory');
         }
       }
@@ -2359,9 +2358,9 @@ export default function Game({
           )}
           {modal === 'chapters' && <>
             <DialogTitle>Les trois quartiers</DialogTitle>
-            <DialogDescription>Chaque chapitre commence avec son propre camp. Le lancer remplace la partie en cours. Vos déblocages sont conservés sur cet appareil.</DialogDescription>
-            <div className="chapter-picker">{Object.values(CAMPAIGN_MAPS).map(chapter => <button key={chapter.id} disabled={chapter.chapter > unlockedChapter} onClick={() => reset(chapter.id)}>
-              <strong>{chapter.chapter}. {chapter.name}</strong><span>{chapter.subtitle} · {chapter.objectives.length} objectifs</span><small>{chapter.chapter > unlockedChapter ? `Terminez le chapitre ${chapter.chapter - 1}` : chapter.briefing}</small>
+            <DialogDescription>Tous les quartiers sont accessibles. Chaque chapitre commence avec son propre camp. Le lancer remplace la partie en cours.</DialogDescription>
+            <div className="chapter-picker">{Object.values(CAMPAIGN_MAPS).map(chapter => <button key={chapter.id} onClick={() => reset(chapter.id)}>
+              <strong>{chapter.chapter}. {chapter.name}</strong><span>{chapter.subtitle} · {chapter.objectives.length} objectifs</span><small>{chapter.briefing}</small>
             </button>)}</div>
           </>}
         </DialogContent>

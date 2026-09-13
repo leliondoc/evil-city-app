@@ -107,6 +107,7 @@ try {
     });
     await press(page.getByRole('button', { name: 'Fermer', exact: true }));
     await press(page.getByRole('button', { name: 'Jouer', exact: true }));
+    await press(page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }));
     await page.locator('.world-canvas[data-ready=true]').waitFor();
     if (scenario.width < 800 && await page.getByRole('button', { name: 'Fermer les détails', exact: true }).isVisible())
       await press(

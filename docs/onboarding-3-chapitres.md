@@ -12,7 +12,7 @@ Les retours du joueur décrivent trois difficultés liées : trop d’informatio
 
 Les implantations diffèrent : le refuge ne contient aucun bâtiment humain ; le faubourg possède une mairie à l’est et aucune guilde ; les Tilleuls disposent d’une guilde au nord-ouest et d’une mairie au nord-est. Les trois scènes réutilisent la grille de rues et les chemins vers les ressources, avec des sols distincts. Il ne s’agit pas encore d’un générateur de terrains libres.
 
-Chaque chapitre fournit ses propres ressources et troupes pour éviter de refaire l’ouverture ou d’arriver sans moyens depuis une victoire coûteuse. Le chapitre suivant devient accessible après la victoire. Les déblocages sont conservés sur l’appareil, tandis que la partie elle-même reste en mémoire dans l’onglet.
+Chaque chapitre fournit ses propres ressources et troupes pour éviter de refaire l’ouverture ou d’arriver sans moyens depuis une victoire coûteuse. La carte de campagne apparaît après « Jouer » et permet de lancer librement les trois quartiers dès la première visite, notamment Les Tilleuls pour les tests. Le Refuge est conseillé pour débuter. Le menu permet de reprendre la partie ou de revenir à la carte ; choisir puis lancer un quartier remplace la partie en cours. La progression reste conservée sur l’appareil, tandis que la partie elle-même reste en mémoire dans l’onglet.
 
 ## Réponse aux retours
 

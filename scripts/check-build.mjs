@@ -105,6 +105,7 @@ try {
         });
         await page.goto(url);
         await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+        await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page.locator('.world-canvas[data-ready=true]').waitFor();
         await closeDetails(page);
         await page
@@ -226,6 +227,7 @@ try {
         );
         await page.goto(url);
         await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+        await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page
           .getByRole('alert')
           .filter({ hasText: 'Le quartier n’a pas pu s’ouvrir' })
@@ -238,6 +240,7 @@ try {
             .click(),
         ]);
         await page.getByRole('button', { name: 'Jouer', exact: true }).click();
+        await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page
           .locator('.world-canvas[data-ready=true]')
           .waitFor()

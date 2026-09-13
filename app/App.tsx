@@ -33,12 +33,13 @@ export default function App() {
   const [hasGame, setHasGame] = useState(false);
   const [menuOpen, setMenuOpen] = useState(true);
   const [initialMap, setInitialMap] = useState<CampaignMapId>('refuge');
+  const [gameSession, setGameSession] = useState(0);
 
   return (
     <>
       {hasGame && (
         <div hidden={menuOpen}>
-          <GameBoundary>
+          <GameBoundary key={gameSession}>
             <Suspense
               fallback={
                 <output className="start-loading">
@@ -59,10 +60,12 @@ export default function App() {
         <StartMenu
           hasGame={hasGame}
           onPlay={(mapId) => {
-            if (!hasGame) setInitialMap(mapId);
+            setInitialMap(mapId);
+            setGameSession((value) => value + 1);
             setHasGame(true);
             setMenuOpen(false);
           }}
+          onResume={() => setMenuOpen(false)}
         />
       )}
     </>
