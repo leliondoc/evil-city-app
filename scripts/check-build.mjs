@@ -101,6 +101,18 @@ try {
           return route.continue();
         });
         await context.addInitScript(() => {
+          // Headless OS fullscreen cannot model physical device rotation.
+          // Exercise the real unsupported-browser fallback here; orientation.test
+          // separately checks successful fullscreen -> landscape sequencing.
+          window.landscapeAttempts = 0;
+          Element.prototype.requestFullscreen = async () => {
+            window.landscapeAttempts++;
+            throw new DOMException('Fullscreen unavailable in this device profile', 'NotAllowedError');
+          };
+          if (screen.orientation) Object.defineProperty(screen.orientation, 'lock', {
+            configurable: true,
+            value: async () => { throw new DOMException('Orientation lock unavailable', 'NotSupportedError'); },
+          });
           localStorage.setItem(
             'evil-city-audio-v1',
             JSON.stringify({ muted: true, volume: 0.35, musicVolume: 0.2 }),
@@ -116,6 +128,8 @@ try {
         await page.goto(url);
         await page.getByRole('button', { name: 'Jouer', exact: true }).click();
         await requireLandscape(page);
+        if (viewport.width < viewport.height)
+          assert.ok(await page.evaluate(() => window.landscapeAttempts > 0), 'Portrait touch launch attempts automatic landscape');
         await page.getByRole('button', { name: 'Entrer dans le quartier', exact: true }).click();
         await page.locator('.world-canvas[data-ready=true]').waitFor();
         await page.getByRole('button', { name: /^Voir le manoir, niveau/ }).click();
