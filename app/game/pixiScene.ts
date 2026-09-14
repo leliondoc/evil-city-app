@@ -116,6 +116,7 @@ export class DrawLayer {
     node.pivot.set(0, 0);
     node.rotation = 0;
     node.scale.set(((flip ? -1 : 1) * width) / sw, height / sh);
+    node.tint = 0xffffff;
     node.alpha = alpha;
     return this.place(node);
   }

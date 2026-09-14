@@ -386,6 +386,7 @@ export interface Unit extends Point {
   nextRestAt?: number;
   nextMealAt?: number;
   wellFedUntil?: number;
+  siegePosition?: Point;
   activityProgress?: number;
   hauntReadyAt?: number;
   moving?: boolean;
@@ -1183,11 +1184,9 @@ function walkableCell(x: number, y: number) {
   if (!lot) return true; // The public street network.
   const dx = x - lot.x,
     dy = y - lot.y;
-  // Front courtyard and driveway; the rest of each plot is an obstacle.
-  if (dy === 7 && dx >= 1 && dx <= 6) return true;
-  if (dx === 4 && dy === 6) return true;
-  const row = supplyGateRow(lot);
-  return row >= 0 && dx === 7 && dy >= row && dy <= 7;
+  // Interior perimeter: gates still control entry, the building stays solid.
+  if (dx === 0 || dx === 7 || dy === 0 || dy >= 6) return true;
+  return false;
 }
 function navigationPoint(x: number, y: number): Point {
   // Align the driveway and its street exit with the visible 40 px gate.
@@ -1195,9 +1194,13 @@ function navigationPoint(x: number, y: number): Point {
   const roadX = inTown ? streetCenter(x) : undefined;
   const roadY = inTown ? streetCenter(y) : undefined;
   const gate = inTown && x % 10 === 6 && (y % 10 >= 8 || y % 10 < 2);
+  const lot = navigationLot(x, y);
+  // Feet stay inside the visible fence, not on its posts.
+  const dx = lot ? x - lot.x : -1, dy = lot ? y - lot.y : -1;
+  const sideGate = lot && dx === 7 && dy === supplyGateRow(lot);
   return {
-    x: roadX ?? x + (gate ? 0 : 0.5),
-    y: roadY ?? y + 0.5,
+    x: roadX ?? x + (gate ? 0 : dx === 0 ? 0.9 : dx === 7 && !sideGate ? 0.1 : 0.5),
+    y: roadY ?? y + (dy === 0 ? 0.9 : 0.5),
   };
 }
 const PATH_MIN_X = -14;
@@ -1319,6 +1322,7 @@ export function assign(
   target: number | null,
 ) {
   if (u.task === 'deliver-loot' && task !== 'deliver-loot') u.loot = undefined;
+  delete u.siegePosition;
   delete u.focusTarget;
   delete u.manualRest;
   delete u.holdPosition;
@@ -1540,10 +1544,39 @@ export function attackReason(s: State, id: number) {
   if (!army(s).length) return 'Recrutez des combattants avant d’attaquer.';
   return armyProvocationReason(s);
 }
+/** Spread siege positions along the inside of the fence, reached through the gate. */
+function assignSiege(s: State, u: Unit, lot: Lot) {
+  const occupied = s.units.filter(v => v.id !== u.id && v.hp > 0 && v.task === 'attack' && v.target === lot.id)
+    .map(v => v.siegePosition ?? entrance(lot));
+  const offsets = [[4, 7.5], [1.5, 6.5], [6.5, 6.5], [0.5, 4.5], [7.5, 4.5], [0.5, 2.5], [7.5, 2.5], [2.5, 0.5], [5.5, 0.5]];
+  const candidates = offsets.map(([x, y]) => navigationTarget({ x: lot.x + x, y: lot.y + y }));
+  const point = candidates.find(p => occupied.every(q => distanceBetween(p, q) >= 1.2)) ?? candidates[u.id % candidates.length];
+  // Assemble at the gate first so defenders cannot split the arriving army.
+  assignPlayerOrder(u, entrance(lot), 'attack', lot.id);
+  u.siegePosition = point;
+}
+export function atSiegePosition(u: Unit, lot: Lot) {
+  return !u.path.length && distanceBetween(u, u.siegePosition ?? entrance(lot)) < 0.8;
+}
+
+/** Reserve distinct reachable destinations, including units already parked there. */
+function groupDestination(s: State, u: Unit, point: Point): Point {
+  const center = navigationTarget(point);
+  const occupied = s.units.filter(v => v.id !== u.id && v.hp > 0).map(v => v.path.at(-1) ?? v);
+  const candidates: Point[] = [];
+  for (let y = -7; y <= 7; y++) for (let x = -7; x <= 7; x++) {
+    const p = navigationTarget({ x: center.x + x, y: center.y + y });
+    if (navigationLot(p.x, p.y)?.id !== navigationLot(center.x, center.y)?.id) continue;
+    if (occupied.some(q => distanceBetween(p, q) < 1.25)) continue;
+    candidates.push(p);
+  }
+  candidates.sort((a, b) => distanceBetween(a, center) - distanceBetween(b, center));
+  return candidates.find(p => distanceBetween(u, p) < 0.1 || findPath(u, p).length > 0) ?? center;
+}
 export function attack(s: State, id: number) {
   const error = attackReason(s, id);
   if (error) return error;
-  for (const u of army(s)) if (!provocationReason(s, u)) assignPlayerOrder(u, entrance(s.lots[id]), 'attack', id);
+  for (const u of army(s)) if (!provocationReason(s, u)) assignSiege(s, u, s.lots[id]);
   markAttackOrder(s, { type: 'lot', id });
   announce(
     s,
@@ -1553,7 +1586,7 @@ export function attack(s: State, id: number) {
 }
 export function retreat(s: State) {
   if (s.won || s.lost) return;
-  for (const u of army(s)) if (!provocationReason(s, u)) assignPlayerOrder(u, entrance(s.lots[6]), 'move', null);
+  for (const u of army(s)) if (!provocationReason(s, u)) moveUnit(s, u.id, entrance(s.lots[6]));
   announce(s, 'Repli au manoir. Les blessés s’y rétabliront.');
 }
 export function moveUnit(s: State, id: number, point: Point) {
@@ -1561,7 +1594,7 @@ export function moveUnit(s: State, id: number, point: Point) {
   const u = s.units.find((v) => v.id === id && v.hp > 0);
   if (!u) return;
   if (provocationReason(s, u)) return;
-  assignPlayerOrder(u, point, 'move', null);
+  assignPlayerOrder(u, groupDestination(s, u, point), 'move', null);
 }
 
 export function holdUnits(s: State, ids: number[]): string {
@@ -1643,7 +1676,7 @@ export function commandUnit(
   } else if (lot && !lot.owned && lot.kind !== 'empty') {
     const error = attackTargetReason(s, lot.id);
     if (error) return error;
-    assignPlayerOrder(unit, entrance(lot), 'attack', lot.id);
+    assignSiege(s, unit, lot);
     markAttackOrder(s, { type: 'lot', id: lot.id });
     announce(
       s,
@@ -2152,7 +2185,7 @@ export function defend(s: State, id = 6): string {
   const locked = armyProvocationReason(s);
   if (locked) return locked;
   for (const u of army(s))
-    if (!provocationReason(s, u)) assignPlayerOrder(u, entrance(s.lots[id]), 'move', null);
+    if (!provocationReason(s, u)) moveUnit(s, u.id, entrance(s.lots[id]));
   announce(
     s,
     `Votre armée se rassemble devant ${BUILDINGS[s.lots[id].kind].name.toLowerCase()}.`,
@@ -2747,7 +2780,7 @@ function separateCombatants(s: State, dt: number) {
   const nudge = (actor: Unit | Enemy, dx: number, dy: number) => {
     // Let marching and retreating units finish their route instead of repeatedly
     // snapping their path back to a cell center when a nearby enemy attacks.
-    if (!actor.fighting) return;
+    if (!actor.fighting && (!('task' in actor) || actor.path.length || ('holdPosition' in actor && actor.holdPosition) || ('task' in actor && !['idle', 'attack'].includes(actor.task)))) return;
     const distance = Math.hypot(dx, dy);
     const budget = Math.min(distance, remaining.get(actor.id) ?? 0);
     if (budget <= 0 || distance <= 0) return;
@@ -2775,7 +2808,7 @@ function separateCombatants(s: State, dt: number) {
       for (let j = i + 1; j < bodies.length; j++) {
         const a = bodies[i],
           b = bodies[j];
-        if (!a.actor.fighting && !b.actor.fighting) continue;
+        if (!a.actor.fighting && !b.actor.fighting && (a.enemy || b.enemy || a.actor.path.length || b.actor.path.length)) continue;
         if (
           a.enemy !== b.enemy &&
           ((Math.abs(a.actor.x - b.actor.x) < 1.5 &&
@@ -3028,9 +3061,9 @@ function tickStep(s: State, dt: number) {
         u.task === 'attack' &&
         u.target !== null &&
         !u.path.length &&
-        !atEntrance(u, s.lots[u.target])
+        !atSiegePosition(u, s.lots[u.target])
       )
-        u.path = findPath(u, entrance(s.lots[u.target]));
+        u.path = findPath(u, u.siegePosition ?? entrance(s.lots[u.target]));
       walk(s, u, unitSpeed(s, u) * dt);
     }
     if (!u.path.length) {
@@ -3078,9 +3111,10 @@ function tickStep(s: State, dt: number) {
           (!u.fighting || (u.kind === 'alchemist' && lot.hp <= 0)) &&
           u.task === 'attack' &&
           u.target === lot.id &&
-          (u.kind === 'alchemist' ? distanceBetween(u, entrance(lot)) <= ALCHEMY.range && clearShot(u, entrance(lot)) : atEntrance(u, lot)),
+          (u.kind === 'alchemist' ? distanceBetween(u, entrance(lot)) <= ALCHEMY.range && clearShot(u, entrance(lot)) : atSiegePosition(u, lot)),
       );
       if (attackers.length) {
+        for (const u of attackers) u.facing = lot.x + 4 >= u.x ? 1 : -1;
         const damage = attackers.reduce((n, u) => n + (u.kind === 'alchemist' ? 0 : armyDamage(s, u)), 0);
         lot.hp = Math.max(0, lot.hp - damage * dt);
         if (lot.hp <= 0) {
@@ -3115,7 +3149,7 @@ function tickStep(s: State, dt: number) {
               s.mobilization[kind].nextRaidAt = null;
               announce(
                 s,
-                `${BUILDINGS[lot.kind].name} neutralisée. Les renforts sont coupés ; éliminez les ennemis encore dans les rues.`,
+                `${BUILDINGS[lot.kind].name} neutralisée. Les renforts sont coupés.`,
               );
             }
           }

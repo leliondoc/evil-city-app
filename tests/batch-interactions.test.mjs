@@ -126,7 +126,9 @@ test('A marching group forms a spaced file and every member reaches the destinat
   for (const unit of s.units) {
     assert.equal(unit.path.length, 0);
     assert.equal(unit.task, 'idle');
-    assert.deepEqual({ x: unit.x, y: unit.y }, { x: 9.5, y: 21 });
+    assert.ok(Math.hypot(unit.x - 9.5, unit.y - 21) <= 4);
+    for (const other of s.units.filter(v => v.id !== unit.id))
+      assert.ok(Math.hypot(unit.x - other.x, unit.y - other.y) >= 1.2, 'Arrivals keep their own space');
   }
 });
 

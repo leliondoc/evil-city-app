@@ -3,7 +3,7 @@ import type { Lot } from './engine';
 import { ISLAND_BRIDGES, inIslandClearing } from './islandRoutes.ts';
 import { HIGHLANDS, onPatch, onGround, onCliff } from './terrainLayout.ts';
 export { HIGHLANDS } from './terrainLayout.ts';
-export type Decoration = { key: AssetKey; x: number; y: number; scale: number };
+export type Decoration = { key: AssetKey; x: number; y: number; scale: number; tint?: number };
 export const BRIDGES = ISLAND_BRIDGES;
 export const BRIDGE = BRIDGES[0];
 
@@ -167,4 +167,14 @@ export function makeScenery(lots: Lot[]): Decoration[] {
   return decorations.filter(
     (d) => sceneryFits(d) && sceneryClearsLots(d, lots) && !inIslandClearing(d.x, d.y),
   );
+}
+
+/** Sparse pack foliage in evil courtyards; keep the central path and fences clear. */
+export function corruptedCourtyard(lot: Lot): Decoration[] {
+  if (!lot.owned || lot.kind === 'empty' || lot.kind === 'house' || lot.kind === 'hall' || lot.kind === 'guild' || lot.construction) return [];
+  return [
+    { key: 'tree-3', x: (lot.x + 6.35) * 32, y: (lot.y + 5.9) * 32, scale: 0.43, tint: 0xb18bcf },
+    { key: 'bush-3', x: (lot.x + 2.5) * 32, y: (lot.y + 6.25) * 32, scale: 0.35, tint: 0xb18bcf },
+    { key: 'bush-3', x: (lot.x + 5.65) * 32, y: (lot.y + 6.4) * 32, scale: 0.3, tint: 0x9d80c4 },
+  ];
 }

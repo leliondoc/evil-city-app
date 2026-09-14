@@ -12,6 +12,7 @@ import {
   supplyActive,
   entrance,
   atEntrance,
+  atSiegePosition,
   buildReason,
   type BuildingKind,
   type State,
@@ -35,7 +36,7 @@ import {
   type Animation,
 } from './art';
 
-import { makeScenery, factionPennantPosition, type Decoration } from './scenery';
+import { makeScenery, corruptedCourtyard, factionPennantPosition, type Decoration } from './scenery';
 import { PixiScene } from './pixiScene';
 import { drawTerrain } from './terrainRenderer';
 import { mission } from './mission';
@@ -665,6 +666,7 @@ export class Renderer {
     alpha = 1,
     flip = false,
     rotation = 0,
+    tint = 0xffffff,
   ): Hit {
     const a = ASSETS[key],
       source = spriteFrame(key, frame),
@@ -685,6 +687,7 @@ export class Renderer {
       alpha,
       flip,
     );
+    node.tint = tint;
     if (rotation) {
       node.position.set(x, y);
       node.pivot.set(source.width / 2, source.height * a.anchor);
@@ -1236,7 +1239,7 @@ export class Renderer {
         },
       });
     }
-    for (const d of this.decorations)
+    for (const d of [...this.decorations, ...s.lots.flatMap(corruptedCourtyard)])
       drawables.push({
         depth: d.y,
         draw: () =>
@@ -1248,6 +1251,7 @@ export class Renderer {
             ((Math.floor(t * 10 + d.x / 32) % ASSETS[d.key].frames) +
               ASSETS[d.key].frames) %
               ASSETS[d.key].frames,
+            1, false, 0, d.tint,
           ),
       });
     for (const site of s.sites)
@@ -1411,7 +1415,7 @@ export class Renderer {
                 ? 'walk'
                 : u.task === 'attack' &&
                     u.target !== null &&
-                    atEntrance(u, s.lots[u.target])
+                    atSiegePosition(u, s.lots[u.target])
                   ? 'attack'
                   : 'idle';
           let motion = this.motions.get(u.id);

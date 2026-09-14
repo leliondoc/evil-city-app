@@ -836,7 +836,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
   return false;
 }
 
-export function thought(s: State, u: Unit): string {
+export function thought(_s: State, u: Unit): string {
   if (u.task === 'duel') return u.path.length ? 'Défi du moine' : 'Duel';
   if (u.task === 'bribe') return 'Bourse';
   if (u.task === 'collect') return 'Collecte';
@@ -848,6 +848,5 @@ export function thought(s: State, u: Unit): string {
   if (u.task === 'eat') return u.path.length ? 'À table !' : 'Repas';
   if (u.task === 'rest') return u.path.length ? 'Au lit' : 'Zzz';
   if (u.task === 'restore') return u.path.length ? 'À la crypte' : 'Régénère';
-  if ((u.wellFedUntil ?? 0) > s.elapsed) return `Bien nourri · −5 % dégâts physiques · ${Math.ceil(u.wellFedUntil! - s.elapsed)} s`;
   return '';
 }

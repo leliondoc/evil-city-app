@@ -3588,8 +3588,8 @@ svg {
   -webkit-tap-highlight-color: transparent;
 }
 .command-wheel button:focus-visible {
-  outline: 3px solid #fff0b6;
-  outline-offset: 4px;
+  outline: 2px solid #e2c48e;
+  outline-offset: -2px;
 }
 .command-wheel-manor {
   left: calc(50% - 50px);
@@ -3800,3 +3800,5 @@ svg {
 .game-shell[data-compact='true'] .research-queue-tiles { display: flex; flex-wrap: wrap; }
 
 @media (pointer: coarse) { .active-research-job { width: 44px; height: 44px; } }
+
+.unit-buff-status { margin: 5px 0; color: #bce09d; font-size: 12px; line-height: 1.3; }

@@ -1216,6 +1216,7 @@ export default function Game({
                       value={(selectedUnit.hp / creature.hp) * 100}
                       aria-label="Santé de la créature"
                     />
+                    {(selectedUnit.wellFedUntil ?? 0) > s.elapsed && <p className="unit-buff-status" title="Le repas réduit les dégâts physiques reçus de 5 %.">Bien nourri · résistance +5 % · {Math.ceil(selectedUnit.wellFedUntil! - s.elapsed)} s</p>}
                     <p className="reason">
                       {Number(armyDamage(s, selectedUnit).toFixed(1))} dégâts/s {selectedUnit.kind === 'alchemist' ? 'magiques' : 'physiques'} avant bonus · vitesse {Number(unitSpeed(s, selectedUnit).toFixed(1))} · Armure {armorPercent(selectedUnit)} %
                       {unitIsMounted(s, selectedUnit) ? ' · Monté sur cochon' : ''}
@@ -2131,8 +2132,7 @@ export default function Game({
             <>
               <DialogTitle>Le guide du mauvais voisin</DialogTitle>
               <DialogDescription>
-                {map ? map.briefing : <>Prenez la mairie et la guilde, puis éliminez les ennemis encore
-                dans les rues. Protégez votre manoir : sa destruction met fin à
+                {map ? map.briefing : <>Prenez l’hôtel de ville et la guilde. Protégez votre manoir : sa destruction met fin à
                 la partie.</>}
               </DialogDescription>
               {map && !classicCampaign(s) && <div className="chapter-guide">
