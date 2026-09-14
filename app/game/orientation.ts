@@ -4,7 +4,7 @@ export async function requestLandscape(): Promise<boolean> {
   const orientation = screen.orientation as ScreenOrientation & { lock?: (mode: string) => Promise<void> };
   if (!orientation?.lock) return false;
   try {
-    if (!document.fullscreenElement && document.documentElement.requestFullscreen)
+    if (!matchMedia('(orientation: landscape)').matches && !document.fullscreenElement && document.documentElement.requestFullscreen)
       await document.documentElement.requestFullscreen();
   } catch {
     // Installed apps may permit orientation locking without fullscreen.
