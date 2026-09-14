@@ -1,4 +1,4 @@
-import { capacity, foodBalance, rates, type Lot, type State } from './engine.ts';
+import { capacity, rates, type Lot, type State } from './engine.ts';
 import { canUpgradeKind } from './progression.ts';
 
 const number = (n: number) => Number(n.toFixed(1)).toLocaleString('fr');
@@ -13,17 +13,18 @@ export function upgradePreview(state: State, lot: Lot) {
     from: `${capacity(state)} places`, to: `${capacity(after)} places`,
     note: `Cette grotte : ${6 * n} → ${6 * (n + 1)} places. Les 6 places de base et celles de toutes vos grottes s’additionnent. La limite de bâtisseurs ne change pas avec les niveaux : seules les grottes supplémentaires terminées l’augmentent (jusqu’à 10).`,
   };
-  if (lot.kind === 'canteen' || lot.kind === 'forge') {
-    const kitchen = lot.kind === 'canteen';
-    const bonus = (s: State) => {
-      const best = Math.max(kitchen ? 0 : 1, ...s.lots.filter(l => l.owned && l.kind === lot.kind && (!kitchen || !l.construction)).map(l => l.level));
-      return kitchen ? Math.min(60, best * 20) : (best - 1) * 15;
-    };
+  if (lot.kind === 'canteen') return {
+    label: 'Durée du bonus Bien nourri',
+    from: `${70 + (n - 1) * 30} s`, to: `${70 + n * 30} s`,
+    note: 'Chaque repas coûte 1 vivre et réduit les dégâts physiques reçus de 5 %. La durée dépend de la cantine visitée ; les bonus ne se cumulent pas.',
+  };
+  if (lot.kind === 'forge') {
+    const bonus = (s: State) => (Math.max(1, ...s.lots.filter(l => l.owned && l.kind === 'forge').map(l => l.level)) - 1) * 15;
     const from = bonus(state), to = bonus(after);
     return {
-      label: kitchen ? 'Réduction de la consommation totale' : 'Bonus des huttes aux dégâts de l’armée',
-      from: `${kitchen ? '−' : '+'}${from} %`, to: `${kitchen ? '−' : '+'}${to} %`,
-      note: `${kitchen ? 'Cette cantine' : 'Cette hutte'} : ${kitchen ? 20 * n : 15 * (n - 1)} → ${kitchen ? 20 * (n + 1) : 15 * n} %. Seul le bâtiment de plus haut niveau compte ; les bonus ne s’additionnent pas. ${from === to ? 'Aucun gain global : un autre bâtiment fournit déjà ce bonus.' : ''}${kitchen ? ` Avec vos créatures actuelles : ${foodBalance(state).consumption} → ${foodBalance(after).consumption} vivres/min.` : ''}`.trim(),
+      label: 'Bonus des huttes aux dégâts de l’armée',
+      from: `+${from} %`, to: `+${to} %`,
+      note: `Cette hutte : ${15 * (n - 1)} → ${15 * n} %. Seul le bâtiment de plus haut niveau compte ; les bonus ne s’additionnent pas. ${from === to ? 'Aucun gain global : un autre bâtiment fournit déjà ce bonus.' : ''}`.trim(),
     };
   }
   const perLevel = lot.kind === 'hq' ? 10.8 : lot.kind === 'crypt' ? 24 : lot.kind === 'guild' ? 18 : 0;

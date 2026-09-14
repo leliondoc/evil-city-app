@@ -857,14 +857,14 @@ export class Renderer {
       bounds.height + padding * 2,
     );
   }
-  private bar(x: number, y: number, ratio: number, width = 60) {
+  private bar(x: number, y: number, ratio: number, width = 60, color?: string) {
     this.draw.rect(x - width / 2 - 2, y - 2, width + 4, 10, '#293333');
     this.draw.rect(
       x - width / 2,
       y,
       width * Math.max(0, Math.min(1, ratio)),
       6,
-      ratio < 0.3 ? '#ed9472' : '#bed27c',
+      color ?? (ratio < 0.3 ? '#ed9472' : '#bed27c'),
     );
   }
   private fence(l: Lot, front: boolean) {
@@ -1815,11 +1815,14 @@ export class Renderer {
     for (const l of s.lots) {
       const x = (l.x + 4) * CELL;
       const bar = buildingBars.get(l.id);
+      const production = l.owned && l.hp > 0 ? s.recruits.filter(r => r.source === l.id) : [];
+      const nextRecruit = production.length ? production.reduce((a, b) => a.remaining < b.remaining ? a : b) : undefined;
+      const recruitOffset = nextRecruit ? 14 + 3 / this.scale : 0;
       // Anchor names to the visible roof, above both health and construction bars.
       const stackedBar =
         (l.construction || l.upgrading) && l.hp < l.maxHp ? 14 + 3 / this.scale : 0;
       const labelY = bar
-        ? bar.y - stackedBar - 2 - (12 * this.uiScale) / this.scale
+        ? bar.y - stackedBar - recruitOffset - 2 - (12 * this.uiScale) / this.scale
         : (l.y + 8) * CELL + 16;
       if (bar) {
         if (l.hp < l.maxHp) this.bar(bar.x, bar.y, l.hp / l.maxHp, 80);
@@ -1829,6 +1832,7 @@ export class Renderer {
         else if (l.upgrading)
           this.bar(bar.x, bar.y - stackedBar, 1 - l.upgrading.remaining / l.upgrading.duration, 90);
       }
+      if (bar && nextRecruit) this.bar(bar.x, bar.y - stackedBar - recruitOffset, 1 - nextRecruit.remaining / (nextRecruit.duration ?? 12), 90, '#74518d');
       const hovered = this.hover?.type === 'lot' && this.hover.id === l.id;
       if (bar && l.level > 1 && !l.construction)
         this.label(x, bar.y + 10 + 5 / this.scale, '★'.repeat(l.level - 1), '#ffe0a0');
@@ -1841,7 +1845,7 @@ export class Renderer {
             : l.ruins ? (l.ruins.progress ? `Reconstruction humaine · ${Math.floor(l.ruins.progress * 100)} %` : 'Maison en ruines') : l.upgrading ? `Niveau ${l.upgrading.targetLevel} · ${Math.ceil(l.upgrading.remaining)} s` : BUILDINGS[l.kind].name,
         );
       else if (l.kind === 'hall' && !l.owned)
-        this.label(x, labelY, 'La mairie');
+        this.label(x, labelY, 'Hôtel de ville');
       else if (l.kind === 'guild')
         this.label(
           x,

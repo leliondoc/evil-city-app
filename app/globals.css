@@ -3779,4 +3779,23 @@ svg {
   .game-shell .creation-cards .build-card:active { transform: none; }
 }
 .game-shell[data-compact='true'] .recruit-card > :is(img, canvas:not(.pack-skin)) { width: 56px !important; height: 56px !important; }
-.creation-spark { position: fixed; z-index: 95; width: 3px; height: 3px; border-radius: 50%; background: #ffe3a1; box-shadow: 0 0 5px #ffe3a1; pointer-events: none; }
+
+/* Global research queue: compact icon tiles beside the creature roster. */
+.active-research { flex: 0 0 44px; align-self: flex-start; min-width: 0; padding: 4px; border-radius: 3px; background: #192b31ed; color: #e3ddc7; pointer-events: auto; }
+.research-queue-tiles { display: grid; gap: 3px; }
+.active-research-job { position: relative; display: block; width: 36px; height: 36px; padding: 2px 2px 5px; border: 1px solid #a1956877; border-radius: 3px; background: linear-gradient(#443a50, #20323b); color: #fff4d8; cursor: pointer; overflow: hidden; box-shadow: inset 0 0 0 1px #101c2499; }
+.active-research-job:hover, .active-research-job:focus-visible { border-color: #ead9aa; outline: 2px solid #b99acb; outline-offset: 1px; }
+.active-research-job .research-icon { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.research-tile-pause { position: absolute; right: 3px; bottom: 7px; padding: 0 3px; background: #12212be6; border-radius: 2px; font-size: 10px; font-variant-numeric: tabular-nums; line-height: 14px; text-shadow: 0 1px #000; }
+.active-research-job progress { position: absolute; left: 0; bottom: 0; display: block; appearance: none; width: 100%; height: 3px; border: 0; background: #14212a; overflow: hidden; }
+.active-research-job progress::-webkit-progress-bar { background: #14212a; }
+.active-research-job progress::-webkit-progress-value { background: var(--faction-purple); box-shadow: inset 0 1px #c7a2df; }
+.active-research-job progress::-moz-progress-bar { background: var(--faction-purple); }
+.active-research-job[data-paused='true'] { border-color: #c0a46c; }
+.active-research-job[data-paused='true'] .research-icon { opacity: .55; }
+.research-choice-title { display: flex; align-items: center; gap: 8px; }
+.research-choice-title .research-icon { width: 32px; height: 32px; flex: 0 0 32px; image-rendering: pixelated; }
+.game-shell[data-compact='true'] .active-research { flex: none; align-self: stretch; width: auto; margin: 6px 0; }
+.game-shell[data-compact='true'] .research-queue-tiles { display: flex; flex-wrap: wrap; }
+
+@media (pointer: coarse) { .active-research-job { width: 44px; height: 44px; } }

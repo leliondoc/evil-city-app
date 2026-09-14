@@ -11,7 +11,6 @@ import {
   population,
   CREATURES,
   army,
-  foodBalance,
 } from '../app/game/engine.ts';
 import {
   haunt,
@@ -275,10 +274,11 @@ test('Meals and sleep use their buildings and yield immediately to explicit move
   assert.equal(u.task, 'eat');
   assert.equal(thought(s, u), 'Repas');
   const expectedFood =
-    s.resources.food + (-foodBalance(s).consumption / 60) * 4;
+    s.resources.food - 1;
   tick(s, 4);
   assert.ok(Math.abs(s.resources.food - expectedFood) < 0.001);
   assert.ok(u.nextMealAt > s.elapsed);
+  assert.ok(u.wellFedUntil > s.elapsed);
   Object.assign(u, entrance(s.lots[3]), {
     task: 'idle',
     path: [],

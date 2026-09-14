@@ -33,7 +33,7 @@ export function buildingLevelEffect(kind: BuildingKind, level: number): string {
     case 'den':
       return `Cette grotte ajoute ${6 * level} places à la population maximale de l’armée`;
     case 'canteen':
-      return `Cette cantine réduit la consommation de ${Math.min(60, 20 * level)} %. Seule la meilleure cantine s’applique`;
+      return `Repas : 1 vivre, −5 % de dégâts physiques reçus pendant ${70 + (level - 1) * 30} s`;
     case 'crypt':
       return `Ce bâtiment produit ${24 * level} essence/min, ajoutées au total du domaine`;
     case 'forge':

@@ -165,7 +165,7 @@ export function advanceCannons(s: State, dt: number) {
         const across = Math.abs(dx * c.direction.y - dy * c.direction.x);
         if (along < -0.5 || along > travel + 0.5 || across > 0.85) continue;
         shot.hit.push(u.id);
-        u.hp = Math.max(0, u.hp - physicalDamage(CANNON.damage, u));
+        u.hp = Math.max(0, u.hp - physicalDamage(CANNON.damage, u, s.elapsed));
         u.knockback = {
           end: cannonEnd(u, c.direction),
           resume: u.path.at(-1)

@@ -73,3 +73,6 @@
   outline: 2px solid #ffe4ab;
   outline-offset: 3px;
 }
+
+.landscape-prompt .rotate-status { display: block; max-width: 340px; margin-top: 14px; color: #efd6a1; font-size: 13px; line-height: 1.5; }
+.landscape-prompt button:disabled { opacity: .6; cursor: wait; }

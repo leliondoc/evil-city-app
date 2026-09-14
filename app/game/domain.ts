@@ -673,7 +673,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
       if (
         alive &&
         canteen &&
-        s.resources.food > 0 &&
+        s.resources.food >= 1 &&
         s.elapsed >= (u.nextMealAt ?? 65)
       )
         assign(u, entrance(canteen), 'eat', canteen.id);
@@ -811,7 +811,7 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
     }
     walk(s, u, unitSpeed(s, u) * dt);
     if (!u.path.length && distance(u, entrance(lot)) < 1) {
-      if (u.task === 'eat' && s.resources.food <= 0) {
+      if (u.task === 'eat' && s.resources.food < 1) {
         idle(u);
         return true;
       }
@@ -822,7 +822,11 @@ export function advanceSpecialUnit(s: State, u: Unit, dt: number): boolean {
       if (
         u.manualRest ? u.hp >= CREATURES[u.kind].hp : u.activityProgress >= 4
       ) {
-        if (u.task === 'eat') u.nextMealAt = s.elapsed + 70;
+        if (u.task === 'eat') {
+          s.resources.food -= 1;
+          u.wellFedUntil = s.elapsed + 70 + (lot.level - 1) * 30;
+          u.nextMealAt = u.wellFedUntil;
+        }
         else u.nextRestAt = s.elapsed + 100;
         idle(u);
       }
@@ -844,12 +848,6 @@ export function thought(s: State, u: Unit): string {
   if (u.task === 'eat') return u.path.length ? 'À table !' : 'Repas';
   if (u.task === 'rest') return u.path.length ? 'Au lit' : 'Zzz';
   if (u.task === 'restore') return u.path.length ? 'À la crypte' : 'Régénère';
-  if (
-    u.kind !== 'skeleton' &&
-    u.kind !== 'specter' &&
-    s.resources.food <= 0 &&
-    s.elapsed >= (u.nextMealAt ?? 65)
-  )
-    return 'Faim';
+  if ((u.wellFedUntil ?? 0) > s.elapsed) return `Bien nourri · −5 % dégâts physiques · ${Math.ceil(u.wellFedUntil! - s.elapsed)} s`;
   return '';
 }

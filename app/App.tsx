@@ -1,4 +1,5 @@
 import { Component, lazy, Suspense, useState, type ReactNode } from 'react';
+import { requestLandscape } from './game/orientation';
 import { StartMenu } from './game/StartMenu';
 import type { CampaignMapId } from './game/campaign';
 import { LandscapeGate, useLandscapeRequired } from './game/LandscapeGate';
@@ -65,12 +66,13 @@ export default function App() {
           hasGame={hasGame}
           portrait={portrait}
           onPlay={(mapId) => {
+            void requestLandscape();
             setInitialMap(mapId);
             setGameSession((value) => value + 1);
             setHasGame(true);
             setMenuOpen(false);
           }}
-          onResume={() => setMenuOpen(false)}
+          onResume={() => { void requestLandscape(); setMenuOpen(false); }}
         />
       )}
     </>

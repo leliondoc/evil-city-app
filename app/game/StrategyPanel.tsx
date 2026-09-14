@@ -1,3 +1,4 @@
+import { ResearchIcon } from './ResearchIcon';
 import { useState } from 'react';
 import { CREATURES, type State, type Lot } from './engine';
 import {
@@ -57,7 +58,7 @@ export function ResearchPanel({
             tierError = manorRequirement(s, r.manor);
           return (
             <div className="research-choice" key={key}>
-              <h5>{r.name}</h5>
+              <h5 className="research-choice-title"><ResearchIcon research={key} />{r.name}</h5>
               <p>{r.text}</p>
               <p className="ability-prerequisite">Prérequis : manoir niveau {r.manor}.</p>
               {!acquired && !pending && (
@@ -205,7 +206,7 @@ export function TowerPanel({
               : tower.racketRaidAt !== undefined ? <p className="ability-status"><PackIcon asset="ui-sword" /><span>{tower.racketRaidAt > s.elapsed ? `Départ de la patrouille dans ${Math.ceil(tower.racketRaidAt - s.elapsed)} s.` : 'Patrouille en préparation : la mairie attend ses moyens.'}</span></p>
               : <p className="ability-meta">{Math.min(RACKET.retaliation, tower.racketStolen ?? 0)} / {RACKET.retaliation} ressources avant alerte.</p>}
             <p>
-              Le gobelin vole {RACKET.share * 100} % des cargaisons proches. Stock : {RACKET.capacity} par ressource.
+              Le gobelin vole {RACKET.share * 100} % des cargaisons proches. Stock : {RACKET.capacity} par ressource. Dès qu’une ressource est pleine, le gobelin livre tout le butin au manoir puis revient à sa tour.
               Après {RACKET.retaliation} ressources volées, la mairie prépare une patrouille pour reprendre la tour.
             </p>
             <Button

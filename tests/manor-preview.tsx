@@ -23,6 +23,12 @@ recruit(s, 'goblin');
 recruit(s, 'spear-goblin');
 tick(s, 6.1);
 }
+if (new URLSearchParams(location.search).has('tracking')) {
+  s.lots[6].level = 3;
+  Object.assign(s.lots[7], { kind: 'forge', owned: true, construction: null });
+  s.strategy.pendingResearch = [{ key: 'embers', elapsed: 80 }, { key: 'chain', elapsed: 90 }, { key: 'solvent', elapsed: 60 }];
+  s.recruits.push({ kind: 'goblin', remaining: 90, duration: 120, source: 6 });
+}
 const original = Reflect.get(Renderer.prototype, 'resize') as () => void;
 Reflect.set(Renderer.prototype, 'resize', function (this: Renderer) {
   window.manorRenderer = this;

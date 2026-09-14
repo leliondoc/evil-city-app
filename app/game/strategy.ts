@@ -349,6 +349,8 @@ export function strategyUnit(s: State, u: Unit, dt: number) {
       announce(s, 'Le butin de la tour arrive au manoir.');
     }
     u.loot = undefined;
+    const homeTower = s.strategy.towers.find(t => t.owned && t.occupant === u.id && t.id === u.target);
+    if (homeTower) { assign(u, homeTower, 'tower', homeTower.id); return true; }
     u.task = 'idle';
     u.target = null;
     return true;
@@ -433,7 +435,7 @@ export function advanceStrategy(s: State, dt: number) {
       (u) =>
         u.id === t.occupant &&
         u.hp > 0 &&
-        u.task === 'tower' &&
+        ['tower', 'deliver-loot'].includes(u.task) &&
         u.target === t.id,
     );
     if (!assigned) {
@@ -477,6 +479,13 @@ export function advanceStrategy(s: State, dt: number) {
           distance(u, t) < TOWER_RANGE.reinforcement
         )
           assign(u, threats[0], 'defend', threats[0].id);
+    }
+    if (occupant?.kind === 'goblin' && Object.values(t.loot).some(amount => amount >= RACKET.capacity)) {
+      const loot = { ...t.loot };
+      t.loot = {};
+      assign(occupant, entrance(s.lots[6]), 'deliver-loot', t.id);
+      occupant.loot = loot;
+      continue;
     }
     if (occupant?.kind === 'goblin')
       for (const w of s.workers) {

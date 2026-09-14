@@ -43,7 +43,7 @@ test('Tower loot fills only remaining storage and cannot be credited twice', () 
   strategyUnit(s, u, 0.1);
   assert.equal(s.resources.gold, RESOURCE_CAP - 10);
 });
-test('Combat loot cannot overflow gold storage and food consumption still applies at a full stock', () => {
+test('Combat loot cannot overflow gold storage and food has no passive upkeep', () => {
   const s = createGame();
   s.resources = {
     gold: RESOURCE_CAP - 1,
@@ -72,6 +72,6 @@ test('Combat loot cannot overflow gold storage and food consumption still applie
   ];
   tick(s, 0.1);
   assert.equal(s.resources.gold, RESOURCE_CAP);
-  assert.ok(s.resources.food < RESOURCE_CAP);
+  assert.equal(s.resources.food, RESOURCE_CAP);
   assert.equal(s.defeatedEnemies, 1);
 });

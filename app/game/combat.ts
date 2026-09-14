@@ -4,8 +4,9 @@ export function armorPercent(actor: Pick<Unit, 'kind'> | Pick<Enemy, 'kind' | 'r
   if (actor.kind === 'hero') return actor.role === 'warrior' ? 25 : actor.role === 'lancer' ? 15 : 0;
   return actor.kind === 'imp' ? 25 : actor.kind === 'troll' ? 15 : actor.kind === 'skeleton' ? 10 : 0;
 }
-export function physicalDamage(damage: number, actor: Pick<Unit, 'kind'> | Pick<Enemy, 'kind' | 'role'>): number {
-  return damage * (1 - armorPercent(actor) / 100);
+export function physicalDamage(damage: number, actor: (Pick<Unit, 'kind'> & { wellFedUntil?: number }) | Pick<Enemy, 'kind' | 'role'>, elapsed = Infinity): number {
+  const fed = 'wellFedUntil' in actor && (actor.wellFedUntil ?? 0) > elapsed;
+  return damage * (1 - armorPercent(actor) / 100) * (fed ? 0.95 : 1);
 }
 
 /** Matchup bonuses affect direct attacks; fire keeps its own solvent multiplier. */

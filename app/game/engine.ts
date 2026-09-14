@@ -120,8 +120,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   canteen: {
     name: 'Cantine de la Cour',
     description:
-      'La cantine sert les vivres rapportés par vos gobelins. Elle réduit la consommation de 20 % par niveau, jusqu’à 60 %, et permet de manger sur place. Seule la cantine de plus haut niveau compte : leurs réductions ne s’additionnent pas.',
-    short: '−20 % de consommation',
+      'Un repas de 4 s coûte 1 vivre et réduit les dégâts physiques reçus de 5 %. Le bonus dure 70 / 100 / 130 s selon le niveau de la cantine. Les unités vivantes disponibles viennent automatiquement manger. Aucune consommation passive ni pénalité sans vivres.',
+    short: 'Repas : résistance physique +5 %',
     art: 2,
     cost: { gold: 80, wood: 25 },
     duration: 18,
@@ -267,7 +267,7 @@ export const CREATURES: Record<
     name: 'Troll',
     job: 'Combattant',
     description:
-      'Le gros bras du quartier brise la première ligne des chevaliers. Les lanciers le tiennent à distance et les archères profitent de sa lenteur. Exige la hutte des trolls et des repas réguliers.',
+      'Le gros bras du quartier brise la première ligne des chevaliers. Les lanciers le tiennent à distance et les archères profitent de sa lenteur. Exige la hutte des trolls. Un repas à la cantine renforce légèrement sa résistance.',
     art: 1,
     cost: { gold: 90, food: 30 },
     hp: 120,
@@ -385,6 +385,7 @@ export interface Unit extends Point {
   loot?: Cost;
   nextRestAt?: number;
   nextMealAt?: number;
+  wellFedUntil?: number;
   activityProgress?: number;
   hauntReadyAt?: number;
   moving?: boolean;
@@ -1791,23 +1792,7 @@ export function demolish(s: State, id: number): string {
 }
 export function foodBalance(s: State) {
   const production = Math.round(harvestRates(s).food * 60);
-  const kitchen = Math.max(
-    0,
-    ...s.lots
-      .filter((l) => l.owned && l.kind === 'canteen' && !l.construction)
-      .map((l) => l.level),
-  );
-  const rawConsumption = s.units.reduce(
-    (total, u) =>
-      total +
-      (u.kind === 'skeleton' || u.kind === 'specter'
-        ? 0
-        : 3),
-    0,
-  );
-  const consumption = Math.ceil(
-    rawConsumption * (1 - Math.min(0.6, kitchen * 0.2)),
-  );
+  const consumption = 0; // Food is spent when a meal finishes, never passively.
   return { production, consumption, net: production - consumption };
 }
 export const GOBLIN_CAP = 6;
@@ -2156,8 +2141,7 @@ export function armyDamage(s: State, u: Unit) {
     (u.kind === 'goblin' && hasResearch(s, 'embers')
       ? 4
       : CREATURES[u.kind].damage) *
-    (1 + (forge - 1) * 0.15) *
-    (s.resources.food <= 0 && u.kind !== 'skeleton' ? 0.6 : 1)
+    (1 + (forge - 1) * 0.15)
   );
 }
 export function defend(s: State, id = 6): string {
@@ -2518,7 +2502,7 @@ function advanceProjectiles(s: State, dt: number) {
     }
     const distance = distanceBetween(p, destination);
     if (distance <= 11 * dt) {
-      target.hp = Math.max(0, target.hp - ('owned' in target ? p.damage : physicalDamage(p.damage, target)));
+      target.hp = Math.max(0, target.hp - ('owned' in target ? p.damage : physicalDamage(p.damage, target, s.elapsed)));
       if ('owned' in target && target.hp <= 0) loseLot(s, target);
       p.life = 0;
     } else {
@@ -2574,7 +2558,7 @@ function advanceEnemies(s: State, dt: number) {
           aggressor.hp = Math.max(
             0,
             aggressor.hp -
-              (e.role === 'monk' ? monkDamage(e, aggressor) : physicalDamage(e.damage * humanMultiplier(e, aggressor.kind, unitIsMounted(s, aggressor)), aggressor)) * dt,
+              (e.role === 'monk' ? monkDamage(e, aggressor) : physicalDamage(e.damage * humanMultiplier(e, aggressor.kind, unitIsMounted(s, aggressor)), aggressor, s.elapsed)) * dt,
           );
       } else {
         pursue(e, aggressor);
@@ -2651,7 +2635,7 @@ function advanceEnemies(s: State, dt: number) {
         e.facing = victim.x >= e.x ? 1 : -1;
         if (e.role === 'archer')
           shoot(s, e, { type: 'unit', id: victim.id }, victim);
-        else victim.hp = Math.max(0, victim.hp - physicalDamage(e.damage * humanMultiplier(e, victim.kind, unitIsMounted(s, victim)), victim) * dt);
+        else victim.hp = Math.max(0, victim.hp - physicalDamage(e.damage * humanMultiplier(e, victim.kind, unitIsMounted(s, victim)), victim, s.elapsed) * dt);
         continue;
       }
       pursue(e, victim);

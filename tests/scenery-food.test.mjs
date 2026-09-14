@@ -209,19 +209,19 @@ test('The lumberjack reaches the side of the trunk, faces it and completes repea
   // Entire visible crown (including sway) has a margin before the eastern road.
   assert.ok(site.x * 32 + 32 < 30 * 32);
 });
-test('A canteen consumes harvested food more efficiently without generating any stock', () => {
+test('Canteens never generate food or charge passive upkeep', () => {
   const s = createGame();
   s.resources = { gold: 300, wood: 125, food: 0, mana: 0 };
-  assert.equal(foodBalance(s).consumption, 9);
+  assert.equal(foodBalance(s).consumption, 0);
   assert.equal(build(s, 7, 'canteen'), '');
   for (let i = 0; i < 600 && s.lots[7].construction; i++) tick(s, 0.1);
   assert.equal(s.lots[7].kind, 'canteen');
   assert.equal(s.resources.food, 0);
-  assert.equal(foodBalance(s).consumption, 8);
-  assert.equal(rates(s).food, -8 / 60);
+  assert.equal(foodBalance(s).consumption, 0);
+  assert.equal(Math.abs(rates(s).food), 0);
   assert.equal(upgradeAndFinish(s, 6), '');
   assert.equal(upgradeAndFinish(s, 7), '');
-  assert.equal(foodBalance(s).consumption, 6);
+  assert.equal(foodBalance(s).consumption, 0);
   s.lots[7].owned = false;
-  assert.equal(foodBalance(s).consumption, 9);
+  assert.equal(foodBalance(s).consumption, 0);
 });

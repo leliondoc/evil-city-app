@@ -204,9 +204,10 @@ test('Upgrade descriptions reflect the actual capacity, economy and army benefit
   s.resources = { gold: 1000, wood: 1000, food: 1000, mana: 1000 };
   Object.assign(s.lots[7], { kind: 'canteen', level: 1 });
   s.units = Array.from({ length: 10 }, (_, i) => ({ ...soldier, id: i + 100 }));
-  assert.equal(foodBalance(s).consumption, 24);
+  assert.equal(foodBalance(s).consumption, 0);
   upgradeAndFinish(s, 7);
-  assert.equal(foodBalance(s).consumption, 18);
+  assert.equal(foodBalance(s).consumption, 0);
   upgradeAndFinish(s, 7);
-  assert.equal(foodBalance(s).consumption, 12);
+  assert.equal(foodBalance(s).consumption, 0);
+  assert.match(buildingLevelEffect('canteen', 3), /130 s/);
 });

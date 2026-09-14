@@ -76,6 +76,7 @@ export function DomainPanel({
           title={unit.kind === 'alchemist' ? 'Soin alchimique' : thought(s, unit) || 'Ordres et besoins'}
           icon={unit.kind === 'alchemist' ? 'alchemist-avatar' : unit.kind === 'specter' ? 'specter-avatar' : 'ui-info'}
         >
+          {(unit.wellFedUntil ?? 0) > s.elapsed && <p className="ability-status">Bien nourri : −5 % de dégâts physiques reçus · {Math.ceil(unit.wellFedUntil! - s.elapsed)} s restantes</p>}
           {unit.kind === 'alchemist' ? <>
             <p>Rend <b>{ALCHEMY.healAmount} PV</b> à l’allié le plus blessé, à moins de <b>{ALCHEMY.healRange} cases</b>.</p>
             <p className="ability-status">{['move', 'rest', 'eat'].includes(unit.task) ? 'Soins en attente : l’alchimiste doit être disponible et à portée.' : (unit.healReadyAt ?? 0) > s.elapsed ? `Prochain soin dans ${Math.ceil(unit.healReadyAt! - s.elapsed)} s` : 'Soin prêt · automatique à portée d’un allié blessé'}</p>

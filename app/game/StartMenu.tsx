@@ -32,6 +32,7 @@ import {
 import { GameMusic } from './music';
 import type { CampaignMapId } from './campaign';
 import { CampaignSelect } from './CampaignSelect';
+import { requestLandscape } from './orientation';
 import { LandscapeGate } from './LandscapeGate';
 
 type MenuPanel = 'bestiary' | 'settings' | 'guide' | null;
@@ -178,7 +179,7 @@ export function StartMenu({
               ref={playRef}
               className="start-play"
               data-resume={hasGame}
-              onClick={() => (hasGame ? onResume() : setShowMap(true))}
+              onClick={() => { if (hasGame) onResume(); else { void requestLandscape(); setShowMap(true); } }}
             >
               <Swords size={26} aria-hidden="true" />
               <span>{hasGame ? 'Reprendre' : 'Jouer'}</span>
@@ -191,7 +192,7 @@ export function StartMenu({
             {hasGame && (
               <button
                 className="start-map-link"
-                onClick={() => setShowMap(true)}
+                onClick={() => { void requestLandscape(); setShowMap(true); }}
               >
                 Carte des quartiers
               </button>

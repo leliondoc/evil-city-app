@@ -3,6 +3,9 @@
 import '../globals.css';
 import './mobile-ui.css';
 import './campaign.css';
+import { ResearchIcon } from './ResearchIcon';
+import { RESEARCH } from './strategy';
+import { manorRequirement } from './progression';
 import { restReason, restUnit, restUnits } from './domain';
 
 import {
@@ -184,21 +187,6 @@ function creationFeedback(button: HTMLButtonElement) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   button.getAnimations().forEach(animation => animation.cancel());
   button.animate(reduced ? [{ filter: 'brightness(1.2)' }, { filter: 'brightness(1)' }] : [{ transform: 'scale(.96)', filter: 'brightness(1.2)' }, { transform: 'scale(1.02)', filter: 'brightness(1.1)', offset: .5 }, { transform: 'none', filter: 'brightness(1)' }], { duration: reduced ? 100 : 280 });
-  if (!reduced) {
-    const box = button.getBoundingClientRect();
-    for (let i = 0; i < 8; i++) {
-      const angle = i * Math.PI / 4;
-      const x = box.left + box.width / 2 + Math.cos(angle) * box.width * .44;
-      const y = box.top + box.height / 2 + Math.sin(angle) * box.height * .44;
-      const spark = document.createElement('span');
-      spark.className = 'creation-spark';
-      spark.setAttribute('aria-hidden', 'true');
-      Object.assign(spark.style, { left: `${x}px`, top: `${y}px` });
-      document.body.append(spark);
-      const animation = spark.animate([{ transform: 'translate(0, 0) scale(.5)', opacity: 0 }, { opacity: 1, offset: .15 }, { transform: `translate(${Math.cos(angle) * 22}px, ${Math.sin(angle) * 18 - 8}px) scale(0)`, opacity: 0 }], { duration: 420, easing: 'ease-out' });
-      void animation.finished.then(() => spark.remove(), () => spark.remove());
-    }
-  }
   const art = button.querySelector(':scope > canvas, :scope > img');
   if (art && !reduced) {
     art.getAnimations().forEach(animation => animation.cancel());
@@ -580,8 +568,10 @@ export default function Game({
       }
       if (event.key.toLowerCase() === 'h') setModal('guide');
       if (event.key.toLowerCase() === 'r') run((s) => retreat(s));
-      if (['1', '2', '3', '4', '5', '6', '7'].includes(event.key)) {
-        const i = Number(event.key) - 1;
+      const digit = /^(?:Digit|Numpad)([1-9])$/.exec(event.code)?.[1] ?? (/^[1-9]$/.test(event.key) ? event.key : undefined);
+      if (digit && !event.repeat) {
+        event.preventDefault();
+        const i = Number(digit) - 1;
         const state = gameStore.getState();
         const buildings = BUILD_OPTIONS.filter(kind => classicCampaign(state) || state.campaign?.buildings.includes(kind));
         const creatures = RECRUIT_OPTIONS.filter(kind => classicCampaign(state) || state.campaign?.creatures.includes(kind));
@@ -929,7 +919,7 @@ export default function Game({
                 key={key}
                 title={`Stockage : ${RESOURCE_CAP.toLocaleString('fr-FR')} maximum. L’excédent de production et de butin est perdu. ${
                   key === 'food'
-                    ? `Récoltes estimées : +${food.production}/min · Créatures : −${food.consumption}/min. Voir la production de vivres.`
+                    ? `Récoltes estimées : +${food.production}/min · Repas : 1 vivre par unité, uniquement à la cantine. Voir la production de vivres.`
                     : `${label} : ${rate >= 0 ? '+' : ''}${rate} par minute`
                 }`}
                 aria-label={`${label} : ${Math.floor(s.resources[key])}. Voir la source de production.`}
@@ -1742,17 +1732,26 @@ export default function Game({
             <button className="army-command" disabled={!group.length || s.won || s.lost} onClick={() => { run(state => holdUnits(state, group.map(u => u.id))); setTouchMode('inspect'); }}><Shield size={14} /> Tenir</button>
           </div>}
 
-            {!compact && touchMode === 'command' ? <output className="army-order-hint" aria-live="polite">Cliquez sur une destination ou une cible.</output> : (!army(s).length || s.recruits.length > 0 || s.resources.food < 20) && <>
-          <p className="army-note">
-            {s.recruits.length ? (
-              `${s.recruits.length} créature${s.recruits.length > 1 ? 's' : ''} en route…`
-            ) : (
-              'Une armée commence par un bon repas.'
-            )}
-          </p>
-            </>}
+            {!compact && touchMode === 'command' ? <output className="army-order-hint" aria-live="polite">Cliquez sur une destination ou une cible.</output> : s.recruits.length > 0 && <p className="army-note">{s.recruits.length} créature{s.recruits.length > 1 ? 's' : ''} en préparation…</p>}
           </div>
         </section>
+        {s.strategy.pendingResearch.length > 0 && <section className="active-research" aria-label="Recherches en cours">
+          <div className="research-queue-tiles">
+          {s.strategy.pendingResearch.map(job => {
+            const def = RESEARCH[job.key];
+            const room = s.lots.find(l => l.owned && l.hp > 0 && !l.construction && l.kind === def.room);
+            const paused = !room || !!manorRequirement(s, def.manor);
+            const seconds = Math.max(0, Math.ceil(def.duration - job.elapsed));
+            const remaining = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+            const status = paused ? 'Suspendue · prérequis manquant' : `${remaining} restantes`;
+            return <button key={job.key} className="active-research-job" data-paused={paused} onClick={() => { if (room) { select({ type: 'lot', id: room.id }); rendererRef.current?.focusLot(room.id); } }} title={`${def.name} — ${status}\n${def.text}${room ? '\nCliquer pour voir le bâtiment.' : ''}`} aria-label={`${def.name} — ${status}`}>
+              <ResearchIcon research={job.key} />
+              {paused && <span className="research-tile-pause" aria-hidden="true"><Pause size={10} /></span>}
+              <progress max={def.duration} value={job.elapsed} aria-label={`Progression : ${def.name}`} />
+            </button>;
+          })}
+          </div>
+        </section>}
         <Tabs
           className="build-tabs"
           value={tab}

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, capacity, rates, foodBalance } from '../app/game/engine.ts';
+import { createGame, capacity, rates } from '../app/game/engine.ts';
 import { upgradePreview } from '../app/game/upgradePreview.ts';
 
 const site = (s, id, kind, level) => Object.assign(s.lots[id], { kind, level, owned: true, construction: null });
@@ -14,7 +14,7 @@ test('Army preview includes base capacity and every other cave without changing 
   assert.equal(upgradePreview(s, lot), null);
 });
 test('A weaker canteen or troll hut never promises an additional global bonus', () => {
-  for (const kind of ['canteen', 'forge']) {
+  for (const kind of ['forge']) {
     const s = createGame(), lot = site(s, 7, kind, 1);
     site(s, 4, kind, 3);
     const preview = upgradePreview(s, lot);
@@ -22,14 +22,12 @@ test('A weaker canteen or troll hut never promises an additional global bonus', 
     assert.match(preview.note, /Aucun gain global/);
   }
 });
-test('A canteen overtaking another one previews the new best bonus and actual food consumption', () => {
+test('A canteen upgrade extends its meals without increasing their cost or resistance', () => {
   const s = createGame(), lot = site(s, 7, 'canteen', 2);
-  site(s, 4, 'canteen', 2);
-  s.units.push({ kind: 'troll' }, { kind: 'goblin' }, { kind: 'skeleton' });
-  const before = foodBalance(s).consumption, preview = upgradePreview(s, lot);
-  assert.equal(preview.from, '−40 %'); assert.equal(preview.to, '−60 %');
-  lot.level++;
-  assert.ok(preview.note.includes(`${before} → ${foodBalance(s).consumption} vivres/min`));
+  site(s, 4, 'canteen', 3);
+  const preview = upgradePreview(s, lot);
+  assert.equal(preview.from, '100 s'); assert.equal(preview.to, '130 s');
+  assert.match(preview.note, /1 vivre/); assert.match(preview.note, /5 %/);
 });
 test('Essence previews show the whole domain, including conquered buildings', () => {
   for (const kind of ['hq', 'crypt', 'guild']) {
