@@ -5,6 +5,11 @@ export async function requireLandscape(page) {
     exact: true,
   });
   if (!(await prompt.isVisible())) return;
+  // Headless Chromium cannot resize its OS window while fullscreen.
+  // Exit before emulating a physical device rotation when auto-lock was refused.
+  await page.evaluate(async () => {
+    if (document.fullscreenElement) await document.exitFullscreen();
+  });
   const { width, height } = page.viewportSize();
   await page.setViewportSize({
     width: Math.max(width, height),
