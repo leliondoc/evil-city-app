@@ -105,10 +105,10 @@
   },
   "goblin-idle": {
     "src": "/tiny-swords/goblin-idle.png",
-    "width": 1536,
+    "width": 1344,
     "height": 192,
     "frameWidth": 192,
-    "frames": 8,
+    "frames": 7,
     "anchor": 0.67
   },
   "goblin-walk": {
@@ -121,17 +121,17 @@
   },
   "goblin-attack": {
     "src": "/tiny-swords/goblin-attack.png",
-    "width": 1536,
+    "width": 1152,
     "height": 192,
     "frameWidth": 192,
-    "frames": 8,
+    "frames": 6,
     "anchor": 0.67
   },
   "goblin-avatar": {
     "src": "/tiny-swords/goblin-avatar.png",
-    "width": 256,
-    "height": 256,
-    "frameWidth": 256,
+    "width": 87,
+    "height": 87,
+    "frameWidth": 87,
     "frames": 1,
     "anchor": 0.67
   },
@@ -520,15 +520,15 @@
     "anchor": 0.67
   },
   "bestiary-goblin-idle": {
-    "src": "/tiny-swords/bestiary-goblin-idle.png",
-    "width": 1536,
+    "src": "/tiny-swords/goblin-idle.png",
+    "width": 1344,
     "height": 192,
     "frameWidth": 192,
-    "frames": 8,
+    "frames": 7,
     "anchor": 0.67
   },
   "bestiary-goblin-walk": {
-    "src": "/tiny-swords/bestiary-goblin-walk.png",
+    "src": "/tiny-swords/goblin-walk.png",
     "width": 1152,
     "height": 192,
     "frameWidth": 192,
@@ -536,11 +536,11 @@
     "anchor": 0.67
   },
   "bestiary-goblin-attack": {
-    "src": "/tiny-swords/bestiary-goblin-attack.png",
-    "width": 1536,
+    "src": "/tiny-swords/goblin-attack.png",
+    "width": 1152,
     "height": 192,
     "frameWidth": 192,
-    "frames": 8,
+    "frames": 6,
     "anchor": 0.67
   },
   "bestiary-troll-idle": {
@@ -2264,5 +2264,85 @@
     "frameWidth": 192,
     "frames": 6,
     "anchor": 0.67
+  },
+  "yard-mushroom-small": {
+    "src": "/tiny-swords/yard-mushroom-small.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.671875
+  },
+  "yard-mushroom": {
+    "src": "/tiny-swords/yard-mushroom.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.734375
+  },
+  "yard-bush": {
+    "src": "/tiny-swords/yard-bush.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.671875
+  },
+  "yard-plant": {
+    "src": "/tiny-swords/yard-plant.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.71875
+  },
+  "yard-leaves": {
+    "src": "/tiny-swords/yard-leaves.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.78125
+  },
+  "yard-pumpkin": {
+    "src": "/tiny-swords/yard-pumpkin.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.796875
+  },
+  "yard-pumpkins": {
+    "src": "/tiny-swords/yard-pumpkins.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.859375
+  },
+  "yard-bone": {
+    "src": "/tiny-swords/yard-bone.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.734375
+  },
+  "yard-bone-small": {
+    "src": "/tiny-swords/yard-bone-small.png",
+    "width": 64,
+    "height": 64,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.6875
+  },
+  "yard-skull-sign": {
+    "src": "/tiny-swords/yard-skull-sign.png",
+    "width": 64,
+    "height": 128,
+    "frameWidth": 64,
+    "frames": 1,
+    "anchor": 0.8125
   }
 }

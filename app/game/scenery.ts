@@ -169,12 +169,27 @@ export function makeScenery(lots: Lot[]): Decoration[] {
   );
 }
 
-/** Sparse pack foliage in evil courtyards; keep the central path and fences clear. */
+/** Two or three original small props, themed by building and stable per parcel. */
 export function corruptedCourtyard(lot: Lot): Decoration[] {
-  if (!lot.owned || lot.kind === 'empty' || lot.kind === 'house' || lot.kind === 'hall' || lot.kind === 'guild' || lot.construction) return [];
-  return [
-    { key: 'tree-3', x: (lot.x + 6.35) * 32, y: (lot.y + 5.9) * 32, scale: 0.43, tint: 0xb18bcf },
-    { key: 'bush-3', x: (lot.x + 2.5) * 32, y: (lot.y + 6.25) * 32, scale: 0.35, tint: 0xb18bcf },
-    { key: 'bush-3', x: (lot.x + 5.65) * 32, y: (lot.y + 6.4) * 32, scale: 0.3, tint: 0x9d80c4 },
-  ];
+  if (!lot.owned || lot.construction) return [];
+  const mushroom = lot.id % 2 ? 'yard-mushroom' : 'yard-mushroom-small';
+  const plant = lot.id % 2 ? 'yard-leaves' : 'yard-plant';
+  const themes: Partial<Record<Lot['kind'], AssetKey[]>> = {
+    hq: ['yard-skull-sign', plant],
+    den: [mushroom, 'yard-bush'],
+    canteen: [lot.id % 2 ? 'yard-pumpkin' : 'yard-pumpkins', mushroom, plant],
+    forge: ['yard-bone', 'yard-skull-sign'],
+    sanctum: ['yard-skull-sign', 'yard-bone-small'],
+    crypt: ['yard-bone', 'yard-skull-sign', 'yard-bone-small'],
+    tavern: ['yard-pumpkin', plant],
+  };
+  const keys = themes[lot.kind] ?? [];
+  // Side lawns: no roots at the gate, on the fence or around the faction pennant.
+  const positions = [[6.15, 6.3], [1.55, 4.05], [6.4, 3.65]];
+  return keys.map((key, i) => ({
+    key,
+    x: (lot.x + positions[i][0] + (lot.id % 3 - 1) * 0.08) * 32,
+    y: (lot.y + positions[i][1] + (lot.id % 2) * 0.1) * 32,
+    scale: key === 'yard-skull-sign' ? 0.48 : 0.7,
+  }));
 }

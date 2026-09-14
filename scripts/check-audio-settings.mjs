@@ -58,6 +58,15 @@ try {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.addInitScript(
       ({ key, failure }) => {
+        // Model the unsupported fullscreen/rotation profile, as in check-build.
+        // Native headless fullscreen races viewport resizing in Chromium.
+        Element.prototype.requestFullscreen = async () => {
+          throw new DOMException('Fullscreen unavailable in this device profile', 'NotAllowedError');
+        };
+        if (screen.orientation) Object.defineProperty(screen.orientation, 'lock', {
+          configurable: true,
+          value: async () => { throw new DOMException('Orientation lock unavailable', 'NotSupportedError'); },
+        });
         const getItem = Object.getOwnPropertyDescriptor(
           Storage.prototype,
           'getItem',

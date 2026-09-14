@@ -36,6 +36,10 @@ if (new URLSearchParams(location.search).has('siege')) {
   commandUnits(s, s.units.map(u => u.id), { type: 'lot', id: lot.id }, entrance(lot));
   for (let i = 0; i < 600; i++) { s.enemies = []; tick(s, 0.1); }
 }
+if (new URLSearchParams(location.search).has('courtyards')) {
+  const kinds = ['crypt', 'canteen', 'sanctum', 'den', 'tavern', 'forge'] as const;
+  kinds.forEach((kind, id) => Object.assign(s.lots[id], { kind, owned: true, construction: null }));
+}
 const original = Reflect.get(Renderer.prototype, 'resize') as () => void;
 Reflect.set(Renderer.prototype, 'resize', function (this: Renderer) {
   window.manorRenderer = this;
